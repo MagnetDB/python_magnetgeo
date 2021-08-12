@@ -105,11 +105,11 @@ ENV/
 .vscode/
 
 # msh
-.msh
-.med
+*.msh
+*.med
 
 # cad
-.brep
-.xao
+*.brep
+*.xao
 .yaml
 
