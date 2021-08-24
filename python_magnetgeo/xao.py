@@ -23,9 +23,15 @@ import argparse
 from numpy.lib.function_base import _unwrap_dispatcher
 from numpy.lib.twodim_base import _trilu_indices_form_dispatcher
 import yaml
-import Ring, Helix, InnerCurrentLead, OuterCurrentLead, Insert
-import MeshData, NumModel
-import freesteam
+
+import Ring
+import Helix
+import InnerCurrentLead
+import OuterCurrentLead
+import Insert
+
+# import MeshData, NumModel
+# import freesteam
 
 import math
 
@@ -82,6 +88,19 @@ groupIsolant = False
 groupLeads = False
 groupCoolingChannels = False
 
+is2D = False
+GeomParams = {
+    'Solid' : (3,'solids'),
+    'Face' : (2,"face")
+}
+
+# check if Axi is in input_file to see wether we are working with a 2D or 3D geometry
+if "Axi" in args.input_file:
+    print("2D geometry detected")
+    is2D = True
+    GeomParams['Solid'] = (2,'faces')
+    GeomParams['Face'] = (1, 'edge')
+    
 if args.command == 'mesh':
     if args.hide:
         hideIsolant = ("Isolants" in args.hide)
@@ -156,12 +175,12 @@ if not gfile:
 volumes = gmsh.model.occ.importShapes(gfile)
 gmsh.model.occ.synchronize()
 
-if len(volumes) == 0 or len(gmsh.model.getEntities(2)) == 0:
+if len(gmsh.model.getEntities(GeomParams['Solid'][0])) == 0:
     print("Pb loaging %s:" % gfile)
     print("Solids:", len(volumes))
     exit(1)
 
-print("Face:", len(gmsh.model.getEntities(2)) )
+print("Face:", len(gmsh.model.getEntities(GeomParams['Face'][0])) )
 if args.debug:
     # get all model entities
     ent = gmsh.model.getEntities()
@@ -213,22 +232,32 @@ if args.command == 'mesh':
                             nInsulators = 2
                     if args.verbose:
                         print("helix:", helix, htype, nturns)
-                    solid_names.append("H%d_Cu" % (i+1))
-                    for j in range(nInsulators):
-                        solid_names.append("H%d_Isolant%d" % (i+1,j))
+
+                    if is2D:
+                        nsection = len(hHelix.axi.turns)
+                        solid_names.append("H%d_Cu%d" % (i+1, 0) ) # HP
+                        for j in range(nsection):
+                            solid_names.append("H%d_Cu%d" % (i+1, j+1) )
+                        solid_names.append("H%d_Cu%d" % (i+1, nsection+1) ) # BP
+                    else:
+                        solid_names.append("H%d_Cu" % (i+1))
+                        for j in range(nInsulators):
+                            solid_names.append("H%d_Isolant%d" % (i+1,j))
                 for i,ring in enumerate(cad.Rings):
                     if args.verbose: 
                         print("ring:" , ring)
                     solid_names.append("R%d" % (i+1))
-                for i,Lead in enumerate(cad.CurrentLeads):
-                    with open(Lead+".yaml", 'r') as f:
-                        clLead = yaml.load(f, Loader=yaml.FullLoader)
-                        prefix = 'o'
-                        outerLead_exist = True
-                        if isinstance(clLead, InnerCurrentLead.InnerCurrentLead):
-                            prefix = 'i'
-                            innerLead_exist = True                        
-                    solid_names.append("%sL%d" % (prefix,(i+1)) )
+                if not is2D:
+                    for i,Lead in enumerate(cad.CurrentLeads):
+                        with open(Lead+".yaml", 'r') as f:
+                            clLead = yaml.load(f, Loader=yaml.FullLoader)
+                            prefix = 'o'
+                            outerLead_exist = True
+                            if isinstance(clLead, InnerCurrentLead.InnerCurrentLead):
+                                prefix = 'i'
+                                innerLead_exist = True                        
+                        solid_names.append("%sL%d" % (prefix,(i+1)) )
+                        
             elif isinstance(cad, Helix.Helix):
                 sInsulator = "Glue"
                 nInsulators = 0
@@ -250,22 +279,30 @@ if args.command == 'mesh':
                         nInsulators = 2 
                 if args.verbose:
                     print("helix:", gname, htype, nturns)
-                solid_names.append("Cu")
-                for j in range(nInsulators):
-                    solid_names.append("%s%d" % (sInsulator, j) )
-            # TODO get BC names ??
-        if "Air" in cfgfile:
+
+                if is2D:
+                    nsection = len(cad.axi.turns)
+                    solid_names.append("Cu%d" %  0 ) # HP
+                    for j in range(nsection):
+                        solid_names.append("Cu%d" % j+1 )
+                    solid_names.append("Cu%d" % nsection+1 ) # BP
+                else:
+                    solid_names.append("Cu")
+                    for j in range(nInsulators):
+                        solid_names.append("%s%d" % (sInsulator, j) )
+
+        if "Air" in args.input_file:
             solid_names.append("Air")
             if hideIsolant:
                 raise Exception("--hide Isolants cannot be used since cad contains Air region")
 
-print("Check solids:", len(solid_names), len(gmsh.model.getEntities(3)))
+assert(len(solid_names) == len(gmsh.model.getEntities(GeomParams['Solid'][0])), "Wrong number of solids: in yaml %d in gmsh %d" % (len(solid_names) , len(gmsh.model.getEntities(GeomParams['Solid'][0]))) )
 
 # use yaml data to identify solids id...
 # Insert solids: H1_Cu, H1_Glue0, H1_Glue1, H2_Cu, ..., H14_Glue1, R1, R2, ..., R13, InnerLead, OuterLead, Air
 # HR: Cu, Kapton0, Kapton1, ... KaptonXX
 print("Get solids:")
-tr_subelements = tree.xpath('//solids')
+tr_subelements = tree.xpath('//'+GeomParams['Solid'][1])
 stags = {}
 for i,sgroup in enumerate(tr_subelements):
     # print("solids=", sgroup.attrib['count'])
@@ -274,6 +311,8 @@ for i,sgroup in enumerate(tr_subelements):
         sname = "solid%d" % j
         if 'name' in child.attrib and child.attrib['name'] != "":
             sname = child.attrib['name'].replace("from_",'')
+            if sname.startswith("Ring-H"):
+                sname = solid_names[j]
         elif solid_names:
             sname = solid_names[j]
 
@@ -301,8 +340,8 @@ for i,sgroup in enumerate(tr_subelements):
 # Physical Volumes
 print("Solidtags:")
 for stag in stags:
-    pgrp = gmsh.model.addPhysicalGroup(3, stags[stag])
-    gmsh.model.setPhysicalName(3, pgrp, stag)
+    pgrp = gmsh.model.addPhysicalGroup(GeomParams['Solid'][0], stags[stag])
+    gmsh.model.setPhysicalName(GeomParams['Solid'][0], pgrp, stag)
     print(stag, ":", stags[stag], pgrp)
 
 Channel_Submeshes = []
@@ -350,7 +389,7 @@ for i,group in enumerate(tr_elements):
     #print("name=", group.attrib['name'], group.attrib['dimension'], group.attrib['count'])
 
     indices=[]
-    if group.attrib['dimension'] == "face":
+    if group.attrib['dimension'] == GeomParams['Face'][1]:
         for child in group:
             indices.append(int(child.attrib['index'])+1)
         
@@ -438,8 +477,8 @@ for i,group in enumerate(tr_elements):
 # Physical Surfaces
 print("BCtags:")
 for bctag in bctags:
-    pgrp = gmsh.model.addPhysicalGroup(2, bctags[bctag])
-    gmsh.model.setPhysicalName(2, pgrp, bctag)
+    pgrp = gmsh.model.addPhysicalGroup(GeomParams['Face'][0], bctags[bctag])
+    gmsh.model.setPhysicalName(GeomParams['Face'][0], pgrp, bctag)
     print(bctag, bctags[bctag], pgrp)
 
 # Generate the mesh and write the mesh file
@@ -459,11 +498,11 @@ if isinstance(cad, Insert.Insert) or isinstance(cad, Helix.Helix):
         print("glue_tags: ", glue_tags)
     for tag in glue_tags:
         if args.verbose:
-            print("BC glue[%d]:" % tag, gmsh.model.getBoundary([(3, tag)]) )
-        for (dim, tag) in gmsh.model.getBoundary([(3,tag)]):
+            print("BC glue[%d]:" % tag, gmsh.model.getBoundary([(GeoParams['Solid'][0], tag)]) )
+        for (dim, tag) in gmsh.model.getBoundary([(GeoParams['Solid'][0],tag)]):
             type = gmsh.model.getType(dim, tag)
             if type == "Plane":
-                Points = gmsh.model.getBoundary([(2, tag)], recursive=True)
+                Points = gmsh.model.getBoundary([(GeoParams['Face'][0], tag)], recursive=True)
                 for p in Points:
                     EndPoints_tags.append(p[1])
     print("EndPoints:", EndPoints_tags)
@@ -556,8 +595,11 @@ if args.command == 'mesh' and not args.dry_run:
     else:
         gmsh.model.mesh.generate(2)
 
-    gmsh.write(gname + ".msh")
-
+    if "Air" in args.input_file:
+        gmsh.write(gname + ".msh")
+    else:
+        gmsh.write(gname + "-Air.msh")
+        
 if args.command == 'adapt':
     print("adapt mesh not implemented yet")
 gmsh.finalize()

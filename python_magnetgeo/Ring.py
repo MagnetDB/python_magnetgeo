@@ -2,13 +2,13 @@
 #-*- coding:utf-8 -*-
 
 """
-Provides definiton for Ring:
+Provides definition for Ring:
 
 """
 
 import json
 import yaml
-from deserialize import *
+import deserialize
 
 class Ring(yaml.YAMLObject):
     """
@@ -90,7 +90,7 @@ class Ring(yaml.YAMLObject):
         return json.dumps(self, default=deserialize.serialize_instance, \
             sort_keys=True, indent=4)
 
-    def from_json(string):
+    def from_json(self, string):
         """
         convert from json to yaml
         """
@@ -110,7 +110,7 @@ class Ring(yaml.YAMLObject):
         read from json file
         """
         istream = open(self.name + '.json', 'r')
-        jsondata = from_json(istream.read())
+        jsondata = self.from_json(istream.read())
         print (type(jsondata))
         istream.close()
 
@@ -151,6 +151,6 @@ if __name__ == "__main__":
             print (ring)
         except:
             print ("Failed to load Ring definition from %s" % args.name)
-        
+
     if args.tojson:
         ring.write_to_json()

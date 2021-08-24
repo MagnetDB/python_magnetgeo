@@ -7,7 +7,7 @@ Provides Inner and OuterCurrentLead class
 
 import json
 import yaml
-from deserialize import *
+import deserialize
 
 class InnerCurrentLead(yaml.YAMLObject):
     """
@@ -128,7 +128,7 @@ def InnerCurrentLead_constructor(loader, node):
     holes = values["holes"]
     support = values["support"]
     fillet = values["fillet"]
-    return InnerCurrentLead(_name, r, h, holes, support, fillet)
+    return InnerCurrentLead(name, r, h, holes, support, fillet)
 
 class OuterCurrentLead(yaml.YAMLObject):
     """
@@ -221,7 +221,7 @@ class OuterCurrentLead(yaml.YAMLObject):
         read from json file
         """
         istream = open(self.name + '.json', 'r')
-        jsondata = from_json(istream.read())
+        jsondata = self.from_json(istream.read())
         istream.close()
         print (type(jsondata))
         print (jsondata)

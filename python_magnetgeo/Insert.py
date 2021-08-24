@@ -6,7 +6,7 @@
 import datetime
 import json
 import yaml
-from deserialize import *
+import deserialize
 
 class Insert(yaml.YAMLObject):
     """

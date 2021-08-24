@@ -7,20 +7,14 @@ Provides tools to un/serialize data from json
 
 import json
 
-from Shape import *
-from ModelAxi import *
-from Model3D import *
-from Helix import *
-from Ring import *
-from InnerCurrentLead import *
-from OuterCurrentLead import *
-from Insert import *
-from MeshData import *
-
-from NumModel import *
-
-from Material import *
-from SimMaterial import *
+import Shape
+import ModelAxi
+import Model3D
+import Helix
+import Ring
+import InnerCurrentLead
+import OuterCurrentLead
+import Insert
 
 # From : http://chimera.labs.oreilly.com/books/1230000000393/ch06.html#_discussion_95
 # Dictionary mapping names to known classes
@@ -33,11 +27,7 @@ classes = {
     'Ring' : Ring,
     'InnerCurrentLead' : InnerCurrentLead,
     'OuterCurrentLead' : OuterCurrentLead,
-    'Insert' : Insert,
-    'MeshData' : MeshData,
-    'SimMaterial' : SimMaterial,
-    'Material' : Material,
-    'NumModel' : NumModel
+    'Insert' : Insert
 }
 
 def serialize_instance(obj):

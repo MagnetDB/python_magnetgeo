@@ -2,7 +2,7 @@
 #-*- coding:utf-8 -*-
 
 """
-Provides definiton for Helix:
+Provides definition for Helix:
 
 * Geom data: r, z
 * Model Axi: definition of helical cut (provided from MagnetTools)
@@ -105,7 +105,7 @@ class Helix(yaml.YAMLObject):
         return json.dumps(self, default=deserialize.serialize_instance, sort_keys=True, indent=4)
 
 
-    def from_json(string):
+    def from_json(self, string):
         """
         convert from json to yaml
         """
@@ -173,6 +173,6 @@ if __name__ == "__main__":
             print (helix)
         except:
             print ("Failed to load Helix definition from %s" % args.name)
-        
+
     if args.tojson:
         helix.write_to_json()
