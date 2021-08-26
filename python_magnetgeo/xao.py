@@ -296,7 +296,8 @@ if args.command == 'mesh':
             if hideIsolant:
                 raise Exception("--hide Isolants cannot be used since cad contains Air region")
 
-assert(len(solid_names) == len(gmsh.model.getEntities(GeomParams['Solid'][0])), "Wrong number of solids: in yaml %d in gmsh %d" % (len(solid_names) , len(gmsh.model.getEntities(GeomParams['Solid'][0]))) )
+nsolids = len(gmsh.model.getEntities(GeomParams['Solid'][0]))
+assert (len(solid_names) == nsolids), "Wrong number of solids: in yaml %d in gmsh %d" % ( len(solid_names) , nsolids )
 
 # use yaml data to identify solids id...
 # Insert solids: H1_Cu, H1_Glue0, H1_Glue1, H2_Cu, ..., H14_Glue1, R1, R2, ..., R13, InnerLead, OuterLead, Air
@@ -446,6 +447,13 @@ for i,group in enumerate(tr_elements):
             for j,channel_id in enumerate(Channel_Submeshes):
                 if sname in channel_id:
                     sname = "Channel%d" % j
+
+            if "_rInt" in sname or "_rExt" in sname:
+                skip = True
+            if "_IrInt" in sname or "_IrExt" in sname:
+                skip = True
+            if "_iRint" in sname or "_iRext" in sname:
+                skip = True
     
         # if hideIsolant remove "iRint"|"iRext" in Bcs otherwise sname: do not record physical surface for Interface
         if hideIsolant:
@@ -498,11 +506,11 @@ if isinstance(cad, Insert.Insert) or isinstance(cad, Helix.Helix):
         print("glue_tags: ", glue_tags)
     for tag in glue_tags:
         if args.verbose:
-            print("BC glue[%d]:" % tag, gmsh.model.getBoundary([(GeoParams['Solid'][0], tag)]) )
-        for (dim, tag) in gmsh.model.getBoundary([(GeoParams['Solid'][0],tag)]):
+            print("BC glue[%d]:" % tag, gmsh.model.getBoundary([(GeomParams['Solid'][0], tag)]) )
+        for (dim, tag) in gmsh.model.getBoundary([(GeomParams['Solid'][0],tag)]):
             type = gmsh.model.getType(dim, tag)
             if type == "Plane":
-                Points = gmsh.model.getBoundary([(GeoParams['Face'][0], tag)], recursive=True)
+                Points = gmsh.model.getBoundary([(GeomParams['Face'][0], tag)], recursive=True)
                 for p in Points:
                     EndPoints_tags.append(p[1])
     print("EndPoints:", EndPoints_tags)
@@ -530,8 +538,8 @@ if args.command == 'mesh' and not args.dry_run:
 
     # load brep file into gmsh
     if args.scaling:
-        gmsh.option.setNumber("Geometry.OCCScaling", 0.001)
         unit = 0.001
+        gmsh.option.setNumber("Geometry.OCCScaling", unit)
 
     # Assign a mesh size to all the points:
     lcar1 = args.lc * unit
@@ -596,9 +604,9 @@ if args.command == 'mesh' and not args.dry_run:
         gmsh.model.mesh.generate(2)
 
     if "Air" in args.input_file:
-        gmsh.write(gname + ".msh")
-    else:
         gmsh.write(gname + "-Air.msh")
+    else:
+        gmsh.write(gname + ".msh")
         
 if args.command == 'adapt':
     print("adapt mesh not implemented yet")
