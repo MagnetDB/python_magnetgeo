@@ -218,7 +218,7 @@ if args.command == 'mesh':
                 NHelices = len(cad.Helices)
                 NChannels = NHelices + 1
                 for i,helix in enumerate(cad.Helices):
-                    Helix = None
+                    hHelix = None
                     Ninsulators = 0
                     with open(helix+".yaml", 'r') as f:
                         hHelix = yaml.load(f, Loader=yaml.FullLoader)
@@ -377,6 +377,9 @@ for i in range(0, NChannels):
     # For the moment keep iChannel_Submeshes into
     # iChannel_Submeshes.append(inames)
 
+if args.debug:
+    print("Channel_Submeshes:", Channel_Submeshes)
+
 # get groups
 print("Get BC groups")
 tr_elements = tree.xpath('//group')
@@ -396,7 +399,8 @@ for i,group in enumerate(tr_elements):
         
         # get bc name
         insert_id = gname.replace("_withAir","")
-        sname = group.attrib['name'].replace(insert_id+"_","").replace('===','_')
+        sname = group.attrib['name'].replace(insert_id+"_","")
+        sname = sname.replace('===','_')
         if sname.startswith('Ring'):
             sname = sname.replace("Ring-H","R")
             sname = re.sub('H\d+','', sname)
@@ -542,7 +546,7 @@ if args.command == 'mesh' and not args.dry_run:
         gmsh.option.setNumber("Geometry.OCCScaling", unit)
 
     # Assign a mesh size to all the points:
-    lcar1 = args.lc * unit
+    lcar1 = args.lc 
     gmsh.model.mesh.setSize(gmsh.model.getEntities(0), lcar1)
     
     # LcMax -                         /------------------
@@ -603,10 +607,12 @@ if args.command == 'mesh' and not args.dry_run:
     else:
         gmsh.model.mesh.generate(2)
 
+    meshname = gname
+    if is2D:
+        meshname += "-Axi"
     if "Air" in args.input_file:
-        gmsh.write(gname + "-Air.msh")
-    else:
-        gmsh.write(gname + ".msh")
+        meshname += "-Air"
+    gmsh.write(meshname + ".msh")
         
 if args.command == 'adapt':
     print("adapt mesh not implemented yet")
