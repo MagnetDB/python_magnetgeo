@@ -173,7 +173,9 @@ class Insert(yaml.YAMLObject):
             HP = []
             dH = []
 
-            Helix = yaml.load(open(name+".yaml", 'r'))
+            Helix = None
+            with open(name+".yaml", 'r') as f:
+                Helix = yaml.load(f)
             geofile.write("// H%d : %s\n" % (i+1, Helix.name))
             geofile.write(onelab_r0 % (i+1, Helix.r[0], i+1))
             geofile.write(onelab_r1 % (i+1, Helix.r[1], i+1))
@@ -288,7 +290,9 @@ class Insert(yaml.YAMLObject):
             BP = []
             HP = []
 
-            Ring = yaml.load(open(name+".yaml", 'r'))
+            Ring = None
+            with open(name+".yaml", 'r') as f:
+                Ring = yaml.load(f)
             geofile.write("// R%d [%d, H%d] : %s\n"%(i+1, H0+1, H1+1, Ring.name))
             geofile.write(onelab_z_R%(i+1, (Ring.z[1]-Ring.z[0]), i+1))
             geofile.write(onelab_lc_R%(i+1, (Ring.r[3]-Ring.r[0])/5., i+1))
@@ -567,7 +571,9 @@ if __name__ == "__main__":
     parser.add_argument("--gmsh", help="save to gmsh geofile", action="store_true")
     args = parser.parse_args()
 
-    Assembly = yaml.load(open(args.name, 'r'))
+    Assembly = None
+    with open(args.name+".yaml", 'r') as f:
+        yaml.load(f)
 
     with_air = False
     if args.air:

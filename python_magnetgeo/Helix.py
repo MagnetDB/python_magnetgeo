@@ -168,11 +168,9 @@ if __name__ == "__main__":
         helix = Helix("ttt", [1, 2],[-1, 1], True)
         helix.dump()
     else:
-        try:
-            helix =  yaml.load(open(args.name, 'r'))
+        with open(args.name, 'r') as f:
+            helix =  yaml.load(f)
             print (helix)
-        except:
-            print ("Failed to load Helix definition from %s" % args.name)
 
     if args.tojson:
         helix.write_to_json()

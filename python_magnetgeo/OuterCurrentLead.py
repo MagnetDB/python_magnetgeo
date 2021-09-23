@@ -8,7 +8,7 @@ Provides Inner and OuterCurrentLead class
 import os
 import json
 import yaml
-import deserialize 
+import deserialize
 
 class OuterCurrentLead(yaml.YAMLObject):
     """
@@ -140,7 +140,8 @@ if __name__ == "__main__":
         lead.dump()
     else:
         try:
-            lead = yaml.load(open(args.name, 'r'))
+            file = open(args.name, 'r')
+            lead = yaml.load(file)
             print ("lead=", lead)
         except:
             print ("Failed to load yaml Outer CurrentLead definition, try json format")

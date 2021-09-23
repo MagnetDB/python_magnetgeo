@@ -151,11 +151,10 @@ if __name__ == "__main__":
         lead = InnerCurrentLead('Inner', r, 480., bars, support, False)
         lead.dump()
     else:    
-        try:
-            lead = yaml.load(open(args.name, 'r'))
-            print ("lead=", lead)
-        except:
-            print ("Failed to load Inner currentlead definition from %s" % args.name)
+        lead = None
+        with open(args.name, 'r') as f:
+            lead = yaml.load(f)
+        print ("lead=", lead)
 
     if args.tojson:
         lead.write_to_json()

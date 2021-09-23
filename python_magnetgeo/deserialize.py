@@ -15,6 +15,7 @@ import Ring
 import InnerCurrentLead
 import OuterCurrentLead
 import Insert
+import Site
 
 # From : http://chimera.labs.oreilly.com/books/1230000000393/ch06.html#_discussion_95
 # Dictionary mapping names to known classes
@@ -27,7 +28,8 @@ classes = {
     'Ring' : Ring,
     'InnerCurrentLead' : InnerCurrentLead,
     'OuterCurrentLead' : OuterCurrentLead,
-    'Insert' : Insert
+    'Insert' : Insert,
+    'Site' : Site
 }
 
 def serialize_instance(obj):
