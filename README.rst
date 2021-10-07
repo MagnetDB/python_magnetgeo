@@ -20,7 +20,7 @@ Python Magnet Geometry
 
 
 
-Python Magnet Geometry contains maget geometrical models
+Python Magnet Geometry contains magnet geometrical models
 
 
 * Free software: MIT license
@@ -30,7 +30,9 @@ Python Magnet Geometry contains maget geometrical models
 Features
 --------
 
-* TODO
+* Define Magnet geometry as yaml files
+* Load/Create CAD and Mesh with Salome (see hifimagnet.salome) 
+* Create Gmsh mesh from Salome XAO format
 
 Credits
 -------
