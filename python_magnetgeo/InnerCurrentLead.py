@@ -7,7 +7,7 @@ Provides Inner and OuterCurrentLead class
 
 import json
 import yaml
-import deserialize
+from . import deserialize
 
 class InnerCurrentLead(yaml.YAMLObject):
     """

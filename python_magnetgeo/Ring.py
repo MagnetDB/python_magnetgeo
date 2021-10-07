@@ -8,7 +8,7 @@ Provides definition for Ring:
 
 import json
 import yaml
-import deserialize
+from . import deserialize
 
 class Ring(yaml.YAMLObject):
     """

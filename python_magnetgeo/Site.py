@@ -8,7 +8,7 @@ Provides definition for Site:
 
 import json
 import yaml
-import deserialize
+from . import deserialize
 
 class Site(yaml.YAMLObject):
     """

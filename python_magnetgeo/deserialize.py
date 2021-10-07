@@ -7,15 +7,15 @@ Provides tools to un/serialize data from json
 
 import json
 
-import Shape
-import ModelAxi
-import Model3D
-import Helix
-import Ring
-import InnerCurrentLead
-import OuterCurrentLead
-import Insert
-import Site
+from . import Shape
+from . import ModelAxi
+from . import Model3D
+from . import Helix
+from . import Ring
+from . import InnerCurrentLead
+from . import OuterCurrentLead
+from . import Insert
+from . import Site
 
 # From : http://chimera.labs.oreilly.com/books/1230000000393/ch06.html#_discussion_95
 # Dictionary mapping names to known classes

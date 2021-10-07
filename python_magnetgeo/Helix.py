@@ -12,11 +12,11 @@ Provides definition for Helix:
 
 import json
 import yaml
-import deserialize
+from . import deserialize
 
-import Shape
-import ModelAxi
-import Model3D
+from . import Shape
+from . import ModelAxi
+from . import Model3D
 
 class Helix(yaml.YAMLObject):
     """

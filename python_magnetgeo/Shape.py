@@ -12,7 +12,7 @@ Provides definiton for Helix:
 
 import json
 import yaml
-import deserialize
+from . import deserialize
 
 # from Shape import *
 # from ModelAxi import *

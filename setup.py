@@ -10,7 +10,7 @@ with open('README.rst') as readme_file:
 with open('HISTORY.rst') as history_file:
     history = history_file.read()
 
-requirements = [ 'yaml', 'tempfile', 'lxml', 'gmsh>=4.8.4', 'freesteam' ]
+requirements = [ 'yaml', 'tempfile', 'lxml', 'gmsh>=4.8.4' ]
 
 setup_requirements = ['pytest-runner', ]
 
@@ -34,7 +34,7 @@ setup(
     description="Python Magnet Geometry contains maget geometrical models",
     entry_points={
         'console_scripts': [
-            'python_magnetgeo=python_magnetgeo.cli:main',
+            'python_magnetgeo=python_magnetgeo.xao:main',
         ],
     },
     install_requires=requirements,
