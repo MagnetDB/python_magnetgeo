@@ -15,6 +15,8 @@ from . import Ring
 from . import InnerCurrentLead
 from . import OuterCurrentLead
 from . import Insert
+from . import Bitter
+from . import Supra
 from . import Site
 
 # From : http://chimera.labs.oreilly.com/books/1230000000393/ch06.html#_discussion_95
@@ -29,6 +31,8 @@ classes = {
     'InnerCurrentLead' : InnerCurrentLead,
     'OuterCurrentLead' : OuterCurrentLead,
     'Insert' : Insert,
+    'Bitter' : Bitter,
+    'Supra' : Supra,
     'Site' : Site
 }
 
