@@ -17,7 +17,7 @@ from . import OuterCurrentLead
 from . import Insert
 from . import Bitter
 from . import Supra
-from . import Site
+from . import MSite
 
 # From : http://chimera.labs.oreilly.com/books/1230000000393/ch06.html#_discussion_95
 # Dictionary mapping names to known classes
@@ -33,7 +33,7 @@ classes = {
     'Insert' : Insert,
     'Bitter' : Bitter,
     'Supra' : Supra,
-    'Site' : Site
+    'MSite' : MSite
 }
 
 def serialize_instance(obj):
