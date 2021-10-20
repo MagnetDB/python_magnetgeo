@@ -10,7 +10,7 @@ with open('README.rst') as readme_file:
 with open('HISTORY.rst') as history_file:
     history = history_file.read()
 
-requirements = [ 'yaml', 'tempfile', 'lxml', 'gmsh>=4.8.4' ]
+requirements = [ 'lxml', 'gmsh>=4.8.4', 'yaml', ]
 
 setup_requirements = ['pytest-runner', ]
 
