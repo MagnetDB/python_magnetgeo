@@ -1,0 +1,4 @@
+yaml
+lxml
+gmsh >= 4.8.4
+
