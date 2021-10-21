@@ -1,0 +1,8 @@
+python-magnetgeo (0.1.0-4) UNRELEASED; urgency=medium
+
+  * Initial release (Closes: #nnnn) 
+  * Add Bitter and Supra
+  * Fix from R. Vallet
+  * Change Site to MSite
+
+ -- Christophe Trophime <christophe.trophime@lncmi.cnrs.fr>  Tue, 19 Oct 2021 16:27:45 +0200

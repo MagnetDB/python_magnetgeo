@@ -111,5 +111,8 @@ ENV/
 # cad
 *.brep
 *.xao
-.yaml
+*.yaml
 
+*~
+*.orig
+*log
