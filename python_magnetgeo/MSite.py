@@ -124,6 +124,6 @@ if __name__ == "__main__":
             print("site=",site)
 
     if args.tojson:
-        rsite.write_to_json()
+        site.write_to_json()
 
     
