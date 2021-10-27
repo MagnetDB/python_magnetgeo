@@ -112,6 +112,55 @@ class Bitter(yaml.YAMLObject):
         """
         return self.axi.get_Nturns()
 
+    def gmsh(self, Air=False):
+        """
+        create gmsh geometry
+        """
+        import gmsh
+
+        gmsh_ids = []
+        x = self.r[0]
+        dr = self.r[1] - self.r[0]
+        y = -self.axi.h
+        for i, (n, pitch) in enumerate(zip(self.axi.turns, self.axi.pitch)):
+            dz = n * pitch
+            _id = gmsh.model.occ.addRectangle(x, y, 0, dr, dz)
+            gmsh_ids.append(_id)
+                
+            ps = gmsh.model.addPhysicalGroup(2, _id)
+            gmsh.model.setPhysicalName(2, ps, "%s%d" % (self.name, i+1))
+
+            y += dz
+
+        ps = gmsh.model.addPhysicalGroup(2, gmsh_ids)
+        gmsh.model.setPhysicalName(2, ps, self.name)
+
+        # get BC
+        gmsh.option.setNumber("Geometry.OCCBoundsUseStl", 1)
+
+        eps = 1.e-3
+        ov = gmsh.model.getEntitiesInBoundingBox(self.r[0]* (1-eps), self.z[0]* (1-eps), 0,
+                                                 self.r[1]* (1+eps), self.z[0]* (1+eps), 0, 1)
+        ps = gmsh.model.addPhysicalGroup(1, [tag for (dim,tag) in ov])
+        gmsh.model.setPhysicalName(1, ps, "%s_Bottom" % self.name)
+        
+        ov = gmsh.model.getEntitiesInBoundingBox(self.r[0]* (1-eps), self.z[1]* (1-eps), 0,
+                                                 self.r[1]* (1+eps), self.z[1]* (1+eps), 0, 1)
+        ps = gmsh.model.addPhysicalGroup(1, [tag for (dim,tag) in ov])
+        gmsh.model.setPhysicalName(1, ps, "%s_Top" % self.name)
+
+        ov = gmsh.model.getEntitiesInBoundingBox(self.r[0]* (1-eps), self.z[0]* (1-eps), 0,
+                                                 self.r[0]* (1+eps), self.z[1]* (1+eps), 0, 1)
+        ps = gmsh.model.addPhysicalGroup(1, [tag for (dim,tag) in ov])
+        gmsh.model.setPhysicalName(1, ps, "%s_Rint" % self.name)
+
+        ov = gmsh.model.getEntitiesInBoundingBox(self.r[1]* (1-eps), self.z[0]* (1-eps), 0,
+                                                 self.r[1]* (1+eps), self.z[1]* (1+eps), 0, 1)
+        ps = gmsh.model.addPhysicalGroup(1, [tag for (dim,tag) in ov])
+        gmsh.model.setPhysicalName(1, ps, "%s_Rext" % self.name)
+
+        pass
+    
 def Bitter_constructor(loader, node):
     """
     build an bitter object
@@ -141,7 +190,7 @@ if __name__ == "__main__":
         bitter.dump()
     else:
         with open(args.name, 'r') as f:
-            bitter =  yaml.load(f)
+            bitter =  yaml.load(f, Loader = yaml.FullLoader)
             print (bitter)
 
     if args.tojson:

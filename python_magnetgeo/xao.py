@@ -27,8 +27,140 @@ from .Helix import *
 from .InnerCurrentLead import *
 from .OuterCurrentLead import *
 from .Insert import *
+from .Bitter import *
+from .Supra import *
+from .MSite import *
 
 import math
+
+def Supra_Gmsh(cad, gname, is2D, verbose):
+    """ Load Supra cad """
+    solid_names = []
+
+    solid_names.append("S")
+    return solid_names
+
+def Bitter_Gmsh(cad, gname, is2D, verbose):
+    """ Load Bitter cad """
+    solid_names = []
+
+    if is2D:
+        nsection = len(cad.axi.turns)
+        for j in range(nsection):
+            solid_names.append("B%d" % j+1 )
+            solid_names.append("B%d" % nsection+1 ) # BP
+    else:
+        solid_names.append("B")        
+    return solid_names
+
+def Helix_Gmsh(cad, gname, is2D, verbose):
+    """ Load Helix cad """
+    solid_names = []
+
+    sInsulator = "Glue"
+    nInsulators = 0
+    nturns = cad.get_Nturns()
+    if cad.m3d.with_shapes and cad.m3d.with_channels :
+        sInsulator = "Kapton"
+        htype = "HR"
+        angle = cad.shape.angle
+        nshapes = nturns * (360 / float(angle))
+        print("shapes: ", nshapes, math.floor(nshapes), math.ceil(nshapes))
+                    
+        nshapes = (lambda x: math.ceil(x) if math.ceil(x) - x < x - math.floor(x) else math.floor(x))(nshapes)
+        nInsulators = int(nshapes)
+        print("nKaptons=", nInsulators)
+    else:
+        htype = "HL"
+        nInsulators = 1
+        if cad.dble:
+            nInsulators = 2 
+        if verbose:
+            print("helix:", gname, htype, nturns)
+
+        if is2D:
+            nsection = len(cad.axi.turns)
+            solid_names.append("Cu%d" %  0 ) # HP
+            for j in range(nsection):
+                solid_names.append("Cu%d" % j+1 )
+                solid_names.append("Cu%d" % nsection+1 ) # BP
+        else:
+            solid_names.append("Cu")
+            for j in range(nInsulators):
+                solid_names.append("%s%d" % (sInsulator, j) )
+        
+    return solid_names
+
+def Insert_Gmsh(cad, gname, is2D, verbose):
+    """ Load Insert """
+    solid_names = []
+
+    NHelices = len(cad.Helices)
+    NChannels = NHelices + 1
+    for i,helix in enumerate(cad.Helices):
+        hHelix = None
+        Ninsulators = 0
+        with open(helix+".yaml", 'r') as f:
+            hHelix = yaml.load(f, Loader=yaml.FullLoader)
+            h_solid_names = Helix_Gmsh(hHelix, gname, is2D, args.verbose)
+            for k,sname in enumerate(h_solid_names):
+                h_solid_names[k] =  "H%d_%s" % (i+1, sname)
+            solid_names += h_solid_names
+    
+    for i,ring in enumerate(cad.Rings):
+        if verbose: 
+            print("ring:" , ring)
+            solid_names.append("R%d" % (i+1))
+    
+    if not is2D:
+        for i,Lead in enumerate(cad.CurrentLeads):
+            with open(Lead+".yaml", 'r') as f:
+                clLead = yaml.load(f, Loader=yaml.FullLoader)
+                prefix = 'o'
+                outerLead_exist = True
+                if isinstance(clLead, InnerCurrentLead):
+                    prefix = 'i'
+                    innerLead_exist = True                        
+                solid_names.append("%sL%d" % (prefix,(i+1)) )
+
+    return solid_names
+
+def Magnet_Gmsh(cad, gname, is2D, verbose):
+    """ Load Magnet cad """
+    solid_names = []
+    cfgfile = cad.magnets
+    with open(cfgfile, 'r') as cfgdata:
+        pcad = yaml.load(cfgdata, Loader = yaml.FullLoader)
+        pname = pcad.name
+        if isinstance(pcad, Bitter):
+            solid_names += Bitter_Gmsh(pcad, pname, is2D, args.verbose)
+            # TODO prepend name with part name
+        elif isinstance(pcad, Supra):
+            solid_names += Supra_Gmsh(cad, pname, is2D, args.verbose)
+            # TODO prepend name with part name
+        elif isinstance(pcad, Insert):
+            solid_names += Insert_Gmsh(pcad, pname, is2D, args.verbose)
+            # TODO prepend name with part name
+    return solid_names
+
+def MSite_Gmsh(cad, gname, is2D, verbose):
+    """ Load MSite cad """
+    solid_names = []
+    if isinstance(cad.magnets, str):
+        solid_names += Magnet_Gmsh(cad.magnets, gname, is2D, verbose)
+    elif isinstance(cad.magnets, list):
+        for magnet in cad.magnets:
+            solid_names += Magnet_Gmsh(magnet, gname, is2D, verbose)
+    elif isinstance(cad.magnets, dict):
+        for key in cad.magnets:
+            if isinstance(cad.magnets[key], str):
+                solid_names += Magnet_Gmsh(cad.magnets[key], gname, is2D, verbose)
+            elif isinstance(cad.magnets[key], list):
+                for mpart in cad.magnets[key]:
+                    solid_names += Magnet_Gmsh(mpart, gname, is2D, verbose)
+
+    return solid_names
+
 
 def main():
     tags = {}
@@ -202,89 +334,24 @@ def main():
             cfgfile = gname+".yaml"
         print("cfgfile:", cfgfile)
 
-        # Get Solid names from yaml file if any
-        id = 0
-        if cfgfile :
-            with open(cfgfile, 'r') as cfgdata:
-                cad = yaml.load(cfgdata, Loader = yaml.FullLoader)
-                # print("cad type", type(cad))
-                # TODO get solid names (see Salome HiFiMagnet plugin)
-                if isinstance(cad, Insert.Insert):
-                    NHelices = len(cad.Helices)
-                    NChannels = NHelices + 1
-                    for i,helix in enumerate(cad.Helices):
-                        hHelix = None
-                        Ninsulators = 0
-                        with open(helix+".yaml", 'r') as f:
-                            hHelix = yaml.load(f, Loader=yaml.FullLoader)
-                        nturns = hHelix.get_Nturns()    
-                        if hHelix.m3d.with_shapes and hHelix.m3d.with_channels :
-                            htype = "HR: how to count insulators?"
-                        else:
-                            htype = "HL"      
-                            nInsulators = 1
-                            if hHelix.dble:
-                                nInsulators = 2
-                        if args.verbose:
-                            print("helix:", helix, htype, nturns)
-
-                        if is2D:
-                            nsection = len(hHelix.axi.turns)
-                            solid_names.append("H%d_Cu%d" % (i+1, 0) ) # HP
-                            for j in range(nsection):
-                                solid_names.append("H%d_Cu%d" % (i+1, j+1) )
-                            solid_names.append("H%d_Cu%d" % (i+1, nsection+1) ) # BP
-                        else:
-                            solid_names.append("H%d_Cu" % (i+1))
-                            for j in range(nInsulators):
-                                solid_names.append("H%d_Isolant%d" % (i+1,j))
-                    for i,ring in enumerate(cad.Rings):
-                        if args.verbose: 
-                            print("ring:" , ring)
-                        solid_names.append("R%d" % (i+1))
-                    if not is2D:
-                        for i,Lead in enumerate(cad.CurrentLeads):
-                            with open(Lead+".yaml", 'r') as f:
-                                clLead = yaml.load(f, Loader=yaml.FullLoader)
-                                prefix = 'o'
-                                outerLead_exist = True
-                                if isinstance(clLead, InnerCurrentLead.InnerCurrentLead):
-                                    prefix = 'i'
-                                    innerLead_exist = True                        
-                            solid_names.append("%sL%d" % (prefix,(i+1)) )
-                        
-                elif isinstance(cad, Helix.Helix):
-                    sInsulator = "Glue"
-                    nInsulators = 0
-                    nturns = cad.get_Nturns()
-                    if cad.m3d.with_shapes and cad.m3d.with_channels :
-                        sInsulator = "Kapton"
-                        htype = "HR"
-                        angle = cad.shape.angle
-                        nshapes = nturns * (360 / float(angle))
-                        print("shapes: ", nshapes, math.floor(nshapes), math.ceil(nshapes))
-                    
-                        nshapes = (lambda x: math.ceil(x) if math.ceil(x) - x < x - math.floor(x) else math.floor(x))(nshapes)
-                        nInsulators = int(nshapes)
-                        print("nKaptons=", nInsulators)
-                    else:
-                        htype = "HL"
-                        nInsulators = 1
-                        if cad.dble:
-                            nInsulators = 2 
-                    if args.verbose:
-                        print("helix:", gname, htype, nturns)
-
-                    if is2D:
-                        nsection = len(cad.axi.turns)
-                        solid_names.append("Cu%d" %  0 ) # HP
-                        for j in range(nsection):
-                            solid_names.append("Cu%d" % j+1 )
-                            solid_names.append("Cu%d" % nsection+1 ) # BP
-                    else:
-                        solid_names.append("Cu")
-                        for j in range(nInsulators):
-                            solid_names.append("%s%d" % (sInsulator, j) )
+    if cfgfile :
+        with open(cfgfile, 'r') as cfgdata:
+            cad = yaml.load(cfgdata, Loader = yaml.FullLoader)
+            # print("cad type", type(cad))
+            # TODO get solid names (see Salome HiFiMagnet plugin)
+            if isinstance(cad, MSite):
+                solid_names += MSite_Gmsh(cad, gname, is2D, args.verbose)
+            elif isinstance(cad, Bitter):
+                solid_names += Bitter_Gmsh(cad, gname, is2D, args.verbose)
+            elif isinstance(cad, Supra):
+                solid_names += Supra_Gmsh(cad, gname, is2D, args.verbose)
+            elif isinstance(cad, Insert):
+                solid_names += Insert_Gmsh(cad, gname, is2D, args.verbose)
+            elif isinstance(cad, Helix):
+                solid_names += Helix_Gmsh(cad, gname, is2D, args.verbose)
+            else:
+                print("unsupported type of cad")
+                sys.exit(1)
 
             if "Air" in args.input_file:
                 solid_names.append("Air")

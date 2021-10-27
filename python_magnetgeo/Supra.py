@@ -110,6 +110,43 @@ class Supra(yaml.YAMLObject):
         """
         return self.axi.get_Nturns()
 
+    def gmsh(self, Air=False):
+        """
+        create gmsh geometry
+        """
+        import gmsh
+
+        _id = gmsh.model.occ.addRectangle(self.r[0], self.z[0], 0, self.r[1]-self.r[0], self.z[1]-self.z[0])
+
+        ps = gmsh.model.addPhysicalGroup(2, [_id])
+        gmsh.model.setPhysicalName(2, ps, self.name)
+
+        # get BC
+        gmsh.option.setNumber("Geometry.OCCBoundsUseStl", 1)
+
+        eps = 1.e-3
+        ov = gmsh.model.getEntitiesInBoundingBox(self.r[0]* (1-eps), self.z[0]* (1-eps), 0,
+                                                 self.r[1]* (1+eps), self.z[0]* (1+eps), 0, 1)
+        ps = gmsh.model.addPhysicalGroup(1, [tag for (dim,tag) in ov])
+        gmsh.model.setPhysicalName(1, ps, "%s_Bottom" % self.name)
+        
+        ov = gmsh.model.getEntitiesInBoundingBox(self.r[0]* (1-eps), self.z[1]* (1-eps), 0,
+                                                 self.r[1]* (1+eps), self.z[1]* (1+eps), 0, 1)
+        ps = gmsh.model.addPhysicalGroup(1, [tag for (dim,tag) in ov])
+        gmsh.model.setPhysicalName(1, ps, "%s_Top" % self.name)
+
+        ov = gmsh.model.getEntitiesInBoundingBox(self.r[0]* (1-eps), self.z[0]* (1-eps), 0,
+                                                 self.r[0]* (1+eps), self.z[1]* (1+eps), 0, 1)
+        ps = gmsh.model.addPhysicalGroup(1, [tag for (dim,tag) in ov])
+        gmsh.model.setPhysicalName(1, ps, "%s_Rint" % self.name)
+
+        ov = gmsh.model.getEntitiesInBoundingBox(self.r[1]* (1-eps), self.z[0]* (1-eps), 0,
+                                                 self.r[1]* (1+eps), self.z[1]* (1+eps), 0, 1)
+        ps = gmsh.model.addPhysicalGroup(1, [tag for (dim,tag) in ov])
+        gmsh.model.setPhysicalName(1, ps, "%s_Rext" % self.name)
+
+        pass
+    
 def Supra_constructor(loader, node):
     """
     build an supra object
@@ -138,7 +175,7 @@ if __name__ == "__main__":
         supra.dump()
     else:
         with open(args.name, 'r') as f:
-            supra =  yaml.load(f)
+            supra =  yaml.load(f, Loader = yaml.FullLoader)
             print (supra)
 
     if args.tojson:

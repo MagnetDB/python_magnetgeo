@@ -105,6 +105,40 @@ class Insert(yaml.YAMLObject):
     #
     ###################################################################
 
+    def gmsh(self, Air=False):
+        """
+        create gmsh geometry
+        """
+        import gmsh
+
+        # loop over Helices
+        z = []
+        for i, name in enumerate(self.Helices):
+            Helix = None
+            with open(name+".yaml", 'r') as f:
+                Helix = yaml.load(f)
+
+            Helix.gmsh()
+            if i%2 == 0:
+                z.append(Helix.z[1])
+            else:
+                z.append(Helix.z[0])
+
+        # loop over Rings
+        for i, name in enumerate(self.Rings):
+            Ring = None
+            with open(name+".yaml", 'r') as f:
+                Ring = yaml.load(f, Loader = yaml.FullLoader)
+
+            x = 0
+            y = z[i]
+            if i%2 != 0:
+                y -= (Ring.z[-1]-Ring.z[0])
+            Ring.gmsh(x, y)
+
+        # TODO get BCs
+        pass
+        
     def Create_AxiGeo(self, Air=False):
         """
         create Axisymetrical Geo Model for gmsh
@@ -564,16 +598,25 @@ yaml.add_constructor(u'!Insert', Insert_constructor)
 # To operate from command line
 
 if __name__ == "__main__":
+    import os
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument("name", help="name of the insert to be loaded")
+    parser.add_argument("--wd", help="set a working directory", type=str, default="data")
+    
     parser.add_argument("--air", help="activate air generation", action="store_true")
     parser.add_argument("--gmsh", help="save to gmsh geofile", action="store_true")
+    parser.add_argument("--gmsh_api", help="use gmsh api to create geofile", action="store_true")
+    parser.add_argument("--show", help="display gmsh geofile when api is on", action="store_true")
     args = parser.parse_args()
+
+    cwd = os.getcwd()
+    if args.wd:
+        os.chdir(args.wd)
 
     Assembly = None
     with open(args.name+".yaml", 'r') as f:
-        yaml.load(f)
+        Assembly = yaml.load(f, Loader = yaml.FullLoader)
 
     with_air = False
     if args.air:
@@ -581,3 +624,23 @@ if __name__ == "__main__":
     # create Axi geometry
     if args.gmsh:
         Assembly.Create_AxiGeo(with_air)
+
+    if args.gmsh_api:
+        import gmsh
+        gmsh.initialize()
+        gmsh.model.add(args.name)
+        gmsh.logger.start()
+
+        Assembly.gmsh(with_air)
+        gmsh.model.occ.synchronize()
+
+        log = gmsh.logger.get()
+        print("Logger has recorded " + str(len(log)) + " lines")
+        gmsh.logger.stop()
+        # Launch the GUI to see the results:
+        if args.show:
+            gmsh.fltk.run()
+        gmsh.finalize()
+
+    if args.wd:
+        os.chdir(cwd)

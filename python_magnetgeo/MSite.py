@@ -89,6 +89,18 @@ class MSite(yaml.YAMLObject):
         print (type(jsondata))
         istream.close()
 
+    def gmsh(self, Air=False):
+        """
+        create gmsh geometry
+        """
+        import gmsh
+
+        # loop over magnets
+        # check magnets type
+        
+        # TODO get BCs
+        pass
+        
 
 def MSite_constructor(loader, node):
     """

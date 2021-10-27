@@ -114,6 +114,47 @@ class Ring(yaml.YAMLObject):
         print (type(jsondata))
         istream.close()
 
+    def gmsh(self, x, y):
+        """
+        create gmsh geometry
+        """
+        import gmsh
+        _id = gmsh.model.occ.addRectangle(self.r[0], y+self.z[0], 0, self.r[-1]-self.r[0], self.z[-1]-self.z[0])
+        # print("gmsh/Ring:", _id, self.name, self.r, self.z)
+        
+        """
+        ps = gmsh.model.addPhysicalGroup(2, [_id])
+        gmsh.model.setPhysicalName(2, ps, self.name)
+        
+        # get BC (TODO review to keep on BP or HP)
+        gmsh.option.setNumber("Geometry.OCCBoundsUseStl", 1)
+
+        eps = 1.e-3
+        
+        # TODO: 
+        ov = gmsh.model.getEntitiesInBoundingBox(self.r[0]* (1-eps), (y+self.z[0])* (1-eps), 0,
+                                                 self.r[-1]* (1+eps), (y+self.z[0])* (1+eps), 0, 1)
+        ps = gmsh.model.addPhysicalGroup(1, [tag for (dim,tag) in ov])
+        gmsh.model.setPhysicalName(1, ps, "%s_Bottom" % self.name)
+        
+        ov = gmsh.model.getEntitiesInBoundingBox(self.r[0]* (1-eps), (y+self.z[-1])* (1-eps), 0,
+                                                 self.r[-1]* (1+eps), (y+self.z[-1])* (1+eps), 0, 1)
+        ps = gmsh.model.addPhysicalGroup(1, [tag for (dim,tag) in ov])
+        gmsh.model.setPhysicalName(1, ps, "%s_Top" % self.name)
+        
+        
+        ov = gmsh.model.getEntitiesInBoundingBox(self.r[0]* (1-eps), (y+self.z[0])* (1-eps), 0,
+                                                 self.r[0]* (1+eps), (y+self.z[-1])* (1+eps), 0, 1)
+        ps = gmsh.model.addPhysicalGroup(1, [tag for (dim,tag) in ov])
+        gmsh.model.setPhysicalName(1, ps, "%s_Rint" % self.name)
+
+        ov = gmsh.model.getEntitiesInBoundingBox(self.r[-1]* (1-eps), (y+self.z[0])* (1-eps), 0,
+                                                 self.r[-1]* (1+eps), (y+self.z[-1])* (1+eps), 0, 1)
+        ps = gmsh.model.addPhysicalGroup(1, [tag for (dim,tag) in ov])
+        gmsh.model.setPhysicalName(1, ps, "%s_Rext" % self.name)
+        """
+        
+        return
 
 def Ring_constructor(loader, node):
     """
@@ -147,7 +188,7 @@ if __name__ == "__main__":
         ring.dump()
     else:
         try:
-            ring = yaml.load(open(args.name, 'r'))
+            ring = yaml.load(open(args.name, 'r'), Loader = yaml.FullLoader)
             print (ring)
         except:
             print ("Failed to load Ring definition from %s" % args.name)
