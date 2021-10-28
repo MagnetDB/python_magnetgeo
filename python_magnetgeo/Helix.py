@@ -135,69 +135,77 @@ class Helix(yaml.YAMLObject):
         """
         return self.axi.get_Nturns()
 
-    def gmsh(self):
+    def gmsh(self, debug=False):
         """
         create gmsh geometry
         """
         import gmsh
 
-        _id = gmsh.model.occ.addRectangle(self.r[0], self.z[0], 0, self.r[1]-self.r[0], self.z[1]-self.z[0])
-
+       
         # TODO get axi model
         gmsh_ids = []
-
         x = self.r[0]
         dr = self.r[1] - self.r[0]
         y = -self.axi.h
+        
+        _id = gmsh.model.occ.addRectangle(self.r[0], self.z[0], 0, dr, y-self.z[0])
+        gmsh_ids.append(_id)
+
         for i, (n, pitch) in enumerate(zip(self.axi.turns, self.axi.pitch)):
             dz = n * pitch
             _id = gmsh.model.occ.addRectangle(x, y, 0, dr, dz)
             gmsh_ids.append(_id)
                 
             y += dz
-                
-        ov, ovv = gmsh.model.occ.fragment([(2, _id)], [(2, i) for i in gmsh_ids] )        
-        print("fragment produced volumes:")
-        for e in ov:
-            print(e)
 
-        # ovv contains the parent-child relationships for all the input entities:
-        print("before/after fragment relations:")
-        for e in zip([(2, _id)] + [(2, i) for i in gmsh_ids], ovv):
-            print("parent " + str(e[0]) + " -> child " + str(e[1]))
+        _id = gmsh.model.occ.addRectangle(self.r[0], y, 0, dr, self.z[1]-y)
+        gmsh_ids.append(_id)
 
+        if debug:
+            print("gmsh_ids:", len(gmsh_ids))
+            for i in gmsh_ids:
+                print(i)
+
+        return gmsh_ids
+
+    def gmsh_bcs(self, name, ids, debug=False):
         """
-        # TODO set name
-        ps = gmsh.model.addPhysicalGroup(2, [_id])
-        gmsh.model.setPhysicalName(2, ps, "%s_Cu%d" % (self.name, i+1))
+        retreive ids for bcs in gmsh geometry
         """
+
+        import gmsh
         
-        """
-        # get BC
+        # set physical name
+        for i,id in enumerate(ids):
+            ps = gmsh.model.addPhysicalGroup(2, [id])
+            gmsh.model.setPhysicalName(2, ps, "%s_Cu%d" % (name, i))
+        
+        # get BC ids
         gmsh.option.setNumber("Geometry.OCCBoundsUseStl", 1)
 
-        ov = gmsh.model.getEntitiesInBoundingBox(r[0]* (1-eps), z[0]* (1-eps), 0,
-                                                 r[1]* (1+eps), z[0]* (1+eps), 0, 1)
+        eps = 1.e-3
+        zmin = self.z[0]* (1+eps)
+        zmax = self.z[1]* (1+eps)
+        print("H/BoundingBox:",self.r[0]* (1-eps), zmin,
+                               self.r[0]* (1+eps), zmax   )
+        ov = gmsh.model.getEntitiesInBoundingBox(self.r[0]* (1-eps), zmin, 0,
+                                                 self.r[0]* (1+eps), zmax, 0, 1)
+        r0_bc_ids = [tag for (dim,tag) in ov]
+        if debug:
+            print("r0_bc_ids:", len(r0_bc_ids))
         ps = gmsh.model.addPhysicalGroup(1, [tag for (dim,tag) in ov])
-        gmsh.model.setPhysicalName(1, ps, "%s_Bottom" % self.name)
-        
-        ov = gmsh.model.getEntitiesInBoundingBox(r[0]* (1-eps), z[1]* (1-eps), 0,
-                                                 r[1]* (1+eps), z[1]* (1+eps), 0, 1)
-        ps = gmsh.model.addPhysicalGroup(1, [tag for (dim,tag) in ov])
-        gmsh.model.setPhysicalName(1, ps, "%s_Top" % self.name)
+        gmsh.model.setPhysicalName(1, ps, "%s_Rint" % name)
 
-        ov = gmsh.model.getEntitiesInBoundingBox(r[0]* (1-eps), z[0]* (1-eps), 0,
-                                                 r[0]* (1+eps), z[1]* (1+eps), 0, 1)
+        ov = gmsh.model.getEntitiesInBoundingBox(self.r[1]* (1-eps), zmin, 0,
+                                                 self.r[1]* (1+eps), zmax, 0, 1)
+        r1_bc_ids = [tag for (dim,tag) in ov]
+        if debug:
+            print("r1_bc_ids:", len(r1_bc_ids))
         ps = gmsh.model.addPhysicalGroup(1, [tag for (dim,tag) in ov])
-        gmsh.model.setPhysicalName(1, ps, "%s_Rint" % self.name)
-
-        ov = gmsh.model.getEntitiesInBoundingBox(r[1]* (1-eps), z[0]* (1-eps), 0,
-                                                 r[1]* (1+eps), z[1]* (1+eps), 0, 1)
-        ps = gmsh.model.addPhysicalGroup(1, [tag for (dim,tag) in ov])
-        gmsh.model.setPhysicalName(1, ps, "%s_Rext" % self.name)
-        """
+        gmsh.model.setPhysicalName(1, ps, "%s_Rext" % name)
         
-        pass
+        return (r0_bc_ids, r1_bc_ids)
+
     
 def Helix_constructor(loader, node):
     """

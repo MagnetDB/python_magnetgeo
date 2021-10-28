@@ -105,7 +105,7 @@ class Insert(yaml.YAMLObject):
     #
     ###################################################################
 
-    def gmsh(self, Air=False):
+    def gmsh(self, Air=False, debug=False):
         """
         create gmsh geometry
         """
@@ -113,18 +113,20 @@ class Insert(yaml.YAMLObject):
 
         # loop over Helices
         z = []
+        H_ids = []
         for i, name in enumerate(self.Helices):
             Helix = None
             with open(name+".yaml", 'r') as f:
-                Helix = yaml.load(f)
+                Helix = yaml.load(f, Loader=yaml.FullLoader)
 
-            Helix.gmsh()
+            H_ids.append(Helix.gmsh())
             if i%2 == 0:
                 z.append(Helix.z[1])
             else:
                 z.append(Helix.z[0])
 
         # loop over Rings
+        R_ids = []
         for i, name in enumerate(self.Rings):
             Ring = None
             with open(name+".yaml", 'r') as f:
@@ -134,11 +136,107 @@ class Insert(yaml.YAMLObject):
             y = z[i]
             if i%2 != 0:
                 y -= (Ring.z[-1]-Ring.z[0])
-            Ring.gmsh(x, y)
+            R_id = Ring.gmsh(x, y)
+            R_ids.append(R_id)
 
-        # TODO get BCs
-        pass
+            # fragment
+            if i%2 != 0:
+                ov, ovv = gmsh.model.occ.fragment([(2, R_id)], [(2, H_ids[i][0]), (2, H_ids[i+1][0])] )    
+            else:
+                ov, ovv = gmsh.model.occ.fragment([(2, R_id)], [(2, H_ids[i][-1]), (2, H_ids[i+1][-1])] )
+
+            if debug:
+                print("Insert/Ring[%d]:" % i, "R_id=%d" % R_id, " fragment produced volumes:", len(ov), len(ovv))
+                for e in ov:
+                    print(e)
         
+        # TODO return ids
+        return (H_ids, R_ids)
+
+    def gmsh_bcs(self, ids: tuple, debug: bool =False):
+        """
+        retreive ids for bcs in gmsh geometry
+        """
+        import gmsh
+
+        (H_ids, R_ids) = ids
+
+        # loop over Helices
+        z = []
+        H_Bc_ids = []
+        NHelices = len(self.Helices)
+        for i, name in enumerate(self.Helices):
+            Helix = None
+            with open(name+".yaml", 'r') as f:
+                Helix = yaml.load(f, Loader=yaml.FullLoader)
+
+            hname = "H%d" % (i+1)
+            (r0_ids, r1_ids) = Helix.gmsh_bcs(hname, H_ids[i], True) #debug)
+            if i%2 == 0:
+                z.append(Helix.z[1])
+            else:
+                z.append(Helix.z[0])
+            H_Bc_ids.append((r0_ids, r1_ids))
+
+        # loop over Rings
+        R_Bc_ids = []
+        NRings = len(self.Rings)
+        for i, name in enumerate(self.Rings):
+            Ring = None
+            with open(name+".yaml", 'r') as f:
+                Ring = yaml.load(f, Loader = yaml.FullLoader)
+
+            y = z[i]
+            if i%2 != 0:
+                y -= (Ring.z[-1]-Ring.z[0])
+            
+            rname = "R%d" % (i+1)
+            (r0_ids, r1_ids, slit_ids) = Ring.gmsh_bcs(rname, (i%2 != 0), y, R_ids[i], debug)
+            R_Bc_ids.append((r0_ids, r1_ids, slit_ids))
+        print("R_bcs %d " % len(R_Bc_ids), ":" , R_Bc_ids)
+
+        # TODO group bcs by Channels
+        num = 0
+        NChannels = NHelices+1
+        for i in range(NChannels):
+            print("Channel%d" % i)
+            Channel_id = []
+            if i == 0:
+                # names.append("R%d_R0n" % (i+1)) # check Ring nummerotation
+                Channel_id += R_Bc_ids[i][0]
+            if i >= 1:
+                # names.append("H%d_rExt" % (i))
+                Channel_id += H_Bc_ids[i-1][1]
+            if i >= 2:
+                # names.append("R%d_R1n" % (i-1))
+                Channel_id += R_Bc_ids[i-2][1]
+            if i < NChannels:
+                # names.append("H%d_rInt" % (i+1))
+                if i < NHelices:
+                    Channel_id += H_Bc_ids[i][0]
+                if i != 0 and i+1 < NChannels:
+                    # names.append("R%d_CoolingSlits" % (i))
+                    print("R_Bc_ids[%d]" % i, R_Bc_ids[i-1])
+                    Channel_id += R_Bc_ids[i-1][2]
+                    #names.append("R%d_R0n" % (i+1))
+                    if i < NRings:
+                        Channel_id += R_Bc_ids[i][0]
+            
+            ps = gmsh.model.addPhysicalGroup(1, Channel_id)
+            gmsh.model.setPhysicalName(1, ps, "Channel%d" % i)
+        
+        # TODO remove uneeded physical groups
+        for i in range(NHelices):
+            gmsh.model.removePhysicalName( ("H%d_Rint") % (i+1) )
+            gmsh.model.removePhysicalName( ("H%d_Rext") % (i+1) )
+        for i in range(NRings):
+            gmsh.model.removePhysicalName( ("R%d_CoolingSlit") % (i+1) )
+            gmsh.model.removePhysicalName( ("R%d_Rint") % (i+1) )
+            gmsh.model.removePhysicalName( ("R%d_Rext") % (i+1) )
+
+        # TODO: H1_Cu0 get Rint and Rext Bc 
+        pass
+
     def Create_AxiGeo(self, Air=False):
         """
         create Axisymetrical Geo Model for gmsh
@@ -618,12 +716,9 @@ if __name__ == "__main__":
     with open(args.name+".yaml", 'r') as f:
         Assembly = yaml.load(f, Loader = yaml.FullLoader)
 
-    with_air = False
-    if args.air:
-        with_air = True
     # create Axi geometry
     if args.gmsh:
-        Assembly.Create_AxiGeo(with_air)
+        Assembly.Create_AxiGeo(args.air)
 
     if args.gmsh_api:
         import gmsh
@@ -631,8 +726,16 @@ if __name__ == "__main__":
         gmsh.model.add(args.name)
         gmsh.logger.start()
 
-        Assembly.gmsh(with_air)
+        ids = Assembly.gmsh(args.air)
         gmsh.model.occ.synchronize()
+
+        # TODO create Physical here
+        print("H_ids:%d" % len(ids[0]), " R_ids:%d" % len(ids[1]))
+        Assembly.gmsh_bcs(ids)
+
+        # TODO set mesh characteristics here
+        gmsh.model.mesh.generate(2)
+        gmsh.write(args.name + ".msh")
 
         log = gmsh.logger.get()
         print("Logger has recorded " + str(len(log)) + " lines")

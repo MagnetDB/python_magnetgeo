@@ -6,6 +6,9 @@ Provides definition for Site:
 
 """
 
+import os
+import sys
+
 import json
 import yaml
 from . import deserialize
@@ -89,18 +92,85 @@ class MSite(yaml.YAMLObject):
         print (type(jsondata))
         istream.close()
 
-    def gmsh(self, Air=False):
+    def gmsh(self, Air: bool =False, debug: bool =False):
         """
         create gmsh geometry
         """
         import gmsh
 
-        # loop over magnets
-        # check magnets type
+        isAir = not Air
+        gmsh_ids = []
+
+        if isinstance(self.magnets, str):
+            with open(self.magnets, 'r') as f:
+                Magnet = yaml.load(f, Loader = yaml.FullLoader)
+            gmsh_ids.append( Magnet.gmsh(isAir, debug) )
+
+        elif isinstance(self.magnets, list):
+            for mname in self.magnets:
+                with open(mname, 'r') as f:
+                    Magnet = yaml.load(f, Loader = yaml.FullLoader)
+                gmsh_ids.append( Magnet.gmsh(isAir, debug) )
+
+        elif isinstance(self.magnets, dict):
+            for key in self.magnets:
+                if isinstance(self.magnets[key], str):
+                    with open(self.magnets[key], 'r') as f:
+                        Magnet = yaml.load(f, Loader = yaml.FullLoader)
+                    gmsh_ids.append( Magnet.gmsh(isAir, debug) )
+
+                if isinstance(self.magnets[key], list):
+                    for mname in self.magnets[key]:
+                        with open(mname, 'r') as f:
+                            Magnet = yaml.load(f, Loader = yaml.FullLoader)
+                        gmsh_ids.append( Magnet.gmsh(isAir, debug) )
+
+        else:
+            print("magnets: unsupported type (%s" % type(self.magnets) )
+            sys.exit(1)
+        
+        return gmsh_ids
+
+    def gmsh_bcs(self, ids: list, debug: bool =False):
+        """
+        retreive ids for bcs in gmsh geometry
+        """
+        import gmsh
+
+        if isinstance(self.magnets, str):
+            with open(self.magnets, 'r') as f:
+                Magnet = yaml.load(f, Loader = yaml.FullLoader)
+            Magnet.gmsh_bcs(ids[0], debug)
+
+        elif isinstance(self.magnets, list):
+            for i,mname in enumerate(self.magnets):
+                with open(mname, 'r') as f:
+                    Magnet = yaml.load(f, Loader = yaml.FullLoader)
+                Magnet.gmsh_bcs(ids[i], debug)
+
+        elif isinstance(self.magnets, dict):
+            num = 0
+            for i,key in enumerate(self.magnets):
+                if isinstance(self.magnets[key], str):
+                    with open(self.magnets[key], 'r') as f:
+                        Magnet = yaml.load(f, Loader = yaml.FullLoader)
+                    Magnet.gmsh_bcs(ids[num], debug)
+                    num += 1
+
+                if isinstance(self.magnets[key], list):
+                    for mname in self.magnets[key]:
+                        with open(mname, 'r') as f:
+                            Magnet = yaml.load(f, Loader = yaml.FullLoader)
+                        Magnet.gmsh_bcs(ids[num], debug)
+                        num += 1
+
+        else:
+            print("magnets: unsupported type (%s" % type(self.magnets) )
+            sys.exit(1)
         
         # TODO get BCs
         pass
-        
+
 
 def MSite_constructor(loader, node):
     """
@@ -121,8 +191,19 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("name", help="name of the site model to be stored", type=str, nargs='?' )
     parser.add_argument("--tojson", help="convert to json", action='store_true')
+    
+    parser.add_argument("--wd", help="set a working directory", type=str, default="data")
+    parser.add_argument("--air", help="activate air generation", action="store_true")
+    parser.add_argument("--gmsh_api", help="use gmsh api to create geofile", action="store_true")
+    parser.add_argument("--show", help="display gmsh geofile when api is on", action="store_true")
+    
     args = parser.parse_args()
 
+    cwd = os.getcwd()
+    if args.wd:
+        os.chdir(args.wd)
+
+    site = None
     if not args.name:
         magnets = {}
         magnets["insert"] = "HL-31"
@@ -138,4 +219,26 @@ if __name__ == "__main__":
     if args.tojson:
         site.write_to_json()
 
-    
+    if args.gmsh_api:
+        import gmsh
+        gmsh.initialize()
+        gmsh.model.add(args.name)
+        gmsh.logger.start()
+
+        site.gmsh(args.air)
+        gmsh.model.occ.synchronize()
+
+        # TODO create Physical here
+        # TODO set mesh characteristics here
+        
+        log = gmsh.logger.get()
+        print("Logger has recorded " + str(len(log)) + " lines")
+        gmsh.logger.stop()
+        # Launch the GUI to see the results:
+        if args.show:
+            gmsh.fltk.run()
+        gmsh.finalize()
+
+    if args.wd:
+        os.chdir(cwd)
+

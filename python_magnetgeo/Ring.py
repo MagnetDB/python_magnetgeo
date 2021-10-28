@@ -114,7 +114,7 @@ class Ring(yaml.YAMLObject):
         print (type(jsondata))
         istream.close()
 
-    def gmsh(self, x, y):
+    def gmsh(self, x, y, debug=False):
         """
         create gmsh geometry
         """
@@ -122,39 +122,53 @@ class Ring(yaml.YAMLObject):
         _id = gmsh.model.occ.addRectangle(self.r[0], y+self.z[0], 0, self.r[-1]-self.r[0], self.z[-1]-self.z[0])
         # print("gmsh/Ring:", _id, self.name, self.r, self.z)
         
+        return _id
+
+    def gmsh_bcs(self, name: str, hp: bool, y: float, id: int, debug: bool = False):
         """
-        ps = gmsh.model.addPhysicalGroup(2, [_id])
-        gmsh.model.setPhysicalName(2, ps, self.name)
+        create gmsh geometry
+        """
+        import gmsh
+        
+        ps = gmsh.model.addPhysicalGroup(2, [id])
+        gmsh.model.setPhysicalName(2, ps, name)
         
         # get BC (TODO review to keep on BP or HP)
         gmsh.option.setNumber("Geometry.OCCBoundsUseStl", 1)
 
         eps = 1.e-3
-        
-        # TODO: 
-        ov = gmsh.model.getEntitiesInBoundingBox(self.r[0]* (1-eps), (y+self.z[0])* (1-eps), 0,
+        if hp:
+            ov = gmsh.model.getEntitiesInBoundingBox(self.r[0]* (1-eps), (y+self.z[0])* (1-eps), 0,
                                                  self.r[-1]* (1+eps), (y+self.z[0])* (1+eps), 0, 1)
-        ps = gmsh.model.addPhysicalGroup(1, [tag for (dim,tag) in ov])
-        gmsh.model.setPhysicalName(1, ps, "%s_Bottom" % self.name)
-        
-        ov = gmsh.model.getEntitiesInBoundingBox(self.r[0]* (1-eps), (y+self.z[-1])* (1-eps), 0,
+            ps = gmsh.model.addPhysicalGroup(1, [tag for (dim,tag) in ov])
+            gmsh.model.setPhysicalName(1, ps, "%s_HP" % name)
+        else:
+            ov = gmsh.model.getEntitiesInBoundingBox(self.r[0]* (1-eps), (y+self.z[-1])* (1-eps), 0,
                                                  self.r[-1]* (1+eps), (y+self.z[-1])* (1+eps), 0, 1)
-        ps = gmsh.model.addPhysicalGroup(1, [tag for (dim,tag) in ov])
-        gmsh.model.setPhysicalName(1, ps, "%s_Top" % self.name)
+            ps = gmsh.model.addPhysicalGroup(1, [tag for (dim,tag) in ov])
+            gmsh.model.setPhysicalName(1, ps, "%s_BP" % name)
         
         
         ov = gmsh.model.getEntitiesInBoundingBox(self.r[0]* (1-eps), (y+self.z[0])* (1-eps), 0,
                                                  self.r[0]* (1+eps), (y+self.z[-1])* (1+eps), 0, 1)
         ps = gmsh.model.addPhysicalGroup(1, [tag for (dim,tag) in ov])
-        gmsh.model.setPhysicalName(1, ps, "%s_Rint" % self.name)
-
+        gmsh.model.setPhysicalName(1, ps, "%s_Rint" % name)
+        r0_ids = [tag for (dim,tag) in ov]
+        
         ov = gmsh.model.getEntitiesInBoundingBox(self.r[-1]* (1-eps), (y+self.z[0])* (1-eps), 0,
                                                  self.r[-1]* (1+eps), (y+self.z[-1])* (1+eps), 0, 1)
         ps = gmsh.model.addPhysicalGroup(1, [tag for (dim,tag) in ov])
-        gmsh.model.setPhysicalName(1, ps, "%s_Rext" % self.name)
-        """
+        gmsh.model.setPhysicalName(1, ps, "%s_Rext" % name)
+        r1_ids = [tag for (dim,tag) in ov]
         
-        return
+        # TODO cooling
+        ov = gmsh.model.getEntitiesInBoundingBox(self.r[1]* (1-eps), (y+self.z[0])* (1-eps), 0,
+                                                 self.r[2]* (1+eps), (y+self.z[-1])* (1+eps), 0, 1)
+        slit_ids = [tag for (dim,tag) in ov]
+        ps = gmsh.model.addPhysicalGroup(1, [tag for (dim,tag) in ov])
+        gmsh.model.setPhysicalName(1, ps, "%s_CoolingSlit" % name)
+
+        return (r0_ids, r1_ids, slit_ids)        
 
 def Ring_constructor(loader, node):
     """

@@ -110,7 +110,7 @@ class Supra(yaml.YAMLObject):
         """
         return self.axi.get_Nturns()
 
-    def gmsh(self, Air=False):
+    def gmsh(self, Air=False, debug=False):
         """
         create gmsh geometry
         """
@@ -118,33 +118,48 @@ class Supra(yaml.YAMLObject):
 
         _id = gmsh.model.occ.addRectangle(self.r[0], self.z[0], 0, self.r[1]-self.r[0], self.z[1]-self.z[0])
 
-        ps = gmsh.model.addPhysicalGroup(2, [_id])
-        gmsh.model.setPhysicalName(2, ps, self.name)
+        return _id
 
-        # get BC
+    def gmsh_bcs(self, id, debug=False):
+        """
+        retreive ids for bcs in gmsh geometry
+        """
+        import gmsh
+        
+        # set physical name
+        ps = gmsh.model.addPhysicalGroup(2, [id])
+        gmsh.model.setPhysicalName(2, ps, "%s_S" % self.name)
+        
+        # get BC ids
         gmsh.option.setNumber("Geometry.OCCBoundsUseStl", 1)
 
         eps = 1.e-3
-        ov = gmsh.model.getEntitiesInBoundingBox(self.r[0]* (1-eps), self.z[0]* (1-eps), 0,
-                                                 self.r[1]* (1+eps), self.z[0]* (1+eps), 0, 1)
+        ov = gmsh.model.getEntitiesInBoundingBox(self.r[0]* (1-eps), (self.z[0])* (1-eps), 0,
+                                                 self.r[-1]* (1+eps), (self.z[0])* (1+eps), 0, 1)
         ps = gmsh.model.addPhysicalGroup(1, [tag for (dim,tag) in ov])
-        gmsh.model.setPhysicalName(1, ps, "%s_Bottom" % self.name)
+        gmsh.model.setPhysicalName(1, ps, "%s_HP" % self.name)
         
-        ov = gmsh.model.getEntitiesInBoundingBox(self.r[0]* (1-eps), self.z[1]* (1-eps), 0,
-                                                 self.r[1]* (1+eps), self.z[1]* (1+eps), 0, 1)
+        ov = gmsh.model.getEntitiesInBoundingBox(self.r[0]* (1-eps), (self.z[-1])* (1-eps), 0,
+                                                 self.r[-1]* (1+eps), (self.z[-1])* (1+eps), 0, 1)
         ps = gmsh.model.addPhysicalGroup(1, [tag for (dim,tag) in ov])
-        gmsh.model.setPhysicalName(1, ps, "%s_Top" % self.name)
+        gmsh.model.setPhysicalName(1, ps, "%s_BP" % self.name)
 
         ov = gmsh.model.getEntitiesInBoundingBox(self.r[0]* (1-eps), self.z[0]* (1-eps), 0,
                                                  self.r[0]* (1+eps), self.z[1]* (1+eps), 0, 1)
+        r0_bc_ids = [tag for (dim,tag) in ov]
+        if debug:
+            print("r0_bc_ids:", len(r0_bc_ids))
         ps = gmsh.model.addPhysicalGroup(1, [tag for (dim,tag) in ov])
         gmsh.model.setPhysicalName(1, ps, "%s_Rint" % self.name)
 
         ov = gmsh.model.getEntitiesInBoundingBox(self.r[1]* (1-eps), self.z[0]* (1-eps), 0,
                                                  self.r[1]* (1+eps), self.z[1]* (1+eps), 0, 1)
+        r1_bc_ids = [tag for (dim,tag) in ov]
+        if debug:
+            print("r1_bc_ids:", len(r1_bc_ids))
         ps = gmsh.model.addPhysicalGroup(1, [tag for (dim,tag) in ov])
         gmsh.model.setPhysicalName(1, ps, "%s_Rext" % self.name)
-
+        
         pass
     
 def Supra_constructor(loader, node):
