@@ -198,7 +198,7 @@ class Insert(yaml.YAMLObject):
                 Helix = yaml.load(f, Loader=yaml.FullLoader)
 
             hname = "H%d" % (i+1)
-            (r0_ids, r1_ids) = Helix.gmsh_bcs(hname, H_ids[i], True) #debug)
+            (r0_ids, r1_ids) = Helix.gmsh_bcs(hname, H_ids[i], debug)
             if i%2 == 0:
                 z.append(Helix.z[1])
             else:
