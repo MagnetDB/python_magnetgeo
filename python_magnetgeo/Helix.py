@@ -186,24 +186,15 @@ class Helix(yaml.YAMLObject):
         eps = 1.e-3
         zmin = self.z[0]* (1+eps)
         zmax = self.z[1]* (1+eps)
-        print("H/BoundingBox:",self.r[0]* (1-eps), zmin,
-                               self.r[0]* (1+eps), zmax   )
+        
         ov = gmsh.model.getEntitiesInBoundingBox(self.r[0]* (1-eps), zmin, 0,
                                                  self.r[0]* (1+eps), zmax, 0, 1)
         r0_bc_ids = [tag for (dim,tag) in ov]
-        if debug:
-            print("r0_bc_ids:", len(r0_bc_ids))
-        ps = gmsh.model.addPhysicalGroup(1, [tag for (dim,tag) in ov])
-        gmsh.model.setPhysicalName(1, ps, "%s_Rint" % name)
 
         ov = gmsh.model.getEntitiesInBoundingBox(self.r[1]* (1-eps), zmin, 0,
                                                  self.r[1]* (1+eps), zmax, 0, 1)
         r1_bc_ids = [tag for (dim,tag) in ov]
-        if debug:
-            print("r1_bc_ids:", len(r1_bc_ids))
-        ps = gmsh.model.addPhysicalGroup(1, [tag for (dim,tag) in ov])
-        gmsh.model.setPhysicalName(1, ps, "%s_Rext" % name)
-        
+
         return (r0_bc_ids, r1_bc_ids)
 
     

@@ -112,7 +112,10 @@ class Insert(yaml.YAMLObject):
         import gmsh
 
         # loop over Helices
+        z0 = []
+        z1 = []
         z = []
+        r = []
         H_ids = []
         for i, name in enumerate(self.Helices):
             Helix = None
@@ -125,6 +128,10 @@ class Insert(yaml.YAMLObject):
             else:
                 z.append(Helix.z[0])
 
+            r.append(Helix.r[1])
+            z0.append(Helix.z[0])
+            
+
         # loop over Rings
         R_ids = []
         for i, name in enumerate(self.Rings):
@@ -134,11 +141,14 @@ class Insert(yaml.YAMLObject):
 
             x = 0
             y = z[i]
+            z1.append(y+(Ring.z[-1]-Ring.z[0]))
+            
             if i%2 != 0:
                 y -= (Ring.z[-1]-Ring.z[0])
+                z1.append(y)
+
             R_id = Ring.gmsh(x, y)
             R_ids.append(R_id)
-
             # fragment
             if i%2 != 0:
                 ov, ovv = gmsh.model.occ.fragment([(2, R_id)], [(2, H_ids[i][0]), (2, H_ids[i+1][0])] )    
@@ -150,8 +160,25 @@ class Insert(yaml.YAMLObject):
                 for e in ov:
                     print(e)
         
+        # Now create air
+        if Air:
+            r0_air = 0
+            dr_air = max(r) * 2
+            z0_air = min(z0) * 1.2
+            dz_air = max(z1) * 1.2 - z0_air
+            _id = gmsh.model.occ.addRectangle(r0_air, z0_air, 0, dr_air, dz_air)
+        
+            flat_list = []
+            for sublist in H_ids:
+                for item in sublist:
+                    flat_list.append(item)
+            flat_list += R_ids
+            print("flat_list:", flat_list)
+            ov, ovv = gmsh.model.occ.fragment([(2, _id)], [(2, i) for i in flat_list] )
+            return (H_ids, R_ids, (_id, dr_air, z0_air, dz_air))
+
         # TODO return ids
-        return (H_ids, R_ids)
+        return (H_ids, R_ids, None)
 
     def gmsh_bcs(self, ids: tuple, debug: bool =False):
         """
@@ -159,7 +186,7 @@ class Insert(yaml.YAMLObject):
         """
         import gmsh
 
-        (H_ids, R_ids) = ids
+        (H_ids, R_ids, Air_data) = ids
 
         # loop over Helices
         z = []
@@ -225,16 +252,35 @@ class Insert(yaml.YAMLObject):
             ps = gmsh.model.addPhysicalGroup(1, Channel_id)
             gmsh.model.setPhysicalName(1, ps, "Channel%d" % i)
         
-        # TODO remove uneeded physical groups
-        for i in range(NHelices):
-            gmsh.model.removePhysicalName( ("H%d_Rint") % (i+1) )
-            gmsh.model.removePhysicalName( ("H%d_Rext") % (i+1) )
-        for i in range(NRings):
-            gmsh.model.removePhysicalName( ("R%d_CoolingSlit") % (i+1) )
-            gmsh.model.removePhysicalName( ("R%d_Rint") % (i+1) )
-            gmsh.model.removePhysicalName( ("R%d_Rext") % (i+1) )
+        # TODO: Air
+        if Air_data:
+            (Air_id, dr_air, z0_air, dz_air) = Air_data
 
-        # TODO: H1_Cu0 get Rint and Rext Bc 
+            ps = gmsh.model.addPhysicalGroup(2, [Air_id])
+            gmsh.model.setPhysicalName(2, ps, "Air")
+
+            # TODO: Axis, Inf
+            gmsh.option.setNumber("Geometry.OCCBoundsUseStl", 1)
+            
+            eps = 1.e-6
+            
+            ov = gmsh.model.getEntitiesInBoundingBox(-eps, z0_air-eps, 0, +eps, z0_air+dz_air+eps, 0, 1)
+            print("ov:", len(ov))
+            ps = gmsh.model.addPhysicalGroup(1, [tag for (dim,tag) in ov])
+            gmsh.model.setPhysicalName(1, ps, "Axis")
+            
+            ov = gmsh.model.getEntitiesInBoundingBox(-eps, z0_air-eps, 0, dr_air+eps, z0_air+eps, 0, 1)
+            print("ov:", len(ov))
+            
+            ov += gmsh.model.getEntitiesInBoundingBox(dr_air-eps, z0_air-eps, 0, dr_air+eps, z0_air+dz_air+eps, 0, 1)
+            print("ov:", len(ov))
+            
+            ov += gmsh.model.getEntitiesInBoundingBox(-eps, z0_air+dz_air-eps, 0, dr_air+eps, z0_air+dz_air+eps, 0, 1)
+            print("ov:", len(ov))
+            
+            ps = gmsh.model.addPhysicalGroup(1, [tag for (dim,tag) in ov])
+            gmsh.model.setPhysicalName(1, ps, "Inf")            
+
         pass
 
     def Create_AxiGeo(self, Air=False):
@@ -696,6 +742,7 @@ yaml.add_constructor(u'!Insert', Insert_constructor)
 # To operate from command line
 
 if __name__ == "__main__":
+    import sys
     import os
     import argparse
     parser = argparse.ArgumentParser()
@@ -705,6 +752,7 @@ if __name__ == "__main__":
     parser.add_argument("--air", help="activate air generation", action="store_true")
     parser.add_argument("--gmsh", help="save to gmsh geofile", action="store_true")
     parser.add_argument("--gmsh_api", help="use gmsh api to create geofile", action="store_true")
+    parser.add_argument("--mesh", help="create gmsh mesh ", action="store_true")
     parser.add_argument("--show", help="display gmsh geofile when api is on", action="store_true")
     args = parser.parse_args()
 
@@ -734,8 +782,9 @@ if __name__ == "__main__":
         Assembly.gmsh_bcs(ids)
 
         # TODO set mesh characteristics here
-        gmsh.model.mesh.generate(2)
-        gmsh.write(args.name + ".msh")
+        if args.mesh:
+            gmsh.model.mesh.generate(2)
+            gmsh.write(args.name + ".msh")
 
         log = gmsh.logger.get()
         print("Logger has recorded " + str(len(log)) + " lines")

@@ -151,23 +151,17 @@ class Ring(yaml.YAMLObject):
         
         ov = gmsh.model.getEntitiesInBoundingBox(self.r[0]* (1-eps), (y+self.z[0])* (1-eps), 0,
                                                  self.r[0]* (1+eps), (y+self.z[-1])* (1+eps), 0, 1)
-        ps = gmsh.model.addPhysicalGroup(1, [tag for (dim,tag) in ov])
-        gmsh.model.setPhysicalName(1, ps, "%s_Rint" % name)
         r0_ids = [tag for (dim,tag) in ov]
         
         ov = gmsh.model.getEntitiesInBoundingBox(self.r[-1]* (1-eps), (y+self.z[0])* (1-eps), 0,
                                                  self.r[-1]* (1+eps), (y+self.z[-1])* (1+eps), 0, 1)
-        ps = gmsh.model.addPhysicalGroup(1, [tag for (dim,tag) in ov])
-        gmsh.model.setPhysicalName(1, ps, "%s_Rext" % name)
         r1_ids = [tag for (dim,tag) in ov]
         
         # TODO cooling
         ov = gmsh.model.getEntitiesInBoundingBox(self.r[1]* (1-eps), (y+self.z[0])* (1-eps), 0,
                                                  self.r[2]* (1+eps), (y+self.z[-1])* (1+eps), 0, 1)
         slit_ids = [tag for (dim,tag) in ov]
-        ps = gmsh.model.addPhysicalGroup(1, [tag for (dim,tag) in ov])
-        gmsh.model.setPhysicalName(1, ps, "%s_CoolingSlit" % name)
-
+        
         return (r0_ids, r1_ids, slit_ids)        
 
 def Ring_constructor(loader, node):
