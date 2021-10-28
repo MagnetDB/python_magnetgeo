@@ -164,22 +164,24 @@ class MSite(yaml.YAMLObject):
 
         return (gmsh_ids, None)
 
-    def gmsh_bcs(self, ids: list, debug: bool =False):
+    def gmsh_bcs(self, ids: tuple, debug: bool =False):
         """
         retreive ids for bcs in gmsh geometry
         """
         import gmsh
-        """
+        print("MSite/gmsh_bcs:", type(ids))
+        (gmsh_ids, Air_data) = ids
+
         if isinstance(self.magnets, str):
             with open(self.magnets + '.yaml', 'r') as f:
                 Magnet = yaml.load(f, Loader = yaml.FullLoader)
-            Magnet.gmsh_bcs(ids[0], debug)
+            Magnet.gmsh_bcs(gmsh_ids[0], debug)
 
         elif isinstance(self.magnets, list):
             for i,mname in enumerate(self.magnets):
                 with open(mname + '.yaml', 'r') as f:
                     Magnet = yaml.load(f, Loader = yaml.FullLoader)
-                Magnet.gmsh_bcs(ids[i], debug)
+                Magnet.gmsh_bcs(gmsh_ids[i], debug)
 
         elif isinstance(self.magnets, dict):
             num = 0
@@ -187,22 +189,50 @@ class MSite(yaml.YAMLObject):
                 if isinstance(self.magnets[key], str):
                     with open(self.magnets[key] + '.yaml', 'r') as f:
                         Magnet = yaml.load(f, Loader = yaml.FullLoader)
-                    Magnet.gmsh_bcs(ids[num], debug)
+                    print("ids:", type(gmsh_ids[num]), type(Magnet))
+                    Magnet.gmsh_bcs(gmsh_ids[num], debug)
                     num += 1
 
                 if isinstance(self.magnets[key], list):
                     for mname in self.magnets[key]:
                         with open(mname + '.yaml', 'r') as f:
                             Magnet = yaml.load(f, Loader = yaml.FullLoader)
-                        Magnet.gmsh_bcs(ids[num], debug)
+                        print("ids:", type(gmsh_ids[num]), type(Magnet))
+                        Magnet.gmsh_bcs(gmsh_ids[num], True) #debug)
                         num += 1
 
         else:
             print("magnets: unsupported type (%s" % type(self.magnets) )
             sys.exit(1)
-        """
+        
+        # TODO: Air
+        if Air_data:
+            (Air_id, dr_air, z0_air, dz_air) = Air_data
 
-        # TODO get BCs
+            ps = gmsh.model.addPhysicalGroup(2, [Air_id])
+            gmsh.model.setPhysicalName(2, ps, "Air")
+
+            # TODO: Axis, Inf
+            gmsh.option.setNumber("Geometry.OCCBoundsUseStl", 1)
+            
+            eps = 1.e-6
+            
+            ov = gmsh.model.getEntitiesInBoundingBox(-eps, z0_air-eps, 0, +eps, z0_air+dz_air+eps, 0, 1)
+            print("ov:", len(ov))
+            ps = gmsh.model.addPhysicalGroup(1, [tag for (dim,tag) in ov])
+            gmsh.model.setPhysicalName(1, ps, "Axis")
+            
+            ov = gmsh.model.getEntitiesInBoundingBox(-eps, z0_air-eps, 0, dr_air+eps, z0_air+eps, 0, 1)
+            print("ov:", len(ov))
+            
+            ov += gmsh.model.getEntitiesInBoundingBox(dr_air-eps, z0_air-eps, 0, dr_air+eps, z0_air+dz_air+eps, 0, 1)
+            print("ov:", len(ov))
+            
+            ov += gmsh.model.getEntitiesInBoundingBox(-eps, z0_air+dz_air-eps, 0, dr_air+eps, z0_air+dz_air+eps, 0, 1)
+            print("ov:", len(ov))
+            
+            ps = gmsh.model.addPhysicalGroup(1, [tag for (dim,tag) in ov])
+            gmsh.model.setPhysicalName(1, ps, "Inf")            
         pass
 
 

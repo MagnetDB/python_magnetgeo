@@ -133,7 +133,7 @@ class Bitter(yaml.YAMLObject):
             r0_air = 0
             dr_air = dr * 2
             z0_air = y * 1.2
-            dz_air = (2 * abs(y) ) * 1.2 
+            dz_air = (2 * abs(y) ) * 1.2    
             _id = gmsh.model.occ.addRectangle(r0_air, z0_air, 0, dr_air, dz_air)
         
             ov, ovv = gmsh.model.occ.fragment([(2, _id)], [(2, i) for i in gmsh_ids] )
@@ -141,7 +141,7 @@ class Bitter(yaml.YAMLObject):
 
         return (gmsh_ids, None)
 
-def gmsh_bcs(self, ids: tuple, debug=False):
+    def gmsh_bcs(self, ids: tuple, debug=False):
         """
         retreive ids for bcs in gmsh geometry
         """
@@ -158,8 +158,8 @@ def gmsh_bcs(self, ids: tuple, debug=False):
         gmsh.option.setNumber("Geometry.OCCBoundsUseStl", 1)
 
         eps = 1.e-3
-        ov = gmsh.model.getEntitiesInBoundingBox(self.r[0]* (1-eps), (self.z[0])* (1-eps), 0,
-                                                 self.r[-1]* (1+eps), (self.z[0])* (1+eps), 0, 1)
+        ov = gmsh.model.getEntitiesInBoundingBox(self.r[0]* (1-eps), (self.z[0])* (1+eps), 0,
+                                                 self.r[-1]* (1+eps), (self.z[0])* (1-eps), 0, 1)
         ps = gmsh.model.addPhysicalGroup(1, [tag for (dim,tag) in ov])
         gmsh.model.setPhysicalName(1, ps, "%s_HP" % self.name)
         
@@ -168,15 +168,17 @@ def gmsh_bcs(self, ids: tuple, debug=False):
         ps = gmsh.model.addPhysicalGroup(1, [tag for (dim,tag) in ov])
         gmsh.model.setPhysicalName(1, ps, "%s_BP" % self.name)
         
-        ov = gmsh.model.getEntitiesInBoundingBox(self.r[0]* (1-eps), self.z[0]* (1-eps), 0,
+        ov = gmsh.model.getEntitiesInBoundingBox(self.r[0]* (1-eps), self.z[0]* (1+eps), 0,
                                                  self.r[0]* (1+eps), self.z[1]* (1+eps), 0, 1)
         r0_bc_ids = [tag for (dim,tag) in ov]
         if debug:
-            print("r0_bc_ids:", len(r0_bc_ids))
+            print("r0_bc_ids:", len(r0_bc_ids), 
+                     self.r[0]* (1-eps), self.z[0]* (1+eps),
+                     self.r[0]* (1+eps), self.z[1]* (1+eps))
         ps = gmsh.model.addPhysicalGroup(1, [tag for (dim,tag) in ov])
         gmsh.model.setPhysicalName(1, ps, "%s_Rint" % self.name)
 
-        ov = gmsh.model.getEntitiesInBoundingBox(self.r[1]* (1-eps), self.z[0]* (1-eps), 0,
+        ov = gmsh.model.getEntitiesInBoundingBox(self.r[1]* (1-eps), self.z[0]* (1+eps), 0,
                                                  self.r[1]* (1+eps), self.z[1]* (1+eps), 0, 1)
         r1_bc_ids = [tag for (dim,tag) in ov]
         if debug:
