@@ -205,6 +205,12 @@ class Insert(yaml.YAMLObject):
                 z.append(Helix.z[0])
             H_Bc_ids.append((r0_ids, r1_ids))
 
+            if i == 0:
+                ov = gmsh.model.getEntitiesInBoundingBox(Helix.r[0]-eps, Helix.z[0]-eps, 0, Helix.r[1]+eps, Helix.z[0]+eps, 0, 1)
+                print("ov:", len(ov))
+                ps = gmsh.model.addPhysicalGroup(1, [tag for (dim,tag) in ov])
+                gmsh.model.setPhysicalName(1, ps, "H1_HP")
+
         # loop over Rings
         R_Bc_ids = []
         NRings = len(self.Rings)
