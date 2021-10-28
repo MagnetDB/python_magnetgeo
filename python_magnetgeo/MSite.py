@@ -98,30 +98,35 @@ class MSite(yaml.YAMLObject):
         """
         import gmsh
 
-        isAir = not Air
+        isAir = False
         gmsh_ids = []
 
         if isinstance(self.magnets, str):
-            with open(self.magnets, 'r') as f:
+            print("msite/gmsh/%s (str)" % self.magnets)
+            with open(self.magnets + '.yaml', 'r') as f:
                 Magnet = yaml.load(f, Loader = yaml.FullLoader)
             gmsh_ids.append( Magnet.gmsh(isAir, debug) )
 
         elif isinstance(self.magnets, list):
             for mname in self.magnets:
-                with open(mname, 'r') as f:
+                print("msite/gmsh/%s (list)" % mname)
+                with open(mname + '.yaml', 'r') as f:
                     Magnet = yaml.load(f, Loader = yaml.FullLoader)
                 gmsh_ids.append( Magnet.gmsh(isAir, debug) )
 
         elif isinstance(self.magnets, dict):
             for key in self.magnets:
+                print("msite/gmsh/%s (dict)" % key)
                 if isinstance(self.magnets[key], str):
-                    with open(self.magnets[key], 'r') as f:
+                    print("msite/gmsh/%s (dict/str)" % self.magnets[key])
+                    with open(self.magnets[key] + '.yaml', 'r') as f:
                         Magnet = yaml.load(f, Loader = yaml.FullLoader)
                     gmsh_ids.append( Magnet.gmsh(isAir, debug) )
 
                 if isinstance(self.magnets[key], list):
                     for mname in self.magnets[key]:
-                        with open(mname, 'r') as f:
+                        print("msite/gmsh/%s (dict/list)" % mname)
+                        with open(mname + '.yaml', 'r') as f:
                             Magnet = yaml.load(f, Loader = yaml.FullLoader)
                         gmsh_ids.append( Magnet.gmsh(isAir, debug) )
 
@@ -129,22 +134,50 @@ class MSite(yaml.YAMLObject):
             print("magnets: unsupported type (%s" % type(self.magnets) )
             sys.exit(1)
         
-        return gmsh_ids
+        # Now create air
+        if Air:
+            r0_air = 0
+            dr_air = 2000
+            z0_air = -1000
+            dz_air = 2000
+            A_id = gmsh.model.occ.addRectangle(r0_air, z0_air, 0, dr_air, dz_air)
+        
+            flat_list = []
+            print("flat_list:", len(gmsh_ids))
+            for sublist in gmsh_ids:
+                if not isinstance(sublist, tuple):
+                    print("flat_list: expect a tuple got a %s" % type(sublist))
+                    sys.exit(1)
+                for elem in sublist:
+                    print("elem:", elem, type(elem))
+                    if isinstance(elem, list):
+                        for item in elem:
+                            print("item:", elem, type(item))
+                            if isinstance(item, list):
+                                flat_list += item
+                            elif isinstance(item, int):
+                                flat_list.append(item)
+
+            print("flat_list:", flat_list)
+            ov, ovv = gmsh.model.occ.fragment([(2, A_id)], [(2, i) for i in flat_list] )
+            return (gmsh_ids, (A_id, dr_air, z0_air, dz_air))
+
+        return (gmsh_ids, None)
 
     def gmsh_bcs(self, ids: list, debug: bool =False):
         """
         retreive ids for bcs in gmsh geometry
         """
         import gmsh
-
+        """
         if isinstance(self.magnets, str):
-            with open(self.magnets, 'r') as f:
+            with open(self.magnets + '.yaml', 'r') as f:
                 Magnet = yaml.load(f, Loader = yaml.FullLoader)
             Magnet.gmsh_bcs(ids[0], debug)
 
         elif isinstance(self.magnets, list):
             for i,mname in enumerate(self.magnets):
-                with open(mname, 'r') as f:
+                with open(mname + '.yaml', 'r') as f:
                     Magnet = yaml.load(f, Loader = yaml.FullLoader)
                 Magnet.gmsh_bcs(ids[i], debug)
 
@@ -152,14 +185,14 @@ class MSite(yaml.YAMLObject):
             num = 0
             for i,key in enumerate(self.magnets):
                 if isinstance(self.magnets[key], str):
-                    with open(self.magnets[key], 'r') as f:
+                    with open(self.magnets[key] + '.yaml', 'r') as f:
                         Magnet = yaml.load(f, Loader = yaml.FullLoader)
                     Magnet.gmsh_bcs(ids[num], debug)
                     num += 1
 
                 if isinstance(self.magnets[key], list):
                     for mname in self.magnets[key]:
-                        with open(mname, 'r') as f:
+                        with open(mname + '.yaml', 'r') as f:
                             Magnet = yaml.load(f, Loader = yaml.FullLoader)
                         Magnet.gmsh_bcs(ids[num], debug)
                         num += 1
@@ -167,7 +200,8 @@ class MSite(yaml.YAMLObject):
         else:
             print("magnets: unsupported type (%s" % type(self.magnets) )
             sys.exit(1)
-        
+        """
+
         # TODO get BCs
         pass
 
@@ -195,6 +229,7 @@ if __name__ == "__main__":
     parser.add_argument("--wd", help="set a working directory", type=str, default="data")
     parser.add_argument("--air", help="activate air generation", action="store_true")
     parser.add_argument("--gmsh_api", help="use gmsh api to create geofile", action="store_true")
+    parser.add_argument("--mesh", help="create gmsh mesh ", action="store_true")
     parser.add_argument("--show", help="display gmsh geofile when api is on", action="store_true")
     
     args = parser.parse_args()
@@ -212,7 +247,7 @@ if __name__ == "__main__":
         site = MSite("Test_Site", magnets)
         site.dump()
     else:
-        with  open(args.name, 'r') as f:
+        with  open(args.name+".yaml", 'r') as f:
             site = yaml.load(f, Loader=yaml.FullLoader)
             print("site=",site)
 
@@ -225,12 +260,16 @@ if __name__ == "__main__":
         gmsh.model.add(args.name)
         gmsh.logger.start()
 
-        site.gmsh(args.air)
+        ids = site.gmsh(args.air)
         gmsh.model.occ.synchronize()
 
         # TODO create Physical here
+        site.gmsh_bcs(ids)
         # TODO set mesh characteristics here
-        
+        if args.mesh:
+            gmsh.model.mesh.generate(2)
+            gmsh.write(args.name + ".msh")        
+
         log = gmsh.logger.get()
         print("Logger has recorded " + str(len(log)) + " lines")
         gmsh.logger.stop()

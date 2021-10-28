@@ -118,14 +118,27 @@ class Supra(yaml.YAMLObject):
 
         _id = gmsh.model.occ.addRectangle(self.r[0], self.z[0], 0, self.r[1]-self.r[0], self.z[1]-self.z[0])
 
-        return _id
+        # Now create air
+        if Air:
+            r0_air = 0
+            dr_air = self.r[1] * 2
+            z0_air = self.z[0] * 1.2
+            dz_air = (self.z[1]-self.z[0]) * 2
+            A_id = gmsh.model.occ.addRectangle(r0_air, z0_air, 0, dr_air, dz_air)
+        
+            ov, ovv = gmsh.model.occ.fragment([(2, A_id)], [(2, _id)] )
+            return (_id, (A_id, dr_air, z0_air, dz_air))
 
-    def gmsh_bcs(self, id, debug=False):
+        return (_id, None)
+
+    def gmsh_bcs(self, ids: tuple, debug=False):
         """
         retreive ids for bcs in gmsh geometry
         """
         import gmsh
         
+        (id, Air_data) = ids
+
         # set physical name
         ps = gmsh.model.addPhysicalGroup(2, [id])
         gmsh.model.setPhysicalName(2, ps, "%s_S" % self.name)
@@ -160,6 +173,35 @@ class Supra(yaml.YAMLObject):
         ps = gmsh.model.addPhysicalGroup(1, [tag for (dim,tag) in ov])
         gmsh.model.setPhysicalName(1, ps, "%s_Rext" % self.name)
         
+        # TODO: Air
+        if Air_data:
+            (Air_id, dr_air, z0_air, dz_air) = Air_data
+
+            ps = gmsh.model.addPhysicalGroup(2, [Air_id])
+            gmsh.model.setPhysicalName(2, ps, "Air")
+
+            # TODO: Axis, Inf
+            gmsh.option.setNumber("Geometry.OCCBoundsUseStl", 1)
+            
+            eps = 1.e-6
+            
+            ov = gmsh.model.getEntitiesInBoundingBox(-eps, z0_air-eps, 0, +eps, z0_air+dz_air+eps, 0, 1)
+            print("ov:", len(ov))
+            ps = gmsh.model.addPhysicalGroup(1, [tag for (dim,tag) in ov])
+            gmsh.model.setPhysicalName(1, ps, "Axis")
+            
+            ov = gmsh.model.getEntitiesInBoundingBox(-eps, z0_air-eps, 0, dr_air+eps, z0_air+eps, 0, 1)
+            print("ov:", len(ov))
+            
+            ov += gmsh.model.getEntitiesInBoundingBox(dr_air-eps, z0_air-eps, 0, dr_air+eps, z0_air+dz_air+eps, 0, 1)
+            print("ov:", len(ov))
+            
+            ov += gmsh.model.getEntitiesInBoundingBox(-eps, z0_air+dz_air-eps, 0, dr_air+eps, z0_air+dz_air+eps, 0, 1)
+            print("ov:", len(ov))
+            
+            ps = gmsh.model.addPhysicalGroup(1, [tag for (dim,tag) in ov])
+            gmsh.model.setPhysicalName(1, ps, "Inf")            
+
         pass
     
 def Supra_constructor(loader, node):
