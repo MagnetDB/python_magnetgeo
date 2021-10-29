@@ -66,7 +66,8 @@ RUN apt-get -y install python3-minimal libpython3.8-dev python-is-python3 python
     && apt-get -y install python3-pandas python3-seaborn \
     && apt-get -y install python3-numpy python3-scipy \
     && apt-get -y install python3-ht python3-pyclaw \
-    && apt-get -y install python3-gmsh python3-yaml
+    && apt-get -y install python3-gmsh python3-yaml  \
+    && apt-get -y install python3-chevron
 
 # Install latest gsh dev version (support for BoundingBox) ?
 #RUN python3 -m pip install -i https://gmsh.info/python-packages --force-reinstall --no-cache-dir gmsh-dev
