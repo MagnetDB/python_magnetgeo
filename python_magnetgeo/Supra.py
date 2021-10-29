@@ -9,40 +9,53 @@ Provides definition for Supra:
 * Model 3D: actual 3D CAD
 """
 
+import os
+import sys
+
 import json
 import yaml
 from . import deserialize
 
-from . import ModelAxi
+from . import SupraStructure
 
 class Supra(yaml.YAMLObject):
     """
     name :
     r :
     z :
+    n :
+    struct: 
 
     TODO: to link with SuperEMFL geometry.py
     """
 
     yaml_tag = 'Supra'
 
-    def __init__(self, name, r=[], z=[]):
+    def __init__(self, name: str, r: list =[], z: list =[], n: int = 0, struct: str = ""):
         """
         initialize object
         """
         self.name = name
         self.r = r
         self.z = z
+        self.n = n
+        self.struct = struct
+        self.detail = 'None' # ['None', 'dblepancake', 'pancake', 'tape']
+
+        # TODO: if struct load r,z and n from struct data
 
     def __repr__(self):
         """
         representation of object
         """
-        return "%s(name=%r, r=%r, z=%r)" % \
+        return "%s(name=%r, r=%r, z=%r, n=%d, struct=%r, detail=%r)" % \
                (self.__class__.__name__,
                 self.name,
                 self.r,
-                self.z
+                self.z,
+                self.n,
+                self.struct,
+                self.detail
                )
 
     def dump(self):
@@ -71,7 +84,12 @@ class Supra(yaml.YAMLObject):
         self.name = data.name
         self.r = data.r
         self.z = data.z
-        self.axi = data.axi
+        self.n = data.n
+        self.struct = data.struct
+        self.detail = data.detail
+
+        # TODO: if struct load r,z and n from struct data
+        # or at least check that values are valid
 
     def to_json(self):
         """
@@ -108,28 +126,55 @@ class Supra(yaml.YAMLObject):
         """
         returns the number of turn
         """
-        return self.axi.get_Nturns()
+        if not self.struct:
+            return self.n
+        else:
+            print("shall get nturns from %s" % self.struct)
+            return -1
 
+    def set_Detail(self, detail):
+        """
+        returns detail level
+        """
+        if detail in ['None', 'dblepancake', 'pancake', 'tape']:
+            self.detail = detail
+        else:
+            print("Supra/set_Detail: unexpected detail value (detail=%s)" % detail)
+            print("valid values are:" , ['None', 'dblepancake', 'pancake', 'tape'])
+            sys.exit(1)
+    
     def gmsh(self, Air=False, debug=False):
         """
         create gmsh geometry
         """
+
+        # TODO: how to specify detail level to actually connect gmsh with struct data
+
         import gmsh
 
-        _id = gmsh.model.occ.addRectangle(self.r[0], self.z[0], 0, self.r[1]-self.r[0], self.z[1]-self.z[0])
+        if not self.struct:
+            _id = gmsh.model.occ.addRectangle(self.r[0], self.z[0], 0, self.r[1]-self.r[0], self.z[1]-self.z[0])
 
-        # Now create air
-        if Air:
-            r0_air = 0
-            dr_air = self.r[1] * 2
-            z0_air = self.z[0] * 1.2
-            dz_air = (self.z[1]-self.z[0]) * 2
-            A_id = gmsh.model.occ.addRectangle(r0_air, z0_air, 0, dr_air, dz_air)
+            # Now create air
+            if Air:
+                r0_air = 0
+                dr_air = self.r[1] * 2
+                z0_air = self.z[0] * 1.2
+                dz_air = (self.z[1]-self.z[0]) * 2
+                A_id = gmsh.model.occ.addRectangle(r0_air, z0_air, 0, dr_air, dz_air)
         
-            ov, ovv = gmsh.model.occ.fragment([(2, A_id)], [(2, _id)] )
-            return (_id, (A_id, dr_air, z0_air, dz_air))
+                ov, ovv = gmsh.model.occ.fragment([(2, A_id)], [(2, _id)] )
+                return (_id, (A_id, dr_air, z0_air, dz_air))
 
-        return (_id, None)
+            return (_id, None)
+        else:
+            # load struct
+            nougat = SupraStructure.HTSinsert()
+            nougat.loadCfg(self.struct)
+
+            # call gmsh for struct
+            gmsh_ids = nougat.gmsh(self.detail, Air, debug)
+            return gmsh_ids
 
     def gmsh_bcs(self, ids: tuple, debug=False):
         """
@@ -137,75 +182,88 @@ class Supra(yaml.YAMLObject):
         """
         import gmsh
         
-        (id, Air_data) = ids
-
-        # set physical name
-        ps = gmsh.model.addPhysicalGroup(2, [id])
-        gmsh.model.setPhysicalName(2, ps, "%s_S" % self.name)
+        if not self.struct:
         
-        # get BC ids
-        gmsh.option.setNumber("Geometry.OCCBoundsUseStl", 1)
+            (id, Air_data) = ids
 
-        eps = 1.e-3
-        ov = gmsh.model.getEntitiesInBoundingBox(self.r[0]* (1-eps), (self.z[0])* (1+eps), 0,
-                                                 self.r[-1]* (1+eps), (self.z[0])* (1-eps), 0, 1)
-        ps = gmsh.model.addPhysicalGroup(1, [tag for (dim,tag) in ov])
-        gmsh.model.setPhysicalName(1, ps, "%s_HP" % self.name)
+            # set physical name
+            ps = gmsh.model.addPhysicalGroup(2, [id])
+            gmsh.model.setPhysicalName(2, ps, "%s_S" % self.name)
         
-        ov = gmsh.model.getEntitiesInBoundingBox(self.r[0]* (1-eps), (self.z[-1])* (1-eps), 0,
-                                                 self.r[-1]* (1+eps), (self.z[-1])* (1+eps), 0, 1)
-        ps = gmsh.model.addPhysicalGroup(1, [tag for (dim,tag) in ov])
-        gmsh.model.setPhysicalName(1, ps, "%s_BP" % self.name)
-
-        ov = gmsh.model.getEntitiesInBoundingBox(self.r[0]* (1-eps), self.z[0]* (1+eps), 0,
-                                                 self.r[0]* (1+eps), self.z[1]* (1+eps), 0, 1)
-        r0_bc_ids = [tag for (dim,tag) in ov]
-        if debug:
-            print("r0_bc_ids:", len(r0_bc_ids), 
-                     self.r[0]* (1-eps), self.z[0]* (1-eps),
-                     self.r[0]* (1+eps), self.z[1]* (1+eps))
-        ps = gmsh.model.addPhysicalGroup(1, [tag for (dim,tag) in ov])
-        gmsh.model.setPhysicalName(1, ps, "%s_Rint" % self.name)
-
-        ov = gmsh.model.getEntitiesInBoundingBox(self.r[1]* (1-eps), self.z[0]* (1+eps), 0,
-                                                 self.r[1]* (1+eps), self.z[1]* (1+eps), 0, 1)
-        r1_bc_ids = [tag for (dim,tag) in ov]
-        if debug:
-            print("r1_bc_ids:", len(r1_bc_ids))
-        ps = gmsh.model.addPhysicalGroup(1, [tag for (dim,tag) in ov])
-        gmsh.model.setPhysicalName(1, ps, "%s_Rext" % self.name)
-        
-        # TODO: Air
-        if Air_data:
-            (Air_id, dr_air, z0_air, dz_air) = Air_data
-
-            ps = gmsh.model.addPhysicalGroup(2, [Air_id])
-            gmsh.model.setPhysicalName(2, ps, "Air")
-
-            # TODO: Axis, Inf
+            # get BC ids
             gmsh.option.setNumber("Geometry.OCCBoundsUseStl", 1)
-            
-            eps = 1.e-6
-            
-            ov = gmsh.model.getEntitiesInBoundingBox(-eps, z0_air-eps, 0, +eps, z0_air+dz_air+eps, 0, 1)
-            print("ov:", len(ov))
-            ps = gmsh.model.addPhysicalGroup(1, [tag for (dim,tag) in ov])
-            gmsh.model.setPhysicalName(1, ps, "Axis")
-            
-            ov = gmsh.model.getEntitiesInBoundingBox(-eps, z0_air-eps, 0, dr_air+eps, z0_air+eps, 0, 1)
-            print("ov:", len(ov))
-            
-            ov += gmsh.model.getEntitiesInBoundingBox(dr_air-eps, z0_air-eps, 0, dr_air+eps, z0_air+dz_air+eps, 0, 1)
-            print("ov:", len(ov))
-            
-            ov += gmsh.model.getEntitiesInBoundingBox(-eps, z0_air+dz_air-eps, 0, dr_air+eps, z0_air+dz_air+eps, 0, 1)
-            print("ov:", len(ov))
-            
-            ps = gmsh.model.addPhysicalGroup(1, [tag for (dim,tag) in ov])
-            gmsh.model.setPhysicalName(1, ps, "Inf")            
 
-        pass
-    
+            eps = 1.e-3
+
+            # TODO: if z[xx] < 0 multiply by 1+eps to get a min by 1-eps to get a max
+        
+            ov = gmsh.model.getEntitiesInBoundingBox(self.r[0]* (1-eps), (self.z[0])* (1+eps), 0,
+                                                     self.r[-1]* (1+eps), (self.z[0])* (1-eps), 0, 1)
+            ps = gmsh.model.addPhysicalGroup(1, [tag for (dim,tag) in ov])
+            gmsh.model.setPhysicalName(1, ps, "%s_HP" % self.name)
+        
+            ov = gmsh.model.getEntitiesInBoundingBox(self.r[0]* (1-eps), (self.z[-1])* (1-eps), 0,
+                                                     self.r[-1]* (1+eps), (self.z[-1])* (1+eps), 0, 1)
+            ps = gmsh.model.addPhysicalGroup(1, [tag for (dim,tag) in ov])
+            gmsh.model.setPhysicalName(1, ps, "%s_BP" % self.name)
+
+            ov = gmsh.model.getEntitiesInBoundingBox(self.r[0]* (1-eps), self.z[0]* (1+eps), 0,
+                                                     self.r[0]* (1+eps), self.z[1]* (1+eps), 0, 1)
+            r0_bc_ids = [tag for (dim,tag) in ov]
+            if debug:
+                print("r0_bc_ids:", len(r0_bc_ids), 
+                         self.r[0]* (1-eps), self.z[0]* (1-eps),
+                         self.r[0]* (1+eps), self.z[1]* (1+eps))
+            ps = gmsh.model.addPhysicalGroup(1, [tag for (dim,tag) in ov])
+            gmsh.model.setPhysicalName(1, ps, "%s_Rint" % self.name)
+
+            ov = gmsh.model.getEntitiesInBoundingBox(self.r[1]* (1-eps), self.z[0]* (1+eps), 0,
+                                                     self.r[1]* (1+eps), self.z[1]* (1+eps), 0, 1)
+            r1_bc_ids = [tag for (dim,tag) in ov]
+            if debug:
+                print("r1_bc_ids:", len(r1_bc_ids))
+            ps = gmsh.model.addPhysicalGroup(1, [tag for (dim,tag) in ov])
+            gmsh.model.setPhysicalName(1, ps, "%s_Rext" % self.name)
+        
+            # TODO: Air
+            if Air_data:
+                (Air_id, dr_air, z0_air, dz_air) = Air_data
+
+                ps = gmsh.model.addPhysicalGroup(2, [Air_id])
+                gmsh.model.setPhysicalName(2, ps, "Air")
+
+                # TODO: Axis, Inf
+                gmsh.option.setNumber("Geometry.OCCBoundsUseStl", 1)
+            
+                eps = 1.e-6
+            
+                ov = gmsh.model.getEntitiesInBoundingBox(-eps, z0_air-eps, 0, +eps, z0_air+dz_air+eps, 0, 1)
+                print("ov:", len(ov))
+                ps = gmsh.model.addPhysicalGroup(1, [tag for (dim,tag) in ov])
+                gmsh.model.setPhysicalName(1, ps, "Axis")
+            
+                ov = gmsh.model.getEntitiesInBoundingBox(-eps, z0_air-eps, 0, dr_air+eps, z0_air+eps, 0, 1)
+                print("ov:", len(ov))
+            
+                ov += gmsh.model.getEntitiesInBoundingBox(dr_air-eps, z0_air-eps, 0, dr_air+eps, z0_air+dz_air+eps, 0, 1)
+                print("ov:", len(ov))
+            
+                ov += gmsh.model.getEntitiesInBoundingBox(-eps, z0_air+dz_air-eps, 0, dr_air+eps, z0_air+dz_air+eps, 0, 1)
+                print("ov:", len(ov))
+            
+                ps = gmsh.model.addPhysicalGroup(1, [tag for (dim,tag) in ov])
+                gmsh.model.setPhysicalName(1, ps, "Inf")            
+
+            pass
+        else:
+            # load struct
+            nougat = SupraStructure.HTSinsert()
+            nougat.loadCfg(self.struct)
+
+            # call gmsh for struct
+            nougat.gmsh_bcs(ids, self.detail, debug)
+            pass
+
 def Supra_constructor(loader, node):
     """
     build an supra object
@@ -214,28 +272,10 @@ def Supra_constructor(loader, node):
     name = values["name"]
     r = values["r"]
     z = values["z"]
+    n = values["n"]
+    struct = values["struct"]
 
-    return Supra(name, r, z)
+    return Supra(name, r, z, struct)
 
 yaml.add_constructor(u'!Supra', Supra_constructor)
 
-#
-# To operate from command line
-
-if __name__ == "__main__":
-    import argparse
-    parser = argparse.ArgumentParser()
-    parser.add_argument("name", help="name of the supra model to be stored", type=str, nargs='?' )
-    parser.add_argument("--tojson", help="convert to json", action='store_true')
-    args = parser.parse_args()
-
-    if not args.name:
-        supra = Supra("ttt", [1, 2],[-1, 1], True)
-        supra.dump()
-    else:
-        with open(args.name, 'r') as f:
-            supra =  yaml.load(f, Loader = yaml.FullLoader)
-            print (supra)
-
-    if args.tojson:
-        supra.write_to_json()

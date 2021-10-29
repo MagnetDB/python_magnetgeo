@@ -157,6 +157,7 @@ class Bitter(yaml.YAMLObject):
         # get BC ids
         gmsh.option.setNumber("Geometry.OCCBoundsUseStl", 1)
 
+        # TODO: if z[xx] < 0 multiply by 1+eps to get a min by 1-eps to get a max
         eps = 1.e-3
         ov = gmsh.model.getEntitiesInBoundingBox(self.r[0]* (1-eps), (self.z[0])* (1+eps), 0,
                                                  self.r[-1]* (1+eps), (self.z[0])* (1-eps), 0, 1)
@@ -231,23 +232,3 @@ def Bitter_constructor(loader, node):
 
 yaml.add_constructor(u'!Bitter', Bitter_constructor)
 
-#
-# To operate from command line
-
-if __name__ == "__main__":
-    import argparse
-    parser = argparse.ArgumentParser()
-    parser.add_argument("name", help="name of the bitter model to be stored", type=str, nargs='?' )
-    parser.add_argument("--tojson", help="convert to json", action='store_true')
-    args = parser.parse_args()
-
-    if not args.name:
-        bitter = Bitter("ttt", [1, 2],[-1, 1], True)
-        bitter.dump()
-    else:
-        with open(args.name, 'r') as f:
-            bitter =  yaml.load(f, Loader = yaml.FullLoader)
-            print (bitter)
-
-    if args.tojson:
-        bitter.write_to_json()

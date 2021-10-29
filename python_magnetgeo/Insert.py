@@ -188,6 +188,8 @@ class Insert(yaml.YAMLObject):
 
         (H_ids, R_ids, Air_data) = ids
 
+        eps =1.e-3
+
         # loop over Helices
         z = []
         H_Bc_ids = []
@@ -553,11 +555,11 @@ class Insert(yaml.YAMLObject):
         geofile.write("Physical Line(\"HP_H%d\") = " % (0))
         geofile.write("{%d};\n"%HP_ids[0])
 
-        if len(Assembly.Helices)%2 == 0:
-            geofile.write("Physical Line(\"HP_H%d\") = " % (len(Assembly.Helices)))
+        if len(self.Helices)%2 == 0:
+            geofile.write("Physical Line(\"HP_H%d\") = " % (len(self.Helices)))
             geofile.write("{%d};\n" % HP_ids[-1])
         else:
-            geofile.write("Physical Line(\"BP_H%d\") = " % (len(Assembly.Helices)))
+            geofile.write("Physical Line(\"BP_H%d\") = " % (len(self.Helices)))
             geofile.write("{%d};\n" % BP_ids[-1])
 
         for i, _ids in enumerate(HP_Ring_ids):
@@ -595,7 +597,7 @@ class Insert(yaml.YAMLObject):
             geofile.write(onelab_lc_air % (2))
 
             H0 = 0
-            Hn = len(Assembly.Helices)-1
+            Hn = len(self.Helices)-1
 
             geofile.write(onelab_pointx % (point, "0", "z_Air * z0_H%d"%(H0+1), i+1))
             geofile.write(onelab_pointx % (point+1, "r_Air * r1_H%d"%(Hn+1), "z_Air * z0_H%d"%(H0+1), i+1))
@@ -744,61 +746,3 @@ def Insert_constructor(loader, node):
 
 yaml.add_constructor(u'!Insert', Insert_constructor)
 
-#
-# To operate from command line
-
-if __name__ == "__main__":
-    import sys
-    import os
-    import argparse
-    parser = argparse.ArgumentParser()
-    parser.add_argument("name", help="name of the insert to be loaded")
-    parser.add_argument("--wd", help="set a working directory", type=str, default="data")
-    
-    parser.add_argument("--air", help="activate air generation", action="store_true")
-    parser.add_argument("--gmsh", help="save to gmsh geofile", action="store_true")
-    parser.add_argument("--gmsh_api", help="use gmsh api to create geofile", action="store_true")
-    parser.add_argument("--mesh", help="create gmsh mesh ", action="store_true")
-    parser.add_argument("--show", help="display gmsh geofile when api is on", action="store_true")
-    args = parser.parse_args()
-
-    cwd = os.getcwd()
-    if args.wd:
-        os.chdir(args.wd)
-
-    Assembly = None
-    with open(args.name+".yaml", 'r') as f:
-        Assembly = yaml.load(f, Loader = yaml.FullLoader)
-
-    # create Axi geometry
-    if args.gmsh:
-        Assembly.Create_AxiGeo(args.air)
-
-    if args.gmsh_api:
-        import gmsh
-        gmsh.initialize()
-        gmsh.model.add(args.name)
-        gmsh.logger.start()
-
-        ids = Assembly.gmsh(args.air)
-        gmsh.model.occ.synchronize()
-
-        # TODO create Physical here
-        print("H_ids:%d" % len(ids[0]), " R_ids:%d" % len(ids[1]))
-        Assembly.gmsh_bcs(ids)
-
-        # TODO set mesh characteristics here
-        if args.mesh:
-            gmsh.model.mesh.generate(2)
-            gmsh.write(args.name + ".msh")
-
-        log = gmsh.logger.get()
-        print("Logger has recorded " + str(len(log)) + " lines")
-        gmsh.logger.stop()
-        # Launch the GUI to see the results:
-        if args.show:
-            gmsh.fltk.run()
-        gmsh.finalize()
-
-    if args.wd:
-        os.chdir(cwd)

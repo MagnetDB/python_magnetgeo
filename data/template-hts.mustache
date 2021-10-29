@@ -1,0 +1,270 @@
+// DblePancake
+// Isolation
+// Pancake
+// Isolation_Pancake
+// Tape
+
+Unit = 1000; // Use mm: mandatory to get proper BCs
+Detail = {{detail}}; // details: 0 for tape, 1 for pancake, 2 for dble pancake, 3 for None
+
+// Geometry
+z0 = {{z0}};
+r0 = {{r0}};
+
+r1 = {{r1}};
+z1 = {{z1}};
+
+// Main characteristics
+n_dp = {{n_dp}};
+n_t[] = {{n_t}};
+
+// Pancake data per dble pancake
+mandrin[] = {{mandrin}};
+h_tape[] = {{h_tape}};
+e_t[] = {{e_t}};
+w_t[] = {{w_t}};
+
+e_p[] = {{e_p}};
+e_dp[] = {{e_dp}};
+
+// Isolation between Pancake
+r_[] = {{r_}};
+e_isolation[] = {{e_isolation}};
+h_isolation[] = {{h_isolation}};
+
+// Isolation between Dble Pancake
+r_dp[] = {{r_dp}};
+e_dp_isolation[] = {{e_dp_isolation}};
+h_dp_isolation[] = {{h_dp_isolation}};
+
+
+// Use OpenCASCADE geo kernel
+SetFactory("OpenCASCADE");
+Geometry.OCCBoundsUseStl = 1; // mandatory to get BCs automatically
+
+x0 = r0 * Unit;
+y0 = z0 * Unit;
+x1 = r1 * Unit;
+y1 = z1 * Unit;
+Printf("r0=%g", x0);
+Printf("r1=%g", x1);
+Printf("y0=%g", y0);
+Printf("z1=%g", y1);
+
+Macro Tape
+   tape = news;
+   // Printf("Tape=%g d=%g", tape, d);
+   Rectangle(tape) = {x0, y0, 0, w_t[d] * Unit, h_t};
+   duromag = news; 
+   Rectangle(duromag) = {x0+w_t[d] * Unit, y0, 0, e_t[d] * Unit, h_t};
+   // Printf("Cowound=", duromag[d]);
+   x0 = x0 + (w_t[d] + e_t[d]) * Unit;
+   HTS[vt] = tape;
+   Cowound[vt] = duromag;
+   vt++;
+Return
+
+Macro Pancake
+   m = news;
+   // Printf("== Pancake[%g]=%g", d, m);
+   Rectangle(m) = {(r0 - mandrin[d]) * Unit, y0, 0, mandrin[d] * Unit, h_p};
+   x0 = r0 * Unit;
+   If (Detail == 0)
+      For i In {0: n_t[d]-1}
+          Call Tape;
+      EndFor
+   Else
+      p = news
+      Rectangle(p) = {x0, y0, 0, e_p[d] * Unit, h_p};
+      Pancakes[vp] = m;
+   EndIf
+   y0 = y0 + h_p;
+   Mandrins[vp] = m;
+   vp++;
+Return
+
+Macro Isolation
+   isolant = news;
+   // Printf("=== Isolant=", isolant, r_i, y0, e_i, h_i);
+   Rectangle(isolant) = {r_i, y0, 0, e_i, h_i};
+   y0 = y0 + h_i;
+   Isolants[vi] = isolant;
+   vi++;
+Return
+
+Macro DblePancake
+   // Printf("=== DblePancake ===");
+   If (Detail <= 1)
+      Call Pancake;
+      Call Isolation;
+      Call Pancake;
+   Else
+      dp = news;
+      Rectangle(dp) = {x0, y0, 0, e_dp[d] * Unit, h_dp[d] * Unit};
+      Dps[vdp] = dp;
+      vdp++;
+      y0 = y0 + h_dp[d] * Unit;
+   EndIf
+Return
+
+// Start here
+
+If (Detail == 0)
+   insert = news;
+   Rectangle(insert) = {x0, y0, 0, x1-x0, y1-y0};
+   HTS[0] = insert; 
+Else
+   vt = 0; vp = 0; vi = 0, vdp = 0;
+   HTS[] = {};
+   Cowound[] = {};
+   Isolants[] = {};
+   Mandrins[] = {};
+   Dps[] = {};
+   Pancakes[] = {};
+
+   For d In {0: n_dp-1}
+      h_t = h_tape[d] * Unit;
+      h_p = h_t;
+      h_i = h_isolation[d] * Unit;
+      e_i = e_isolation[d] * Unit;
+      r_i = r_[d] * Unit;
+      // Printf("DblePancake", d, h_t, h_p, h_i, e_i, r_i);
+      Call DblePancake;
+      If (d != n_dp-1)
+         h_i = h_dp_isolation[d] * Unit;
+         e_i = e_dp_isolation[d] * Unit;
+         r_i = r_dp[d] * Unit;
+         // Printf("Dble Isolation", r_i, e_i, h_i);
+         Call Isolation;
+      EndIf
+   EndFor
+
+   // Printf("vt=%g", vt);
+   // For i In {0:#HTS[]-1}
+   //    Printf("HTS[%g]=%g", i, HTS[i]);
+   // EndFor
+   // For i In {0:#Isolants[]-1}
+   //    Printf("Isolant[%g]=%g", i, Isolants[i]);
+   // EndFor
+   // For i In {0:#Mandrins[]-1}
+   //    Printf("Mandrins[%g]=%g", i, Mandrins[i]);
+   // EndFor
+EndIf
+
+If (Detail == 0)
+   Physical Surface("HTS") = {HTS[]};
+   Physical Surface("Cowound") = {Cowound[]};
+   Physical Surface("Mandrins") = {Mandrins[]};
+ElseIf (Detail == 1)
+   Physical Surface("HTS") = {Pancakes[]};
+ElseIf (Detail == 2)
+   Physical Surface("HTS") = {Dps[]};
+   Physical Surface("Isolants") = {Isolants[]};
+Else
+   Physical Surface("HTS") = {HTS[]};
+EndIf
+
+
+// Fragment (i.e. intersect) the volume with all the cutting planes
+If (Detail != 3)
+   l[] = BooleanFragments{ Surface{Isolants[]}; Delete; }{ Surface{HTS[], Cowound[], Mandrins[]}; Delete; };
+
+   //For i In {0:#l[]-1}
+   //   Printf("Lines[%g]=%g", i, l[i]);
+   //EndFor
+EndIf
+
+// Get Lines on HP side
+
+x0 = r0 * Unit;
+y0 = z0 * Unit;
+x1 = r1 * Unit;
+y1 = z1 * Unit;
+Printf("r0=%g", x0);
+Printf("r1=%g", x1);
+Printf("y0=%g", y0);
+Printf("z1=%g", y1);
+
+// Get Lines on HP side from min(x0-min(mandrin), min(r_dp), min(r_) ) to x1
+
+xmin = {{xmin}} * Unit;
+eps = {{emin}}/10. * Unit;
+Printf("eps=", eps);
+Pt[] = Point In BoundingBox{xmin-eps,y0-eps,-eps, x1+eps,y0+eps,+eps};
+LR_HP[] = Curve In BoundingBox{xmin-eps,y0-eps,-eps, x1+eps,y0+eps,+eps};
+
+If (#Pt[] != #LR_HP[]+1)
+   Printf("BoundingBox: %g %g %g %g", xmin-eps, y0-eps, x1+eps, y0+eps);
+   Printf("Wrong number of Lines on HP side: Pts %g, Lines %g", #Pt[], #LR_HP[]);
+   For i In {0:#Pt[]-1}
+       Printf("HP Points[%g]=%g", i, Pt[i]);
+   EndFor
+   For i In {0:#LR_HP[]-1}
+       Printf("Lines[%g]=%g", i, LR_HP[i]);
+   EndFor
+EndIf
+
+Physical Line("HP") = {LR_HP[]};
+
+// Get Lines on BP side from min(x0-min(mandrin), min(r_dp), min(r_) ) to x1
+
+Pt[] = Point In BoundingBox{xmin-eps,y1-eps,-eps, x1+eps,y1+eps,+eps};
+LR_BP[] = Curve In BoundingBox{xmin-eps,y1-eps,-eps, x1+eps,y1+eps,+eps};
+
+If (#Pt[] != #LR_BP[]+1)
+   Printf("BoundingBox: %g %g %g %g", xmin-eps, y1-eps, x1+eps, y1+eps);
+   Printf("Wrong number of Lines on BP side: Pts %g, Lines %g", #Pt[], #LR_BP[]);
+   For i In {0:#Pt[]-1}
+       Printf("BP Points[%g]=%g", i, Pt[i]);
+   EndFor
+   For i In {0:#LR_BP[]-1}
+       Printf("Lines[%g]=%g", i, LR_BP[i]);
+   EndFor
+EndIf
+
+Physical Line("BP") = {LR_BP[]};
+
+// Get Lines on Rint side from min(r0-mandrin, r_dp, r_) to x0
+// To be checked if r_ and/or r_dp > r0
+
+rmin = {{rmin}} * Unit;
+rmax = {{rmax}} * Unit;
+Pt[] = Point In BoundingBox{rmin-eps,y0-eps,-eps, rmax-eps,y1+eps,+eps};
+LR_Ri[] = Curve In BoundingBox{rmin-eps,y0-eps,-eps, rmax-eps,y1+eps,+eps};
+
+If (#Pt[] != #LR_Ri[]+1)
+   Printf("BoundingBox: %g %g %g %g", xmin-eps, y0-eps, rmax-eps, y1+eps);
+   Printf("Wrong number of Lines on Rint side: Pts %g, Lines %g", #Pt[], #LR_Ri[]);
+   For i In {0:#Pt[]-1}
+       Printf("Rint Points[%g]=%g", i, Pt[i]);
+   EndFor
+   For i In {0:#LR_Ri[]-1}
+       Printf("Lines[%g]=%g", i, LR_Ri[i]);
+   EndFor
+EndIf
+
+Physical Line("Rint") = {LR_Ri[]};
+
+// Get Lines on Rext side from x1 to max(r_dp+e_dp_isolation, r_+e_isolation)
+// TODO Fix for Detail = 0 (tape)
+
+xmax = {{xmax}} * Unit;
+Printf("eps=", eps, xmax, x1);
+
+Pt[] = Point In BoundingBox{x1+eps,y0-eps,-eps, xmax+eps,y1+eps,+eps};
+LR_Re[] = Curve In BoundingBox{x1+eps,y0-eps,-eps, xmax+eps,y1+eps,+eps};
+
+If (#Pt[] != #LR_Re[]+1)
+   Printf("BoundingBox: %g %g %g %g", x1-eps, y0-eps, xmax+eps, y1+eps);
+   Printf("Wrong number of Lines on Rext side: Pts %g, Lines %g", #Pt[], #LR_Re[]);
+   For i In {0:#Pt[]-1}
+       Printf("Rext Points[%g]=%g", i, Pt[i]);
+   EndFor
+   For i In {0:#LR_Re[]-1}
+       Printf("Lines[%g]=%g", i, LR_Re[i]);
+   EndFor
+EndIf
+
+Physical Line("Rext") = {LR_Re[]};
+
+// TODO create external line loop for use with Resistive insert

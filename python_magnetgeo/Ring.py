@@ -181,25 +181,3 @@ def Ring_constructor(loader, node):
 
 yaml.add_constructor(u'!Ring', Ring_constructor)
 
-#
-# To operate from command line
-
-if __name__ == "__main__":
-    import argparse
-    parser = argparse.ArgumentParser()
-    parser.add_argument("name", help="name of the ring model to be stored", type=str, nargs='?' )
-    parser.add_argument("--tojson", help="convert to json", action='store_true')
-    args = parser.parse_args()
-
-    if not args.name:
-        ring = Ring("Test_Ring", [19.3, 24.2, 25.1, 30.7], [0, 20], 6, 30, True, False)
-        ring.dump()
-    else:
-        try:
-            ring = yaml.load(open(args.name, 'r'), Loader = yaml.FullLoader)
-            print (ring)
-        except:
-            print ("Failed to load Ring definition from %s" % args.name)
-
-    if args.tojson:
-        ring.write_to_json()

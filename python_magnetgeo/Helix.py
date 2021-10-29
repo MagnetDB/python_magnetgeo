@@ -184,6 +184,7 @@ class Helix(yaml.YAMLObject):
         gmsh.option.setNumber("Geometry.OCCBoundsUseStl", 1)
 
         eps = 1.e-3
+        # TODO: if z[xx] < 0 multiply by 1+eps to get a min by 1-eps to get a max
         zmin = self.z[0]* (1+eps)
         zmax = self.z[1]* (1+eps)
         
@@ -217,23 +218,3 @@ def Helix_constructor(loader, node):
 
 yaml.add_constructor(u'!Helix', Helix_constructor)
 
-#
-# To operate from command line
-
-if __name__ == "__main__":
-    import argparse
-    parser = argparse.ArgumentParser()
-    parser.add_argument("name", help="name of the helix model to be stored", type=str, nargs='?' )
-    parser.add_argument("--tojson", help="convert to json", action='store_true')
-    args = parser.parse_args()
-
-    if not args.name:
-        helix = Helix("ttt", [1, 2],[-1, 1], True)
-        helix.dump()
-    else:
-        with open(args.name, 'r') as f:
-            helix =  yaml.load(f, Loader = yaml.FullLoader)
-            print (helix)
-
-    if args.tojson:
-        helix.write_to_json()
