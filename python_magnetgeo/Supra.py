@@ -43,7 +43,18 @@ class Supra(yaml.YAMLObject):
         self.detail = 'None' # ['None', 'dblepancake', 'pancake', 'tape']
 
         # TODO: if struct load r,z and n from struct data
+        if self.struct:
+            magnet = SupraStructure.HTSinsert()
+            magnet.loadCfg(self.struct)
 
+            print("Supra/init: override dimensions from %s" % self.struct)
+            self.r[0] = magnet.getR0()
+            self.r[1] = magnet.getR1()
+            self.z[0] = magnet.getZ0()-magnet.getH()/2.
+            self.z[1] = magnet.getZ0()+magnet.getH()/2.
+            self.n = sum(magnet.getNtapes())
+
+        
     def __repr__(self):
         """
         representation of object

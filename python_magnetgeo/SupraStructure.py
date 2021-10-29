@@ -802,8 +802,8 @@ class HTSinsert:
                     y0 += self.isolations[i].getH()
                     i_ids.append(_id)
 
-            for i,ids in enumerate(i_ids):
-                print("i_ids[%d]=" % i, ids)
+            #for i,ids in enumerate(i_ids):
+            #    print("i_ids[%d]=" % i, ids)
         
             # Perform BooleanFragment
             print("Create BooleanFragments (detail=%s)" % detail)
@@ -920,6 +920,7 @@ class HTSinsert:
                     ps = gmsh.model.addPhysicalGroup(2, [dp[1]])
                     gmsh.model.setPhysicalName(2, ps, "i_dp%d" % i)
                 elif detail == "tape":
+                    print("HTSInsert/gsmh_bcs (tape):", dp)
                     ps = gmsh.model.addPhysicalGroup(2, [dp[1]])
                     gmsh.model.setPhysicalName(2, ps, "i_dp%d" % i)
                     for t in dp[0][0]:
@@ -931,9 +932,9 @@ class HTSinsert:
                                 ps = gmsh.model.addPhysicalGroup(2, [t_id[1]])
                                 gmsh.model.setPhysicalName(2, ps, "du%d_p%d_dp%d" % (l,0,i))
                         else:
-                            ps = gmsh.model.addPhysicalGroup(2, [dp[1]])
+                            ps = gmsh.model.addPhysicalGroup(2, [t])
                             gmsh.model.setPhysicalName(2, ps, "mandrin_p%d_dp%d" % (0,i))
-                            print("HTSInsert/gmsh_bcs: mandrin %d: %d" % dp[1], ps)
+                            print("HTSInsert/gmsh_bcs: mandrin %d: %d" % t, ps)
                     for t in dp[0][1]:
                         print("p1:", t)
                         if isinstance(t, list):
@@ -943,9 +944,9 @@ class HTSinsert:
                                 ps = gmsh.model.addPhysicalGroup(2, [t_id[1]])
                                 gmsh.model.setPhysicalName(2, ps, "du%d_p%d_dp%d" % (l,1,i))
                         else:
-                            ps = gmsh.model.addPhysicalGroup(2, [dp[1]])
+                            ps = gmsh.model.addPhysicalGroup(2, [t])
                             gmsh.model.setPhysicalName(2, ps, "mandrin_p%d_dp%d" % (1,i))
-                            print("HTSInsert/gmsh_bcs: mandrin %d: %d" % dp[1], ps)
+                            print("HTSInsert/gmsh_bcs: mandrin %d: %d" % t, ps)
         else:   
             ps = gmsh.model.addPhysicalGroup(2, [gmsh_ids])
             gmsh.model.setPhysicalName(2, ps, "Supra")
