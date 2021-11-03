@@ -61,6 +61,50 @@ class MSite(yaml.YAMLObject):
         self.name = data.name
         self.magnets = data.magnets
 
+        # TODO: check that magnets are not interpenetring
+        # define a boundingbox method for each type: Bitter, Supra, Insert
+
+        # ref: https://stackoverflow.com/questions/115426/algorithm-to-detect-intersection-of-two-rectangles
+        # struct Rect {
+        #     x, // the center in x axis
+        #     y, // the center in y axis
+        #     width,
+        #     height
+        # }
+        #
+        # if Math.abs(rectA.x - rectB.x) < (Math.abs(rectA.width + rectB.width) / 2) 
+        # && (Math.abs(rectA.y - rectB.y) < (Math.abs(rectA.height + rectB.height) / 2))
+        #     then
+        #         // A and B collide
+        #     end if
+
+        """
+        if isinstance(self.magnets, str):
+            print("msite/gmsh/%s (str)" % self.magnets)
+            with open(self.magnets + '.yaml', 'r') as f:
+                Magnet = yaml.load(f, Loader = yaml.FullLoader)
+            
+        elif isinstance(self.magnets, list):
+            for mname in self.magnets:
+                print("msite/gmsh/%s (list)" % mname)
+                with open(mname + '.yaml', 'r') as f:
+                    Magnet = yaml.load(f, Loader = yaml.FullLoader)
+            
+        elif isinstance(self.magnets, dict):
+            for key in self.magnets:
+                print("msite/gmsh/%s (dict)" % key)
+                if isinstance(self.magnets[key], str):
+                    print("msite/gmsh/%s (dict/str)" % self.magnets[key])
+                    with open(self.magnets[key] + '.yaml', 'r') as f:
+                        Magnet = yaml.load(f, Loader = yaml.FullLoader)
+            
+                if isinstance(self.magnets[key], list):
+                    for mname in self.magnets[key]:
+                        print("msite/gmsh/%s (dict/list)" % mname)
+                        with open(mname + '.yaml', 'r') as f:
+                            Magnet = yaml.load(f, Loader = yaml.FullLoader)
+        """    
+
     def to_json(self):
         """
         convert from yaml to json

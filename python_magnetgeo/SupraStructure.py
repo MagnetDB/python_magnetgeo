@@ -8,6 +8,10 @@ import os
 import sys
 import gmsh
 
+def flatten(S: list):
+    from pandas.core.common import flatten
+    return list(flatten(S))
+
 class tape:
     """
     HTS tape
@@ -223,7 +227,7 @@ class pancake:
             return _id
         else:
             _mandrin = gmsh.model.occ.addRectangle(self.r0-self.mandrin, y0, 0, self.mandrin, self.getH())
-            print("pancake/gmsh: create mandrin %d" % _mandrin)
+            # print("pancake/gmsh: create mandrin %d" % _mandrin)
             x0 = self.r0
             tape_ids = []
             for i in range(self.n):
@@ -827,21 +831,28 @@ class HTSinsert:
                                 
                             else:
                                 # detail == tape
-                                # p = [ mandrin, [SC, duromag], [SC, duromag], ... ]
+                                # p = [ mandrin, [[SC, duromag], [SC, duromag], ...] ]
                                 # print("HTSInsert gmsh: dp[%d] len(p)=" % j, len(p), "p=", p)
+                                flat_p0 = flatten(p[0])
+                                flat_p1 = flatten(p[1])
+                                if j >= 1:
+                                    ov, ovv = gmsh.model.occ.fragment([(2, i_ids[j-1])], [(2, l) for l in flat_p0])
+                                if j < n_dp-1:
+                                    ov, ovv = gmsh.model.occ.fragment([(2, i_ids[j])], [(2, l) for l in flat_p1])
+                                ov, ovv = gmsh.model.occ.fragment([(2, dp[-1])], [(2, l) for l in flat_p0] + [(2, l) for l in flat_p1] )
+                                
+                                """
                                 for t in p:    
-                                    # print("HTSInsert gmsh: dp[%d]" % j, "tape: t=", t)
-                                    flat_list = []
-                                    for sublist in t[1]:
-                                        for item in sublist:
-                                            flat_list.append(item)
-
                                     # print("flatten:", flat_list)
+                                    flat_list = flatten(t[1])
                                     ov, ovv = gmsh.model.occ.fragment([(2, dp[-1])], [(2, l) for l in flat_list])
                                     if j < n_dp-1:
                                         ov, ovv = gmsh.model.occ.fragment([(2, i_ids[j])], [(2, l) for l in flat_list] )
+                                """
                 else:
                     # detail == dblepancake 
+                    if j >= 1:
+                        ov, ovv = gmsh.model.occ.fragment([(2, dp)], [(2, i_ids[j-1])])
                     if j < n_dp-1:
                         ov, ovv = gmsh.model.occ.fragment([(2, dp)], [(2, i_ids[j])])
 
@@ -855,31 +866,20 @@ class HTSinsert:
                 _id = gmsh.model.occ.addRectangle(r0_air, z0_air, 0, dr_air, dz_air)
         
                 # TODO fragment _id with dp_ids, i_ids
+                for j,i_dp in enumerate(i_ids):
+                    ov, ovv = gmsh.model.occ.fragment([(2, _id)], [(2, i_dp)])
+
                 for j,dp in enumerate(dp_ids):
+                    # dp = [ [p0, p1], isolation ]
+                    print("HTSInsert with Air: dp[%d]" % j, "detail=%s" % detail, dp) 
                     if isinstance(dp, list):
-                        for p in dp:
-                            if isinstance(p, list):
-                                if len(p) == 2 and isinstance(p[0], int):
-                                    # shall use i_ids[j] and i_ids[j+1] if j != n_dp_1
-                                    ov, ovv = gmsh.model.occ.fragment([(2, _id)], [(2, p[0])] + [(2, p[1])] + [(2, dp[-1])])
-                                    if j < n_dp-1:
-                                        ov, ovv = gmsh.model.occ.fragment([(2, _id)], [(2, i_ids[j])])
-                                    #if j < n_dp-2:
-                                    #    ov, ovv = gmsh.model.occ.fragment([(2, _id)], [(2, i_ids[j+1])])
-                                else:
-                                    for t in p:    
-                                        flat_list = []
-                                        for sublist in t[1]:
-                                            for item in sublist:
-                                                flat_list.append(item)
-
-                                        # print("flatten:", flat_list)
-                                        ov, ovv = gmsh.model.occ.fragment([(2, _id)], [(2, i) for i in i_ids] + [(2, l) for l in flat_list])
-
+                        # detail == pancake|tape
+                        # print(_id, flatten(dp))
+                        ov, ovv = gmsh.model.occ.fragment([(2, _id)], [(2, l) for l in flatten(dp)])               
                     else:
                         # detail == dblepancake 
                         ov, ovv = gmsh.model.occ.fragment([(2, _id)], [(2, dp)])
-                        ov, ovv = gmsh.model.occ.fragment([(2, _id)], [(2, i) for i in i_ids])
+                        # ov, ovv = gmsh.model.occ.fragment([(2, _id)], [(2, i) for i in i_ids])
                 
                 # print("dp_ids:", dp_ids)
                 # print("i_ids:", i_ids)
@@ -905,7 +905,7 @@ class HTSinsert:
             i_ids = gmsh_ids[1]
             for i,isol in enumerate(i_ids):
                 ps = gmsh.model.addPhysicalGroup(2, [isol])
-                gmsh.model.setPhysicalName(2, ps, "isolation%d" % i)
+                gmsh.model.setPhysicalName(2, ps, "i_dp%d" % i)
             for i,dp in enumerate(dp_ids):
                 print("dp[%d]" % i)
                 if detail == "dblepancake":
@@ -918,13 +918,13 @@ class HTSinsert:
                     ps = gmsh.model.addPhysicalGroup(2, [dp[0][1]])
                     gmsh.model.setPhysicalName(2, ps, "p%d_dp%d" % (1,i))
                     ps = gmsh.model.addPhysicalGroup(2, [dp[1]])
-                    gmsh.model.setPhysicalName(2, ps, "i_dp%d" % i)
+                    gmsh.model.setPhysicalName(2, ps, "i_p%d" % i)
                 elif detail == "tape":
-                    print("HTSInsert/gsmh_bcs (tape):", dp)
+                    # print("HTSInsert/gsmh_bcs (tape):", dp)
                     ps = gmsh.model.addPhysicalGroup(2, [dp[1]])
-                    gmsh.model.setPhysicalName(2, ps, "i_dp%d" % i)
+                    gmsh.model.setPhysicalName(2, ps, "i_p%d" % i)
                     for t in dp[0][0]:
-                        print("p0:", t)
+                        # print("p0:", t)
                         if isinstance(t, list):
                             for l,t_id in enumerate(t):
                                 ps = gmsh.model.addPhysicalGroup(2, [t_id[0]])
@@ -934,9 +934,9 @@ class HTSinsert:
                         else:
                             ps = gmsh.model.addPhysicalGroup(2, [t])
                             gmsh.model.setPhysicalName(2, ps, "mandrin_p%d_dp%d" % (0,i))
-                            print("HTSInsert/gmsh_bcs: mandrin %d: %d" % t, ps)
+                            print("HTSInsert/gmsh_bcs: mandrin %d: %d" % (t, ps))
                     for t in dp[0][1]:
-                        print("p1:", t)
+                        # print("p1:", t)
                         if isinstance(t, list):
                             for l,t_id in enumerate(t):
                                 ps = gmsh.model.addPhysicalGroup(2, [t_id[0]])
@@ -946,7 +946,7 @@ class HTSinsert:
                         else:
                             ps = gmsh.model.addPhysicalGroup(2, [t])
                             gmsh.model.setPhysicalName(2, ps, "mandrin_p%d_dp%d" % (1,i))
-                            print("HTSInsert/gmsh_bcs: mandrin %d: %d" % t, ps)
+                            print("HTSInsert/gmsh_bcs: mandrin %d: %d" % (t, ps))
         else:   
             ps = gmsh.model.addPhysicalGroup(2, [gmsh_ids])
             gmsh.model.setPhysicalName(2, ps, "Supra")
