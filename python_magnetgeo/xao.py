@@ -99,7 +99,8 @@ def Insert_Gmsh(cad, gname, is2D, verbose):
     solid_names = []
 
     NHelices = len(cad.Helices)
-    NChannels = NHelices + 1
+    NChannels = NHelices + 1 # To be updated if there is any htype==HR in Insert
+    NIsolants= [] # To be computed depend on htype and dble
     for i,helix in enumerate(cad.Helices):
         hHelix = None
         Ninsulators = 0
@@ -128,7 +129,7 @@ def Insert_Gmsh(cad, gname, is2D, verbose):
 
     if verbose:
         print("Insert_Gmsh:", len(solid_names))
-    return solid_names
+    return (solid_names, NHelices, NChannels, NIsolants)
 
 def Magnet_Gmsh(cad, gname, is2D, verbose):
     """ Load Magnet cad """
@@ -144,7 +145,8 @@ def Magnet_Gmsh(cad, gname, is2D, verbose):
             solid_names += Supra_Gmsh(cad, pname, is2D, args.verbose)
             # TODO prepend name with part name
         elif isinstance(pcad, Insert):
-            solid_names += Insert_Gmsh(pcad, pname, is2D, args.verbose)
+            (_names, NHelices, NChannels, NIsolants) = Insert_Gmsh(pcad, pname, is2D, args.verbose)
+            solid_names += _names
             # TODO prepend name with part name
     return solid_names
 
@@ -356,7 +358,8 @@ def main():
             elif isinstance(cad, Supra):
                 solid_names += Supra_Gmsh(cad, gname, is2D, args.verbose)
             elif isinstance(cad, Insert):
-                solid_names += Insert_Gmsh(cad, gname, is2D, args.verbose)
+                (_names, NHelices, NChannels, NIsolants) = Insert_Gmsh(cad, gname, is2D, args.verbose)
+                solid_names += _names
             elif isinstance(cad, Helix):
                 solid_names += Helix_Gmsh(cad, gname, is2D, args.verbose)
             else:
@@ -453,6 +456,7 @@ def main():
         #
         # For the moment keep iChannel_Submeshes into
         # iChannel_Submeshes.append(inames)
+    print("Channels[%d]:" % NChannels, Channel_Submeshes)
 
     if args.debug:
         print("Channel_Submeshes:", Channel_Submeshes)

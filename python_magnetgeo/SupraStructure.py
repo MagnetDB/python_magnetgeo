@@ -106,6 +106,7 @@ class tape:
         # gmsh.model.occ.synchronize()
         return [_tape, _e]
 
+
 class pancake:
     """
     Pancake structure
@@ -1115,62 +1116,3 @@ class HTSinsert:
 
         return
 
-"""
-if __name__ == "__main__":
-    import argparse
-
-    parser = argparse.ArgumentParser()
-    parser.add_argument("inputcfg")
-    parser.add_argument("--wd", help="set a working directory", type=str, default="data")
-    parser.add_argument("--detail", help="select representation mode of HTS", choices=['None', 'dblepancake', 'pancake', 'tape'], default='None')
-    parser.add_argument("--gmsh", help="create a geo file for gmsh", action='store_true')
-    parser.add_argument("--mesh", help="create a mesh file for gmsh", action='store_true')
-    parser.add_argument("--geo", help="create a geo file for gmsh", action='store_true')
-    parser.add_argument("--air", help="activate air generation", action="store_true")
-    parser.add_argument("--debug", help="activate debug mode", action='store_true')
-    parser.add_argument(
-        "--show", help="display graphs (requires X11 server active)", action='store_true')
-    args = parser.parse_args()
-
-    cwd = os.getcwd()
-    if args.wd:
-        os.chdir(args.wd)
-        
-    nougat = HTSinsert()
-    nougat.loadCfg(args.inputcfg)
-
-    print("HTS insert: ", "R0=%g m" %nougat.getR0(), 
-          "R1=%g m" % nougat.getR1(), 
-          "Z0=%g" % (nougat.getZ0()-nougat.getH()/2.),
-          "Z1=%g" % (nougat.getZ0()+nougat.getH()/2.))
-    
-    gname = args.inputcfg.replace(".json","")
-    print("gname:", gname)
-    if args.geo:
-        nougat.template_gmsh(gname, args.detail)
-
-    if args.gmsh:
-        gmsh.initialize()
-        gmsh.model.add(gname)
-        gmsh.logger.start()
-
-        gmsh_ids = nougat.gmsh(args.detail, args.air, args.debug)
-        gmsh.model.occ.synchronize()
-        nougat.gmsh_bcs(gmsh_ids, args.debug)
-
-        # TODO set mesh characteristics here
-        if args.mesh:
-            gmsh.model.mesh.generate(2)
-            gmsh.write(gname + ".msh")
-
-        log = gmsh.logger.get()
-        print("Logger has recorded " + str(len(log)) + " lines")
-        gmsh.logger.stop()
-        
-        if args.show:
-            gmsh.fltk.run()
-        gmsh.finalize()
-
-    if args.wd:
-        os.chdir(cwd)
-"""
