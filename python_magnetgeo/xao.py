@@ -78,17 +78,20 @@ def Helix_Gmsh(cad, gname, is2D, verbose):
         if verbose:
             print("helix:", gname, htype, nturns)
 
-        if is2D:
-            nsection = len(cad.axi.turns)
-            solid_names.append("Cu%d" %  0 ) # HP
-            for j in range(nsection):
-                solid_names.append("Cu%d" % j+1 )
-                solid_names.append("Cu%d" % nsection+1 ) # BP
-        else:
-            solid_names.append("Cu")
-            for j in range(nInsulators):
-                solid_names.append("%s%d" % (sInsulator, j) )
+    if is2D:
+        nsection = len(cad.axi.turns)
+        solid_names.append("Cu%d" %  0 ) # HP
+        for j in range(nsection):
+            solid_names.append("Cu%d" % (j+1) )
+        solid_names.append("Cu%d" % (nsection+1) ) # BP
+    else:
+        solid_names.append("Cu")
+        # TODO tell HR from HL
+        for j in range(nInsulators):
+            solid_names.append("%s%d" % (sInsulator, j) )
         
+    if verbose:
+        print("Helix_Gmsh[%s]:" % htype, len(solid_names))
     return solid_names
 
 def Insert_Gmsh(cad, gname, is2D, verbose):
@@ -102,7 +105,7 @@ def Insert_Gmsh(cad, gname, is2D, verbose):
         Ninsulators = 0
         with open(helix+".yaml", 'r') as f:
             hHelix = yaml.load(f, Loader=yaml.FullLoader)
-            h_solid_names = Helix_Gmsh(hHelix, gname, is2D, args.verbose)
+            h_solid_names = Helix_Gmsh(hHelix, gname, is2D, verbose)
             for k,sname in enumerate(h_solid_names):
                 h_solid_names[k] =  "H%d_%s" % (i+1, sname)
             solid_names += h_solid_names
@@ -110,7 +113,7 @@ def Insert_Gmsh(cad, gname, is2D, verbose):
     for i,ring in enumerate(cad.Rings):
         if verbose: 
             print("ring:" , ring)
-            solid_names.append("R%d" % (i+1))
+        solid_names.append("R%d" % (i+1))
     
     if not is2D:
         for i,Lead in enumerate(cad.CurrentLeads):
@@ -123,6 +126,8 @@ def Insert_Gmsh(cad, gname, is2D, verbose):
                     innerLead_exist = True                        
                 solid_names.append("%sL%d" % (prefix,(i+1)) )
 
+    if verbose:
+        print("Insert_Gmsh:", len(solid_names))
     return solid_names
 
 def Magnet_Gmsh(cad, gname, is2D, verbose):
@@ -169,6 +174,7 @@ def main():
     parser.add_argument("input_file")
     parser.add_argument("--debug", help="activate debug", action='store_true')
     parser.add_argument("--verbose", help="activate verbose", action='store_true')
+    parser.add_argument("--wd", help="set a working directory", type=str, default="data")
 
     subparsers = parser.add_subparsers(title="commands", dest="command", help='sub-command help')
 
@@ -209,6 +215,10 @@ def main():
     args = parser.parse_args()
     if args.debug:
         print(args)
+
+    cwd = os.getcwd()
+    if args.wd:
+        os.chdir(args.wd)
 
     hideIsolant = False
     groupIsolant = False
@@ -307,7 +317,7 @@ def main():
         print("Solids:", len(volumes))
         exit(1)
 
-    print("Face:", len(gmsh.model.getEntities(GeomParams['Face'][0])) )
+    # print("Face:", len(gmsh.model.getEntities(GeomParams['Face'][0])) )
     if args.debug:
         # get all model entities
         ent = gmsh.model.getEntities()
@@ -357,9 +367,13 @@ def main():
                 solid_names.append("Air")
                 if hideIsolant:
                     raise Exception("--hide Isolants cannot be used since cad contains Air region")
+    # print("solid_names[%d]:" % len(solid_names), solid_names)
 
+    # print("GeomParams['Solid'][0]:", GeomParams['Solid'][0])
+    # print("gmsh solids:", len(gmsh.model.getEntities(2)) )
     nsolids = len(gmsh.model.getEntities(GeomParams['Solid'][0]))
-    assert (len(solid_names) == nsolids), "Wrong number of solids: in yaml %d in gmsh %d" % ( len(solid_names) , nsolids )
+    assert (len(solid_names) == nsolids), "Wrong number of solids: in yaml %d in gmsh %d" % (len(solid_names) , nsolids)
+    # print(len(solid_names), nsolids)
 
     # use yaml data to identify solids id...
     # Insert solids: H1_Cu, H1_Glue0, H1_Glue1, H2_Cu, ..., H14_Glue1, R1, R2, ..., R13, InnerLead, OuterLead, Air
@@ -371,13 +385,13 @@ def main():
         # print("solids=", sgroup.attrib['count'])
 
         for j,child in enumerate(sgroup):
-            sname = "solid%d" % j
+            sname = solid_names[j]
             if 'name' in child.attrib and child.attrib['name'] != "":
                 sname = child.attrib['name'].replace("from_",'')
                 if sname.startswith("Ring-H"):
                     sname = solid_names[j]
-                elif solid_names:
-                    sname = solid_names[j]
+            if args.verbose:
+                print("sname[%d]: %s" % (j, sname), child.attrib, solid_names[j])
 
             indices = int(child.attrib['index'])+1
             if args.verbose:
@@ -405,7 +419,8 @@ def main():
     for stag in stags:
         pgrp = gmsh.model.addPhysicalGroup(GeomParams['Solid'][0], stags[stag])
         gmsh.model.setPhysicalName(GeomParams['Solid'][0], pgrp, stag)
-        print(stag, ":", stags[stag], pgrp)
+        if args.verbose:
+            print(stag, ":", stags[stag], pgrp)
 
     Channel_Submeshes = []
     for i in range(0, NChannels):
@@ -463,6 +478,8 @@ def main():
             insert_id = gname.replace("_withAir","")
             sname = group.attrib['name'].replace(insert_id+"_","")
             sname = sname.replace('===','_')
+            if args.debug:
+                print("sname=", sname)
             if sname.startswith('Ring'):
                 sname = sname.replace("Ring-H","R")
                 sname = re.sub('H\d+','', sname)
@@ -565,7 +582,7 @@ def main():
     EndPoints_tags = []
     VPoints_tags = []
 
-    if isinstance(cad, Insert.Insert) or isinstance(cad, Helix.Helix):
+    if isinstance(cad, Insert) or isinstance(cad, Helix):
         # TODO: loop over tag from Glue or Kaptons (here [2, 3])
         glue_tags = [ i+1  for i,name in enumerate(solid_names) if ("Isolant" in name or ("Glue" in name or "Kapton" in name)) ]
         if args.verbose:
