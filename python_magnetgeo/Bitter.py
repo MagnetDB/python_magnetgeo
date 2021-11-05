@@ -112,6 +112,28 @@ class Bitter(yaml.YAMLObject):
         """
         return self.axi.get_Nturns()
 
+    def boundingBox(self):
+        """
+        return Bounding as r[], z[]
+        """
+        
+        return ([0,0], [0,0])
+
+    def intersect(self, r, z):
+        """
+        Check if intersection with rectangle defined by r,z is empty or not
+        
+        return False if empty, True otherwise
+        """
+        
+        # TODO take into account Mandrin and Isolation even if detail="None"
+        collide = False
+        isR = abs(self.r[0] - r[0]) < abs(self.r[1]-self.r[0] + r[0] + r[1]) /2.
+        isZ = abs(self.z[0] - z[0]) < abs(self.z[1]-self.z[0] + z[0] + z[1]) /2.
+        if isR and isZ:
+            collide = True
+        return collide
+
     def gmsh(self, Air=False, debug=False):
         """
         create gmsh geometry
