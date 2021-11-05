@@ -29,8 +29,6 @@ def get_main_characteristics(cad: Insert):
     Z2 = []
     Nsections = []
     index_h = []
-    index_conductor = []
-    index_Helices = []
     Zmin = [] 
     Zmax =  []
     Dh = []
@@ -41,11 +39,7 @@ def get_main_characteristics(cad: Insert):
             hhelix = yaml.load(f, Loader = yaml.FullLoader)
         n_sections = len(hhelix.axi.turns)
         Nsections.append(n_sections)
-        for j in range(0,n_sections+2):
-            index_h.append([str(i+1),str(j)])
-        for j in range(1,n_sections+1):
-            index_conductor.append([str(i+1),str(j)])
-        index_Helices.append(["0:{}".format(n_sections+2)])
+        index_h.append([str(i+1), "1:%s" % str(n_sections+1), "[0,%s]" % str(n_sections+2)])
 
         R1.append(hhelix.r[0])
         R2.append(hhelix.r[1])
@@ -76,4 +70,4 @@ def get_main_characteristics(cad: Insert):
     Dh.append(2*(Re-Ri))
     Sh.append(math.pi*(Re-Ri)*(Re+Ri))
 
-    return (NHelices, NRings, NChannels, Nsections, index_h, index_conductor, index_Helices, R1, R2, Z1, Z2, Zmin, Zmax, Dh, Sh)
+    return (NHelices, NRings, NChannels, Nsections, index_h, R1, R2, Z1, Z2, Zmin, Zmax, Dh, Sh)
