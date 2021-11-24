@@ -14,11 +14,11 @@ def main():
     parser.add_argument("filename", help="name of the model to be loaded", type=str, nargs='?' )
     parser.add_argument("--tojson", help="convert to json", action='store_true')
     
-    parser.add_argument("--wd", help="set a working directory", type=str, default="data")
-    parser.add_argument("--air", help="activate air generation", action="store_true")
+    parser.add_argument("--wd", help="set a working directory", type=str, default="")
+    parser.add_argument("--air", help="activate air generation", nargs=2, type=float, metavar=('infty_Rratio', 'infty_Zratio'))
     parser.add_argument("--gmsh", help="save to gmsh geofile", action="store_true")
     parser.add_argument("--gmsh_api", help="use gmsh api to create geofile", action="store_true")
-    parser.add_argument("--mesh", help="create gmsh mesh ", action="store_true")
+    parser.add_argument("--mesh", help="create gmsh mesh with lc charateristics (stored like bcs)", action="extend", nargs='+', type=float)
     parser.add_argument("--detail", help="select representation mode of HTS", choices=['None', 'dblepancake', 'pancake', 'tape'], default='None')
     parser.add_argument("--show", help="display gmsh geofile when api is on", action="store_true")
     
@@ -57,9 +57,19 @@ def main():
         if not isinstance(site, SupraStructure.HTSinsert):
             site.write_to_json()
 
+    AirData = None
+    if args.air:
+        infty_Rratio = args.air[0] #1.5
+        if infty_Rratio < 1:
+            raise RuntimeError("Infty_Rratio=%g should be greater than 1"%infty_Rratio)
+        infty_Zratio = args.air[1] #2.
+        if infty_Zratio < 1:
+            raise RuntimeError("Infty_Zratio=%g should be greater than 1"%infty_Zratio)
+        AirData = (infty_Rratio, infty_Zratio)
+
     if args.gmsh:
         if isinstance(site, Insert):
-            site.Create_AxiGeo(args.air)
+            site.Create_AxiGeo(AirData)
         if isinstance(site, SupraStructure.HTSinsert):
             site.template_gmsh(name, args.detail)
     
@@ -70,18 +80,21 @@ def main():
         gmsh.logger.start()
 
         if not isinstance(site, SupraStructure.HTSinsert):
-            ids = site.gmsh(args.air)
+            ids = site.gmsh(AirData)
         else:
             ids = site.gmsh(args.detail, args.air)
         gmsh.model.occ.synchronize()
 
         # TODO create Physical here
         if not isinstance(site, SupraStructure.HTSinsert):
-            site.gmsh_bcs(ids)
+            bcs = site.gmsh_bcs(ids)
         else:
-            site.gmsh_bcs(args.detail, ids)
+            bcs = site.gmsh_bcs(site.name, args.detail, ids)
+
         # TODO set mesh characteristics here
         if args.mesh:
+            print("msh:", type(args.mesh))
+            site.gmsh_msh(bcs, args.mesh[0])
             gmsh.model.mesh.generate(2)
             gmsh.write(name + ".msh")        
 

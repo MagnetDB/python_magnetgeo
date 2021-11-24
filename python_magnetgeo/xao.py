@@ -176,7 +176,7 @@ def main():
     parser.add_argument("input_file")
     parser.add_argument("--debug", help="activate debug", action='store_true')
     parser.add_argument("--verbose", help="activate verbose", action='store_true')
-    parser.add_argument("--wd", help="set a working directory", type=str, default="data")
+    parser.add_argument("--wd", help="set a working directory", type=str, default="")
 
     subparsers = parser.add_subparsers(title="commands", dest="command", help='sub-command help')
 
@@ -378,6 +378,9 @@ def main():
     assert (len(solid_names) == nsolids), "Wrong number of solids: in yaml %d in gmsh %d" % (len(solid_names) , nsolids)
     # print(len(solid_names), nsolids)
 
+    print("NHelices = %d" % NHelices)
+    print("NChannels = %d" % NChannels)
+
     # use yaml data to identify solids id...
     # Insert solids: H1_Cu, H1_Glue0, H1_Glue1, H2_Cu, ..., H14_Glue1, R1, R2, ..., R13, InnerLead, OuterLead, Air
     # HR: Cu, Kapton0, Kapton1, ... KaptonXX
@@ -451,13 +454,11 @@ def main():
         if i != 0 and i+1 < NChannels:
             names.append("R%d_CoolingSlits" % (i))
             names.append("R%d_R0n" % (i+1))
-        # print "Channel%d"%i, names
         Channel_Submeshes.append(names)
         #
         # For the moment keep iChannel_Submeshes into
         # iChannel_Submeshes.append(inames)
-    print("Channels[%d]:" % NChannels, Channel_Submeshes)
-
+    
     if args.debug:
         print("Channel_Submeshes:", Channel_Submeshes)
 
@@ -532,8 +533,10 @@ def main():
             # TODO case of HR: group HChannel and muChannel per Helix
             if groupCoolingChannels:
                 for j,channel_id in enumerate(Channel_Submeshes):
-                    if sname in channel_id:
-                        sname = "Channel%d" % j
+                    for cname in channel_id:
+                        if sname.endswith(cname):
+                            sname = "Channel%d" % j
+                            break
 
                 if "_rInt" in sname or "_rExt" in sname:
                     skip = True
@@ -541,7 +544,7 @@ def main():
                     skip = True
                 if "_iRint" in sname or "_iRext" in sname:
                     skip = True
-    
+                
             # if hideIsolant remove "iRint"|"iRext" in Bcs otherwise sname: do not record physical surface for Interface
             if hideIsolant:
                 if 'IrInt' in sname or 'IrExt' in sname:

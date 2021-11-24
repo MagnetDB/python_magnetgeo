@@ -762,7 +762,7 @@ class HTSinsert:
                 print("dlbpancake[%d]: " % i, self.dblepancakes[i])
             print("===")
 
-    def gmsh(self, detail: str, Air: bool =False, debug: bool = False):
+    def gmsh(self, detail: str, AirData: tuple =(), debug: bool = False):
         """
         create insert for gmsh
 
@@ -783,11 +783,11 @@ class HTSinsert:
             id = gmsh.model.occ.addRectangle(self.r0, y0, 0, (self.r1-self.r0), self.getH())
             
             # Now create air
-            if Air:
+            if AirData:
                 r0_air = 0
-                dr_air = (self.r1-self.r0) * 2
-                z0_air = y0 * 1.2
-                dz_air = (2 * abs(y0) ) * 1.2    
+                dr_air = (self.r1-self.r0) * AirData[0]
+                z0_air = y0 * AirData[1]
+                dz_air = (2 * abs(y0) ) * AirData[1]
                 _id = gmsh.model.occ.addRectangle(r0_air, z0_air, 0, dr_air, dz_air)
         
                 ov, ovv = gmsh.model.occ.fragment([(2, _id)], [(2, id)] )
@@ -858,7 +858,7 @@ class HTSinsert:
                         ov, ovv = gmsh.model.occ.fragment([(2, dp)], [(2, i_ids[j])])
 
             # Now create air
-            if Air:
+            if AirData:
                 y0 = self.z0-self.getH()/2. # need to force y0 to init value
                 r0_air = 0
                 dr_air = (self.r1-self.r0) * 2
@@ -888,7 +888,7 @@ class HTSinsert:
 
             return ([dp_ids, i_ids], None)
 
-    def gmsh_bcs(self, detail: str, ids: tuple, debug=False):
+    def gmsh_bcs(self, name: str,  detail: str, ids: tuple, debug=False):
         """
         create bcs groups for gmsh
 
@@ -898,6 +898,7 @@ class HTSinsert:
         returns
         """
 
+        defs = {}
         (gmsh_ids, Air_data) = ids
 
         print("Set Physical Volumes")
@@ -906,51 +907,63 @@ class HTSinsert:
             i_ids = gmsh_ids[1]
             for i,isol in enumerate(i_ids):
                 ps = gmsh.model.addPhysicalGroup(2, [isol])
-                gmsh.model.setPhysicalName(2, ps, "i_dp%d" % i)
+                gmsh.model.setPhysicalName(2, ps, "%s_i_dp%d" % (name, i))
+                defs["%s_i_dp%d" % (name, i)] = ps
             for i,dp in enumerate(dp_ids):
                 print("dp[%d]" % i)
                 if detail == "dblepancake":
                     ps = gmsh.model.addPhysicalGroup(2, [dp])
-                    gmsh.model.setPhysicalName(2, ps, "dp%d" % i)
+                    gmsh.model.setPhysicalName(2, ps, "%s_dp%d" % (name, i))
+                    defs["%s_dp%d" % (name, i)] = ps
                 elif detail == "pancake":
                     # print("dp:", dp)
                     ps = gmsh.model.addPhysicalGroup(2, [dp[0][0]])
-                    gmsh.model.setPhysicalName(2, ps, "p%d_dp%d" % (0,i))
+                    gmsh.model.setPhysicalName(2, ps, "%s_p%d_dp%d" % (name, 0,i))
+                    defs["%s_p%d_dp%d" % (name, 0,i)] = ps
                     ps = gmsh.model.addPhysicalGroup(2, [dp[0][1]])
-                    gmsh.model.setPhysicalName(2, ps, "p%d_dp%d" % (1,i))
+                    gmsh.model.setPhysicalName(2, ps, "%s_p%d_dp%d" % (name, 1,i))
+                    defs["%s_p%d_dp%d" % (name, 1,i)] = ps
                     ps = gmsh.model.addPhysicalGroup(2, [dp[1]])
-                    gmsh.model.setPhysicalName(2, ps, "i_p%d" % i)
+                    gmsh.model.setPhysicalName(2, ps, "%s_i_p%d" % (name, i))
+                    defs["%s_i_p%d" % (name, i)] = ps
                 elif detail == "tape":
                     # print("HTSInsert/gsmh_bcs (tape):", dp)
                     ps = gmsh.model.addPhysicalGroup(2, [dp[1]])
-                    gmsh.model.setPhysicalName(2, ps, "i_p%d" % i)
+                    gmsh.model.setPhysicalName(2, ps, "%s_i_p%d" % (name, i))
+                    defs["%s_i_p%d" % (name, i)] = ps
                     for t in dp[0][0]:
                         # print("p0:", t)
                         if isinstance(t, list):
                             for l,t_id in enumerate(t):
                                 ps = gmsh.model.addPhysicalGroup(2, [t_id[0]])
-                                gmsh.model.setPhysicalName(2, ps, "sc%d_p%d_dp%d" % (l,0,i))
+                                gmsh.model.setPhysicalName(2, ps, "%s_sc%d_p%d_dp%d" % (name, l,0,i))
+                                defs["%s_sc%d_p%d_dp%d" % (name, l,0,i)] = ps
                                 ps = gmsh.model.addPhysicalGroup(2, [t_id[1]])
-                                gmsh.model.setPhysicalName(2, ps, "du%d_p%d_dp%d" % (l,0,i))
+                                gmsh.model.setPhysicalName(2, ps, "%s_du%d_p%d_dp%d" % (name, l,0,i))
+                                defs["%s_du%d_p%d_dp%d" % (name, l,0,i)] = ps
                         else:
                             ps = gmsh.model.addPhysicalGroup(2, [t])
-                            gmsh.model.setPhysicalName(2, ps, "mandrin_p%d_dp%d" % (0,i))
+                            gmsh.model.setPhysicalName(2, ps, "%s_mandrin_p%d_dp%d" % (name, 0,i))
+                            defs["%s_mandrin_p%d_dp%d" % (name, 0,i)] = ps
                             print("HTSInsert/gmsh_bcs: mandrin %d: %d" % (t, ps))
                     for t in dp[0][1]:
                         # print("p1:", t)
                         if isinstance(t, list):
                             for l,t_id in enumerate(t):
                                 ps = gmsh.model.addPhysicalGroup(2, [t_id[0]])
-                                gmsh.model.setPhysicalName(2, ps, "sc%d_p%d_dp%d" % (l,1,i))
+                                gmsh.model.setPhysicalName(2, ps, "%s_sc%d_p%d_dp%d" % (name, l,1,i))
+                                defs["%s_sc%d_p%d_dp%d" % (name, l,1,i)] = ps
                                 ps = gmsh.model.addPhysicalGroup(2, [t_id[1]])
-                                gmsh.model.setPhysicalName(2, ps, "du%d_p%d_dp%d" % (l,1,i))
+                                gmsh.model.setPhysicalName(2, ps, "%s_du%d_p%d_dp%d" % (name, l,1,i))
+                                defs["%s_du%d_p%d_dp%d" % (name, l,1,i)] = ps
                         else:
                             ps = gmsh.model.addPhysicalGroup(2, [t])
-                            gmsh.model.setPhysicalName(2, ps, "mandrin_p%d_dp%d" % (1,i))
+                            gmsh.model.setPhysicalName(2, ps, "%s_mandrin_p%d_dp%d" % (name, 1,i))
+                            defs["%s_mandrin_p%d_dp%d" % (name, 1,i)] = ps
                             print("HTSInsert/gmsh_bcs: mandrin %d: %d" % (t, ps))
         else:   
             ps = gmsh.model.addPhysicalGroup(2, [gmsh_ids])
-            gmsh.model.setPhysicalName(2, ps, "Supra")
+            gmsh.model.setPhysicalName(2, ps, "%s_S" % name)
 
         # TODO set lc charact on Domains
         # TODO retreive BCs group for Rint, Rext, Top, Bottom
@@ -963,25 +976,29 @@ class HTSinsert:
                                                  self.getR1()* (1+eps), (self.z0-self.getH()/2.)* (1+eps), 0, 1)
         print("BoundingBox Bottom:", ov, type(ov))
         ps = gmsh.model.addPhysicalGroup(1, [tag for (dim,tag) in ov])
-        gmsh.model.setPhysicalName(1, ps, "Bottom")
+        gmsh.model.setPhysicalName(1, ps, "%s_Bottom" % name)
+        defs["%s_Bottom" % name] = ps
 
         ov = gmsh.model.getEntitiesInBoundingBox(self.getR0()* (1-eps), (self.z0+self.getH()/2.)* (1-eps), 0,
                                                  self.getR1()* (1+eps), (self.z0+self.getH()/2.)* (1+eps), 0, 1)
         print("BoundingBox Top:", ov, type(ov))
         ps = gmsh.model.addPhysicalGroup(1, [tag for (dim,tag) in ov])
-        gmsh.model.setPhysicalName(1, ps, "Top")
+        gmsh.model.setPhysicalName(1, ps, "%s_Top" % name)
+        defs["%s_Top" % name] = ps
         
         ov = gmsh.model.getEntitiesInBoundingBox(self.getR0()* (1-eps), (self.z0-self.getH()/2.)* (1-eps), 0,
                                                  self.getR0()* (1+eps), (self.z0+self.getH()/2.)* (1+eps), 0, 1)
         print("BoundingBox Rint:", ov, type(ov))
         ps = gmsh.model.addPhysicalGroup(1, [tag for (dim,tag) in ov])
-        gmsh.model.setPhysicalName(1, ps, "Rint")
+        gmsh.model.setPhysicalName(1, ps, "%s_Rint" % name)
+        defs["%s_Rint" % name] = ps
 
         ov = gmsh.model.getEntitiesInBoundingBox(self.getR1()* (1-eps), (self.z0-self.getH()/2.)* (1-eps), 0,
                                                  self.getR1()* (1+eps), (self.z0+self.getH()/2.)* (1+eps), 0, 1)
         print("BoundingBox Rext:", ov, type(ov))
         ps = gmsh.model.addPhysicalGroup(1, [tag for (dim,tag) in ov])
-        gmsh.model.setPhysicalName(1, ps, "Rext")
+        gmsh.model.setPhysicalName(1, ps, "%s_Rext" % name)
+        defs["%s_Rext" % name] = ps
 
         # TODO: Air
         if Air_data:
@@ -989,6 +1006,7 @@ class HTSinsert:
 
             ps = gmsh.model.addPhysicalGroup(2, [Air_id])
             gmsh.model.setPhysicalName(2, ps, "Air")
+            defs["Air" % self.name] = ps
 
             # TODO: Axis, Inf
             gmsh.option.setNumber("Geometry.OCCBoundsUseStl", 1)
@@ -999,6 +1017,7 @@ class HTSinsert:
             print("ov:", len(ov))
             ps = gmsh.model.addPhysicalGroup(1, [tag for (dim,tag) in ov])
             gmsh.model.setPhysicalName(1, ps, "Axis")
+            defs["Axis" % self.name] = ps 
             
             ov = gmsh.model.getEntitiesInBoundingBox(-eps, z0_air-eps, 0, dr_air+eps, z0_air+eps, 0, 1)
             print("ov:", len(ov))
@@ -1010,8 +1029,12 @@ class HTSinsert:
             print("ov:", len(ov))
             
             ps = gmsh.model.addPhysicalGroup(1, [tag for (dim,tag) in ov])
-            gmsh.model.setPhysicalName(1, ps, "Inf")            
-        
+            gmsh.model.setPhysicalName(1, ps, "Infty")
+            defs["Infty" % self.name] = ps            
+
+        return defs
+
+    def gmsh_msh(self, defs: dict = {}, lc: list=[]):
         print("TODO: set characteristic lengths")
         """
         lcar = (nougat.getR1() - nougat.R(0) ) / 10.

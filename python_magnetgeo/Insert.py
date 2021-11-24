@@ -159,7 +159,7 @@ class Insert(yaml.YAMLObject):
             collide = True
         return collide
 
-    def gmsh(self, Air=False, debug=False):
+    def gmsh(self, AirData=None, debug=False):
         """
         create gmsh geometry
         """
@@ -215,7 +215,7 @@ class Insert(yaml.YAMLObject):
                     print(e)
         
         # Now create air
-        if Air:
+        if AirData:
             r0_air = 0
             dr_air = max(r) * 2
             z0_air = min(z0) * 1.2
@@ -243,7 +243,8 @@ class Insert(yaml.YAMLObject):
         (H_ids, R_ids, Air_data) = ids
 
         eps =1.e-3
-
+        defs = {}
+        
         # loop over Helices
         z = []
         H_Bc_ids = []
@@ -254,18 +255,21 @@ class Insert(yaml.YAMLObject):
                 Helix = yaml.load(f, Loader=yaml.FullLoader)
 
             hname = "H%d" % (i+1)
-            (r0_ids, r1_ids) = Helix.gmsh_bcs(hname, H_ids[i], debug)
+            (r0_ids, r1_ids, hdefs) = Helix.gmsh_bcs(hname, H_ids[i], debug)
             if i%2 == 0:
                 z.append(Helix.z[1])
             else:
                 z.append(Helix.z[0])
             H_Bc_ids.append((r0_ids, r1_ids))
-
+            for key in hdefs:
+                defs[key] = hdefs[key]
+            
             if i == 0:
                 ov = gmsh.model.getEntitiesInBoundingBox(Helix.r[0]-eps, Helix.z[0]-eps, 0, Helix.r[1]+eps, Helix.z[0]+eps, 0, 1)
                 print("ov:", len(ov))
                 ps = gmsh.model.addPhysicalGroup(1, [tag for (dim,tag) in ov])
                 gmsh.model.setPhysicalName(1, ps, "H1_HP")
+                defs["H1_HP"] = ps
 
         # loop over Rings
         R_Bc_ids = []
@@ -313,6 +317,7 @@ class Insert(yaml.YAMLObject):
             
             ps = gmsh.model.addPhysicalGroup(1, Channel_id)
             gmsh.model.setPhysicalName(1, ps, "Channel%d" % i)
+            defs["Channel%d" % i] = ps
         
         # TODO: Air
         if Air_data:
@@ -320,6 +325,7 @@ class Insert(yaml.YAMLObject):
 
             ps = gmsh.model.addPhysicalGroup(2, [Air_id])
             gmsh.model.setPhysicalName(2, ps, "Air")
+            defs["ZAxis" % self.name] = ps
 
             # TODO: Axis, Inf
             gmsh.option.setNumber("Geometry.OCCBoundsUseStl", 1)
@@ -341,11 +347,28 @@ class Insert(yaml.YAMLObject):
             print("ov:", len(ov))
             
             ps = gmsh.model.addPhysicalGroup(1, [tag for (dim,tag) in ov])
-            gmsh.model.setPhysicalName(1, ps, "Inf")            
+            gmsh.model.setPhysicalName(1, ps, "Inf")
+            defs["Infty" % self.name] = ps        
 
+        return defs
+
+    def gmsh_msh(self, defs: dict = {}, lc: list=[]):
+        print("TODO: set characteristic lengths")
+        """
+        lcar = (nougat.getR1() - nougat.R(0) ) / 10.
+        lcar_dp = nougat.dblepancakes[0].getW() / 10.
+        lcar_p = nougat.dblepancakes[0].getPancake().getW() / 10.
+        lcar_tape = nougat.dblepancakes[0].getPancake().getW()/3.
+
+        gmsh.model.mesh.setSize(gmsh.model.getEntities(0), lcar)
+        # Override this constraint on the points of the tapes:
+
+        gmsh.model.mesh.setSize(gmsh.model.getBoundary(tapes, False, False, True), lcar_tape)
+        """
         pass
+    
 
-    def Create_AxiGeo(self, Air=False):
+    def Create_AxiGeo(self, AirData):
         """
         create Axisymetrical Geo Model for gmsh
 
@@ -638,7 +661,7 @@ class Insert(yaml.YAMLObject):
         #Air
         Air_ids = []
         BC_Air_ids = []
-        if Air:
+        if AirData:
             Axis_ids = []
             Infty_ids = []
 

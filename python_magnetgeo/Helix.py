@@ -10,6 +10,7 @@ Provides definition for Helix:
 * Shape: definition of Shape eventually added to the helical cut
 """
 
+import math
 import json
 import yaml
 from . import deserialize
@@ -173,12 +174,14 @@ class Helix(yaml.YAMLObject):
         retreive ids for bcs in gmsh geometry
         """
 
+        defs = {}
         import gmsh
         
         # set physical name
         for i,id in enumerate(ids):
             ps = gmsh.model.addPhysicalGroup(2, [id])
             gmsh.model.setPhysicalName(2, ps, "%s_Cu%d" % (name, i))
+            defs["%s_Cu%d" % (name, i)] = ps
         
         # get BC ids
         gmsh.option.setNumber("Geometry.OCCBoundsUseStl", 1)
@@ -196,9 +199,38 @@ class Helix(yaml.YAMLObject):
                                                  self.r[1]* (1+eps), zmax, 0, 1)
         r1_bc_ids = [tag for (dim,tag) in ov]
 
-        return (r0_bc_ids, r1_bc_ids)
+        return (r0_bc_ids, r1_bc_ids, defs)
 
+    def htype(self):
+        """
+        return the type of Helix (aka HR or HL)
+        """
+        if self.dble:
+            return "HL"
+        else:
+            return "HR"
+
+    def insulators(self):
+        """
+        return name and number of insulators depending on htype
+        """
+        
+        sInsulator = "Glue"
+        nInsulators = 1
+        if self.htype() == "HL":
+            nInsulators = 2
+        else:
+            sInsulator = "Kapton"
+            angle = self.shape.angle
+            nshapes = self.axi.nturns * (360 / float(angle))
+            # print("shapes: ", nshapes, math.floor(nshapes), math.ceil(nshapes))
+                    
+            nshapes = (lambda x: math.ceil(x) if math.ceil(x) - x < x - math.floor(x) else math.floor(x))(nshapes)
+            nInsulators = int(nshapes)
+            # print("nKaptons=", nInsulators)
     
+        return (sInsulator, nInsulators)
+
 def Helix_constructor(loader, node):
     """
     build an helix object
