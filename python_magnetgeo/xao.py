@@ -35,26 +35,35 @@ import math
 
 def Supra_Gmsh(cad, gname, is2D, verbose):
     """ Load Supra cad """
+    #print("Supra_Gmsh:", cad)
     solid_names = []
 
-    solid_names.append("S")
+    # TODO take into account supra detail
+    solid_names.append("%s_S" % cad.name)
+    if verbose:
+        print("Supra_Gmsh: solid_names %d", len(solid_names))      
     return solid_names
 
 def Bitter_Gmsh(cad, gname, is2D, verbose):
     """ Load Bitter cad """
+    print("Bitter_Gmsh:", cad)
     solid_names = []
 
     if is2D:
         nsection = len(cad.axi.turns)
+        # print("Bitter_Gmsh: %d" % nsection)
         for j in range(nsection):
-            solid_names.append("B%d" % j+1 )
-            solid_names.append("B%d" % nsection+1 ) # BP
+            solid_names.append("%s_B%d" % (cad.name, (j+1)) )
+            # solid_names.append("B%d" % (nsection+1) ) # BP
     else:
-        solid_names.append("B")        
+        solid_names.append("%s_B" % cad.name)  
+    if verbose:
+         print("Bitter_Gmsh: solid_names %d" % len(solid_names))
     return solid_names
 
 def Helix_Gmsh(cad, gname, is2D, verbose):
     """ Load Helix cad """
+    # print("Helix_Gmsh:", cad)
     solid_names = []
 
     sInsulator = "Glue"
@@ -91,11 +100,12 @@ def Helix_Gmsh(cad, gname, is2D, verbose):
             solid_names.append("%s%d" % (sInsulator, j) )
         
     if verbose:
-        print("Helix_Gmsh[%s]:" % htype, len(solid_names))
+        print("Helix_Gmsh[%s]:" % htype, " solid_names %d", len(solid_names))      
     return solid_names
 
 def Insert_Gmsh(cad, gname, is2D, verbose):
     """ Load Insert """
+    # print("Insert_Gmsh:", cad)
     solid_names = []
 
     NHelices = len(cad.Helices)
@@ -128,45 +138,94 @@ def Insert_Gmsh(cad, gname, is2D, verbose):
                 solid_names.append("%sL%d" % (prefix,(i+1)) )
 
     if verbose:
-        print("Insert_Gmsh:", len(solid_names))
+        print("Insert_Gmsh: solid_names %d", len(solid_names))      
     return (solid_names, NHelices, NChannels, NIsolants)
 
 def Magnet_Gmsh(cad, gname, is2D, verbose):
     """ Load Magnet cad """
+    # print("Magnet_Gmsh:", cad)
     solid_names = []
-    cfgfile = cad.magnets
+    NHelices = []
+    NChannels = []
+    NIsolants = []
+
+    cfgfile = cad + ".yaml"
     with open(cfgfile, 'r') as cfgdata:
         pcad = yaml.load(cfgdata, Loader = yaml.FullLoader)
         pname = pcad.name
         if isinstance(pcad, Bitter):
-            solid_names += Bitter_Gmsh(pcad, pname, is2D, args.verbose)
+            solid_names += Bitter_Gmsh(pcad, pname, is2D, verbose)
+            NHelices.append(0)
+            NChannels.append(0)
+            NIsolants.append(0)
             # TODO prepend name with part name
         elif isinstance(pcad, Supra):
-            solid_names += Supra_Gmsh(cad, pname, is2D, args.verbose)
+            solid_names += Supra_Gmsh(cad, pname, is2D, verbose)
+            NHelices.append(0)
+            NChannels.append(0)
+            NIsolants.append(0)
             # TODO prepend name with part name
         elif isinstance(pcad, Insert):
-            (_names, NHelices, NChannels, NIsolants) = Insert_Gmsh(pcad, pname, is2D, args.verbose)
+            (_names,_NHelices, _NChannels, _NIsolants) = Insert_Gmsh(pcad, pname, is2D, verbose)
             solid_names += _names
+            NHelices.append(_NHelices)
+            NChannels.append(_NChannels)
+            NIsolants.append(_NIsolants)
             # TODO prepend name with part name
-    return solid_names
+    if verbose:
+        print("Magnet_Gmsh:", cad, " Done", "solids %d " % len(solid_names))
+    return (solid_names, NHelices, NChannels, NIsolants)
 
 def MSite_Gmsh(cad, gname, is2D, verbose):
     """ Load MSite cad """
+    # print("MSite_Gmsh:", cad)
+    
+    compound = []
     solid_names = []
+    NHelices = []
+    NChannels = []
+    NIsolants = []
+
     if isinstance(cad.magnets, str):
-        solid_names += Magnet_Gmsh(cad.magnets, gname, is2D, verbose)
+        (_names,_NHelices, _NChannels, _NIsolants)= Magnet_Gmsh(cad.magnets, gname, is2D, verbose)
+        compound.append(cad.magnets)
+        solid_names += _names
+        NHelices += _NHelices
+        NChannels += _NChannels
+        NIsolants += _NIsolants
+        # print("MSite_Gmsh: cad.magnets=", cad.magnets, "solids=%d" % len(solid_names))
     elif isinstance(cad.magnets, list):
         for magnet in cad.magnets:
-            solid_names += Magnet_Gmsh(magnet, gname, is2D, verbose)
+            (_names, _NHelices, _NChannels, _NIsolants) = Magnet_Gmsh(magnet, gname, is2D, verbose)
+            compound.append(magnet)
+            solid_names += _names
+            NHelices += _NHelices
+            NChannels += _NChannels
+            NIsolants += _NIsolants
+        # print("MSite_Gmsh: magnet=", magnet, "solids=%d" % len(solid_names))
     elif isinstance(cad.magnets, dict):
         for key in cad.magnets:
             if isinstance(cad.magnets[key], str):
-                solid_names += Magnet_Gmsh(cad.magnets[key], gname, is2D, verbose)
+                (_names, _NHelices, _NChannels, _NIsolants) = Magnet_Gmsh(cad.magnets[key], gname, is2D, verbose)
+                compound.append(cad.magnets[key])
+                solid_names += _names
+                NHelices += _NHelices
+                NChannels += _NChannels
+                NIsolants += _NIsolants
+                # print("MSite_Gmsh: cad.magnets[key]=", cad.magnets[key], "solids=%d" % len(solid_names))
             elif isinstance(cad.magnets[key], list):
                 for mpart in cad.magnets[key]:
-                    solid_names += Magnet_Gmsh(mpart, gname, is2D, verbose)
+                    (_names, NHelices, NChannels, NIsolants) = Magnet_Gmsh(mpart, gname, is2D, verbose)
+                    compound.append(mpart)
+                    solid_names += _names
+                    NHelices += _NHelices
+                    NChannels += _NChannels
+                    NIsolants += _NIsolants
+                    # print("MSite_Gmsh: mpart=", mpart, "solids=%d" % len(solid_names))
 
-    return solid_names
+    if verbose:
+        print("MSite_Gmsh:", cad, " Done", "solids %d " % len(solid_names))
+    return (compound, solid_names, NHelices, NChannels, NIsolants)
 
 
 def main():
@@ -346,21 +405,28 @@ def main():
             cfgfile = gname+".yaml"
         print("cfgfile:", cfgfile)
 
+    compound = []
     if cfgfile :
         with open(cfgfile, 'r') as cfgdata:
             cad = yaml.load(cfgdata, Loader = yaml.FullLoader)
             # print("cad type", type(cad))
             # TODO get solid names (see Salome HiFiMagnet plugin)
             if isinstance(cad, MSite):
-                solid_names += MSite_Gmsh(cad, gname, is2D, args.verbose)
+                print("load cfg MSite")
+                (compound, _names, NHelices, NChannels, NIsolants) = MSite_Gmsh(cad, gname, is2D, args.verbose)
+                solid_names += _names
             elif isinstance(cad, Bitter):
+                print("load cfg Bitter")
                 solid_names += Bitter_Gmsh(cad, gname, is2D, args.verbose)
             elif isinstance(cad, Supra):
+                print("load cfg Supra")
                 solid_names += Supra_Gmsh(cad, gname, is2D, args.verbose)
             elif isinstance(cad, Insert):
+                print("load cfg Insert")
                 (_names, NHelices, NChannels, NIsolants) = Insert_Gmsh(cad, gname, is2D, args.verbose)
                 solid_names += _names
             elif isinstance(cad, Helix):
+                print("load cfg Helix")
                 solid_names += Helix_Gmsh(cad, gname, is2D, args.verbose)
             else:
                 print("unsupported type of cad")
@@ -378,8 +444,9 @@ def main():
     assert (len(solid_names) == nsolids), "Wrong number of solids: in yaml %d in gmsh %d" % (len(solid_names) , nsolids)
     # print(len(solid_names), nsolids)
 
-    print("NHelices = %d" % NHelices)
-    print("NChannels = %d" % NChannels)
+    print("compound =", compound)
+    print("NHelices = ", NHelices)
+    print("NChannels = ", NChannels)
 
     # use yaml data to identify solids id...
     # Insert solids: H1_Cu, H1_Glue0, H1_Glue1, H2_Cu, ..., H14_Glue1, R1, R2, ..., R13, InnerLead, OuterLead, Air
@@ -428,8 +495,14 @@ def main():
         if args.verbose:
             print(stag, ":", stags[stag], pgrp)
 
+    # TODO review if several insert in msite
+    # so far assume only one insert that appears as latest magnets
     Channel_Submeshes = []
-    for i in range(0, NChannels):
+    if isinstance(NChannels, int):
+        _NChannels = NChannels
+    elif isinstance(NChannels, list):
+        _NChannels = NChannels[-1]
+    for i in range(0, _NChannels):
         names = []
         inames = []
         if i == 0:
@@ -443,7 +516,7 @@ def main():
                 # inames = inames + isolant_names + kapton_names
         if i >= 2:
             names.append("R%d_R1n" % (i-1))
-        if i < NChannels:
+        if i < _NChannels:
             names.append("H%d_rInt" % (i+1))
             if not hideIsolant:
                 isolant_names = [ "H%d_IrInt" % (i+1)]
@@ -451,7 +524,7 @@ def main():
                 names = names + isolant_names + kapton_names
                 # inames = inames + isolant_names + kapton_names
         # Better? if i+1 < nchannels:    
-        if i != 0 and i+1 < NChannels:
+        if i != 0 and i+1 < _NChannels:
             names.append("R%d_CoolingSlits" % (i))
             names.append("R%d_R0n" % (i+1))
         Channel_Submeshes.append(names)
@@ -472,7 +545,7 @@ def main():
         #print("group:", group.keys())
 
         ## dimension: "solid", "face", "edge"
-        #print("name=", group.attrib['name'], group.attrib['dimension'], group.attrib['count'])
+        print("name=", group.attrib['name'], group.attrib['dimension'], group.attrib['count'])
 
         indices=[]
         if group.attrib['dimension'] == GeomParams['Face'][1]:
@@ -483,6 +556,7 @@ def main():
             insert_id = gname.replace("_withAir","")
             sname = group.attrib['name'].replace(insert_id+"_","")
             sname = sname.replace('===','_')
+            
             if args.debug:
                 print("sname=", sname)
             if sname.startswith('Ring'):
@@ -491,7 +565,7 @@ def main():
             sname = sname.replace("Air_","")
             if args.debug:
                 print(sname, indices, insert_id)
-        
+
             skip = False
             # remove unneeded surfaces for Rings: BP for even rings and HP for odd rings
             if sname.startswith('Ring'):
@@ -537,14 +611,25 @@ def main():
                         if sname.endswith(cname):
                             sname = "Channel%d" % j
                             break
-
-                if "_rInt" in sname or "_rExt" in sname:
-                    skip = True
-                if "_IrInt" in sname or "_IrExt" in sname:
-                    skip = True
-                if "_iRint" in sname or "_iRext" in sname:
-                    skip = True
                 
+                # TODO make it more genral
+                # so far assume only one insert and  insert is the 1st compound
+                if compound:
+                    if sname.startswith(compound[0]):
+                        if "_rInt" in sname or "_rExt" in sname:
+                            skip = True
+                        if "_IrInt" in sname or "_IrExt" in sname:
+                            skip = True
+                        if "_iRint" in sname or "_iRext" in sname:
+                            skip = True
+                else:
+                    if "_rInt" in sname or "_rExt" in sname:
+                        skip = True
+                    if "_IrInt" in sname or "_IrExt" in sname:
+                        skip = True
+                    if "_iRint" in sname or "_iRext" in sname:
+                        skip = True
+
             # if hideIsolant remove "iRint"|"iRext" in Bcs otherwise sname: do not record physical surface for Interface
             if hideIsolant:
                 if 'IrInt' in sname or 'IrExt' in sname:
@@ -565,6 +650,7 @@ def main():
                     # print("groupBC: skip ", sname)
                     skip = True
 
+            print("name=", group.attrib['name'], group.attrib['dimension'], group.attrib['count'], "sname=%s" % sname, "skip=", skip)
             if not skip:
                 if not sname in bctags: 
                     bctags[sname] = indices
