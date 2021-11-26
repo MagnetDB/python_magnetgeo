@@ -74,7 +74,8 @@ def Helix_Gmsh(cad, gname, is2D, verbose):
         htype = "HR"
         angle = cad.shape.angle
         nshapes = nturns * (360 / float(angle))
-        print("shapes: ", nshapes, math.floor(nshapes), math.ceil(nshapes))
+        if verbose:
+            print("shapes: ", nshapes, math.floor(nshapes), math.ceil(nshapes))
                     
         nshapes = (lambda x: math.ceil(x) if math.ceil(x) - x < x - math.floor(x) else math.floor(x))(nshapes)
         nInsulators = int(nshapes)
@@ -345,12 +346,14 @@ def main():
         tr_elements = tree.xpath('//geometry')
         for i,group in enumerate(tr_elements):
             gname = group.attrib['name']
-            print("gname=", gname)
+            if args.debug:
+                print("gname=", gname)
             gmsh.model.add(gname)
             for child in group:
                 if 'format' in child.attrib:
                     fformat = child.attrib['format']
-                    print("format:" , child.attrib['format'])
+                    if args.debug:
+                        print("format:" , child.attrib['format'])
 
                 # CAD is stored in a separate file
                 if 'file' in child.attrib and child.attrib['file'] != "":
@@ -412,24 +415,24 @@ def main():
             # print("cad type", type(cad))
             # TODO get solid names (see Salome HiFiMagnet plugin)
             if isinstance(cad, MSite):
-                print("load cfg MSite")
+                if args.verbose: print("load cfg MSite")
                 (compound, _names, NHelices, NChannels, NIsolants) = MSite_Gmsh(cad, gname, is2D, args.verbose)
                 solid_names += _names
             elif isinstance(cad, Bitter):
-                print("load cfg Bitter")
+                if args.verbose: print("load cfg Bitter")
                 solid_names += Bitter_Gmsh(cad, gname, is2D, args.verbose)
             elif isinstance(cad, Supra):
-                print("load cfg Supra")
+                if args.verbose: print("load cfg Supra")
                 solid_names += Supra_Gmsh(cad, gname, is2D, args.verbose)
             elif isinstance(cad, Insert):
-                print("load cfg Insert")
+                if args.verbose: print("load cfg Insert")
                 (_names, NHelices, NChannels, NIsolants) = Insert_Gmsh(cad, gname, is2D, args.verbose)
                 solid_names += _names
             elif isinstance(cad, Helix):
-                print("load cfg Helix")
+                if args.verbose: print("load cfg Helix")
                 solid_names += Helix_Gmsh(cad, gname, is2D, args.verbose)
             else:
-                print("unsupported type of cad")
+                print("unsupported type of cad %s" % type(cad))
                 sys.exit(1)
 
             if "Air" in args.input_file:
@@ -545,7 +548,8 @@ def main():
         #print("group:", group.keys())
 
         ## dimension: "solid", "face", "edge"
-        print("name=", group.attrib['name'], group.attrib['dimension'], group.attrib['count'])
+        if args.debug:
+            print("name=", group.attrib['name'], group.attrib['dimension'], group.attrib['count'])
 
         indices=[]
         if group.attrib['dimension'] == GeomParams['Face'][1]:
@@ -650,7 +654,8 @@ def main():
                     # print("groupBC: skip ", sname)
                     skip = True
 
-            print("name=", group.attrib['name'], group.attrib['dimension'], group.attrib['count'], "sname=%s" % sname, "skip=", skip)
+            if args.debug:
+                print("name=", group.attrib['name'], group.attrib['dimension'], group.attrib['count'], "sname=%s" % sname, "skip=", skip)
             if not skip:
                 if not sname in bctags: 
                     bctags[sname] = indices
