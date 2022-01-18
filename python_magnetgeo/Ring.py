@@ -23,7 +23,7 @@ class Ring(yaml.YAMLObject):
 
     yaml_tag = 'Ring'
 
-    def __init__(self, name='', r=[], z=[], n=0, angle=0, BPside=True, fillets=False, orientation=0):
+    def __init__(self, name='', r=[], z=[], n=0, angle=0, BPside=True, fillets=False):
         """
         initialize object
         """
@@ -34,13 +34,12 @@ class Ring(yaml.YAMLObject):
         self.angle = angle
         self.BPside = BPside
         self.fillets = fillets
-        self.orientation = 0
 
     def __repr__(self):
         """
         representation of object
         """
-        return "%s(name=%r, r=%r, z=%r, n=%r, angle=%r, BPside=%r, fillets=%r, orientation=%r)" % \
+        return "%s(name=%r, r=%r, z=%r, n=%r, angle=%r, BPside=%r, fillets=%r)" % \
                (self.__class__.__name__,
                 self.name,
                 self.r,
@@ -48,8 +47,7 @@ class Ring(yaml.YAMLObject):
                 self.n,
                 self.angle,
                 self.BPside,
-                self.fillets,
-                self.orientation
+                self.fillets
                )
 
     def dump(self):
@@ -81,7 +79,6 @@ class Ring(yaml.YAMLObject):
         self.angle = data.angle
         self.BPside = data.BPside
         self.fillets = data.fillets
-        self.orientation = data.orientation
 
     def to_json(self):
         """
@@ -176,8 +173,7 @@ def Ring_constructor(loader, node):
     angle = values["angle"]
     BPside = values["BPside"]
     fillets = values["fillets"]
-    orientation = values["orientation"]
-    return Ring(name, r, z, n, angle, BPside, fillets, orientation)
+    return Ring(name, r, z, n, angle, BPside, fillets)
 
 yaml.add_constructor(u'!Ring', Ring_constructor)
 
