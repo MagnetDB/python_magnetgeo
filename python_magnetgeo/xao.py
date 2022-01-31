@@ -33,6 +33,8 @@ from .MSite import *
 
 import math
 
+from python_magnetsetup.file_utils import MyOpen, search_paths
+
 def Supra_Gmsh(cad, gname, is2D, verbose):
     """ Load Supra cad """
     #print("Supra_Gmsh:", cad)
@@ -104,7 +106,7 @@ def Helix_Gmsh(cad, gname, is2D, verbose):
         print("Helix_Gmsh[%s]:" % htype, " solid_names %d", len(solid_names))      
     return solid_names
 
-def Insert_Gmsh(cad, gname, is2D, verbose):
+def Insert_Gmsh(MyEnv, cad, gname, is2D, verbose):
     """ Load Insert """
     # print("Insert_Gmsh:", cad)
     solid_names = []
@@ -115,7 +117,7 @@ def Insert_Gmsh(cad, gname, is2D, verbose):
     for i,helix in enumerate(cad.Helices):
         hHelix = None
         Ninsulators = 0
-        with open(helix+".yaml", 'r') as f:
+        with MyOpen(helix+".yaml", 'r', paths=search_paths(MyEnv, "geom")) as f:
             hHelix = yaml.load(f, Loader=yaml.FullLoader)
             h_solid_names = Helix_Gmsh(hHelix, gname, is2D, verbose)
             for k,sname in enumerate(h_solid_names):
@@ -129,7 +131,7 @@ def Insert_Gmsh(cad, gname, is2D, verbose):
     
     if not is2D:
         for i,Lead in enumerate(cad.CurrentLeads):
-            with open(Lead+".yaml", 'r') as f:
+            with MyOpen(Lead+".yaml", 'r', paths=search_paths(MyEnv, "geom")) as f:
                 clLead = yaml.load(f, Loader=yaml.FullLoader)
                 prefix = 'o'
                 outerLead_exist = True
@@ -142,7 +144,7 @@ def Insert_Gmsh(cad, gname, is2D, verbose):
         print("Insert_Gmsh: solid_names %d", len(solid_names))      
     return (solid_names, NHelices, NChannels, NIsolants)
 
-def Magnet_Gmsh(cad, gname, is2D, verbose):
+def Magnet_Gmsh(MyEnv, cad, gname, is2D, verbose):
     """ Load Magnet cad """
     # print("Magnet_Gmsh:", cad)
     solid_names = []
@@ -151,7 +153,7 @@ def Magnet_Gmsh(cad, gname, is2D, verbose):
     NIsolants = []
 
     cfgfile = cad + ".yaml"
-    with open(cfgfile, 'r') as cfgdata:
+    with MyOpen(cfgfile, 'r', paths=search_paths(MyEnv, "geom")) as cfgdata:
         pcad = yaml.load(cfgdata, Loader = yaml.FullLoader)
         pname = pcad.name
         if isinstance(pcad, Bitter):
@@ -167,7 +169,7 @@ def Magnet_Gmsh(cad, gname, is2D, verbose):
             NIsolants.append(0)
             # TODO prepend name with part name
         elif isinstance(pcad, Insert):
-            (_names,_NHelices, _NChannels, _NIsolants) = Insert_Gmsh(pcad, pname, is2D, verbose)
+            (_names,_NHelices, _NChannels, _NIsolants) = Insert_Gmsh(MyEnv, pcad, pname, is2D, verbose)
             solid_names += _names
             NHelices.append(_NHelices)
             NChannels.append(_NChannels)
@@ -177,7 +179,7 @@ def Magnet_Gmsh(cad, gname, is2D, verbose):
         print("Magnet_Gmsh:", cad, " Done", "solids %d " % len(solid_names))
     return (solid_names, NHelices, NChannels, NIsolants)
 
-def MSite_Gmsh(cad, gname, is2D, verbose):
+def MSite_Gmsh(MyEnv, cad, gname, is2D, verbose):
     """ Load MSite cad """
     # print("MSite_Gmsh:", cad)
     
@@ -188,7 +190,7 @@ def MSite_Gmsh(cad, gname, is2D, verbose):
     NIsolants = []
 
     if isinstance(cad.magnets, str):
-        (_names,_NHelices, _NChannels, _NIsolants)= Magnet_Gmsh(cad.magnets, gname, is2D, verbose)
+        (_names,_NHelices, _NChannels, _NIsolants)= Magnet_Gmsh(MyEnv, cad.magnets, gname, is2D, verbose)
         compound.append(cad.magnets)
         solid_names += _names
         NHelices += _NHelices
@@ -197,7 +199,7 @@ def MSite_Gmsh(cad, gname, is2D, verbose):
         # print("MSite_Gmsh: cad.magnets=", cad.magnets, "solids=%d" % len(solid_names))
     elif isinstance(cad.magnets, list):
         for magnet in cad.magnets:
-            (_names, _NHelices, _NChannels, _NIsolants) = Magnet_Gmsh(magnet, gname, is2D, verbose)
+            (_names, _NHelices, _NChannels, _NIsolants) = Magnet_Gmsh(MyEnv, magnet, gname, is2D, verbose)
             compound.append(magnet)
             solid_names += _names
             NHelices += _NHelices
@@ -207,7 +209,7 @@ def MSite_Gmsh(cad, gname, is2D, verbose):
     elif isinstance(cad.magnets, dict):
         for key in cad.magnets:
             if isinstance(cad.magnets[key], str):
-                (_names, _NHelices, _NChannels, _NIsolants) = Magnet_Gmsh(cad.magnets[key], gname, is2D, verbose)
+                (_names, _NHelices, _NChannels, _NIsolants) = Magnet_Gmsh(MyEnv, cad.magnets[key], gname, is2D, verbose)
                 compound.append(cad.magnets[key])
                 solid_names += _names
                 NHelices += _NHelices
@@ -216,7 +218,7 @@ def MSite_Gmsh(cad, gname, is2D, verbose):
                 # print("MSite_Gmsh: cad.magnets[key]=", cad.magnets[key], "solids=%d" % len(solid_names))
             elif isinstance(cad.magnets[key], list):
                 for mpart in cad.magnets[key]:
-                    (_names, NHelices, NChannels, NIsolants) = Magnet_Gmsh(mpart, gname, is2D, verbose)
+                    (_names, NHelices, NChannels, NIsolants) = Magnet_Gmsh(MyEnv, mpart, gname, is2D, verbose)
                     compound.append(mpart)
                     solid_names += _names
                     NHelices += _NHelices
@@ -236,6 +238,7 @@ def main():
     parser.add_argument("input_file")
     parser.add_argument("--debug", help="activate debug", action='store_true')
     parser.add_argument("--verbose", help="activate verbose", action='store_true')
+    parser.add_argument("--env", help="load settings.env", action="store_true")
     parser.add_argument("--wd", help="set a working directory", type=str, default="")
 
     subparsers = parser.add_subparsers(title="commands", dest="command", help='sub-command help')
@@ -278,10 +281,18 @@ def main():
     if args.debug:
         print(args)
 
+ 
+    # load appenv
+    from python_magnetsetup.config import appenv
+    MyEnv = None
+    if args.env:
+        MyEnv = appenv()
+
     cwd = os.getcwd()
     if args.wd:
         os.chdir(args.wd)
 
+        
     hideIsolant = False
     groupIsolant = False
     groupLeads = False
@@ -337,7 +348,7 @@ def main():
     cleanup = False
     tree = None
 
-    with open(file, 'r') as f:
+    with MyOpen(file, 'r', paths=search_paths(MyEnv, "cad")) as f:
         tree = etree.parse(f)
         if args.debug:
             print(etree.tostring(tree.getroot()))
@@ -410,13 +421,13 @@ def main():
 
     compound = []
     if cfgfile :
-        with open(cfgfile, 'r') as cfgdata:
+        with MyOpen(cfgfile, 'r', paths=search_paths(MyEnv, "geom")) as cfgdata:
             cad = yaml.load(cfgdata, Loader = yaml.FullLoader)
             # print("cad type", type(cad))
             # TODO get solid names (see Salome HiFiMagnet plugin)
             if isinstance(cad, MSite):
                 if args.verbose: print("load cfg MSite")
-                (compound, _names, NHelices, NChannels, NIsolants) = MSite_Gmsh(cad, gname, is2D, args.verbose)
+                (compound, _names, NHelices, NChannels, NIsolants) = MSite_Gmsh(MyEnv, cad, gname, is2D, args.verbose)
                 solid_names += _names
             elif isinstance(cad, Bitter):
                 if args.verbose: print("load cfg Bitter")
@@ -426,7 +437,7 @@ def main():
                 solid_names += Supra_Gmsh(cad, gname, is2D, args.verbose)
             elif isinstance(cad, Insert):
                 if args.verbose: print("load cfg Insert")
-                (_names, NHelices, NChannels, NIsolants) = Insert_Gmsh(cad, gname, is2D, args.verbose)
+                (_names, NHelices, NChannels, NIsolants) = Insert_Gmsh(MyEnv, cad, gname, is2D, args.verbose)
                 solid_names += _names
             elif isinstance(cad, Helix):
                 if args.verbose: print("load cfg Helix")

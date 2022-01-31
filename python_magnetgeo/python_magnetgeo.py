@@ -5,6 +5,8 @@ from .Insert import *
 import math
 import os
 
+from python_magnetsetup.file_utils import MyOpen, search_paths
+
 def get_main_characteristics(cad: Insert, MyEnv = None ):
     """
     return main characteristics for Insert
@@ -21,16 +23,6 @@ def get_main_characteristics(cad: Insert, MyEnv = None ):
     Sh
     """
     
-    from python_magnetsetup.file_utils import MyOpen
-    search_paths = [ os.getcwd() ]
-    if MyEnv:
-        default_paths={
-            "geom" : MyEnv.yaml_repo,
-            "cad" : MyEnv.cad_repo,
-            "mesh" : MyEnv.mesh_repo
-        }
-        search_paths.append( default_paths["geom"]] )
-    
     NHelices = len(cad.Helices)
     NRings = len(cad.Rings)
     NChannels = NHelices+1 # TODO check this value if insert contains HR 
@@ -46,7 +38,7 @@ def get_main_characteristics(cad: Insert, MyEnv = None ):
     Sh = []
     for i,helix in enumerate(cad.Helices):
         hhelix = None
-        with MyOpen(helix+".yaml", 'r', paths=search_paths) as f:
+        with MyOpen(helix+".yaml", 'r', paths=search_paths(MyEnv, "geom")) as f:
             hhelix = yaml.load(f, Loader = yaml.FullLoader)
         n_sections = len(hhelix.axi.turns)
         Nsections.append(n_sections)
@@ -90,22 +82,12 @@ def get_cut_characteristics(cad: Insert, MyEnv = None):
     NPitch
     """
     
-    from python_magnetsetup.file_utils import MyOpen
-    search_paths = [ os.getcwd() ]
-    if MyEnv:
-        default_paths={
-            "geom" : MyEnv.yaml_repo,
-            "cad" : MyEnv.cad_repo,
-            "mesh" : MyEnv.mesh_repo
-        }
-        search_paths.append( default_paths["geom"]] )
-    
     NHelices = len(cad.Helices)
     Nturns = []
     Pitch = [] 
     for i,helix in enumerate(cad.Helices):
         hhelix = None
-        with MyOpen(helix+".yaml", 'r', paths=search_paths) as f:
+        with MyOpen(helix+".yaml", 'r', paths=search_paths(MyEnv, "geom")) as f:
             hhelix = yaml.load(f, Loader = yaml.FullLoader)
         Nturns.append(hhelix.axi.turns)
         Pitch.append(hhelix.axi.pitch)

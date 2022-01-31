@@ -7,6 +7,8 @@ import yaml
 from . import Insert
 from . import SupraStructure
 
+from python_magnetsetup.file_utils import MyOpen, search_paths
+
 def main():
     """Console script for python_magnetgeo."""
     parser = argparse.ArgumentParser()
@@ -14,6 +16,7 @@ def main():
     parser.add_argument("filename", help="name of the model to be loaded", type=str, nargs='?' )
     parser.add_argument("--tojson", help="convert to json", action='store_true')
     
+    parser.add_argument("--env", help="load settings.env", action="store_true")
     parser.add_argument("--wd", help="set a working directory", type=str, default="")
     parser.add_argument("--air", help="activate air generation", nargs=2, type=float, metavar=('infty_Rratio', 'infty_Zratio'))
     parser.add_argument("--gmsh", help="save to gmsh geofile", action="store_true")
@@ -26,6 +29,12 @@ def main():
 
     print("Arguments: " + str(args))
     
+    # load appenv
+    from python_magnetsetup.config import appenv
+    MyEnv = None
+    if args.env:
+        MyEnv = appenv()
+
     cwd = os.getcwd()
     if args.wd:
         os.chdir(args.wd)
@@ -36,12 +45,12 @@ def main():
 
     site = None
     if ext == "yaml":
-        with open(args.filename, 'r') as f:
+        with MyOpen(args.filename, 'r', paths=search_paths(MyEnv, "geom")) as f:
             site = yaml.load(f, Loader=yaml.FullLoader)
             print("site=",site)
 
     elif ext == "json":
-        with open(args.filename, 'r') as f:
+        with MyOpen(args.filename, 'r', paths=search_paths(MyEnv, "geom")) as f:
             site = SupraStructure.HTSinsert()
             site.loadCfg(args.filename)
 
