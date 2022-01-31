@@ -3,8 +3,9 @@
 from .Insert import *
 
 import math
+import os
 
-def get_main_characteristics(cad: Insert):
+def get_main_characteristics(cad: Insert, MyEnv = None ):
     """
     return main characteristics for Insert
     NHelices
@@ -19,6 +20,16 @@ def get_main_characteristics(cad: Insert):
     Dh, 
     Sh
     """
+    
+    from python_magnetsetup.file_utils import MyOpen
+    search_paths = [ os.getcwd() ]
+    if MyEnv:
+        default_paths={
+            "geom" : MyEnv.yaml_repo,
+            "cad" : MyEnv.cad_repo,
+            "mesh" : MyEnv.mesh_repo
+        }
+        search_paths.append( default_paths["geom"]] )
     
     NHelices = len(cad.Helices)
     NRings = len(cad.Rings)
@@ -35,7 +46,7 @@ def get_main_characteristics(cad: Insert):
     Sh = []
     for i,helix in enumerate(cad.Helices):
         hhelix = None
-        with open(helix+".yaml", 'r') as f:
+        with MyOpen(helix+".yaml", 'r', paths=search_paths) as f:
             hhelix = yaml.load(f, Loader = yaml.FullLoader)
         n_sections = len(hhelix.axi.turns)
         Nsections.append(n_sections)
@@ -72,19 +83,29 @@ def get_main_characteristics(cad: Insert):
 
     return (NHelices, NRings, NChannels, Nsections, R1, R2, Z1, Z2, Zmin, Zmax, Dh, Sh)
 
-def get_cut_characteristics(cad: Insert):
+def get_cut_characteristics(cad: Insert, MyEnv = None):
     """
     return cut characteristics for Insert
     Nturns
     NPitch
     """
     
+    from python_magnetsetup.file_utils import MyOpen
+    search_paths = [ os.getcwd() ]
+    if MyEnv:
+        default_paths={
+            "geom" : MyEnv.yaml_repo,
+            "cad" : MyEnv.cad_repo,
+            "mesh" : MyEnv.mesh_repo
+        }
+        search_paths.append( default_paths["geom"]] )
+    
     NHelices = len(cad.Helices)
     Nturns = []
     Pitch = [] 
     for i,helix in enumerate(cad.Helices):
         hhelix = None
-        with open(helix+".yaml", 'r') as f:
+        with MyOpen(helix+".yaml", 'r', paths=search_paths) as f:
             hhelix = yaml.load(f, Loader = yaml.FullLoader)
         Nturns.append(hhelix.axi.turns)
         Pitch.append(hhelix.axi.pitch)
