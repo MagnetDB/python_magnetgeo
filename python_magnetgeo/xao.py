@@ -117,12 +117,17 @@ def Insert_Gmsh(MyEnv, cad, gname, is2D, verbose):
     for i,helix in enumerate(cad.Helices):
         hHelix = None
         Ninsulators = 0
-        with MyOpen(helix+".yaml", 'r', paths=search_paths(MyEnv, "geom")) as f:
-            hHelix = yaml.load(f, Loader=yaml.FullLoader)
-            h_solid_names = Helix_Gmsh(hHelix, gname, is2D, verbose)
-            for k,sname in enumerate(h_solid_names):
-                h_solid_names[k] =  "H%d_%s" % (i+1, sname)
-            solid_names += h_solid_names
+        if MyEnv:
+            with MyOpen(helix+".yaml", 'r', paths=search_paths(MyEnv, "geom")) as f:
+                hHelix = yaml.load(f, Loader=yaml.FullLoader)
+        else:
+            with open(helix+".yaml", 'r', paths=search_paths(MyEnv, "geom")) as f:
+                hHelix = yaml.load(f, Loader=yaml.FullLoader)
+            
+        h_solid_names = Helix_Gmsh(hHelix, gname, is2D, verbose)
+        for k,sname in enumerate(h_solid_names):
+            h_solid_names[k] =  "H%d_%s" % (i+1, sname)
+        solid_names += h_solid_names
     
     for i,ring in enumerate(cad.Rings):
         if verbose: 
@@ -131,14 +136,18 @@ def Insert_Gmsh(MyEnv, cad, gname, is2D, verbose):
     
     if not is2D:
         for i,Lead in enumerate(cad.CurrentLeads):
-            with MyOpen(Lead+".yaml", 'r', paths=search_paths(MyEnv, "geom")) as f:
-                clLead = yaml.load(f, Loader=yaml.FullLoader)
-                prefix = 'o'
-                outerLead_exist = True
-                if isinstance(clLead, InnerCurrentLead):
-                    prefix = 'i'
-                    innerLead_exist = True                        
-                solid_names.append("%sL%d" % (prefix,(i+1)) )
+            if MyEnv:
+                with MyOpen(Lead+".yaml", 'r', paths=search_paths(MyEnv, "geom")) as f:
+                    clLead = yaml.load(f, Loader=yaml.FullLoader)
+            else:
+                with open(Lead+".yaml", 'r') as f:
+                    clLead = yaml.load(f, Loader=yaml.FullLoader)
+            prefix = 'o'
+            outerLead_exist = True
+            if isinstance(clLead, InnerCurrentLead):
+                prefix = 'i'
+                innerLead_exist = True                        
+            solid_names.append("%sL%d" % (prefix,(i+1)) )
 
     if verbose:
         print("Insert_Gmsh: solid_names %d", len(solid_names))      
@@ -153,28 +162,33 @@ def Magnet_Gmsh(MyEnv, cad, gname, is2D, verbose):
     NIsolants = []
 
     cfgfile = cad + ".yaml"
-    with MyOpen(cfgfile, 'r', paths=search_paths(MyEnv, "geom")) as cfgdata:
-        pcad = yaml.load(cfgdata, Loader = yaml.FullLoader)
-        pname = pcad.name
-        if isinstance(pcad, Bitter):
-            solid_names += Bitter_Gmsh(pcad, pname, is2D, verbose)
-            NHelices.append(0)
-            NChannels.append(0)
-            NIsolants.append(0)
-            # TODO prepend name with part name
-        elif isinstance(pcad, Supra):
-            solid_names += Supra_Gmsh(cad, pname, is2D, verbose)
-            NHelices.append(0)
-            NChannels.append(0)
-            NIsolants.append(0)
-            # TODO prepend name with part name
-        elif isinstance(pcad, Insert):
-            (_names,_NHelices, _NChannels, _NIsolants) = Insert_Gmsh(MyEnv, pcad, pname, is2D, verbose)
-            solid_names += _names
-            NHelices.append(_NHelices)
-            NChannels.append(_NChannels)
-            NIsolants.append(_NIsolants)
-            # TODO prepend name with part name
+    if MyEnv:
+        with MyOpen(cfgfile, 'r', paths=search_paths(MyEnv, "geom")) as cfgdata:
+            pcad = yaml.load(cfgdata, Loader = yaml.FullLoader)
+            pname = pcad.name
+    else:
+        with open(cfgfile, 'r') as cfgdata:
+            pcad = yaml.load(cfgdata, Loader = yaml.FullLoader)
+            pname = pcad.name
+    if isinstance(pcad, Bitter):
+        solid_names += Bitter_Gmsh(pcad, pname, is2D, verbose)
+        NHelices.append(0)
+        NChannels.append(0)
+        NIsolants.append(0)
+        # TODO prepend name with part name
+    elif isinstance(pcad, Supra):
+        solid_names += Supra_Gmsh(cad, pname, is2D, verbose)
+        NHelices.append(0)
+        NChannels.append(0)
+        NIsolants.append(0)
+        # TODO prepend name with part name
+    elif isinstance(pcad, Insert):
+        (_names,_NHelices, _NChannels, _NIsolants) = Insert_Gmsh(MyEnv, pcad, pname, is2D, verbose)
+        solid_names += _names
+        NHelices.append(_NHelices)
+        NChannels.append(_NChannels)
+        NIsolants.append(_NIsolants)
+        # TODO prepend name with part name
     if verbose:
         print("Magnet_Gmsh:", cad, " Done", "solids %d " % len(solid_names))
     return (solid_names, NHelices, NChannels, NIsolants)
@@ -348,27 +362,31 @@ def main():
     cleanup = False
     tree = None
 
-    with MyOpen(file, 'r', paths=search_paths(MyEnv, "cad")) as f:
-        tree = etree.parse(f)
+    if MyEnv:
+        with MyOpen(file, 'r', paths=search_paths(MyEnv, "cad")) as f:
+            tree = etree.parse(f)
+    else:
+        with open(file, 'r') as f:
+            tree = etree.parse(f)
+    if args.debug:
+        print(etree.tostring(tree.getroot()))
+
+    # get geometry 'name' and shape 'format', 'file'
+    tr_elements = tree.xpath('//geometry')
+    for i,group in enumerate(tr_elements):
+        gname = group.attrib['name']
         if args.debug:
-            print(etree.tostring(tree.getroot()))
+            print("gname=", gname)
+        gmsh.model.add(gname)
+        for child in group:
+            if 'format' in child.attrib:
+                fformat = child.attrib['format']
+                if args.debug:
+                    print("format:" , child.attrib['format'])
 
-        # get geometry 'name' and shape 'format', 'file'
-        tr_elements = tree.xpath('//geometry')
-        for i,group in enumerate(tr_elements):
-            gname = group.attrib['name']
-            if args.debug:
-                print("gname=", gname)
-            gmsh.model.add(gname)
-            for child in group:
-                if 'format' in child.attrib:
-                    fformat = child.attrib['format']
-                    if args.debug:
-                        print("format:" , child.attrib['format'])
-
-                # CAD is stored in a separate file
-                if 'file' in child.attrib and child.attrib['file'] != "":
-                    gfile = child.attrib['file']
+            # CAD is stored in a separate file
+            if 'file' in child.attrib and child.attrib['file'] != "":
+                gfile = child.attrib['file']
                 
             
     if not gfile:
@@ -421,35 +439,40 @@ def main():
 
     compound = []
     if cfgfile :
-        with MyOpen(cfgfile, 'r', paths=search_paths(MyEnv, "geom")) as cfgdata:
-            cad = yaml.load(cfgdata, Loader = yaml.FullLoader)
-            # print("cad type", type(cad))
-            # TODO get solid names (see Salome HiFiMagnet plugin)
-            if isinstance(cad, MSite):
-                if args.verbose: print("load cfg MSite")
-                (compound, _names, NHelices, NChannels, NIsolants) = MSite_Gmsh(MyEnv, cad, gname, is2D, args.verbose)
-                solid_names += _names
-            elif isinstance(cad, Bitter):
-                if args.verbose: print("load cfg Bitter")
-                solid_names += Bitter_Gmsh(cad, gname, is2D, args.verbose)
-            elif isinstance(cad, Supra):
-                if args.verbose: print("load cfg Supra")
-                solid_names += Supra_Gmsh(cad, gname, is2D, args.verbose)
-            elif isinstance(cad, Insert):
-                if args.verbose: print("load cfg Insert")
-                (_names, NHelices, NChannels, NIsolants) = Insert_Gmsh(MyEnv, cad, gname, is2D, args.verbose)
-                solid_names += _names
-            elif isinstance(cad, Helix):
-                if args.verbose: print("load cfg Helix")
-                solid_names += Helix_Gmsh(cad, gname, is2D, args.verbose)
-            else:
-                print("unsupported type of cad %s" % type(cad))
-                sys.exit(1)
+        if MyEnv:
+            with MyOpen(cfgfile, 'r', paths=search_paths(MyEnv, "geom")) as cfgdata:
+                cad = yaml.load(cfgdata, Loader = yaml.FullLoader)
+        else:
+            with open(cfgfile, 'r') as cfgdata:
+                cad = yaml.load(cfgdata, Loader = yaml.FullLoader)
 
-            if "Air" in args.input_file:
-                solid_names.append("Air")
-                if hideIsolant:
-                    raise Exception("--hide Isolants cannot be used since cad contains Air region")
+        # print("cad type", type(cad))
+        # TODO get solid names (see Salome HiFiMagnet plugin)
+        if isinstance(cad, MSite):
+            if args.verbose: print("load cfg MSite")
+            (compound, _names, NHelices, NChannels, NIsolants) = MSite_Gmsh(MyEnv, cad, gname, is2D, args.verbose)
+            solid_names += _names
+        elif isinstance(cad, Bitter):
+            if args.verbose: print("load cfg Bitter")
+            solid_names += Bitter_Gmsh(cad, gname, is2D, args.verbose)
+        elif isinstance(cad, Supra):
+            if args.verbose: print("load cfg Supra")
+            solid_names += Supra_Gmsh(cad, gname, is2D, args.verbose)
+        elif isinstance(cad, Insert):
+            if args.verbose: print("load cfg Insert")
+            (_names, NHelices, NChannels, NIsolants) = Insert_Gmsh(MyEnv, cad, gname, is2D, args.verbose)
+            solid_names += _names
+        elif isinstance(cad, Helix):
+            if args.verbose: print("load cfg Helix")
+            solid_names += Helix_Gmsh(cad, gname, is2D, args.verbose)
+        else:
+            print("unsupported type of cad %s" % type(cad))
+            sys.exit(1)
+
+        if "Air" in args.input_file:
+            solid_names.append("Air")
+            if hideIsolant:
+                raise Exception("--hide Isolants cannot be used since cad contains Air region")
     # print("solid_names[%d]:" % len(solid_names), solid_names)
 
     # print("GeomParams['Solid'][0]:", GeomParams['Solid'][0])

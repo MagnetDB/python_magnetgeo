@@ -20,7 +20,7 @@ def get_main_characteristics(cad: Insert, MyEnv = None ):
     Zmin, 
     Zmax, 
     Dh, 
-    Sh
+    Sh,
     """
     
     NHelices = len(cad.Helices)
@@ -38,8 +38,12 @@ def get_main_characteristics(cad: Insert, MyEnv = None ):
     Sh = []
     for i,helix in enumerate(cad.Helices):
         hhelix = None
-        with MyOpen(helix+".yaml", 'r', paths=search_paths(MyEnv, "geom")) as f:
-            hhelix = yaml.load(f, Loader = yaml.FullLoader)
+        if MyEnv:
+            with MyOpen(helix+".yaml", 'r', paths=search_paths(MyEnv, "geom")) as f:
+                hhelix = yaml.load(f, Loader = yaml.FullLoader)
+        else:
+            with open(helix+".yaml", 'r') as f:
+                hhelix = yaml.load(f, Loader = yaml.FullLoader)
         n_sections = len(hhelix.axi.turns)
         Nsections.append(n_sections)
         Nturns_h.append(hhelix.axi.turns)
@@ -87,8 +91,12 @@ def get_cut_characteristics(cad: Insert, MyEnv = None):
     Pitch = [] 
     for i,helix in enumerate(cad.Helices):
         hhelix = None
-        with MyOpen(helix+".yaml", 'r', paths=search_paths(MyEnv, "geom")) as f:
-            hhelix = yaml.load(f, Loader = yaml.FullLoader)
+        if MyEnv:
+            with MyOpen(helix+".yaml", 'r', paths=search_paths(MyEnv, "geom")) as f:
+                hhelix = yaml.load(f, Loader = yaml.FullLoader)
+        else:
+            with open(helix+".yaml", 'r') as f:
+                hhelix = yaml.load(f, Loader = yaml.FullLoader)
         Nturns.append(hhelix.axi.turns)
         Pitch.append(hhelix.axi.pitch)
     

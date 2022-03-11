@@ -45,19 +45,28 @@ def main():
 
     site = None
     if ext == "yaml":
-        with MyOpen(args.filename, 'r', paths=search_paths(MyEnv, "geom")) as f:
-            site = yaml.load(f, Loader=yaml.FullLoader)
-            print("site=",site)
+        if MyEnv:
+            with MyOpen(args.filename, 'r', paths=search_paths(MyEnv, "geom")) as f:
+                site = yaml.load(f, Loader=yaml.FullLoader)
+        else:
+            with open(args.filename, 'r') as f:
+                site = yaml.load(f, Loader=yaml.FullLoader)
+        print("site=",site)
 
     elif ext == "json":
-        with MyOpen(args.filename, 'r', paths=search_paths(MyEnv, "geom")) as f:
-            site = SupraStructure.HTSinsert()
-            site.loadCfg(args.filename)
+        if MyEnv:
+            with MyOpen(args.filename, 'r', paths=search_paths(MyEnv, "geom")) as f:
+                site = SupraStructure.HTSinsert()
+                site.loadCfg(args.filename)
+        else:
+            with open(args.filename, 'r') as f:
+                site = SupraStructure.HTSinsert()
+                site.loadCfg(args.filename)
 
-            print("HTS insert: ", "R0=%g m" % site.getR0(), 
-                  "R1=%g m" % site.getR1(), 
-                  "Z0=%g" % (site.getZ0()-site.getH()/2.),
-                  "Z1=%g" % (site.getZ0()+site.getH()/2.))
+        print("HTS insert: ", "R0=%g m" % site.getR0(), 
+                "R1=%g m" % site.getR1(), 
+                "Z0=%g" % (site.getZ0()-site.getH()/2.),
+                "Z1=%g" % (site.getZ0()+site.getH()/2.))
     else:
         print("unsupported extension: %s" % ext)
         sys.exit(1)
