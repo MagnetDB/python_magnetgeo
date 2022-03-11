@@ -121,7 +121,7 @@ def Insert_Gmsh(MyEnv, cad, gname, is2D, verbose):
             with MyOpen(helix+".yaml", 'r', paths=search_paths(MyEnv, "geom")) as f:
                 hHelix = yaml.load(f, Loader=yaml.FullLoader)
         else:
-            with open(helix+".yaml", 'r', paths=search_paths(MyEnv, "geom")) as f:
+            with open(helix+".yaml", 'r') as f:
                 hHelix = yaml.load(f, Loader=yaml.FullLoader)
             
         h_solid_names = Helix_Gmsh(hHelix, gname, is2D, verbose)
@@ -466,8 +466,7 @@ def main():
             if args.verbose: print("load cfg Helix")
             solid_names += Helix_Gmsh(cad, gname, is2D, args.verbose)
         else:
-            print("unsupported type of cad %s" % type(cad))
-            sys.exit(1)
+            raise Exception(f"unsupported type of cad {type(cad)}")
 
         if "Air" in args.input_file:
             solid_names.append("Air")
