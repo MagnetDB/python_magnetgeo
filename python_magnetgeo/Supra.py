@@ -152,9 +152,7 @@ class Supra(yaml.YAMLObject):
         if detail in ['None', 'dblepancake', 'pancake', 'tape']:
             self.detail = detail
         else:
-            print("Supra/set_Detail: unexpected detail value (detail=%s)" % detail)
-            print("valid values are:" , ['None', 'dblepancake', 'pancake', 'tape'])
-            sys.exit(1)
+            raise Exception(f"Supra/set_Detail: unexpected detail value (detail={detail}) : valid values are: {['None', 'dblepancake', 'pancake', 'tape']}")
     
     def boundingBox(self):
         """

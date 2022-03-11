@@ -68,8 +68,7 @@ def main():
                 "Z0=%g" % (site.getZ0()-site.getH()/2.),
                 "Z1=%g" % (site.getZ0()+site.getH()/2.))
     else:
-        print("unsupported extension: %s" % ext)
-        sys.exit(1)
+        raise RuntimeError(f"python_magnetgeo/cli: unsupported extension {ext}")
 
     if args.tojson:
         if not isinstance(site, SupraStructure.HTSinsert):
@@ -79,10 +78,10 @@ def main():
     if args.air:
         infty_Rratio = args.air[0] #1.5
         if infty_Rratio < 1:
-            raise RuntimeError("Infty_Rratio=%g should be greater than 1"%infty_Rratio)
+            raise RuntimeError(f"Infty_Rratio={infty_Rratio} should be greater than 1")
         infty_Zratio = args.air[1] #2.
         if infty_Zratio < 1:
-            raise RuntimeError("Infty_Zratio=%g should be greater than 1"%infty_Zratio)
+            raise RuntimeError("Infty_Zratio={infty_Zratio} should be greater than 1")
         AirData = (infty_Rratio, infty_Zratio)
 
     if args.gmsh:

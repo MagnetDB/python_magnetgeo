@@ -147,11 +147,9 @@ class MSite(yaml.YAMLObject):
                             (r, z) = Object.boundingBox()
                             (rmin, rmax, zmin, zmax) = cboundingbox(rmin, rmax, zmin, zmax, r, z)
                 else:
-                    print("magnets: unsupported type (%s" % type(self._I.magnets[key]) )
-                    sys.exit(1)
+                    raise Exception(f"magnets: unsupported type {type(self._I.magnets[key])}" )
         else:
-            print("magnets: unsupported type (%s" % type(self._I.magnets) )
-            sys.exit(1)
+            raise Exception(f"magnets: unsupported type {type(self._I.magnets)}" )
 
         return (rmin, rmax, zmin, zmax)
     
@@ -193,8 +191,7 @@ class MSite(yaml.YAMLObject):
                         gmsh_ids.append( Magnet.gmsh(None, debug) )
 
         else:
-            print("magnets: unsupported type (%s" % type(self.magnets) )
-            sys.exit(1)
+            raise Exception(f"magnets: unsupported type {type(self.magnets)}" )
         
         # Now create air
         if AirData:
@@ -209,8 +206,7 @@ class MSite(yaml.YAMLObject):
             print("flat_list:", len(gmsh_ids))
             for sublist in gmsh_ids:
                 if not isinstance(sublist, tuple):
-                    print("flat_list: expect a tuple got a %s" % type(sublist))
-                    sys.exit(1)
+                    raise Exception(f"python_magnetgeo/gmsh: flat_list: expect a tuple got a {type(sublist)}")
                 for elem in sublist:
                     print("elem:", elem, type(elem))
                     if isinstance(elem, list):
@@ -275,8 +271,7 @@ class MSite(yaml.YAMLObject):
                         num += 1
 
         else:
-            print("magnets: unsupported type (%s" % type(self.magnets) )
-            sys.exit(1)
+            raise Exception(f"magnets: unsupported type {type(self.magnets)}" )
         
         # TODO: Air
         if Air_data:
