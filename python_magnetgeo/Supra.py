@@ -334,7 +334,7 @@ def Supra_constructor(loader, node):
     n = values["n"]
     struct = values["struct"]
 
-    return Supra(name, r, z, struct)
+    return Supra(name, r, z, n, struct)
 
 yaml.add_constructor(u'!Supra', Supra_constructor)
 
