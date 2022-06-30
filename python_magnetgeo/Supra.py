@@ -42,7 +42,7 @@ class Supra(yaml.YAMLObject):
         self.z = z
         self.n = n
         self.struct = struct
-        self.detail = 'None' # ['None', 'dblepancake', 'pancake', 'tape']
+        self.detail = 'None' # ['None', 'dblpancake', 'pancake', 'tape']
 
         # TODO: if struct load r,z and n from struct data
         if self.struct:
@@ -149,10 +149,10 @@ class Supra(yaml.YAMLObject):
         """
         returns detail level
         """
-        if detail in ['None', 'dblepancake', 'pancake', 'tape']:
+        if detail in ['None', 'dblpancake', 'pancake', 'tape']:
             self.detail = detail
         else:
-            raise Exception(f"Supra/set_Detail: unexpected detail value (detail={detail}) : valid values are: {['None', 'dblepancake', 'pancake', 'tape']}")
+            raise Exception(f"Supra/set_Detail: unexpected detail value (detail={detail}) : valid values are: {['None', 'dblpancake', 'pancake', 'tape']}")
     
     def boundingBox(self):
         """
@@ -311,9 +311,9 @@ class Supra(yaml.YAMLObject):
         print("TODO: set characteristic lengths")
         """
         lcar = (nougat.getR1() - nougat.R(0) ) / 10.
-        lcar_dp = nougat.dblepancakes[0].getW() / 10.
-        lcar_p = nougat.dblepancakes[0].getPancake().getW() / 10.
-        lcar_tape = nougat.dblepancakes[0].getPancake().getW()/3.
+        lcar_dp = nougat.dblpancakes[0].getW() / 10.
+        lcar_p = nougat.dblpancakes[0].getPancake().getW() / 10.
+        lcar_tape = nougat.dblpancakes[0].getPancake().getW()/3.
 
         gmsh.model.mesh.setSize(gmsh.model.getEntities(0), lcar)
         # Override this constraint on the points of the tapes:

@@ -22,7 +22,7 @@ def main():
     parser.add_argument("--gmsh", help="save to gmsh geofile", action="store_true")
     parser.add_argument("--gmsh_api", help="use gmsh api to create geofile", action="store_true")
     parser.add_argument("--mesh", help="create gmsh mesh with lc charateristics (stored like bcs)", action="extend", nargs='+', type=float)
-    parser.add_argument("--detail", help="select representation mode of HTS", choices=['None', 'dblepancake', 'pancake', 'tape'], default='None')
+    parser.add_argument("--detail", help="select representation mode of HTS", choices=['None', 'dblpancake', 'pancake', 'tape'], default='None')
     parser.add_argument("--show", help="display gmsh geofile when api is on", action="store_true")
     
     args = parser.parse_args()

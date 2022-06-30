@@ -414,11 +414,11 @@ class dblpancake:
         returns tuple of gmsh ids
         ie. (m_id, t_id, e_id, i_id)
         """
-        # print("gmsh/dblepancake")
+        # print("gmsh/dblpancake")
 
         #TODO if detail="pancake" return the pancake as a whole
         #     otherwise do like bellow
-        if detail == "dblepancake":
+        if detail == "dblpancake":
             _id = gmsh.model.occ.addRectangle(self.getR0(), y0, 0, self.getW(), self.getH())
             """
             lcar = self.getW() / 10.
@@ -445,7 +445,7 @@ class HTSinsert:
     """
     HTS insert
 
-    dblepancakes: stack of double pancakes
+    dblpancakes: stack of double pancakes
     isolation: stack of isolations between double pancakes
 
     TODO: add possibility to use 2 different pancake
@@ -458,12 +458,12 @@ class HTSinsert:
         self.r1 = 0
         self.z1 = 0
         self.n = 0
-        self.dblepancakes = []
+        self.dblpancakes = []
         self.isolations = []
         pass
 
-    def setDblepancake(self, dblepancake):
-        self.dblepancakes.append(dblepancake)
+    def setDblepancake(self, dblpancake):
+        self.dblpancakes.append(dblpancake)
 
     def setIsolation(self, isolation):
         self.isolations.append(isolation)
@@ -513,7 +513,7 @@ class HTSinsert:
         returns the number of tapes as a list
         """
         n_ = []
-        for dp in self.dblepancakes:
+        for dp in self.dblpancakes:
             n_.append( dp.getPancake().getN() )
         return n_
 
@@ -523,7 +523,7 @@ class HTSinsert:
         either as an float or a list
         """
         w_tapes = []
-        for dp in self.dblepancakes:
+        for dp in self.dblpancakes:
             w_tapes.append( dp.pancake.getTape().getH() )
         return w_tapes
 
@@ -532,7 +532,7 @@ class HTSinsert:
         returns the width of SC tapes as a list
         """
         w_ = []
-        for dp in self.dblepancakes:
+        for dp in self.dblpancakes:
             w_.append( dp.pancake.getTape().getW_Sc() )
         return w_
 
@@ -541,7 +541,7 @@ class HTSinsert:
         returns the width of isolation between tapes as a list
         """
         w_ = []
-        for dp in self.dblepancakes:
+        for dp in self.dblpancakes:
             w_.append( dp.pancake.getTape().getW_Isolation() )
         return w_
 
@@ -550,7 +550,7 @@ class HTSinsert:
         returns the width of Mandrin as a list
         """
         w_ = []
-        for dp in self.dblepancakes:
+        for dp in self.dblpancakes:
             w_.append( dp.getPancake().getMandrin() )
         return w_
 
@@ -559,7 +559,7 @@ class HTSinsert:
         returns the width of pancake as a list
         """
         w_ = []
-        for dp in self.dblepancakes:
+        for dp in self.dblpancakes:
             w_.append( dp.getPancake().getW() )
         return w_
 
@@ -568,7 +568,7 @@ class HTSinsert:
         returns the width of isolation between pancake as a list
         """
         w_ = []
-        for dp in self.dblepancakes:
+        for dp in self.dblpancakes:
             w_.append( dp.isolation.getW() )
         return w_
 
@@ -577,7 +577,7 @@ class HTSinsert:
         returns the height of isolation between pancake as a list
         """
         w_ = []
-        for dp in self.dblepancakes:
+        for dp in self.dblpancakes:
             w_.append( dp.getIsolation().getR0() )
         return w_
 
@@ -586,26 +586,26 @@ class HTSinsert:
         returns the height of isolation between pancake as a list
         """
         w_ = []
-        for dp in self.dblepancakes:
+        for dp in self.dblpancakes:
             w_.append( dp.getIsolation().getH() )
         return w_
 
 
     def getWDblePancake(self) -> list:
         """
-        returns the width of dblepancake as a list
+        returns the width of dblpancake as a list
         """
         w_ = []
-        for dp in self.dblepancakes:
+        for dp in self.dblpancakes:
             w_.append( dp.getW() )
         return w_
 
     def getHDblePancake(self) -> list:
         """
-        returns the height of dblepancake as a list
+        returns the height of dblpancake as a list
         """
         w_ = []
-        for dp in self.dblepancakes:
+        for dp in self.dblpancakes:
             w_.append( dp.getH() )
         return w_
 
@@ -638,7 +638,7 @@ class HTSinsert:
 
     def getFillingFactor(self) -> float:
         S_tapes = 0
-        for dp in self.dblepancakes:
+        for dp in self.dblpancakes:
             S_tapes += dp.pancake.n * 2 * dp.pancake.tape.w * dp.pancake.tape.h
         return S_tapes / self.getArea()
 
@@ -673,29 +673,29 @@ class HTSinsert:
             if "isolation" in data:
                 myisolation = isolation(data["isolation"])
 
-            if "dblepancakes" in data:
-                print("DblePancake data:", data["dblepancakes"])
+            if "dblpancakes" in data:
+                print("DblePancake data:", data["dblpancakes"])
 
                 # if n defined use the same pancakes and isolations
                 # else loop to load pancake and isolation structure definitions
-                if "n" in data["dblepancakes"]:
+                if "n" in data["dblpancakes"]:
                     z = 0
-                    if "isolation" in data["dblepancakes"]:
-                        dpisolation = isolation(data["dblepancakes"]["isolation"])
+                    if "isolation" in data["dblpancakes"]:
+                        dpisolation = isolation(data["dblpancakes"]["isolation"])
                     else:
                         dpisolation = myisolation
 
-                    self.n = data["dblepancakes"]["n"]
+                    self.n = data["dblpancakes"]["n"]
                     for i in range(self.n):
-                        # print("dblepancake[%d]" % i, "z0= %g [mm]" % z)
-                        dblepancake = dblpancake()
-                        dblepancake.setZ0(z)
-                        dblepancake.setPancake(mypancake)
-                        dblepancake.setIsolation(myisolation)
-                        self.setDblepancake(dblepancake)
+                        # print("dblpancake[%d]" % i, "z0= %g [mm]" % z)
+                        dblpancake = dblpancake()
+                        dblpancake.setZ0(z)
+                        dblpancake.setPancake(mypancake)
+                        dblpancake.setIsolation(myisolation)
+                        self.setDblepancake(dblpancake)
                         self.setIsolation(dpisolation)
 
-                        z += dblepancake.getH()
+                        z += dblpancake.getH()
                         z += dpisolation.getH() # isolation between DP
 
                     self.h = z - dpisolation.getH()
@@ -705,17 +705,17 @@ class HTSinsert:
                     # shift insert by z0-z/2.
                     z = self.z0 - self.h/2.
                     for i in range(self.n):
-                        h = self.dblepancakes[i].getH()
-                        self.dblepancakes[i].setZ0(z + h/2.)
+                        h = self.dblpancakes[i].getH()
+                        self.dblpancakes[i].setZ0(z + h/2.)
                         z += h
                         z += dpisolation.getH()
 
                 else:
                     z = 0
-                    print("Loading different dblepancakes")
-                    for dp in data['dblepancakes']:
-                        print("dp:", dp, data['dblepancakes'][dp]["pancake"])
-                        mypancake = pancake(data['dblepancakes'][dp]["pancake"])
+                    print("Loading different dblpancakes")
+                    for dp in data['dblpancakes']:
+                        print("dp:", dp, data['dblpancakes'][dp]["pancake"])
+                        mypancake = pancake(data['dblpancakes'][dp]["pancake"])
                         print(mypancake)
 
                         print("isolant:", dp, data['isolations'][dp])
@@ -723,16 +723,16 @@ class HTSinsert:
                         print(myisolation)
                         self.setIsolation(myisolation)
 
-                        dblepancake = dblpancake()
-                        print(type(dblepancake))
-                        dblepancake.setZ0(z)
-                        dblepancake.setPancake(mypancake)
-                        isolant = isolation(data['dblepancakes'][dp]["isolation"])
-                        dblepancake.setIsolation(isolant)
-                        print(dblepancake)
-                        self.setDblepancake(dblepancake)
+                        dblpancake = dblpancake()
+                        print(type(dblpancake))
+                        dblpancake.setZ0(z)
+                        dblpancake.setPancake(mypancake)
+                        isolant = isolation(data['dblpancakes'][dp]["isolation"])
+                        dblpancake.setIsolation(isolant)
+                        print(dblpancake)
+                        self.setDblepancake(dblpancake)
 
-                        z += dblepancake.getH()
+                        z += dblpancake.getH()
                         z += myisolation.getH() # isolation between DP
 
                         self.h = z - myisolation.getH()
@@ -742,8 +742,8 @@ class HTSinsert:
                         # shift insert by z0-z/2.
                         z = self.z0 - self.h/2.
                         for i in range(self.n):
-                            h = self.dblepancakes[i].getH()
-                            self.dblepancakes[i].setZ0(z + h/2.)
+                            h = self.dblpancakes[i].getH()
+                            self.dblpancakes[i].setZ0(z + h/2.)
                             z += h
                             z += myisolation.getH()
 
@@ -756,10 +756,10 @@ class HTSinsert:
             if self.n:
                 print("n= %d" % self.n)
             else:
-                print("n= %d" % len(self.dblepancakes))
+                print("n= %d" % len(self.dblpancakes))
 
             for i in range(self.n):
-                print("dlbpancake[%d]: " % i, self.dblepancakes[i])
+                print("dlbpancake[%d]: " % i, self.dblpancakes[i])
             print("===")
 
     def gmsh(self, detail: str, AirData: tuple =(), debug: bool = False):
@@ -776,7 +776,7 @@ class HTSinsert:
 
         x0 = self.r0
         y0 = self.z0-self.getH()/2.
-        n_dp = len(self.dblepancakes)
+        n_dp = len(self.dblpancakes)
 
         if detail == "None":
             #
@@ -798,7 +798,7 @@ class HTSinsert:
             dp_ids = []
             i_ids = []
                     
-            for i,dp in enumerate(self.dblepancakes):
+            for i,dp in enumerate(self.dblpancakes):
                 dp_id = dp.gmsh(x0, y0, detail)
                 dp_ids.append(dp_id)
                 y0 += dp.getH()
@@ -851,7 +851,7 @@ class HTSinsert:
                                         ov, ovv = gmsh.model.occ.fragment([(2, i_ids[j])], [(2, l) for l in flat_list] )
                                 """
                 else:
-                    # detail == dblepancake 
+                    # detail == dblpancake 
                     if j >= 1:
                         ov, ovv = gmsh.model.occ.fragment([(2, dp)], [(2, i_ids[j-1])])
                     if j < n_dp-1:
@@ -878,7 +878,7 @@ class HTSinsert:
                         # print(_id, flatten(dp))
                         ov, ovv = gmsh.model.occ.fragment([(2, _id)], [(2, l) for l in flatten(dp)])               
                     else:
-                        # detail == dblepancake 
+                        # detail == dblpancake 
                         ov, ovv = gmsh.model.occ.fragment([(2, _id)], [(2, dp)])
                         # ov, ovv = gmsh.model.occ.fragment([(2, _id)], [(2, i) for i in i_ids])
                 
@@ -911,7 +911,7 @@ class HTSinsert:
                 defs["%s_i_dp%d" % (name, i)] = ps
             for i,dp in enumerate(dp_ids):
                 print("dp[%d]" % i)
-                if detail == "dblepancake":
+                if detail == "dblpancake":
                     ps = gmsh.model.addPhysicalGroup(2, [dp])
                     gmsh.model.setPhysicalName(2, ps, "%s_dp%d" % (name, i))
                     defs["%s_dp%d" % (name, i)] = ps
@@ -1038,9 +1038,9 @@ class HTSinsert:
         print("TODO: set characteristic lengths")
         """
         lcar = (nougat.getR1() - nougat.R(0) ) / 10.
-        lcar_dp = nougat.dblepancakes[0].getW() / 10.
-        lcar_p = nougat.dblepancakes[0].getPancake().getW() / 10.
-        lcar_tape = nougat.dblepancakes[0].getPancake().getW()/3.
+        lcar_dp = nougat.dblpancakes[0].getW() / 10.
+        lcar_p = nougat.dblpancakes[0].getPancake().getW() / 10.
+        lcar_tape = nougat.dblpancakes[0].getPancake().getW()/3.
 
         gmsh.model.mesh.setSize(gmsh.model.getEntities(0), lcar)
         # Override this constraint on the points of the tapes:
@@ -1054,13 +1054,13 @@ class HTSinsert:
         """
         generate a geo gmsh file
 
-        option = dblepancake|pancake|tape control the precision of the model
+        option = dblpancake|pancake|tape control the precision of the model
         """
 
         details= {
             "tape" : 0,
             "pancake" : 1,
-            "dblepancake" : 2,
+            "dblpancake" : 2,
             "None" : 3
         }
         
@@ -1077,7 +1077,7 @@ class HTSinsert:
 
         rmin = min(self.getR0()-max_mandrin, min_r_dp, min_r_)
         rmax = 0
-        for i, dp in enumerate(self.dblepancakes):
+        for i, dp in enumerate(self.dblpancakes):
             r_dp = self.isolations[i].getR0()
             r_ = dp.getIsolation().getR0()
             rmax = max(rmax, dp.getPancake().getR0(), r_dp, r_)
@@ -1094,7 +1094,7 @@ class HTSinsert:
         """
 
         xmax = 0
-        for i, dp in enumerate(self.dblepancakes):
+        for i, dp in enumerate(self.dblpancakes):
             r_dp = self.isolations[i].getR0() + self.isolations[i].getW()
             r_ = dp.getIsolation().getR0() + dp.getIsolation().getW()
             xmax = max(xmax, r_dp, r_)

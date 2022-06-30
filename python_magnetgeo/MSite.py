@@ -318,9 +318,9 @@ class MSite(yaml.YAMLObject):
          
         """
         lcar = (nougat.getR1() - nougat.R(0) ) / 10.
-        lcar_dp = nougat.dblepancakes[0].getW() / 10.
-        lcar_p = nougat.dblepancakes[0].getPancake().getW() / 10.
-        lcar_tape = nougat.dblepancakes[0].getPancake().getW()/3.
+        lcar_dp = nougat.dblpancakes[0].getW() / 10.
+        lcar_p = nougat.dblpancakes[0].getPancake().getW() / 10.
+        lcar_tape = nougat.dblpancakes[0].getPancake().getW()/3.
 
         gmsh.model.mesh.setSize(gmsh.model.getEntities(0), lcar)
         # Override this constraint on the points of the tapes:
