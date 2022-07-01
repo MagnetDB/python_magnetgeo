@@ -21,19 +21,21 @@ class tape:
     e: thickness of co-wound durnomag
     """
 
-    def __init__(self, w=0, h=0, e=0):
+    def __init__(self, w: float=0, h: float=0, e: float=0):
         self.w = w
         self.h = h
         self.e = e
 
 
-    def __init__(self, data={}):
+    @classmethod
+    def from_data(cls, data={}):
         if "w" in data:
-            self.w = data["w"]
+            w = data["w"]
         if "h" in data:
-            self.h = data["h"]
+            h = data["h"]
         if "e" in data:
-            self.e = data["e"]
+            e = data["e"]
+        return cls(w, h, e)
 
     def __str__(self) -> str:
         msg = "\n"
@@ -117,23 +119,24 @@ class pancake:
     n: number of tapes
     """
 
-    def __init__(self, r0=0, tape=tape(), n=0, mandrin=0) -> None:
+    def __init__(self, r0: float=0, tape: tape =tape(), n: int=0, mandrin=0):
         self.mandrin = mandrin
         self.tape = tape
         self.n = n
         self.r0 = r0
-        pass
 
-    def __init__(self, data={}):
+    @classmethod
+    def from_data(cls, data={}):
         if "r0" in data:
-            self.r0 = data["r0"]
+            r0 = data["r0"]
         if "mandrin" in data:
-            self.mandrin = data["mandrin"]
+            mandrin = data["mandrin"]
         if "tape" in data:
-            self.tape = tape(data["tape"])
+            t_ = tape.from_data(data["tape"])
         if "ntapes" in data:
-            self.n = data["ntapes"]
-
+            n = data["ntapes"]
+        return cls(r0, t_, n, mandrin)
+    
     def __str__(self) -> str:
         msg = "\n"
         msg += "r0: %g [m]\n" % self.r0
@@ -248,25 +251,26 @@ class isolation:
     h: heights of the different layers
     """
 
-    def __init__(self, r0=0, w=[], h=[]) -> None:
+    def __init__(self, r0: float=0, w: list =[], h: list =[]):
         self.r0 = r0
         self.w = w
         self.h = h
-        pass
 
-    def __init__(self, data={}):
+    @classmethod
+    def from_data(cls, data={}):
         if "r0" in data:
-            self.r0 = data["r0"]
+            r0 = data["r0"]
         if "w" in data:
-            self.w = data["w"]
+            w = data["w"]
         if "h" in data:
-            self.h = data["h"]
+            h = data["h"]
+        return cls(r0, w, h)
 
     def __str__(self) -> str:
         msg = "\n"
-        msg += "r0: %g [mm]\n" % self.r0
-        msg += "w:" + str(self.w) + "\n"
-        msg += "h:" + str(self.h) + "\n"
+        msg += f'r0: {self.r0} [mm]\n'
+        msg += f'w: {self.w} \n'
+        msg += f'h: {self.h} \n'
         return msg
         pass
 
@@ -338,28 +342,17 @@ class dblpancake:
     isolation: isolation between pancakes
     """
 
-    def __init__(self) -> None:
-        self.z0 = 0
-        self.pancake = pancake()
-        self.isolation = isolation()
-        pass
-
-    def __init__(self, data={}):
-        if "z0" in data:
-            self.z0 = data["z0"]
-        if "pancake" in data:
-            self.pancake = pancake(data["pancake"])
-        if "isolation" in data:
-            self.isolation = data["isolation"]
-            print(self.isolation)
+    def __init__(self, z0: float, pancake: pancake=pancake(), isolation: isolation=isolation()):
+        self.z0 = z0
+        self.pancake = pancake
+        self.isolation = isolation
 
     def __str__(self) -> str:
-        msg = str(self.pancake.getR0()) + ", "
-        msg += str(self.pancake.getR1()) + ", "
-        msg += str(self.z0 - self.getH()) + ", "
-        msg += str(self.z0 + self.getH())
+        msg = f'{self.pancake.getR0()}, '
+        msg += f'{self.pancake.getR1()}, '
+        msg += f'{self.getZ0() - self.getH()}, '
+        msg += f'{self.getZ0() + self.getH()}'
         return msg
-        pass
 
     def getPancake(self):
         """
@@ -386,11 +379,11 @@ class dblpancake:
         """
         ratio of the surface occupied by the tapes / total surface
         """
-        S_tapes = 2 * self.pancake.n * self.pancake.tape.w * self.pancake.tape.h
-        return S_tapes / self.getArea()
+        S_tapes = 2. * self.pancake.n * self.pancake.tape.w * self.pancake.tape.h
+        return (S_tapes / self.getArea())
 
     def getR0(self) -> float:
-        return self.pancake.r0
+        return self.pancake.getR0()
 
     def getZ0(self) -> float:
         return self.z0
@@ -399,14 +392,14 @@ class dblpancake:
         return self.pancake.getW()
 
     def getH(self) -> float:
-        return 2*self.pancake.getH() + self.isolation.getH()
+        return ( 2.*self.pancake.getH() + self.isolation.getH() )
 
     def getArea(self) -> float:
-        return (self.pancake.getR1() - self.pancake.getR0()) * self.getH()
+        return ((self.pancake.getR1() - self.pancake.getR0()) * self.getH())
 
     def gmsh(self, x0: float, y0: float, detail: str):
         """
-        create dble pancake for gmsh
+        create dbl pancake for gmsh
 
         inputs:
         x0, y0: coordinates of lower left point
@@ -451,7 +444,7 @@ class HTSinsert:
     TODO: add possibility to use 2 different pancake
     """
 
-    def __init__(self) -> None:
+    def __init__(self):
         self.z0 = 0
         self.h = 0
         self.r0 = 0
@@ -460,9 +453,8 @@ class HTSinsert:
         self.n = 0
         self.dblpancakes = []
         self.isolations = []
-        pass
 
-    def setDblepancake(self, dblpancake):
+    def setDblpancake(self, dblpancake):
         self.dblpancakes.append(dblpancake)
 
     def setIsolation(self, isolation):
@@ -504,7 +496,7 @@ class HTSinsert:
 
     def getN(self) -> int:
         """
-        returns the number of dble pancakes
+        returns the number of dbl pancakes
         """
         return self.n
 
@@ -591,7 +583,7 @@ class HTSinsert:
         return w_
 
 
-    def getWDblePancake(self) -> list:
+    def getWDblPancake(self) -> list:
         """
         returns the width of dblpancake as a list
         """
@@ -600,7 +592,7 @@ class HTSinsert:
             w_.append( dp.getW() )
         return w_
 
-    def getHDblePancake(self) -> list:
+    def getHDblPancake(self) -> list:
         """
         returns the height of dblpancake as a list
         """
@@ -611,7 +603,7 @@ class HTSinsert:
 
     def getR0_Isolation(self) -> list:
         """
-        returns the height of isolation between dble pancake as a list
+        returns the height of isolation between dbl pancake as a list
         """
         w_ = []
         for isolant in self.isolations:
@@ -620,7 +612,7 @@ class HTSinsert:
 
     def getW_Isolation(self) -> list:
         """
-        returns the width of isolation between dble pancakes
+        returns the width of isolation between dbl pancakes
         """
         w_ = []
         for isolant in self.isolations:
@@ -629,7 +621,7 @@ class HTSinsert:
 
     def getH_Isolation(self) -> list:
         """
-        returns the height of isolation between dble pancakes
+        returns the height of isolation between dbl pancakes
         """
         w_ = []
         for isolant in self.isolations:
@@ -663,39 +655,41 @@ class HTSinsert:
 
             mytape = None
             if "tape" in data:
-                mytape = tape(data["tape"])
+                mytape = tape.from_data(data["tape"])
 
             mypancake = None
             if "pancake" in data:
-                mypancake = pancake(data["pancake"])
+                mypancake = pancake.from_data(data["pancake"])
+                print(f'mypancake={mypancake}')
 
             myisolation = None
             if "isolation" in data:
-                myisolation = isolation(data["isolation"])
+                myisolation = isolation.from_data(data["isolation"])
+                print(f'myisolation={myisolation}')
 
             if "dblpancakes" in data:
-                print("DblePancake data:", data["dblpancakes"])
+                print("DblPancake data:", data["dblpancakes"])
 
                 # if n defined use the same pancakes and isolations
                 # else loop to load pancake and isolation structure definitions
                 if "n" in data["dblpancakes"]:
                     z = 0
                     if "isolation" in data["dblpancakes"]:
-                        dpisolation = isolation(data["dblpancakes"]["isolation"])
+                        dpisolation = isolation.from_data(data["dblpancakes"]["isolation"])
                     else:
                         dpisolation = myisolation
+                    print(f'dpisolation={dpisolation}')
 
                     self.n = data["dblpancakes"]["n"]
+                    print(f'n={self.n}')
                     for i in range(self.n):
-                        # print("dblpancake[%d]" % i, "z0= %g [mm]" % z)
-                        dblpancake = dblpancake()
-                        dblpancake.setZ0(z)
-                        dblpancake.setPancake(mypancake)
-                        dblpancake.setIsolation(myisolation)
-                        self.setDblepancake(dblpancake)
+                        print(f'dblpancake[{i}]:')
+                        dp = dblpancake(z, mypancake, myisolation)
+                        print(dp)
+                        self.setDblpancake(dp)
                         self.setIsolation(dpisolation)
 
-                        z += dblpancake.getH()
+                        z += dp.getH()
                         z += dpisolation.getH() # isolation between DP
 
                     self.h = z - dpisolation.getH()
@@ -715,24 +709,21 @@ class HTSinsert:
                     print("Loading different dblpancakes")
                     for dp in data['dblpancakes']:
                         print("dp:", dp, data['dblpancakes'][dp]["pancake"])
-                        mypancake = pancake(data['dblpancakes'][dp]["pancake"])
+                        mypancake = pancake.from_data(data['dblpancakes'][dp]["pancake"])
                         print(mypancake)
 
-                        print("isolant:", dp, data['isolations'][dp])
-                        myisolation = isolation(data['isolations'][dp])
-                        print(myisolation)
-                        self.setIsolation(myisolation)
+                        if "isolation" in data['isolations'][dp]:
+                            dpisolation = isolation.from_data(data['isolations'][dp]["isolation"])
+                        else:
+                            dpisolation = myisolation
+                        print("dpisolant:", dpisolation)
+                        self.setIsolation(dpisolation)
 
-                        dblpancake = dblpancake()
-                        print(type(dblpancake))
-                        dblpancake.setZ0(z)
-                        dblpancake.setPancake(mypancake)
-                        isolant = isolation(data['dblpancakes'][dp]["isolation"])
-                        dblpancake.setIsolation(isolant)
-                        print(dblpancake)
-                        self.setDblepancake(dblpancake)
+                        dp_ = dblpancake(z, mypancake, myisolation)
+                        print(dp_)
+                        self.setDblpancake(dp_)
 
-                        z += dblpancake.getH()
+                        z += dp_.getH()
                         z += myisolation.getH() # isolation between DP
 
                         self.h = z - myisolation.getH()
@@ -1107,8 +1098,8 @@ class HTSinsert:
             'z1':self.getZ0()+self.getH()/2.,
             'r1':self.getR1(),
             'n_dp':self.getN(),
-            'e_dp':str(self.getWDblePancake()).replace('[','{').replace(']','}'),
-            'h_dp':str(self.getHDblePancake()).replace('[','{').replace(']','}'),
+            'e_dp':str(self.getWDblPancake()).replace('[','{').replace(']','}'),
+            'h_dp':str(self.getHDblPancake()).replace('[','{').replace(']','}'),
             'h_dp_isolation':str(self.getH_Isolation()).replace('[','{').replace(']','}'),
             'r_dp':str(self.getR0_Isolation()).replace('[','{').replace(']','}'),
             'e_p':str(self.getWPancake()).replace('[','{').replace(']','}'),
