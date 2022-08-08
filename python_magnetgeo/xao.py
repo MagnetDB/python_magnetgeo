@@ -177,7 +177,7 @@ def Magnet_Gmsh(MyEnv, cad, gname, is2D, verbose):
         NIsolants.append(0)
         # TODO prepend name with part name
     elif isinstance(pcad, Supra):
-        solid_names += Supra_Gmsh(cad, pname, is2D, verbose)
+        solid_names += Supra_Gmsh(pcad, pname, is2D, verbose)
         NHelices.append(0)
         NChannels.append(0)
         NIsolants.append(0)
