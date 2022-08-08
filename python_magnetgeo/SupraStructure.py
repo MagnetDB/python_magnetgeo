@@ -566,11 +566,20 @@ class HTSinsert:
 
     def getR0Pancake_Isolation(self) -> list:
         """
-        returns the height of isolation between pancake as a list
+        returns the inner radius of isolation between pancake as a list
         """
         w_ = []
         for dp in self.dblpancakes:
             w_.append( dp.getIsolation().getR0() )
+        return w_
+
+    def getR1Pancake_Isolation(self) -> list:
+        """
+        returns the external radius of isolation between pancake as a list
+        """
+        w_ = []
+        for dp in self.dblpancakes:
+            w_.append( dp.getIsolation().getR0() + dp.getIsolation().getW() )
         return w_
 
     def getHPancake_Isolation(self) -> list:
@@ -603,11 +612,20 @@ class HTSinsert:
 
     def getR0_Isolation(self) -> list:
         """
-        returns the height of isolation between dbl pancake as a list
+        returns the inner radius of isolation between dbl pancake as a list
         """
         w_ = []
         for isolant in self.isolations:
             w_.append( isolant.getR0() )
+        return w_
+
+    def getR1_Isolation(self) -> list:
+        """
+        returns the external radius of isolation between dbl pancake as a list
+        """
+        w_ = []
+        for isolant in self.isolations:
+            w_.append( isolant.getR0() +  isolant.getH() )
         return w_
 
     def getW_Isolation(self) -> list:
@@ -637,7 +655,7 @@ class HTSinsert:
     def getArea(self) -> float:
         return (self.getR1() - self.getR0()) * self.getH()
 
-    def loadCfg(self, inputcfg: str):
+    def loadCfg(self, inputcfg: str, debug: bool=False):
         """
         Load insert params from json
         """
@@ -645,7 +663,8 @@ class HTSinsert:
 
         with open(inputcfg) as f:
             data = json.load(f)
-            print("HTSinsert data:", data)
+            if debug:
+                print("HTSinsert data:", data)
 
             """
             print("List main keys:")
@@ -660,12 +679,14 @@ class HTSinsert:
             mypancake = None
             if "pancake" in data:
                 mypancake = pancake.from_data(data["pancake"])
-                print(f'mypancake={mypancake}')
+                if debug:
+                    print(f'mypancake={mypancake}')
 
             myisolation = None
             if "isolation" in data:
                 myisolation = isolation.from_data(data["isolation"])
-                print(f'myisolation={myisolation}')
+                if debug:
+                    print(f'myisolation={myisolation}')
 
             if "dblpancakes" in data:
                 print("DblPancake data:", data["dblpancakes"])
@@ -678,14 +699,18 @@ class HTSinsert:
                         dpisolation = isolation.from_data(data["dblpancakes"]["isolation"])
                     else:
                         dpisolation = myisolation
-                    print(f'dpisolation={dpisolation}')
+                    if debug:
+                        print(f'dpisolation={dpisolation}')
 
                     self.n = data["dblpancakes"]["n"]
-                    print(f'n={self.n}')
+                    if debug:
+                        print(f'n={self.n}')
                     for i in range(self.n):
-                        print(f'dblpancake[{i}]:')
+                        if debug:
+                            print(f'dblpancake[{i}]:')
                         dp = dblpancake(z, mypancake, myisolation)
-                        print(dp)
+                        if debug:
+                            print(dp)
                         self.setDblpancake(dp)
                         self.setIsolation(dpisolation)
 
@@ -708,19 +733,23 @@ class HTSinsert:
                     z = 0
                     print("Loading different dblpancakes")
                     for dp in data['dblpancakes']:
-                        print("dp:", dp, data['dblpancakes'][dp]["pancake"])
+                        if debug:
+                            print("dp:", dp, data['dblpancakes'][dp]["pancake"])
                         mypancake = pancake.from_data(data['dblpancakes'][dp]["pancake"])
-                        print(mypancake)
+                        if debug:
+                            print(mypancake)
 
                         if "isolation" in data['isolations'][dp]:
                             dpisolation = isolation.from_data(data['isolations'][dp]["isolation"])
                         else:
                             dpisolation = myisolation
-                        print("dpisolant:", dpisolation)
+                        if debug:
+                            print("dpisolant:", dpisolation)
                         self.setIsolation(dpisolation)
 
                         dp_ = dblpancake(z, mypancake, myisolation)
-                        print(dp_)
+                        if debug:
+                            print(dp_)
                         self.setDblpancake(dp_)
 
                         z += dp_.getH()
