@@ -41,7 +41,42 @@ def Supra_Gmsh(cad, gname, is2D, verbose):
     solid_names = []
 
     # TODO take into account supra detail
-    solid_names.append("%s_S" % cad.name)
+    if cad.detail == "None":
+        solid_names.append("%s_S" % cad.name)
+    else:
+        # load yaml
+        from . import SupraStructure
+        hst = SupraStructure.HTSinstert()
+        hts.loadCfg(f'{cad.struct}')
+        n_dp = len(hts.dblpancakes)
+        cadname = cad.struct.replace('.json','')
+        for i,dp in enumerate(hts.dblpancakes):
+            dp_name = f'{cadname}_dp{i}'
+            if cad.detail == 'dblpancake':
+                solid_names.append(f'{cad.name}_{dp_name}')
+
+            if cad.detail == 'pancake':
+                solid_names.append(f'{dp_name}_p0')
+            if cad.detail == 'tape':
+                solid_names.append(f'{dp_name}_p0_Mandrin')
+                for j in range(dp.pancake.n):
+                    solid_names.append(f'{dp_name}_p0_t{j}_SC')
+                    solid_names.append(f'{dp_name}_p0_t{j}_Duromag')
+                
+            if cad.detail == 'pancake' or cad.detail == 'tape' :
+                solid_names.append(f'{dp_name}_i')
+                
+            if cad.detail == 'pancake':
+                solid_names.append(f'{dp_name}_p1')
+            if cad.detail == 'tape':
+                solid_names.append(f'{dp_name}_p1_Mandrin')
+                for j in range(dp.pancake.n):
+                    solid_names.append(f'{dp_name}_p1_t{j}_SC')
+                    solid_names.append(f'{dp_name}_p0_t{j}_Duromag')
+                
+            if i != n_dp-1 :
+                solid_names.append(f'{cadname}_i{i}')
+
     if verbose:
         print("Supra_Gmsh: solid_names %d", len(solid_names))      
     return solid_names
