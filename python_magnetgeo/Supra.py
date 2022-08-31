@@ -44,17 +44,35 @@ class Supra(yaml.YAMLObject):
         self.struct = struct
         self.detail = 'None' # ['None', 'dblpancake', 'pancake', 'tape']
 
+    def get_magnet_struct(self) -> SupraStructure.HTSinsert:
+        magnet = SupraStructure.HTSinsert()
+        if self.struct:
+            magnet.loadCfg(self.struct)
+        return magnet
+    
+    def check_dimensions(self, magnet: SupraStructure.HTSinsert):
         # TODO: if struct load r,z and n from struct data
         if self.struct:
-            magnet = SupraStructure.HTSinsert()
-            magnet.loadCfg(self.struct)
+            changed = False
+            if self.r[0] != magnet.getR0():
+                changed = True
+                self.r[0] = magnet.getR0()
+            if self.r[1] != magnet.getR1():
+                changed = True
+                self.r[1] = magnet.getR1()
+            if self.z[0] != magnet.getZ0()-magnet.getH()/2.:
+                changed = True
+                self.z[0] = magnet.getZ0()-magnet.getH()/2.
+            if self.z[1] != magnet.getZ0()+magnet.getH()/2.:
+                changed = True
+                self.z[1] = magnet.getZ0()+magnet.getH()/2.
+            if self.n != sum(magnet.getNtapes()):
+                changed = True
+                self.n = sum(magnet.getNtapes())
 
-            print("Supra/init: override dimensions from %s" % self.struct)
-            self.r[0] = magnet.getR0()
-            self.r[1] = magnet.getR1()
-            self.z[0] = magnet.getZ0()-magnet.getH()/2.
-            self.z[1] = magnet.getZ0()+magnet.getH()/2.
-            self.n = sum(magnet.getNtapes())
+            if changed:
+                print(f"Supra/check_dimensions: override dimensions for {self.name} from {self.struct}")
+                print(self)
 
         
     def __repr__(self):
@@ -103,6 +121,9 @@ class Supra(yaml.YAMLObject):
 
         # TODO: if struct load r,z and n from struct data
         # or at least check that values are valid
+        if self.struct:
+            magnet = self.get_magnet_struct()
+            self.check_dimensions(magnet)
 
     def to_json(self):
         """
