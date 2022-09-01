@@ -39,15 +39,19 @@ def Supra_Gmsh(cad, gname, is2D, verbose):
     """ Load Supra cad """
     #print("Supra_Gmsh:", cad)
     solid_names = []
-
+    
+    # # load yaml
+    # from . import SupraStructure
+    # hts = SupraStructure.HTSinsert()
+    # hts.loadCfg(f'{cad.struct}')
+    hts = cad.get_magnet_struct()
+    cad.check_dimensions(hts)
+    
     # TODO take into account supra detail
     if cad.detail == "None":
         solid_names.append(f"{cad.name}_S")
     else:
-        # load yaml
-        from . import SupraStructure
-        hts = SupraStructure.HTSinsert()
-        hts.loadCfg(f'{cad.struct}')
+        
         n_dp = len(hts.dblpancakes)
         cadname = cad.struct.replace('.json','')
         for i,dp in enumerate(hts.dblpancakes):
@@ -58,18 +62,19 @@ def Supra_Gmsh(cad, gname, is2D, verbose):
             if cad.detail == 'pancake':
                 solid_names.append(f'{dp_name}_p0')
                 solid_names.append(f'{dp_name}_p1')
+                solid_names.append(f'{dp_name}_i')
             if cad.detail == 'tape':
                 solid_names.append(f'{dp_name}_p0_Mandrin')
                 for j in range(dp.pancake.n):
                     solid_names.append(f'{dp_name}_p0_t{j}_SC')
                     solid_names.append(f'{dp_name}_p0_t{j}_Duromag')
+                solid_names.append(f'{dp_name}_p1_Mandrin')
                 for j in range(dp.pancake.n):
                     solid_names.append(f'{dp_name}_p1_t{j}_SC')
                     solid_names.append(f'{dp_name}_p1_t{j}_Duromag')
-                
-            if cad.detail == 'pancake' or cad.detail == 'tape' :
                 solid_names.append(f'{dp_name}_i')
                 
+        for i,dp in enumerate(hts.dblpancakes):
             if i != n_dp-1 :
                 solid_names.append(f'{cadname}_i{i}')
 
@@ -197,26 +202,24 @@ def Magnet_Gmsh(MyEnv, cad, gname, is2D, verbose):
         with MyOpen(cfgfile, 'r', paths=search_paths(MyEnv, "geom")) as cfgdata:
             pcad = yaml.load(cfgdata, Loader = yaml.FullLoader)
             pname = pcad.name
-            Boxes[pname] = (0, pcad.boundingBox())
     else:
         with open(cfgfile, 'r') as cfgdata:
             pcad = yaml.load(cfgdata, Loader = yaml.FullLoader)
             pname = pcad.name
-            Boxes[pname] = (0, pcad.boundingBox())
 
     if isinstance(pcad, Bitter):
         solid_names += Bitter_Gmsh(pcad, pname, is2D, verbose)
         NHelices.append(0)
         NChannels.append(0)
         NIsolants.append(0)
-        Boxes[pname][0] = 'Bitter'
+        Boxes[pname] = ('Bitter', pcad.boundingBox())
         # TODO prepend name with part name
     elif isinstance(pcad, Supra):
         solid_names += Supra_Gmsh(pcad, pname, is2D, verbose)
         NHelices.append(0)
         NChannels.append(0)
         NIsolants.append(0)
-        Boxes[pname][0] = 'Supra'
+        Boxes[pname] = ('Supra', pcad.boundingBox())
         # TODO prepend name with part name
     elif isinstance(pcad, Insert):
         (_names,_NHelices, _NChannels, _NIsolants) = Insert_Gmsh(MyEnv, pcad, pname, is2D, verbose)
@@ -224,10 +227,11 @@ def Magnet_Gmsh(MyEnv, cad, gname, is2D, verbose):
         NHelices.append(_NHelices)
         NChannels.append(_NChannels)
         NIsolants.append(_NIsolants)
-        Boxes[pname][0] = 'Insert'
+        Boxes[pname] = ('Insert', pcad.boundingBox())
         # TODO prepend name with part name
     if verbose:
         print(f"Magnet_Gmsh: {cad} Done [solids {len(solid_names)}]")
+        print(f'Magnet_Gmsh: Boxes={Boxes}')
     return (solid_names, NHelices, NChannels, NIsolants, Boxes)
 
 def MSite_Gmsh(MyEnv, cad, gname, is2D, verbose):
@@ -310,7 +314,7 @@ def main():
     parser_mesh.add_argument("--algo3d", help="select an algorithm for 3d mesh", type=str,
                          choices=['Delaunay', 'Initial', 'Frontal', 'MMG3D', 'HXT', 'None'], default='None')
     parser_mesh.add_argument(
-        "--lc", help="specify characteristic lengths (Magnet1, Magnet2, ..., default)", type=float, nargs='?', metavar='LC', default=5)
+        "--lc", help="specify characteristic lengths (Magnet1, Magnet2, ..., Air (aka default))", type=float, nargs='+', metavar='LC', default=5)
     parser_mesh.add_argument("--scaling", help="scale to m (default unit is mm)", action='store_true')
     parser_mesh.add_argument("--dry-run", help="mimic mesh operation without actually meshing", action='store_true')
 
@@ -380,9 +384,10 @@ def main():
     print("groupLeads:", groupLeads)
     print("groupCoolingChannels:", groupCoolingChannels)
 
-    lc = 5
-    if args.lc:
-       lc = args.lc[-1]
+    if isinstance(args.lc, list):
+        lc = args.lc[-1]
+    else:
+        lc = args.lc
        
     MeshAlgo2D = {
         'MeshAdapt' : 1,
@@ -498,6 +503,7 @@ def main():
         if isinstance(cad, MSite):
             if args.verbose: print("load cfg MSite")
             (compound, _names, NHelices, NChannels, NIsolants, Boxes) = MSite_Gmsh(MyEnv, cad, gname, is2D, args.verbose)
+            print(f'Boxes: {Boxes}, {len(Boxes)}')
             solid_names += _names
         elif isinstance(cad, Bitter):
             if args.verbose: print("load cfg Bitter")
@@ -520,7 +526,7 @@ def main():
             if hideIsolant:
                 raise Exception("--hide Isolants cannot be used since cad contains Air region")
 
-    if args.lc:
+    if isinstance(args.lc, list):
         assert (len(Boxes) == len(args.lc)-1), f"Wrong number of mesh length size: {len(Boxes)} magnets whereas args.lc contains {len(args.lc)} mesh size"
     # print(f"solid_names[{len(solid_names)}]: {solid_names}")
 
@@ -538,7 +544,8 @@ def main():
     # use yaml data to identify solids id...
     # Insert solids: H1_Cu, H1_Glue0, H1_Glue1, H2_Cu, ..., H14_Glue1, R1, R2, ..., R13, InnerLead, OuterLead, Air
     # HR: Cu, Kapton0, Kapton1, ... KaptonXX
-    print("Get solids:")
+    if args.verbose:
+        print("Get solids:")
     tr_subelements = tree.xpath('//'+GeomParams['Solid'][1])
     stags = {}
     for i,sgroup in enumerate(tr_subelements):
@@ -575,7 +582,8 @@ def main():
                     stags[sname] = [indices]
 
     # Physical Volumes
-    print("Solidtags:")
+    if args.verbose:
+        print("Solidtags:")
     for stag in stags:
         pgrp = gmsh.model.addPhysicalGroup(GeomParams['Solid'][0], stags[stag])
         gmsh.model.setPhysicalName(GeomParams['Solid'][0], pgrp, stag)
@@ -623,7 +631,8 @@ def main():
         print("Channel_Submeshes:", Channel_Submeshes)
 
     # get groups
-    print("Get BC groups")
+    if args.verbose:
+        print("Get BC groups")
     tr_elements = tree.xpath('//group')
 
     bctags = {}
@@ -748,11 +757,15 @@ def main():
                         bctags[sname].append(index)
 
     # Physical Surfaces
-    print("BCtags:")
+    if args.verbose:
+        print("BCtags:")
     for bctag in bctags:
         pgrp = gmsh.model.addPhysicalGroup(GeomParams['Face'][0], bctags[bctag])
         gmsh.model.setPhysicalName(GeomParams['Face'][0], pgrp, bctag)
-        print(bctag, bctags[bctag], pgrp)
+        if args.verbose:
+            print(bctag, bctags[bctag], pgrp)
+
+    Origin = gmsh.model.occ.addPoint(0, 0, 0, 0.1, 0)
 
     # Generate the mesh and write the mesh file
     gmsh.model.occ.synchronize()
@@ -761,9 +774,10 @@ def main():
 
     # TODO: get solid id for glue
     # Get Helical cuts EndPoints  
-    EndPoints_tags = []
+    EndPoints_tags = [ 0 ]
     VPoints_tags = []
 
+    
     if isinstance(cad, Insert) or isinstance(cad, Helix):
         # TODO: loop over tag from Glue or Kaptons (here [2, 3])
         glue_tags = [ i+1  for i,name in enumerate(solid_names) if ("Isolant" in name or ("Glue" in name or "Kapton" in name)) ]
@@ -807,17 +821,26 @@ def main():
             gmsh.option.setNumber("Geometry.OCCScaling", unit)
 
         # Assign a mesh size to all the points:
-        lcar1 = lc 
+        lcar1 = lc
+        if isinstance(args.lc, list):
+            lcar1 = args.lc[-1]
         gmsh.model.mesh.setSize(gmsh.model.getEntities(0), lcar1)
 
         # Get points from Physical volumes
         # from volume name use correct lc characteristic
-        for i,box in enumerate(Boxes):
-            mtype = box[0]
-            (r, z) = box[1]
+        if isinstance(args.lc, list):
             z_eps = 1.e-6
-            ov = gmsh.model.getEntitiesInBoundingBox(r[0], z[0], -z_eps, r[1], z[1], z_eps, 0)
-            gmsh.model.mesh.setSize(ov, lcar[i])
+            for i,box in enumerate(Boxes):
+                for key in box:
+                    mtype = box[key][0]
+                    print(f'box[{i}]={key} mtype={mtype} lc={args.lc[i]} boundingbox={box[key][1]}')
+                    (r, z) = box[key][1]
+                    if mtype == 'Supra':
+                        z[0] *= 1.1
+                        z[1] *= 1.1
+
+                    ov = gmsh.model.getEntitiesInBoundingBox(r[0], z[0], -z_eps, r[1], z[1], z_eps, 0)
+                    gmsh.model.mesh.setSize(ov, args.lc[i])
         
     
         # LcMax -                         /------------------
@@ -839,9 +862,9 @@ def main():
             gmsh.model.mesh.field.setNumber(2, "IField", 1)
             gmsh.model.mesh.field.setNumber(2, "LcMin", lcar1/20.)
             gmsh.model.mesh.field.setNumber(2, "LcMax", lcar1)
-            gmsh.model.mesh.field.setNumber(2, "DistMin", 0.2*unit)
-            gmsh.model.mesh.field.setNumber(2, "DistMax", 1.5*unit)
-            gmsh.model.mesh.field.setNumber(2, "StopAtDistMax", 1*unit)
+            gmsh.model.mesh.field.setNumber(2, "DistMin", 5*unit)
+            gmsh.model.mesh.field.setNumber(2, "DistMax", 10*unit)
+            gmsh.model.mesh.field.setNumber(2, "StopAtDistMax", 15*unit)
             gmsh.model.mesh.field.setAsBackgroundMesh(2)
 
             # gmsh.model.mesh.field.add("Distance", 3)
