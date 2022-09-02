@@ -1,8 +1,51 @@
-python-magnetgeo (0.1.0-4) UNRELEASED; urgency=medium
+python-magnetgeo (0.1.0-63) UNRELEASED; urgency=medium
 
   * Initial release (Closes: #nnnn) 
-  * Add Bitter and Supra
-  * Fix from R. Vallet
-  * Change Site to MSite
+  * update to git rev cf3177a8be9
+  * d/control:  rename python3-magnetgeo
+  * d/patches: setup.patch
+  * d/patches: up to git rev9f3d454796
+  * d/pathches: fix MyEnv
+  * d/patches: fix open in xao
+  * d/patches: consistant mesh filename with Salome
+  * d/patches: add screen
+  * d/patches: fix typo in xao
+  * d/patches: rename dblpancake
+  * d/patches: fix-supra
+  * less verbose
+  * fix z range for hts insert
+  * z0.patch
+  * xao.py: fix supra_gmsh
+  * add getr1_isolation, getr1pancake_isolation
+  * d/patches: cleanup.patch: print msg only when debug is on
+  * add supra names in xao.py
+  * correct xao typos
+  * rework supra names
+  * add bounding box per magnet to control gmsh mesh
+  * add a list for mesh size per magnets
+  * fix xao.py
+  * debug suprastruct
+  * up suprastruct
+  * simplify suprastruct loadCfg 
+  * fix messages
+  * debug supra init
+  * continue to debug 
+  * no getR1 for dblpancake
+  * fix typo
+  * fix self.r0 for htsinsert
+  * up
+  * up
+  * up
+  * try to fix z0
+  * add get_magnet_struct
+  * loadcfg get radius from dblpancakes
+  * r1 = self.dblpancakes[0].getR0() + self.dblpancakes[0].getW()
+  * new def constructor for htsinsert
+  * fix syntax
+  * missing arg in htsinsert constructor
+  * some cleanup 
+  * small fixes
+  * up to git rev f4c8b1046d
+  * adapt mesh
 
- -- Christophe Trophime <christophe.trophime@lncmi.cnrs.fr>  Tue, 19 Oct 2021 16:27:45 +0200
+ -- Christophe Trophime <christophe.trophime@lncmi.cnrs.fr>  Thu, 01 Sep 2022 15:29:08 +0200

@@ -12,7 +12,7 @@ with open('HISTORY.rst') as history_file:
 
 requirements = [ 'lxml', 'gmsh>=4.8.4', 'pyyaml', ]
 
-setup_requirements = [ ]
+setup_requirements = ['pytest-runner', ]
 
 test_requirements = ['pytest>=3', ]
 

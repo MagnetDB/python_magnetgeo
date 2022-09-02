@@ -17,7 +17,7 @@ Homepage: https://github.com/Trophime/python_magnetgeo
 #Testsuite: autopkgtest-pkg-python
 Rules-Requires-Root: no
 
-Package: python3-python-magnetgeo
+Package: python3-magnetgeo
 Architecture: all
 Depends: ${python3:Depends}, ${misc:Depends}
 Suggests: python-python-magnetgeo-doc
