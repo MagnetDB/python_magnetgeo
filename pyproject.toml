@@ -1,13 +1,16 @@
 [tool.poetry]
 name = "python_magnetgeo"
 version = "0.1.0"
-description = ""
-authors = ["Your Name <you@example.com>"]
+description = "Python helpers to create HiFiMagnet cads and meshes"
+authors = ["Christophe Trophime <christophe.trophime@lncmi.cnrs.fr>",
+           "Romain Vallet <romain.vallet@lncmi.cnrs.fr>",
+           "Jeremie Muzet <jeremie.muzet@lncmi.cnrs.fr>"
+          ]
 
 [tool.poetry.dependencies]
 python = "^3.8"
 PyYAML = "^5"
-lxml = "^4.9.1"
+lxml = "^4.8.0"
 gmsh = "^4.9.5"
 
 [tool.poetry.dev-dependencies]
