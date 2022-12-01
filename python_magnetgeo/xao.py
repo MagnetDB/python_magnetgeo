@@ -319,8 +319,8 @@ def main():
     parser_mesh.add_argument("--dry-run", help="mimic mesh operation without actually meshing", action='store_true')
 
     # TODO add similar option to salome HIFIMAGNET plugins 
-    parser_mesh.add_argument("--group", help="group selected items in mesh generation (Eg Isolants, Leads, CoolingChannels)", nargs='?', metavar='BC', type=str)
-    parser_mesh.add_argument("--hide", help="hide selected items in mesh generation (eg Isolants)", nargs='?', metavar='Domain', type=str)
+    parser_mesh.add_argument("--group", help="group selected items in mesh generation (Eg Isolants, Leads, CoolingChannels)", nargs='+', metavar='BC', type=str)
+    parser_mesh.add_argument("--hide", help="hide selected items in mesh generation (eg Isolants)", nargs='+', metavar='Domain', type=str)
 
     parser_adapt.add_argument(
         "--bgm", help="specify a background mesh", type=str, default=None)
@@ -404,7 +404,10 @@ def main():
     # init gmsh
     gmsh.initialize()
     gmsh.option.setNumber("General.Terminal", 1)
-    
+    # (0: silent except for fatal errors, 1: +errors, 2: +warnings, 3: +direct, 4: +information, 5: +status, 99: +debug)
+    if args.debug or args.verbose:
+        gmsh.option.setNumber("General.Verbosity", 0)
+
     file = args.input_file # r"HL-31_H1.xao"
     gname = ""
     fformat = ""
@@ -491,6 +494,7 @@ def main():
 
     compound = []
     if cfgfile :
+        cad = None
         if MyEnv:
             with MyOpen(cfgfile, 'r', paths=search_paths(MyEnv, "geom")) as cfgdata:
                 cad = yaml.load(cfgdata, Loader = yaml.FullLoader)
@@ -498,7 +502,7 @@ def main():
             with open(cfgfile, 'r') as cfgdata:
                 cad = yaml.load(cfgdata, Loader = yaml.FullLoader)
 
-        # print("cad type", type(cad))
+        # print(f"cad type: {type(cad)}")
         # TODO get solid names (see Salome HiFiMagnet plugin)
         if isinstance(cad, MSite):
             if args.verbose: print("load cfg MSite")
@@ -548,21 +552,22 @@ def main():
         print("Get solids:")
     tr_subelements = tree.xpath('//'+GeomParams['Solid'][1])
     stags = {}
+    ring_ids = {}
     for i,sgroup in enumerate(tr_subelements):
         # print("solids=", sgroup.attrib['count'])
 
         for j,child in enumerate(sgroup):
             sname = solid_names[j]
+            oname = sname
             if 'name' in child.attrib and child.attrib['name'] != "":
                 sname = child.attrib['name'].replace("from_",'')
                 if sname.startswith("Ring-H"):
+                    ring_ids[sname] = solid_names[j]
                     sname = solid_names[j]
-            if args.verbose:
-                print(f'sname[{j}]: {sname}', child.attrib, solid_names[j])
 
             indices = int(child.attrib['index'])+1
             if args.verbose:
-                print(sname, ":", indices)
+                print(f'sname[{j}]: oname={oname}, sname={sname}, child.attrib={child.attrib}, solid_name={solid_names[j]}, indices={indices}')
 
             skip = False
             if hideIsolant and ("Isolant" in sname or "Glue" in sname or "Kapton" in sname):
@@ -656,9 +661,13 @@ def main():
             
             if args.debug:
                 print("sname=", sname)
-            if sname.startswith('Ring'):
-                sname = sname.replace("Ring-H","R")
-                sname = re.sub('H\d+','', sname)
+            if sname.startswith('Ring-H'):
+                # print(f"=== {sname} ===")
+                for rkey in ring_ids:
+                    # print(f'rkey={rkey}, rvalue={ring_ids[rkey]}')
+                    if sname.startswith(rkey):
+                        sname = sname.replace(rkey, ring_ids[rkey])
+                # print(f"Ring BC: {sname}")
             sname = sname.replace("Air_","")
             if args.debug:
                 print(sname, indices, insert_id)
@@ -787,8 +796,8 @@ def main():
             if args.verbose:
                 print(f"BC glue[{tag}:", gmsh.model.getBoundary([(GeomParams['Solid'][0], tag)]) )
             for (dim, tag) in gmsh.model.getBoundary([(GeomParams['Solid'][0],tag)]):
-                type = gmsh.model.getType(dim, tag)
-                if type == "Plane":
+                gtype = gmsh.model.getType(dim, tag)
+                if gtype == "Plane":
                     Points = gmsh.model.getBoundary([(GeomParams['Face'][0], tag)], recursive=True)
                     for p in Points:
                         EndPoints_tags.append(p[1])
