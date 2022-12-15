@@ -384,11 +384,6 @@ def main():
     print("groupLeads:", groupLeads)
     print("groupCoolingChannels:", groupCoolingChannels)
 
-    if isinstance(args.lc, list):
-        lc = args.lc[-1]
-    else:
-        lc = args.lc
-       
     MeshAlgo2D = {
         'MeshAdapt' : 1,
         'Automatic' : 2,
@@ -530,8 +525,20 @@ def main():
             if hideIsolant:
                 raise Exception("--hide Isolants cannot be used since cad contains Air region")
 
-    if isinstance(args.lc, list):
-        assert (len(Boxes) == len(args.lc)-1), f"Wrong number of mesh length size: {len(Boxes)} magnets whereas args.lc contains {len(args.lc)} mesh size"
+    # if not mesh characteristic length is given
+    if not args.lc:
+        for item in Boxes:
+            (r, z) = Boxes[box]
+            args.lc.append((r[1]-r[0])/100.)
+        if "Air" in args.input_file:
+            args.lc.append(args.lc[-1]*20)
+    else:
+        nboxes = len(Boxes)
+        if "Air" in args.input_file:
+            assert (nboxes == len(args.lc)-1), f"Wrong number of mesh length size: {len(Boxes)} magnets whereas args.lc contains {len(args.lc)-1} mesh size"
+        else:
+            assert (nboxes == len(args.lc)), f"Wrong number of mesh length size: {len(Boxes)} magnets whereas args.lc contains {len(args.lc)} mesh size"
+            
     # print(f"solid_names[{len(solid_names)}]: {solid_names}")
 
     # print(f"GeomParams['Solid'][0]: {GeomParams['Solid'][0]}")
@@ -830,26 +837,23 @@ def main():
             gmsh.option.setNumber("Geometry.OCCScaling", unit)
 
         # Assign a mesh size to all the points:
-        lcar1 = lc
-        if isinstance(args.lc, list):
-            lcar1 = args.lc[-1]
+        lcar1 = args.lc[-1]
         gmsh.model.mesh.setSize(gmsh.model.getEntities(0), lcar1)
 
         # Get points from Physical volumes
         # from volume name use correct lc characteristic
-        if isinstance(args.lc, list):
-            z_eps = 1.e-6
-            for i,box in enumerate(Boxes):
-                for key in box:
-                    mtype = box[key][0]
-                    print(f'box[{i}]={key} mtype={mtype} lc={args.lc[i]} boundingbox={box[key][1]}')
-                    (r, z) = box[key][1]
-                    if mtype == 'Supra':
-                        z[0] *= 1.1
-                        z[1] *= 1.1
+        z_eps = 1.e-6
+        for i,box in enumerate(Boxes):
+            for key in box:
+                mtype = box[key][0]
+                print(f'box[{i}]={key} mtype={mtype} lc={args.lc[i]} boundingbox={box[key][1]}')
+                (r, z) = box[key][1]
+                if mtype == 'Supra':
+                    z[0] *= 1.1
+                    z[1] *= 1.1
 
-                    ov = gmsh.model.getEntitiesInBoundingBox(r[0], z[0], -z_eps, r[1], z[1], z_eps, 0)
-                    gmsh.model.mesh.setSize(ov, args.lc[i])
+                ov = gmsh.model.getEntitiesInBoundingBox(r[0], z[0], -z_eps, r[1], z[1], z_eps, 0)
+                gmsh.model.mesh.setSize(ov, args.lc[i])
         
     
         # LcMax -                         /------------------
