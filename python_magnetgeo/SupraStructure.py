@@ -696,7 +696,8 @@ class HTSinsert:
                 # else loop to load pancake and isolation structure definitions
                 if "n" in data["dblpancakes"]:
                     self.n = data["dblpancakes"]["n"]
-                    print(f"Loading {self.n} similar dblpancakes, z={z}")
+                    if debug: 
+                        print(f"Loading {self.n} similar dblpancakes, z={z}")
                     if "isolation" in data["dblpancakes"]:
                         dpisolation = isolation.from_data(data["dblpancakes"]["isolation"])
                     else:
@@ -726,7 +727,8 @@ class HTSinsert:
                     self.r0 = self.dblpancakes[0].getR0()
                     self.r1 = self.dblpancakes[0].getR0() + self.dblpancakes[0].getW()
                 else:
-                    print(f"Loading different dblpancakes, z={z}")
+                    if debug:
+                        print(f"Loading different dblpancakes, z={z}")
                     self.n = 0
                     for dp in data['dblpancakes']:
                         self.n += 1
@@ -765,18 +767,19 @@ class HTSinsert:
                 # print(f'dp[{i}]: z0={z+_h/2.}, z1={z}, z2={z+_h}')
                 z += _h + myisolation.getH()
 
-            print("=== Load cfg:")
-            print(f"r0= {self.r0} [mm]")
-            print(f"r1= {self.r1} [mm]")
-            print(f"z1= {self.getZ0()-self.getH()/2.} [mm]")
-            print(f"z2= {self.getZ0()+self.getH()/2.} [mm]")
-            print(f"z0= {self.z0} [mm]")
-            print(f"h= {self.h} [mm]")
-            print(f"n= {len(self.dblpancakes)}")
+            if debug:
+                print("=== Load cfg:")
+                print(f"r0= {self.r0} [mm]")
+                print(f"r1= {self.r1} [mm]")
+                print(f"z1= {self.getZ0()-self.getH()/2.} [mm]")
+                print(f"z2= {self.getZ0()+self.getH()/2.} [mm]")
+                print(f"z0= {self.z0} [mm]")
+                print(f"h= {self.h} [mm]")
+                print(f"n= {len(self.dblpancakes)}")
 
-            for i,dp in enumerate(self.dblpancakes):
-                print(f"dblpancakes[{i}]: {dp}")
-            print("===")
+                for i,dp in enumerate(self.dblpancakes):
+                    print(f"dblpancakes[{i}]: {dp}")
+                print("===")
 
     def gmsh(self, detail: str, AirData: tuple =(), debug: bool = False):
         """

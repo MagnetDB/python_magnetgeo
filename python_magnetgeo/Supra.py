@@ -153,7 +153,7 @@ class Supra(yaml.YAMLObject):
         """
         istream = open(self.name + '.json', 'r')
         jsondata = self.from_json(istream.read())
-        print (type(jsondata))
+        # print (type(jsondata))
         istream.close()
 
     def get_Nturns(self):
