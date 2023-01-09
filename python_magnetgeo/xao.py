@@ -976,7 +976,7 @@ def main():
         if is2D:
             meshname += "-Axi"
         if "Air" in args.input_file:
-            meshname += "-Air"
+            meshname += "_withAir"
         print(f'Save mesh {meshname}.msh to {os.getcwd()}')
         gmsh.write(f'{meshname}.msh')
         
