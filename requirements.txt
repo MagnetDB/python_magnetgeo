@@ -1,4 +1,4 @@
 yaml
-lxml
+lxml >= 4.9.1
 gmsh >= 4.8.4
 
