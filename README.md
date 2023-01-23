@@ -22,6 +22,13 @@ Features
 -   Load/Create CAD and Mesh with Salome (see hifimagnet.salome)
 -   Create Gmsh mesh from Salome XAO format
 
+Examples
+========
+
+```
+python3 -m python_magnetgeo.xao --wd /data/geometries Pancakes-pancake-Axi.xao mesh --geo HTS-pancake-test.yaml []
+```
+
 Credits
 =======
 
