@@ -683,19 +683,21 @@ def main():
             if args.debug:
                 print("sname=", sname)
 
-            if sname.endswith('_rInt') or sname.endswith('_rExt'):
-                for rkey in ring_ids:
-                    # print(f'rkey={rkey}, rvalue={ring_ids[rkey]}')
-                    if sname.startswith(rkey):
-                        sname = sname.replace(rkey, ring_ids[rkey])
+            if not ring_ids is None:
+                if sname.endswith('_rInt') or sname.endswith('_rExt'):
+                    for rkey in ring_ids:
+                        # print(f'rkey={rkey}, rvalue={ring_ids[rkey]}')
+                        if sname.startswith(rkey):
+                            sname = sname.replace(rkey, ring_ids[rkey])
                 
-            if sname.startswith('Ring-H'):
-                #print(f"=== {sname} ===")
-                for rkey in ring_ids:
-                    # print(f'rkey={rkey}, rvalue={ring_ids[rkey]}')
-                    if sname.startswith(rkey):
-                        sname = sname.replace(rkey, ring_ids[rkey])
-                #print(f"Ring BC: {sname}")
+                if sname.startswith('Ring-H'):
+                    #print(f"=== {sname} ===")
+                    for rkey in ring_ids:
+                        # print(f'rkey={rkey}, rvalue={ring_ids[rkey]}')
+                        if sname.startswith(rkey):
+                            sname = sname.replace(rkey, ring_ids[rkey])
+                    #print(f"Ring BC: {sname}")
+
             sname = sname.replace("Air_","")
             if args.debug:
                 print(sname, indices, insert_id)
