@@ -7,8 +7,6 @@ import yaml
 from . import Insert
 from . import SupraStructure
 
-from python_magnetsetup.file_utils import MyOpen, search_paths
-
 def main():
     """Console script for python_magnetgeo."""
     parser = argparse.ArgumentParser()
@@ -29,12 +27,6 @@ def main():
 
     print("Arguments: " + str(args))
     
-    # load appenv
-    from python_magnetsetup.config import appenv
-    MyEnv = None
-    if args.env:
-        MyEnv = appenv()
-
     cwd = os.getcwd()
     if args.wd:
         os.chdir(args.wd)
@@ -45,23 +37,14 @@ def main():
 
     site = None
     if ext == "yaml":
-        if MyEnv:
-            with MyOpen(args.filename, 'r', paths=search_paths(MyEnv, "geom")) as f:
-                site = yaml.load(f, Loader=yaml.FullLoader)
-        else:
-            with open(args.filename, 'r') as f:
-                site = yaml.load(f, Loader=yaml.FullLoader)
+        with open(args.filename, 'r') as f:
+            site = yaml.load(f, Loader=yaml.FullLoader)
         print("site=",site)
 
     elif ext == "json":
-        if MyEnv:
-            with MyOpen(args.filename, 'r', paths=search_paths(MyEnv, "geom")) as f:
-                site = SupraStructure.HTSinsert()
-                site.loadCfg(args.filename)
-        else:
-            with open(args.filename, 'r') as f:
-                site = SupraStructure.HTSinsert()
-                site.loadCfg(args.filename)
+        with open(args.filename, 'r') as f:
+            site = SupraStructure.HTSinsert()
+            site.loadCfg(args.filename)
 
         print("HTS insert: ", "R0=%g m" % site.getR0(), 
                 "R1=%g m" % site.getR1(), 
