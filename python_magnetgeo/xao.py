@@ -25,18 +25,20 @@ from lxml import etree
 
 import gmsh
 
-from .Ring import *
-from .Helix import *
-from .InnerCurrentLead import *
-from .OuterCurrentLead import *
-from .Insert import *
-from .Bitter import *
-from .Supra import *
-from .MSite import *
+from . import Ring
+from . import Helix
+from . import InnerCurrentLead
+from . import OuterCurrentLead
+from . import Insert
+from . import Bitter
+from . import Supra
+from . import MSite
 
 from .utils import load_Xao
+from .volumes import create_physicalgroups, create_bcs
+from .volumes import create_channels
 
-def Supra_Gmsh(cad, gname, is2D, verbose):
+def Supra_Gmsh(mnane, cad, gname, is2D, verbose):
     """ Load Supra cad """
     print("Supra_Gmsh:", cad={cad.name}, gname={gname})
     solid_names = []
@@ -81,10 +83,9 @@ def Supra_Gmsh(cad, gname, is2D, verbose):
 
     if verbose:
         print(f"Supra_Gmsh: solid_names {len(solid_names)}")
-    print(f"Supra_Gmsh: {cad.name} done")
     return solid_names
 
-def Bitter_Gmsh(cad, gname, is2D, verbose):
+def Bitter_Gmsh(mname, cad, gname, is2D, verbose):
     """ Load Bitter cad """
     print(f"Bitter_Gmsh: cad={cad.name}, gname={gname}")
     solid_names = []
@@ -100,7 +101,7 @@ def Bitter_Gmsh(cad, gname, is2D, verbose):
         print(f"Bitter_Gmsh: solid_names {len(solid_names)}")
     return solid_names
 
-def Helix_Gmsh(cad, gname, is2D, verbose):
+def Helix_Gmsh(mname, cad, gname, is2D, verbose):
     """ Load Helix cad """
     print(f"Helix_Gmsh: cad={cad.name}, gname={gname}")
     solid_names = []
@@ -202,8 +203,6 @@ def Magnet_Gmsh(mname, cad, gname, is2D, verbose):
     # print('pcad: {pcad} type={type(pcad)}')
     if isinstance(pcad, Bitter):
         # TODO replace pname by f'{mname}_{pname}'
-        if mname:
-            pname = f'{mname}_{pcad.name}'
         solid_names += Bitter_Gmsh(pcad, pname, is2D, verbose)
         NHelices.append(0)
         NChannels.append(0)
@@ -212,8 +211,6 @@ def Magnet_Gmsh(mname, cad, gname, is2D, verbose):
         # TODO prepend name with part name
     elif isinstance(pcad, Supra):
         # TODO replace pname by f'{mname}_{pname}'
-        if mname:
-            pname = f'{mname}_{pname}'
         solid_names += Supra_Gmsh(pcad, pname, is2D, verbose)
         NHelices.append(0)
         NChannels.append(0)
@@ -234,13 +231,11 @@ def Magnet_Gmsh(mname, cad, gname, is2D, verbose):
     if verbose:
         print(f"Magnet_Gmsh: {cad} Done [solids {len(solid_names)}]")
         print(f'Magnet_Gmsh: Boxes={Boxes}')
-    return (solid_names, NHelices, NChannels, NIsolants, Boxes, ring_ids)
+    return (pname, solid_names, NHelices, NChannels, NIsolants, Boxes, ring_ids)
 
-def MSite_Gmsh(mdata, cad, gname, is2D, verbose):
+def MSite_Gmsh(cad, gname, is2D, verbose):
     """
     Load MSite cad
-
-    mdata: dict with mname and type
     """
 
     print("MSite_Gmsh:", cad)
@@ -251,58 +246,33 @@ def MSite_Gmsh(mdata, cad, gname, is2D, verbose):
     NChannels = []
     NIsolants = []
     Boxes = []
-    ring_ids = {}
+    ring_ids = {} # would be better {mname: ring_ids}
 
-    # Get mnames from mdata dict
-    if mdata:
-        mnames = [*mdata]
-
-    def ddd(cad_data, mname):
-        (_names, _NHelices, _NChannels, _NIsolants, _Boxes, _ring_ids) = Magnet_Gmsh(mname, cad_data, gname, is2D, verbose)
-        compound.append(cad_data)
+    def ddd(cad_data, mname, mtype):
+        (pname, _names, _NHelices, _NChannels, _NIsolants, _Boxes, _ring_ids) = Magnet_Gmsh(mname, cad_data, gname, is2D, verbose)
+        compound.append(cad_name) # should add mname??
         solid_names += _names
         NHelices += _NHelices
         NChannels += _NChannels
         NIsolants += _NIsolants
         Boxes.append(_Boxes)
         ring_ids.update(_ring_ids)
-        # print(f"MSite_Gmsh: cad_data={cad_data}, _names={len(solid_names)}, solids={len(solid_names)}")
+        if verbose:
+            print(f"MSite_Gmsh: cad_data={cad_data}, pname={pname}, _names={len(solid_names)}, solids={len(solid_names)}")
 
     i = 0
     if isinstance(cad.magnets, str):
-        # mdata: 1 entry only
-        if mdata:
-            mname = mnames[i]
-            i + 1
-        else:
-            mname = ""
-        ddd(cad.magnets, mname)
-        # print(f"MSite_Gmsh: cad.magnets={cad.magnets} solids={len(solid_names)}")
+        ddd(cad.magnets, mname, mtype)
     elif isinstance(cad.magnets, list):
-        # mdata: as many entries as in cad.magnets
-        if mdata:
-            mname = mnames[i]
-            i + 1
-        else:
-            mname = ""
         for magnet in cad.magnets:
             ddd(magnet, mname)
-            # print(f"MSite_Gmsh: magnet={magnet} solids={len(solid_names)}")
     elif isinstance(cad.magnets, dict):
-        # mdata: as many entries as in cad.magnets
-        if mdata:
-            mname = mnames[i]
-            i + 1
-        else:
-            mname = ""
         for key in cad.magnets:
             if isinstance(cad.magnets[key], str):
                 ddd(cad.magnets[key], mname)
-                # print(f"MSite_Gmsh: cad.magnets[key]={cad.magnets[key]} solids={len(solid_names)}")
             elif isinstance(cad.magnets[key], list):
                 for mpart in cad.magnets[key]:
                     ddd(mpart, mname)
-                    # print(f"MSite_Gmsh: mpart={mpart} solids={len(solid_names)}")
 
     if verbose:
         print(f"MSite_Gmsh: {cad} Done [solids {len(solid_names)}]")
@@ -313,7 +283,6 @@ def main():
 
     parser = argparse.ArgumentParser()
     parser.add_argument("input_file")
-    parser.add_argument("--mdata", help="specify magnet data", type=json.loads)
     parser.add_argument("--debug", help="activate debug", action='store_true')
     parser.add_argument("--verbose", help="activate verbose", action='store_true')
     parser.add_argument("--env", help="load settings.env", action="store_true")
@@ -352,10 +321,6 @@ def main():
     cwd = os.getcwd()
     if args.wd:
         os.chdir(args.wd)
-
-    if args.mdata:
-        print(f'mdata={args.mdata}')
-        # return 1
 
     hideIsolant = False
     groupIsolant = False
@@ -410,7 +375,7 @@ def main():
         gmsh.option.setNumber("General.Verbosity", 2)
 
     file = args.input_file # r"HL-31_H1.xao"
-    (gname, tree, volumes) = load_Xao(file, GeomParams, args.debug)
+    (gname, tree) = load_Xao(file, GeomParams, args.debug)
 
     # Loading yaml file to get infos on volumes
     cfgfile = ""
@@ -437,30 +402,34 @@ def main():
         with open(cfgfile, 'r') as cfgdata:
             cad = yaml.load(cfgdata, Loader=yaml.FullLoader)
 
-        # print(f"cfgfile: {cad} type: {type(cad)}")
+        print(f"cfgfile: {cad} type: {type(cad)}")
         # TODO get solid names (see Salome HiFiMagnet plugin)
         if isinstance(cad, MSite):
             if args.verbose: print("load cfg MSite")
-            (compound, _names, NHelices, NChannels, NIsolants, _Boxes, ring_ids) = MSite_Gmsh(args.mdata, gname, is2D, args.verbose)
+            (compound, _names, NHelices, NChannels, NIsolants, _Boxes, ring_ids) = MSite_Gmsh(gname, is2D, args.verbose)
             # print(f'_Boxes: {_Boxes}, {len(_Boxes)}')
             Boxes = _Boxes
             solid_names += _names
         elif isinstance(cad, Bitter):
             if args.verbose: print("load cfg Bitter")
-            solid_names += Bitter_Gmsh(cad, gname, is2D, args.verbose)
+            mname = ""
+            solid_names += Bitter_Gmsh(mname, cad, gname, is2D, args.verbose)
             Boxes.append({cad.name: ('Bitter', cad.boundingBox())})
         elif isinstance(cad, Supra):
             if args.verbose: print("load cfg Supra")
-            solid_names += Supra_Gmsh(cad, gname, is2D, args.verbose)
+            mname = ""
+            solid_names += Supra_Gmsh(mname, cad, gname, is2D, args.verbose)
             Boxes.append({cad.name: ('Supra', cad.boundingBox())})
         elif isinstance(cad, Insert):
             if args.verbose: print("load cfg Insert")
-            (_names, NHelices, NChannels, NIsolants, ring_ids) = Insert_Gmsh(cad, gname, is2D, args.verbose)
+            mname = ""
+            (_names, NHelices, NChannels, NIsolants, ring_ids) = Insert_Gmsh(mname, cad, gname, is2D, args.verbose)
             Boxes.append({cad.name: ('Insert', cad.boundingBox())})
             solid_names += _names
         elif isinstance(cad, Helix):
             if args.verbose: print("load cfg Helix")
-            solid_names += Helix_Gmsh(cad, gname, is2D, args.verbose)
+            mname = ""
+            solid_names += Helix_Gmsh(mname, cad, gname, is2D, args.verbose)
             Boxes.append({cad.name: ('Helix', cad.boundingBox())})
         else:
             raise Exception(f"unsupported type of cad {type(cad)}")
@@ -470,13 +439,8 @@ def main():
             if hideIsolant:
                 raise Exception("--hide Isolants cannot be used since cad contains Air region")
 
-    # print(f"solid_names[{len(solid_names)}]: {solid_names}")
-
-    # print(f"GeomParams['Solid'][0]: {GeomParams['Solid'][0]}")
-    # print(f"gmsh solids: {len(gmsh.model.getEntities(2))}")
     nsolids = len(gmsh.model.getEntities(GeomParams['Solid'][0]))
     assert (len(solid_names) == nsolids), f"Wrong number of solids: in yaml {len(solid_names)} in gmsh {nsolids}"
-    # print(len(solid_names), nsolids)
 
     print(f"compound = {compound}")
     print(f"NHelices = {NHelices}")
@@ -487,249 +451,17 @@ def main():
     # use yaml data to identify solids id...
     # Insert solids: H1_Cu, H1_Glue0, H1_Glue1, H2_Cu, ..., H14_Glue1, R1, R2, ..., R13, InnerLead, OuterLead, Air
     # HR: Cu, Kapton0, Kapton1, ... KaptonXX
-    if args.verbose:
-        print("Get solids:")
-    tr_subelements = tree.xpath('//'+GeomParams['Solid'][1])
-    stags = {}
-    for i, sgroup in enumerate(tr_subelements):
-        # print("solids=", sgroup.attrib['count'])
-
-        for j, child in enumerate(sgroup):
-            sname = solid_names[j]
-            oname = sname
-            # print(f'sname={sname}: child.attrib={child.attrib}')
-            if 'name' in child.attrib and child.attrib['name'] != "":
-                sname = child.attrib['name'].replace("from_", '')
-                # print(f'sname={sname}')
-                if sname.startswith("Ring-H"):
-                    sname = ring_ids[sname]
-
-            indices = int(child.attrib['index'])+1
-            if args.verbose:
-                print(f'sname[{j}]: oname={oname}, sname={sname}, child.attrib={child.attrib}, solid_name={solid_names[j]}, indices={indices}')
-
-            skip = False
-            if hideIsolant and ("Isolant" in sname or "Glue" in sname or "Kapton" in sname):
-                if args.verbose:
-                    print("skip isolant: ", sname)
-                skip = True
-
-            # TODO if groupIsolant and "glue" in sname:
-            #    sname = remove latest digit from sname
-            if groupIsolant and  ("Isolant" in sname or "Glue" in sname or "Kapton" in sname):
-                sname = re.sub(r'\d+$', '', sname)
-
-            if not skip:
-                if sname in stags:
-                    stags[sname].append(indices)
-                else:
-                    stags[sname] = [indices]
-
-    # Physical Volumes
-    if args.verbose:
-        print("Solidtags:")
-    for stag in stags:
-        pgrp = gmsh.model.addPhysicalGroup(GeomParams['Solid'][0], stags[stag])
-        gmsh.model.setPhysicalName(GeomParams['Solid'][0], pgrp, stag)
-        if args.verbose:
-            print(stag, ":", stags[stag], pgrp)
-
+    stags = create_physicalgroups(tree, solid_names, ring_ids, hideIsolant, groupIsolant, args.debug)
+    
     # TODO review if several insert in msite
     # so far assume only one insert that appears as first magnets
-    Channel_Submeshes = []
-    if isinstance(NChannels, int):
-        _NChannels = NChannels
-    elif isinstance(NChannels, list):
-        _NChannels = NChannels[0]
-    for i in range(0, _NChannels):
-        names = []
-        inames = []
-        if i == 0:
-            names.append(f"R{i+1}_R0n") # check Ring nummerotation
-        if i >= 1:
-            names.append(f"H{i}_rExt")
-            if not hideIsolant:
-                isolant_names = [f"H{i}_IrExt"]
-                kapton_names = [f"H{i}_kaptonsIrExt"]
-                names = names + isolant_names + kapton_names
-                # inames = inames + isolant_names + kapton_names
-        if i >= 2:
-            names.append(f"R{i-1}_R1n")
-        if i < _NChannels:
-            names.append(f"H{i+1}_rInt")
-            if not hideIsolant:
-                isolant_names = [f"H{i+1}_IrInt"]
-                kapton_names = [f"H{i+1}_kaptonsIrInt"]
-                names = names + isolant_names + kapton_names
-                # inames = inames + isolant_names + kapton_names
-        # Better? if i+1 < nchannels:
-        if i != 0 and i+1 < _NChannels:
-            names.append(f"R{i}_CoolingSlits")
-            names.append(f"R{i}_R0n")
-        Channel_Submeshes.append(names)
-        #
-        # For the moment keep iChannel_Submeshes into
-        # iChannel_Submeshes.append(inames)
-
-    if args.debug:
-        print("Channel_Submeshes:")
-        for channel in Channel_Submeshes:
-            print(f'\t{channel}')
+    Channel_Submeshes = create_channels(Channel_Submeshes, NChannels, hideIsolant, args.debug)
 
     # get groups
-    if args.verbose:
-        print("Get BC groups")
-    tr_elements = tree.xpath('//group')
-
-    if args.debug:
-        print('Ring_ids')
-        for rkey in ring_ids:
-            print(f'rkey={rkey}, rvalue={ring_ids[rkey]}')
-
-    bctags = {}
-    for i, group in enumerate(tr_elements):
-        #print(etree.tostring(group))
-        #print("group:", group.keys())
-
-        ## dimension: "solid", "face", "edge"
-        if args.debug:
-            print("name=", group.attrib['name'], group.attrib['dimension'], group.attrib['count'])
-
-        indices = []
-        if group.attrib['dimension'] == GeomParams['Face'][1]:
-            for child in group:
-                indices.append(int(child.attrib['index'])+1)
-
-            # get bc name
-            insert_id = gname.replace("_withAir", "")
-            sname = group.attrib['name'].replace(insert_id+"_", "")
-            sname = sname.replace('===', '_')
-
-            if args.debug:
-                print("sname=", sname)
-
-            if not ring_ids is None:
-                if sname.endswith('_rInt') or sname.endswith('_rExt'):
-                    for rkey in ring_ids:
-                        # print(f'rkey={rkey}, rvalue={ring_ids[rkey]}')
-                        if sname.startswith(rkey):
-                            sname = sname.replace(rkey, ring_ids[rkey])
-                
-                if sname.startswith('Ring-H'):
-                    #print(f"=== {sname} ===")
-                    for rkey in ring_ids:
-                        # print(f'rkey={rkey}, rvalue={ring_ids[rkey]}')
-                        if sname.startswith(rkey):
-                            sname = sname.replace(rkey, ring_ids[rkey])
-                    #print(f"Ring BC: {sname}")
-
-            sname = sname.replace("Air_","")
-            if args.debug:
-                print(sname, indices, insert_id)
-
-            skip = False
-            # remove unneeded surfaces for Rings: BP for even rings and HP for odd rings
-            if sname.startswith('Ring'):
-                num = int(sname.split('_')[0].replace('R', ''))
-                if num % 2 == 0 and 'BP' in sname:
-                    skip = True
-                if num % 2 != 0 and 'HP' in sname:
-                    skip = True
-
-            # keep only H0_V0 if no innerlead otherwise keep Lead_V0
-            # keep only H14_V1 if not outerlead otherwise keep outerlead V1
-            # print(innerLead_exist, re.search('H\d+_V0',sname))
-            if innerLead_exist:
-                match = re.search('H\d+_V0', sname)
-                if match or (sname.startswith("Inner") and sname.endswith("V1")):
-                    skip = True
-            else:
-                match = re.search('H\d+_V0', sname)
-                if match:
-                    num = int(sname.split('_')[0].replace('H', ''))
-                    if num != 1:
-                        skip = True
-            if outerLead_exist:
-                match = re.search('H\d+_V1', sname)
-                if match:
-                    skip = True
-                if sname.startswith("Outer") and sname.endswith("V1"):
-                    skip = True
-            else:
-                match = re.search('H\d+_V1', sname)
-                if match:
-                    num = int(sname.split('_')[0].replace('H', ''))
-                    if num != NHelices:
-                        skip = True
-
-            # groupCoolingChannels option (see Tools_SMESH::CreateChannelSubMeshes for HL and for HR ??) + watch out when hideIsolant is True
-            # TODO case of HR: group HChannel and muChannel per Helix
-            if groupCoolingChannels:
-                for j, channel_id in enumerate(Channel_Submeshes):
-                    for cname in channel_id:
-                        if sname.endswith(cname):
-                            sname = f"Channel{j}"
-                            break
-
-                # TODO make it more genral
-                # so far assume only one insert and  insert is the 1st compound
-                if compound:
-                    if sname.startswith(compound[0]):
-                        if "_rInt" in sname or "_rExt" in sname:
-                            skip = True
-                        if "_IrInt" in sname or "_IrExt" in sname:
-                            skip = True
-                        if "_iRint" in sname or "_iRext" in sname:
-                            skip = True
-                else:
-                    if "_rInt" in sname or "_rExt" in sname:
-                        skip = True
-                    if "_IrInt" in sname or "_IrExt" in sname:
-                        skip = True
-                    if "_iRint" in sname or "_iRext" in sname:
-                        skip = True
-
-            # if hideIsolant remove "iRint"|"iRext" in Bcs otherwise sname: do not record physical surface for Interface
-            if hideIsolant:
-                if 'IrInt' in sname or 'IrExt' in sname:
-                    skip = True
-                if 'iRint' in sname or 'iRext' in sname:
-                    skip = True
-                if 'Interface' in sname:
-                    if groupIsolant:
-                        sname = re.sub(r'\d+$', '', sname)
-
-            if groupIsolant:
-                if ('IrInt' in sname or 'IrExt' in sname):
-                    sname = re.sub(r'\d+$', '', sname)
-                if ('iRint' in sname or 'iRext' in sname):
-                    sname = re.sub(r'\d+$', '', sname)
-                    # print("groupBC:", sname)
-                if 'Interface' in sname:
-                    # print("groupBC: skip ", sname)
-                    skip = True
-
-            if args.debug:
-                print("name=", group.attrib['name'], group.attrib['dimension'], group.attrib['count'], f"sname={sname}", "skip=", skip)
-            if not skip:
-                if not sname in bctags:
-                    bctags[sname] = indices
-                else:
-                    for index in indices:
-                        bctags[sname].append(index)
-
-    # Physical Surfaces
-    if args.verbose:
-        print("BCtags:")
-    for bctag in bctags:
-        pgrp = gmsh.model.addPhysicalGroup(GeomParams['Face'][0], bctags[bctag])
-        gmsh.model.setPhysicalName(GeomParams['Face'][0], pgrp, bctag)
-        if args.verbose:
-            print(bctag, bctags[bctag], pgrp)
-
-    Origin = gmsh.model.occ.addPoint(0, 0, 0, 0.1, 0)
+    bctags = create_bcs(tree, ring_ids, gname, innerLead_exist, outerLead_exist, groupCoolingChannels, Channel_Submeshes, compound, hideIsolant, groupIsolant, args.debug)
 
     # Generate the mesh and write the mesh file
+    Origin = gmsh.model.occ.addPoint(0, 0, 0, 0.1, 0)
     gmsh.model.occ.synchronize()
 
     # TODO write a template geo gmsh file for later use(gname + ".geo")

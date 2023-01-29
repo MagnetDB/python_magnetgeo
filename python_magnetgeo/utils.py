@@ -62,7 +62,6 @@ def load_Xao(file: str, GeomParams: dict, debug=False):
         print(f"Solids: {len(volumes)}")
         exit(1)
 
-    # print("Face:", len(gmsh.model.getEntities(GeomParams['Face'][0])) )
     if debug:
         # get all model entities
         ent = gmsh.model.getEntities()
@@ -71,4 +70,4 @@ def load_Xao(file: str, GeomParams: dict, debug=False):
     if cleanup:
         os.remove(gfile)
 
-    return (gname, tree, volumes)
+    return (gname, tree)
