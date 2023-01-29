@@ -15,7 +15,6 @@ class Ring(yaml.YAMLObject):
     name :
     r :
     z :
-    orientation:
     angle :
     BPside :
     fillets :
