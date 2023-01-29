@@ -1,4 +1,4 @@
-yaml
-lxml >= 4.9.1
+PyYAML
+lxml >= 4.9.2
 gmsh >= 4.8.4
 
