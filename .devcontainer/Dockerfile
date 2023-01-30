@@ -51,17 +51,17 @@ RUN apt-get update \
     && mkdir ~vscode/.ssh/ \
     && ssh-keyscan github.com >> ~vscode/.ssh/known_hosts \
     && chown -R vscode.$USER_GID ~vscode/.ssh
-    
-# install prerequistes from Lncmi debian repo 
+
+# install prerequistes from Lncmi debian repo
 RUN apt update \
     && apt-get install -y lsb-release \
     && apt-get install -y debian-keyring \
     && cp /usr/share/keyrings/debian-maintainers.gpg /etc/apt/trusted.gpg.d \
-    && echo "deb http://euler.GRENOBLE.LNCMI.LOCAL/~trophime/debian/ $(lsb_release -cs) main" > /etc/apt/sources.list.d/lncmi.list
-
-RUN apt-get -y install python3-nptdms python3-freesteam python3-nlopt python3-tabulate \
+    && echo "deb http://euler.GRENOBLE.LNCMI.LOCAL/~trophime/debian/ $(lsb_release -cs) main" > /etc/apt/sources.list.d/lncmi.list \
+    && apt update \
+    && apt-get -y install python3-nptdms python3-freesteam python3-nlopt python3-tabulate \
     && apt-get -y install python3-ht python3-pyclaw python3-yaml  \
-    && apt-get -y install python3-chevron python3-magnettools python3-magnetsetup
+    && apt-get -y install python3-chevron python3-magnettools python3-gmsh
 
 # Install latest gsh dev version (support for BoundingBox) ?
 #RUN python3 -m pip install -i https://gmsh.info/python-packages --force-reinstall --no-cache-dir gmsh-dev
