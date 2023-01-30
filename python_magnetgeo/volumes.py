@@ -1,4 +1,13 @@
-def create_physicalgroups(tree, solid_names: list, ring_ids:dict, hideIsolant: bool, goupIsolant: bool, debug: bool=False):
+"""
+
+"""
+
+from typing import Union
+
+import re
+import gmsh
+
+def create_physicalgroups(tree, solid_names: list, ring_ids: dict, GeomParams: dict, hideIsolant: bool, groupIsolant: bool, debug: bool = False):
     """
     creates PhysicalVolumes
     """
@@ -9,8 +18,9 @@ def create_physicalgroups(tree, solid_names: list, ring_ids:dict, hideIsolant: b
         for j, child in enumerate(sgroup):
             sname = solid_names[j]
             oname = sname
-            # print(f'sname={sname}: child.attrib={child.attrib}')
+            print(f'sname={sname}: child.attrib={child.attrib}')
             if 'name' in child.attrib and child.attrib['name'] != "":
+                # print(f"sname={sname}, {child.attrib['name']}")
                 sname = child.attrib['name'].replace("from_", '')
                 # print(f'sname={sname}')
                 if sname.startswith("Ring-H"):
@@ -48,13 +58,13 @@ def create_physicalgroups(tree, solid_names: list, ring_ids:dict, hideIsolant: b
 
     return stags
 
-def create_bcs(tree, ring_ids, gname,
+def create_bcs(tree, ring_ids, gname, GeomParams, NHelices,
                innerLead_exist, outerLead_exist,
-               groupCoolingChannels, Channel_Submeshes, compound, hideIsolant, groupIsolant, debug: bool=False):
+               groupCoolingChannels, Channel_Submeshes, compound, hideIsolant, groupIsolant, debug: bool = False):
 
     tr_elements = tree.xpath('//group')
 
-    if args.debug:
+    if debug:
         print('Ring_ids')
         for rkey in ring_ids:
             print(f'rkey={rkey}, rvalue={ring_ids[rkey]}')
@@ -66,6 +76,7 @@ def create_bcs(tree, ring_ids, gname,
 
         indices = []
         if group.attrib['dimension'] == GeomParams['Face'][1]:
+            print(f"BCs[{i}]: {group.attrib['name']}")
             for child in group:
                 indices.append(int(child.attrib['index'])+1)
 
@@ -88,8 +99,8 @@ def create_bcs(tree, ring_ids, gname,
                         if sname.startswith(rkey):
                             sname = sname.replace(rkey, ring_ids[rkey])
 
-            sname = sname.replace("Air_","")
-            if args.debug:
+            sname = sname.replace("Air_", "")
+            if debug:
                 print(sname, indices, insert_id)
 
             skip = False
@@ -175,7 +186,7 @@ def create_bcs(tree, ring_ids, gname,
                     # print("groupBC: skip ", sname)
                     skip = True
 
-            if args.debug:
+            if debug:
                 print(f"name={group.attrib['name']}, {group.attrib['dimension']}, {group.attrib['count']}, sname={sname}, skip={skip}")
             if not skip:
                 if not sname in bctags:
@@ -185,25 +196,25 @@ def create_bcs(tree, ring_ids, gname,
                         bctags[sname].append(index)
 
     # Physical Surfaces
-    if args.verbose:
+    if debug:
         print("BCtags:")
     for bctag in bctags:
         pgrp = gmsh.model.addPhysicalGroup(GeomParams['Face'][0], bctags[bctag])
         gmsh.model.setPhysicalName(GeomParams['Face'][0], pgrp, bctag)
-        if args.verbose:
+        if debug:
             print(bctag, bctags[bctag], pgrp)
 
     return bctags
 
 
-def create_channels(NChannels: int|list, hideIsolant: bool, debug: bool=False):
+def create_channels(NChannels: Union[int, list], hideIsolant: bool, debug: bool = False):
     """
     create channels
 
     TODO regexp shall be associated to a magnet
     """
     Channel_Submeshes = []
-    
+
     if isinstance(NChannels, int):
         _NChannels = NChannels
     elif isinstance(NChannels, list):
@@ -238,7 +249,7 @@ def create_channels(NChannels: int|list, hideIsolant: bool, debug: bool=False):
         # For the moment keep iChannel_Submeshes into
         # iChannel_Submeshes.append(inames)
 
-    if args.debug:
+    if debug:
         print("Channel_Submeshes:")
         for channel in Channel_Submeshes:
             print(f'\t{channel}')

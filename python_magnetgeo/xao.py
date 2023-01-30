@@ -32,13 +32,15 @@ from . import OuterCurrentLead
 from . import Insert
 from . import Bitter
 from . import Supra
+from . import Bitters
+from . import Supras
 from . import MSite
 
 from .utils import load_Xao
 from .volumes import create_physicalgroups, create_bcs
 from .volumes import create_channels
 
-def Supra_Gmsh(mnane, cad, gname, is2D, verbose):
+def Supra_Gmsh(mname, cad, gname, is2D, verbose: bool = False):
     """ Load Supra cad """
     print("Supra_Gmsh:", cad={cad.name}, gname={gname})
     solid_names = []
@@ -85,7 +87,7 @@ def Supra_Gmsh(mnane, cad, gname, is2D, verbose):
         print(f"Supra_Gmsh: solid_names {len(solid_names)}")
     return solid_names
 
-def Bitter_Gmsh(mname, cad, gname, is2D, verbose):
+def Bitter_Gmsh(mname, cad, gname, is2D, verbose: bool = False):
     """ Load Bitter cad """
     print(f"Bitter_Gmsh: cad={cad.name}, gname={gname}")
     solid_names = []
@@ -101,7 +103,7 @@ def Bitter_Gmsh(mname, cad, gname, is2D, verbose):
         print(f"Bitter_Gmsh: solid_names {len(solid_names)}")
     return solid_names
 
-def Helix_Gmsh(mname, cad, gname, is2D, verbose):
+def Helix_Gmsh(cad, gname, is2D, verbose: bool = False):
     """ Load Helix cad """
     print(f"Helix_Gmsh: cad={cad.name}, gname={gname}")
     solid_names = []
@@ -144,7 +146,23 @@ def Helix_Gmsh(mname, cad, gname, is2D, verbose):
         print(f"Helix_Gmsh[{htype}]: solid_names {len(solid_names)}")
     return solid_names
 
-def Insert_Gmsh(cad, gname, is2D, verbose):
+def Bitters_Gmsh(mname, cad, gname, is2D, verbose: bool = False):
+    """ Load Bitters """
+    print(f"Bitters_Gmsh: mname={mname}, gname={gname}")
+    solid_names = []
+    for magnet in cad.magnets:
+        solid_names += Bitter_Gmsh(magnet, gname, is2D, verbose)
+    return solid_names
+
+def Supras_Gmsh(mname, cad, gname, is2D, verbose: bool = False):
+    """ Load Supras """
+    print(f"Supras_Gmsh: mname={mname}, gname={gname}")
+    solid_names = []
+    for magnet in cad.magnets:
+        solid_names += Supra_Gmsh(magnet, gname, is2D, verbose)
+    return solid_names
+
+def Insert_Gmsh(cad, gname, is2D, verbose: bool = False):
     """ Load Insert """
     print(f"Insert_Gmsh: cad={cad.name}, gname={gname}")
     solid_names = []
@@ -177,7 +195,7 @@ def Insert_Gmsh(cad, gname, is2D, verbose):
             with open(Lead+".yaml", 'r') as f:
                 clLead = yaml.load(f, Loader=yaml.FullLoader)
             prefix = 'o'
-            if isinstance(clLead, InnerCurrentLead):
+            if isinstance(clLead, InnerCurrentLead.InnerCurrentLead):
                 prefix = 'i'
             solid_names.append(f"{prefix}L{i+1}")
 
@@ -201,23 +219,21 @@ def Magnet_Gmsh(mname, cad, gname, is2D, verbose):
         pname = pcad.name
 
     # print('pcad: {pcad} type={type(pcad)}')
-    if isinstance(pcad, Bitter):
-        # TODO replace pname by f'{mname}_{pname}'
-        solid_names += Bitter_Gmsh(pcad, pname, is2D, verbose)
+    if isinstance(pcad, Bitter.Bitter):
+        solid_names += Bitter_Gmsh(mname, pcad, pname, is2D, verbose)
         NHelices.append(0)
         NChannels.append(0)
         NIsolants.append(0)
         Boxes[pname] = ('Bitter', pcad.boundingBox())
         # TODO prepend name with part name
-    elif isinstance(pcad, Supra):
-        # TODO replace pname by f'{mname}_{pname}'
-        solid_names += Supra_Gmsh(pcad, pname, is2D, verbose)
+    elif isinstance(pcad, Supra.Supra):
+        solid_names += Supra_Gmsh(mname, pcad, pname, is2D, verbose)
         NHelices.append(0)
         NChannels.append(0)
         NIsolants.append(0)
         Boxes[pname] = ('Supra', pcad.boundingBox())
         # TODO prepend name with part name
-    elif isinstance(pcad, Insert):
+    elif isinstance(pcad, Insert.Insert):
         # keep pname
         # print(f'Insert: {pname}')
         (_names, _NHelices, _NChannels, _NIsolants, ring_ids) = Insert_Gmsh(pcad, pname, is2D, verbose)
@@ -248,9 +264,10 @@ def MSite_Gmsh(cad, gname, is2D, verbose):
     Boxes = []
     ring_ids = {} # would be better {mname: ring_ids}
 
-    def ddd(cad_data, mname, mtype):
+    def ddd(mname, cad_data, solid_names, NHelices, NChannels, NIsolants):
+        print(f'ddd: mname={mname}, cad_data={cad_data}')
         (pname, _names, _NHelices, _NChannels, _NIsolants, _Boxes, _ring_ids) = Magnet_Gmsh(mname, cad_data, gname, is2D, verbose)
-        compound.append(cad_name) # should add mname??
+        compound.append(cad_data)
         solid_names += _names
         NHelices += _NHelices
         NChannels += _NChannels
@@ -260,19 +277,21 @@ def MSite_Gmsh(cad, gname, is2D, verbose):
         if verbose:
             print(f"MSite_Gmsh: cad_data={cad_data}, pname={pname}, _names={len(solid_names)}, solids={len(solid_names)}")
 
-    i = 0
     if isinstance(cad.magnets, str):
-        ddd(cad.magnets, mname, mtype)
+        print(f'magnet={cad.magnets}, type={type(cad.magnets)}')
+        ddd(cad.magnets, cad.magnets, solid_names, NHelices, NChannels, NIsolants)
     elif isinstance(cad.magnets, list):
         for magnet in cad.magnets:
-            ddd(magnet, mname)
+            print(f'magnet={magnet}, list')
+            ddd(magnet, magnet, solid_names, NHelices, NChannels, NIsolants)
     elif isinstance(cad.magnets, dict):
         for key in cad.magnets:
+            print(f'magnet={key}, dict')
             if isinstance(cad.magnets[key], str):
-                ddd(cad.magnets[key], mname)
+                ddd(key, cad.magnets[key], solid_names, NHelices, NChannels, NIsolants)
             elif isinstance(cad.magnets[key], list):
                 for mpart in cad.magnets[key]:
-                    ddd(mpart, mname)
+                    ddd(key, mpart, solid_names, NHelices, NChannels, NIsolants)
 
     if verbose:
         print(f"MSite_Gmsh: {cad} Done [solids {len(solid_names)}]")
@@ -402,31 +421,41 @@ def main():
         with open(cfgfile, 'r') as cfgdata:
             cad = yaml.load(cfgdata, Loader=yaml.FullLoader)
 
-        print(f"cfgfile: {cad} type: {type(cad)}")
+        print(f"cfgfile: {cad}")
         # TODO get solid names (see Salome HiFiMagnet plugin)
-        if isinstance(cad, MSite):
+        if isinstance(cad, MSite.MSite):
             if args.verbose: print("load cfg MSite")
-            (compound, _names, NHelices, NChannels, NIsolants, _Boxes, ring_ids) = MSite_Gmsh(gname, is2D, args.verbose)
+            (compound, _names, NHelices, NChannels, NIsolants, _Boxes, ring_ids) = MSite_Gmsh(cad, gname, is2D, args.verbose)
             # print(f'_Boxes: {_Boxes}, {len(_Boxes)}')
             Boxes = _Boxes
             solid_names += _names
-        elif isinstance(cad, Bitter):
+        elif isinstance(cad, Bitters.Bitters):
+            if args.verbose: print("load cfg Bitters")
+            mname = ""
+            solid_names += Bitters_Gmsh(mname, cad, gname, is2D, args.verbose)
+            Boxes.append({cad.name: ('Bitters', cad.boundingBox())})
+        elif isinstance(cad, Supras.Supras):
+            if args.verbose: print("load cfg Supras")
+            mname = ""
+            solid_names += Supras_Gmsh(mname, cad, gname, is2D, args.verbose)
+            Boxes.append({cad.name: ('Supras', cad.boundingBox())})
+        elif isinstance(cad, Bitter.Bitter):
             if args.verbose: print("load cfg Bitter")
             mname = ""
             solid_names += Bitter_Gmsh(mname, cad, gname, is2D, args.verbose)
             Boxes.append({cad.name: ('Bitter', cad.boundingBox())})
-        elif isinstance(cad, Supra):
+        elif isinstance(cad, Supra.Supra):
             if args.verbose: print("load cfg Supra")
             mname = ""
             solid_names += Supra_Gmsh(mname, cad, gname, is2D, args.verbose)
             Boxes.append({cad.name: ('Supra', cad.boundingBox())})
-        elif isinstance(cad, Insert):
+        elif isinstance(cad, Insert.Insert):
             if args.verbose: print("load cfg Insert")
             mname = ""
             (_names, NHelices, NChannels, NIsolants, ring_ids) = Insert_Gmsh(mname, cad, gname, is2D, args.verbose)
             Boxes.append({cad.name: ('Insert', cad.boundingBox())})
             solid_names += _names
-        elif isinstance(cad, Helix):
+        elif isinstance(cad, Helix.Helix):
             if args.verbose: print("load cfg Helix")
             mname = ""
             solid_names += Helix_Gmsh(mname, cad, gname, is2D, args.verbose)
@@ -451,14 +480,14 @@ def main():
     # use yaml data to identify solids id...
     # Insert solids: H1_Cu, H1_Glue0, H1_Glue1, H2_Cu, ..., H14_Glue1, R1, R2, ..., R13, InnerLead, OuterLead, Air
     # HR: Cu, Kapton0, Kapton1, ... KaptonXX
-    stags = create_physicalgroups(tree, solid_names, ring_ids, hideIsolant, groupIsolant, args.debug)
-    
+    stags = create_physicalgroups(tree, solid_names, ring_ids, GeomParams, hideIsolant, groupIsolant, args.debug)
+
     # TODO review if several insert in msite
     # so far assume only one insert that appears as first magnets
-    Channel_Submeshes = create_channels(Channel_Submeshes, NChannels, hideIsolant, args.debug)
+    Channel_Submeshes = create_channels(NChannels, hideIsolant, args.debug)
 
     # get groups
-    bctags = create_bcs(tree, ring_ids, gname, innerLead_exist, outerLead_exist, groupCoolingChannels, Channel_Submeshes, compound, hideIsolant, groupIsolant, args.debug)
+    bctags = create_bcs(tree, ring_ids, gname, GeomParams, NHelices, innerLead_exist, outerLead_exist, groupCoolingChannels, Channel_Submeshes, compound, hideIsolant, groupIsolant, args.debug)
 
     # Generate the mesh and write the mesh file
     Origin = gmsh.model.occ.addPoint(0, 0, 0, 0.1, 0)
@@ -471,7 +500,7 @@ def main():
     EndPoints_tags = [0]
     VPoints_tags = []
 
-    if isinstance(cad, Insert) or isinstance(cad, Helix):
+    if isinstance(cad, Insert.Insert) or isinstance(cad, Helix.Helix):
         # TODO: loop over tag from Glue or Kaptons (here [2, 3])
         glue_tags = [i+1  for i, name in enumerate(solid_names) if ("Isolant" in name or ("Glue" in name or "Kapton" in name))]
         if args.verbose:

@@ -5,8 +5,6 @@
 Provides tools to un/serialize data from json
 """
 
-import json
-
 from . import Shape
 from . import ModelAxi
 from . import Model3D
@@ -19,6 +17,8 @@ from . import Bitter
 from . import Supra
 from . import Screen
 from . import MSite
+from . import Bitters
+from . import Supras
 
 # From : http://chimera.labs.oreilly.com/books/1230000000393/ch06.html#_discussion_95
 # Dictionary mapping names to known classes
@@ -35,6 +35,8 @@ classes = {
     'Bitter' : Bitter,
     'Supra' : Supra,
     'Screen' : Screen,
+    'Bitters' : Bitters,
+    'Supras' : Supras,
     'MSite' : MSite
 }
 
@@ -59,4 +61,3 @@ def unserialize_object(d):
         return obj
     else:
         return d
-
