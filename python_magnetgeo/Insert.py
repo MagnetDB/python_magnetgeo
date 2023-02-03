@@ -149,7 +149,7 @@ class Insert(yaml.YAMLObject):
         return False if empty, True otherwise
         """
 
-        (r_i, z_i) = self.boundingbox()
+        (r_i, z_i) = self.boundingBox()
 
         # TODO take into account Mandrin and Isolation even if detail="None"
         collide = False

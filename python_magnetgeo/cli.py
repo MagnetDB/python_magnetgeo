@@ -4,29 +4,54 @@ import sys
 import os
 import yaml
 
+from . import Helix
 from . import Insert
 from . import SupraStructure
+
 
 def main():
     """Console script for python_magnetgeo."""
     parser = argparse.ArgumentParser()
-    
-    parser.add_argument("filename", help="name of the model to be loaded", type=str, nargs='?' )
-    parser.add_argument("--tojson", help="convert to json", action='store_true')
-    
+
+    parser.add_argument(
+        "filename", help="name of the model to be loaded", type=str, nargs="?"
+    )
+    parser.add_argument("--tojson", help="convert to json", action="store_true")
+
     parser.add_argument("--env", help="load settings.env", action="store_true")
     parser.add_argument("--wd", help="set a working directory", type=str, default="")
-    parser.add_argument("--air", help="activate air generation", nargs=2, type=float, metavar=('infty_Rratio', 'infty_Zratio'))
+    parser.add_argument(
+        "--air",
+        help="activate air generation",
+        nargs=2,
+        type=float,
+        metavar=("infty_Rratio", "infty_Zratio"),
+    )
     parser.add_argument("--gmsh", help="save to gmsh geofile", action="store_true")
-    parser.add_argument("--gmsh_api", help="use gmsh api to create geofile", action="store_true")
-    parser.add_argument("--mesh", help="create gmsh mesh with lc charateristics (stored like bcs)", action="extend", nargs='+', type=float)
-    parser.add_argument("--detail", help="select representation mode of HTS", choices=['None', 'dblpancake', 'pancake', 'tape'], default='None')
-    parser.add_argument("--show", help="display gmsh geofile when api is on", action="store_true")
-    
+    parser.add_argument(
+        "--gmsh_api", help="use gmsh api to create geofile", action="store_true"
+    )
+    parser.add_argument(
+        "--mesh",
+        help="create gmsh mesh with lc charateristics (stored like bcs)",
+        action="extend",
+        nargs="+",
+        type=float,
+    )
+    parser.add_argument(
+        "--detail",
+        help="select representation mode of HTS",
+        choices=["None", "dblpancake", "pancake", "tape"],
+        default="None",
+    )
+    parser.add_argument(
+        "--show", help="display gmsh geofile when api is on", action="store_true"
+    )
+
     args = parser.parse_args()
 
-    print("Arguments: " + str(args))
-    
+    print(f"Arguments: {args}")
+
     cwd = os.getcwd()
     if args.wd:
         os.chdir(args.wd)
@@ -37,19 +62,25 @@ def main():
 
     site = None
     if ext == "yaml":
-        with open(args.filename, 'r') as f:
+        with open(args.filename, "r") as f:
             site = yaml.load(f, Loader=yaml.FullLoader)
-        print("site=",site)
+        print("site=", site)
+
+        if isinstance(site, Helix.Helix):
+            print(f"{site.compact()}")
 
     elif ext == "json":
-        with open(args.filename, 'r') as f:
+        with open(args.filename, "r") as f:
             site = SupraStructure.HTSinsert()
             site.loadCfg(args.filename)
 
-        print("HTS insert: ", "R0=%g m" % site.getR0(), 
-                "R1=%g m" % site.getR1(), 
-                "Z0=%g" % (site.getZ0()-site.getH()/2.),
-                "Z1=%g" % (site.getZ0()+site.getH()/2.))
+        print(
+            "HTS insert: ",
+            f"R0={site.getR0()} m",
+            f"R1={site.getR1()} m",
+            f"Z0={(site.getZ0() - site.getH() / 2.0)} m",
+            f"Z1={(site.getZ0() + site.getH() / 2.0)} m",
+        )
     else:
         raise RuntimeError(f"python_magnetgeo/cli: unsupported extension {ext}")
 
@@ -59,10 +90,10 @@ def main():
 
     AirData = None
     if args.air:
-        infty_Rratio = args.air[0] #1.5
+        infty_Rratio = args.air[0]  # 1.5
         if infty_Rratio < 1:
             raise RuntimeError(f"Infty_Rratio={infty_Rratio} should be greater than 1")
-        infty_Zratio = args.air[1] #2.
+        infty_Zratio = args.air[1]  # 2.
         if infty_Zratio < 1:
             raise RuntimeError("Infty_Zratio={infty_Zratio} should be greater than 1")
         AirData = (infty_Rratio, infty_Zratio)
@@ -72,9 +103,10 @@ def main():
             site.Create_AxiGeo(AirData)
         if isinstance(site, SupraStructure.HTSinsert):
             site.template_gmsh(name, args.detail)
-    
+
     if args.gmsh_api:
         import gmsh
+
         gmsh.initialize()
         gmsh.model.add(name)
         gmsh.logger.start()
@@ -96,7 +128,7 @@ def main():
             print("msh:", type(args.mesh))
             site.gmsh_msh(bcs, args.mesh[0])
             gmsh.model.mesh.generate(2)
-            gmsh.write(name + ".msh")        
+            gmsh.write(name + ".msh")
 
         log = gmsh.logger.get()
         print("Logger has recorded " + str(len(log)) + " lines")

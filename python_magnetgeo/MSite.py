@@ -64,7 +64,7 @@ class MSite(yaml.YAMLObject):
         self.screens = data.screens
 
         # TODO: check that magnets are not interpenetring
-        # define a boundingbox method for each type: Bitter, Supra, Insert
+        # define a boundingBox method for each type: Bitter, Supra, Insert
 
 
     def to_json(self):
@@ -97,7 +97,7 @@ class MSite(yaml.YAMLObject):
         jsondata = self.from_json(istream.read())
         istream.close()
 
-    def boundingbox(self, workingDir):
+    def boundingBox(self, workingDir):
         """
         """
         zmin = None
@@ -105,7 +105,7 @@ class MSite(yaml.YAMLObject):
         rmin = None
         rmax = None
 
-        def cboundingbox(rmin, rmax, zmin, zmax, r, z):
+        def cboundingBox(rmin, rmax, zmin, zmax, r, z):
             if zmin == None:
                 zmin = min(z)
                 zmax = max(z)
@@ -123,7 +123,7 @@ class MSite(yaml.YAMLObject):
             with open(YAMLFile, 'r') as istream:
                 Object = yaml.load(istream, Loader=yaml.FullLoader)
                 (r, z) = Object.boundingBox()
-                (rmin, rmax, zmin, zmax) = cboundingbox(rmin, rmax, zmin, zmax, r, z)
+                (rmin, rmax, zmin, zmax) = cboundingBox(rmin, rmax, zmin, zmax, r, z)
 
         elif isinstance(self.magnets, list):
             for mname in self.magnets:
@@ -131,7 +131,7 @@ class MSite(yaml.YAMLObject):
                 with open(YAMLFile, 'r') as istream:
                     Object = yaml.load(istream, Loader=yaml.FullLoader)
                     (r, z) = Object.boundingBox()
-                    (rmin, rmax, zmin, zmax) = cboundingbox(rmin, rmax, zmin, zmax, r, z)
+                    (rmin, rmax, zmin, zmax) = cboundingBox(rmin, rmax, zmin, zmax, r, z)
         elif isinstance(self.magnets, dict):
             for key in self.magnets:
                 if isinstance(self.magnets[key], str):
@@ -139,14 +139,14 @@ class MSite(yaml.YAMLObject):
                     with open(YAMLFile, 'r') as istream:
                         Object = yaml.load(istream, Loader=yaml.FullLoader)
                         (r, z) = Object.boundingBox()
-                        (rmin, rmax, zmin, zmax) = cboundingbox(rmin, rmax, zmin, zmax, r, z)
+                        (rmin, rmax, zmin, zmax) = cboundingBox(rmin, rmax, zmin, zmax, r, z)
                 elif isinstance(self.magnets[key], list):
                     for mname in self.magnets[key]:
                         YAMLFile = os.path.join(workingDir, f"{mname}.yaml")
                         with open(YAMLFile, 'r') as istream:
                             Object = yaml.load(istream, Loader=yaml.FullLoader)
                             (r, z) = Object.boundingBox()
-                            (rmin, rmax, zmin, zmax) = cboundingbox(rmin, rmax, zmin, zmax, r, z)
+                            (rmin, rmax, zmin, zmax) = cboundingBox(rmin, rmax, zmin, zmax, r, z)
                 else:
                     raise Exception(f"magnets: unsupported type {type(self.magnets[key])}")
         else:
@@ -196,7 +196,7 @@ class MSite(yaml.YAMLObject):
 
         # Now create air
         if AirData:
-            (r_min, r_max, z_min, z_max) = self.boundingbox(workingDir)
+            (r_min, r_max, z_min, z_max) = self.boundingBox(workingDir)
             r0_air = 0
             dr_air = (r_min - r_max) * AirData[0]
             z0_air = z_min * AirData[1]

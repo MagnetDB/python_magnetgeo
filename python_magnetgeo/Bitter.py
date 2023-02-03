@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-#-*- coding:utf-8 -*-
+# -*- coding:utf-8 -*-
 
 """
 Provides definition for Bitter:
@@ -16,6 +16,7 @@ from . import deserialize
 
 from . import ModelAxi
 
+
 class Bitter(yaml.YAMLObject):
     """
     name :
@@ -27,7 +28,7 @@ class Bitter(yaml.YAMLObject):
     tierods: [r, n, shape]
     """
 
-    yaml_tag = 'Bitter'
+    yaml_tag = "Bitter"
 
     def __init__(self, name, r: List[float], z: List[float], axi=ModelAxi.ModelAxi()):
         """
@@ -42,20 +43,20 @@ class Bitter(yaml.YAMLObject):
         """
         representation of object
         """
-        return "%s(name=%r, r=%r, z=%r, axi=%r)" % \
-               (self.__class__.__name__,
-                self.name,
-                self.r,
-                self.z,
-                self.axi
-               )
+        return "%s(name=%r, r=%r, z=%r, axi=%r)" % (
+            self.__class__.__name__,
+            self.name,
+            self.r,
+            self.z,
+            self.axi,
+        )
 
     def dump(self):
         """
         dump object to file
         """
         try:
-            ostream = open(self.name + '.yaml', 'w')
+            ostream = open(f"{self.name}.yaml", "w")
             yaml.dump(self, stream=ostream)
             ostream.close()
         except:
@@ -67,11 +68,11 @@ class Bitter(yaml.YAMLObject):
         """
         data = None
         try:
-            istream = open(self.name + '.yaml', 'r')
+            istream = open(f"{self.name}.yaml", "r")
             data = yaml.load(stream=istream)
             istream.close()
         except:
-            raise Exception("Failed to load Bitter data %s.yaml"%self.name)
+            raise Exception(f"Failed to load Bitter data {self.name}.yaml")
 
         self.name = data.name
         self.r = data.r
@@ -82,8 +83,9 @@ class Bitter(yaml.YAMLObject):
         """
         convert from yaml to json
         """
-        return json.dumps(self, default=deserialize.serialize_instance, sort_keys=True, indent=4)
-
+        return json.dumps(
+            self, default=deserialize.serialize_instance, sort_keys=True, indent=4
+        )
 
     def from_json(self, string):
         """
@@ -95,7 +97,7 @@ class Bitter(yaml.YAMLObject):
         """
         write from json file
         """
-        ostream = open(self.name + '.json', 'w')
+        ostream = open(self.name + ".json", "w")
         jsondata = self.to_json()
         ostream.write(str(jsondata))
         ostream.close()
@@ -104,7 +106,7 @@ class Bitter(yaml.YAMLObject):
         """
         read from json file
         """
-        istream = open(self.name + '.json', 'r')
+        istream = open(self.name + ".json", "r")
         jsondata = self.from_json(istream.read())
         istream.close()
 
@@ -130,8 +132,8 @@ class Bitter(yaml.YAMLObject):
 
         # TODO take into account Mandrin and Isolation even if detail="None"
         collide = False
-        isR = abs(self.r[0] - r[0]) < abs(self.r[1]-self.r[0] + r[0] + r[1]) /2.
-        isZ = abs(self.z[0] - z[0]) < abs(self.z[1]-self.z[0] + z[0] + z[1]) /2.
+        isR = abs(self.r[0] - r[0]) < abs(self.r[1] - self.r[0] + r[0] + r[1]) / 2.0
+        isZ = abs(self.z[0] - z[0]) < abs(self.z[1] - self.z[0] + z[0] + z[1]) / 2.0
         if isR and isZ:
             collide = True
         return collide
@@ -178,45 +180,78 @@ class Bitter(yaml.YAMLObject):
         # set physical name
         for i, id in enumerate(B_ids):
             ps = gmsh.model.addPhysicalGroup(2, [id])
-            gmsh.model.setPhysicalName(2, ps, "%s_Cu%d" % (self.name, i))
-            defs["%s_Cu%d" % (self.name, i)] = ps
+            gmsh.model.setPhysicalName(2, ps, f"{self.name}_Cu{i}")
+            defs[f"{self.name}_Cu{i}"] = ps
 
         # get BC ids
         gmsh.option.setNumber("Geometry.OCCBoundsUseStl", 1)
 
         # TODO: if z[xx] < 0 multiply by 1+eps to get a min by 1-eps to get a max
-        eps = 1.e-3
-        ov = gmsh.model.getEntitiesInBoundingBox(self.r[0]* (1-eps), (self.z[0])* (1+eps), 0,
-                                                 self.r[-1]* (1+eps), (self.z[0])* (1-eps), 0, 1)
+        eps = 1.0e-3
+        ov = gmsh.model.getEntitiesInBoundingBox(
+            self.r[0] * (1 - eps),
+            (self.z[0]) * (1 + eps),
+            0,
+            self.r[-1] * (1 + eps),
+            (self.z[0]) * (1 - eps),
+            0,
+            1,
+        )
         ps = gmsh.model.addPhysicalGroup(1, [tag for (dim, tag) in ov])
-        gmsh.model.setPhysicalName(1, ps, "%s_HP" % self.name)
-        defs["%s_HP" % self.name] = ps
+        gmsh.model.setPhysicalName(1, ps, f"{self.name}_HP")
+        defs[f"{self.nqme}_HP"] = ps
 
-        ov = gmsh.model.getEntitiesInBoundingBox(self.r[0]* (1-eps), (self.z[-1])* (1-eps), 0,
-                                                 self.r[-1]* (1+eps), (self.z[-1])* (1+eps), 0, 1)
+        ov = gmsh.model.getEntitiesInBoundingBox(
+            self.r[0] * (1 - eps),
+            (self.z[-1]) * (1 - eps),
+            0,
+            self.r[-1] * (1 + eps),
+            (self.z[-1]) * (1 + eps),
+            0,
+            1,
+        )
         ps = gmsh.model.addPhysicalGroup(1, [tag for (dim, tag) in ov])
-        gmsh.model.setPhysicalName(1, ps, "%s_BP" % self.name)
-        defs["%s_BP" % self.name] = ps
+        gmsh.model.setPhysicalName(1, ps, f"{self.name}_BP")
+        defs[f"{self.name}_BP"] = ps
 
-        ov = gmsh.model.getEntitiesInBoundingBox(self.r[0]* (1-eps), self.z[0]* (1+eps), 0,
-                                                 self.r[0]* (1+eps), self.z[1]* (1+eps), 0, 1)
+        ov = gmsh.model.getEntitiesInBoundingBox(
+            self.r[0] * (1 - eps),
+            self.z[0] * (1 + eps),
+            0,
+            self.r[0] * (1 + eps),
+            self.z[1] * (1 + eps),
+            0,
+            1,
+        )
         r0_bc_ids = [tag for (dim, tag) in ov]
         if debug:
-            print("r0_bc_ids:", len(r0_bc_ids), 
-                  self.r[0]* (1-eps), self.z[0]* (1+eps),
-                  self.r[0]* (1+eps), self.z[1]* (1+eps))
+            print(
+                "r0_bc_ids:",
+                len(r0_bc_ids),
+                self.r[0] * (1 - eps),
+                self.z[0] * (1 + eps),
+                self.r[0] * (1 + eps),
+                self.z[1] * (1 + eps),
+            )
         ps = gmsh.model.addPhysicalGroup(1, [tag for (dim, tag) in ov])
-        gmsh.model.setPhysicalName(1, ps, "%s_Rint" % self.name)
-        defs["%s_Rint" % self.name] = ps
+        gmsh.model.setPhysicalName(1, ps, f"{self.name}_Rint")
+        defs[f"{self.name}_Rint"] = ps
 
-        ov = gmsh.model.getEntitiesInBoundingBox(self.r[1]* (1-eps), self.z[0]* (1+eps), 0,
-                                                 self.r[1]* (1+eps), self.z[1]* (1+eps), 0, 1)
+        ov = gmsh.model.getEntitiesInBoundingBox(
+            self.r[1] * (1 - eps),
+            self.z[0] * (1 + eps),
+            0,
+            self.r[1] * (1 + eps),
+            self.z[1] * (1 + eps),
+            0,
+            1,
+        )
         r1_bc_ids = [tag for (dim, tag) in ov]
         if debug:
             print("r1_bc_ids:", len(r1_bc_ids))
         ps = gmsh.model.addPhysicalGroup(1, [tag for (dim, tag) in ov])
-        gmsh.model.setPhysicalName(1, ps, "%s_Rext" % self.name)
-        defs["%s_Rext" % self.name] = ps
+        gmsh.model.setPhysicalName(1, ps, f"{self.name}_Rext")
+        defs[f"{self.name}_Rext"] = ps
 
         # TODO: Air
         if Air_data:
@@ -228,26 +263,40 @@ class Bitter(yaml.YAMLObject):
             # TODO: Axis, Inf
             gmsh.option.setNumber("Geometry.OCCBoundsUseStl", 1)
 
-            eps = 1.e-6
+            eps = 1.0e-6
 
-            ov = gmsh.model.getEntitiesInBoundingBox(-eps, z0_air-eps, 0, +eps, z0_air+dz_air+eps, 0, 1)
+            ov = gmsh.model.getEntitiesInBoundingBox(
+                -eps, z0_air - eps, 0, +eps, z0_air + dz_air + eps, 0, 1
+            )
             print("ov:", len(ov))
             ps = gmsh.model.addPhysicalGroup(1, [tag for (dim, tag) in ov])
             gmsh.model.setPhysicalName(1, ps, "ZAxis")
-            defs["ZAxis" % self.name] = ps
+            defs[f"ZAxis{self.name}"] = ps
 
-            ov = gmsh.model.getEntitiesInBoundingBox(-eps, z0_air-eps, 0, dr_air+eps, z0_air+eps, 0, 1)
+            ov = gmsh.model.getEntitiesInBoundingBox(
+                -eps, z0_air - eps, 0, dr_air + eps, z0_air + eps, 0, 1
+            )
             print("ov:", len(ov))
 
-            ov += gmsh.model.getEntitiesInBoundingBox(dr_air-eps, z0_air-eps, 0, dr_air+eps, z0_air+dz_air+eps, 0, 1)
+            ov += gmsh.model.getEntitiesInBoundingBox(
+                dr_air - eps, z0_air - eps, 0, dr_air + eps, z0_air + dz_air + eps, 0, 1
+            )
             print("ov:", len(ov))
 
-            ov += gmsh.model.getEntitiesInBoundingBox(-eps, z0_air+dz_air-eps, 0, dr_air+eps, z0_air+dz_air+eps, 0, 1)
+            ov += gmsh.model.getEntitiesInBoundingBox(
+                -eps,
+                z0_air + dz_air - eps,
+                0,
+                dr_air + eps,
+                z0_air + dz_air + eps,
+                0,
+                1,
+            )
             print("ov:", len(ov))
 
             ps = gmsh.model.addPhysicalGroup(1, [tag for (dim, tag) in ov])
             gmsh.model.setPhysicalName(1, ps, "Infty")
-            defs["Infty" % self.name] = ps
+            defs[f"Infty{self.name}"] = ps
 
         return defs
 
@@ -265,7 +314,8 @@ class Bitter(yaml.YAMLObject):
         gmsh.model.mesh.setSize(gmsh.model.getBoundary(tapes, False, False, True), lcar_tape)
         """
         pass
-    
+
+
 def Bitter_constructor(loader, node):
     """
     build an bitter object
@@ -278,4 +328,6 @@ def Bitter_constructor(loader, node):
 
     return Bitter(name, r, z, axi)
 
-yaml.add_constructor(u'!Bitter', Bitter_constructor)
+
+yaml.add_constructor(u"!Bitter", Bitter_constructor)
+

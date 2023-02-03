@@ -136,6 +136,101 @@ class Helix(yaml.YAMLObject):
         """
         return self.axi.get_Nturns()
 
+    def compact(self):
+        def indices(lst, item):
+            return [i for i, x in enumerate(lst) if abs(1-item/x) <= 1.e-6]
+            
+        List = self.axi.pitch
+        duplicates = dict((x, indices(List, x)) for x in set(List) if List.count(x) > 1)
+        print(f'duplicates: {duplicates}')
+
+        sum_index = {}
+        for key in duplicates:
+            index_fst = duplicates[key][0]
+            sum_index[index_fst] = [index_fst]
+            search_index = sum_index[index_fst]
+            search_elem = search_index[-1]
+            for index in duplicates[key]:
+                print(f'index={index}, search_elem={search_elem}')
+                if index-search_elem == 1:
+                    search_index.append(index)
+                    search_elem = index
+                else:
+                    sum_index[index] = [index]
+                    search_index = sum_index[index]
+                    search_elem = search_index[-1]
+                            
+        print(f'sum_index: {sum_index}')
+        
+        remove_ids = []
+        for i in sum_index:
+            for item in sum_index[i]:
+                if item != i:
+                    remove_ids.append(item)
+
+        new_pitch = [p for i,p in enumerate(self.axi.pitch) if not i in remove_ids]
+        print(f'new_pitch={new_pitch}')
+
+        new_turns = self.axi.turns # use deepcopy: import copy and copy.deepcopy(self.axi.turns)
+        for i in sum_index:
+            for item in sum_index[i]:
+                new_turns[i] += self.axi.turns[item]
+        new_turns = [p for i,p in enumerate(self.axi.turns) if not i in remove_ids]
+        print(f'new_turns={new_turns}')
+
+        """
+  int t = Magnet_Stack.back();
+
+  MyDouble r1 = Tubes[t].get_R_int();
+  MyDouble r2 = Tubes[t].get_R_ext();
+  MyDouble h  = Tubes[t].get_Half_Electrical_Length();
+  MyDouble z0 = Tubes[t].get_Z0();
+
+  MyDouble z = (z0 + h);
+  MyDouble theta = 0;
+
+  MyDouble units = 1.e+3;
+  MyDouble angle_units = M_PI/180.;
+
+  MyDouble z_offset = 0;
+
+  string ident = filename;
+  string in_suffix;
+
+  remove_file_extension(ident, in_suffix);
+
+  cut_helix_file << "#theta[rad] \tShape_id[]\tZ[mm]\n";
+  cut_helix_file << "#\n";
+  cut_helix_file << setw(12) << setprecision(8) << theta * (-sign) << "\t";
+  cut_helix_file << setw(12) << setprecision(8) << 0 << "\t";
+  cut_helix_file << setw(12) << setprecision(8) << (z + z_offset) * units << "\n";
+
+  vector<BitterMagnet>::const_iterator Magnet = Helix.begin();
+  for (int s=Magnet_Stack.size()-1; s>=0; s--){
+     int stack = Magnet_Stack[s];
+
+     for (int n=Tubes[stack].get_n_elem()-1; n>=0; n--){
+	 int num = n + Tubes[stack].get_index();
+	 Magnet = Helix.begin();
+	 Magnet += num;
+
+	 MyDouble pitch = Tubes[stack].get_pitch(n);
+	 MyDouble Nturns = Tubes[stack].get_nturn(n); // = fabs(Magnet->get_Z_sup() - Magnet->get_Z_inf()) / pitch;
+
+	 z -= pitch * Nturns;
+	 theta += Nturns * 2 * M_PI; // in radians
+
+	 cut_helix_file << setw(12) << setprecision(8) << theta * (-sign) << "\t";
+	 cut_helix_file << setw(12) << setprecision(8) << 0 << "\t";
+	 cut_helix_file << setw(12) << setprecision(8) << (z + z_offset) * units << "\n";
+     }
+  }
+        
+        """
+
+
+
+    
     def gmsh(self, debug=False):
         """
         create gmsh geometry
