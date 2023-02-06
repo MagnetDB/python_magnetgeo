@@ -29,7 +29,21 @@ class Screen(yaml.YAMLObject):
         self.r = r
         self.z = z
 
+    def get_names(self, mname: str, is2D: bool, verbose: bool = False):
+        """
+        return names for Markers
+        """
+        solid_names = []
+
+        prefix = ""
+        if mname:
+            prefix = f"{mname}_"
         
+        solid_names.append(f"{prefix}{self.name}_Screen")
+        if verbose:
+            print(f"Bitter/get_names: solid_names {len(solid_names)}")
+        return solid_names
+    
     def __repr__(self):
         """
         representation of object

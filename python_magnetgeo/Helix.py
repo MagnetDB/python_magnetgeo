@@ -49,6 +49,54 @@ class Helix(yaml.YAMLObject):
         self.m3d = m3d
         self.shape = shape
 
+    def get_names(self, mname: str, is2D: bool, verbose: bool = False):
+        """
+        return names for Markers
+        """
+        solid_names = []
+
+        sInsulator = "Glue"
+        nInsulators = 0
+        nturns = self.get_Nturns()
+        if self.m3d.with_shapes and self.m3d.with_channels:
+            sInsulator = "Kapton"
+            htype = "HR"
+            angle = self.shape.angle
+            nshapes = nturns * (360 / float(angle))
+            if verbose:
+                print("shapes: ", nshapes, math.floor(nshapes), math.ceil(nshapes))
+
+            nshapes = (
+                lambda x: math.ceil(x)
+                if math.ceil(x) - x < x - math.floor(x)
+                else math.floor(x)
+            )(nshapes)
+            nInsulators = int(nshapes)
+            print("nKaptons=", nInsulators)
+        else:
+            htype = "HL"
+            nInsulators = 1
+            if self.dble:
+                nInsulators = 2
+            if verbose:
+                print("helix:", gname, htype, nturns)
+
+        if is2D:
+            nsection = len(self.axi.turns)
+            solid_names.append(f"Cu{0}")  # HP
+            for j in range(nsection):
+                solid_names.append(f"Cu{j+1}")
+            solid_names.append(f"Cu{nsection+1}")  # BP
+        else:
+            solid_names.append("Cu")
+            # TODO tell HR from HL
+            for j in range(nInsulators):
+                solid_names.append(f"{sInsulator}{j}")
+
+        if verbose:
+            print(f"Helix_Gmsh[{htype}]: solid_names {len(solid_names)}")
+        return solid_names
+    
     def __repr__(self):
         """
         representation of object

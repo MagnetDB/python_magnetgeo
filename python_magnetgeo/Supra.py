@@ -74,7 +74,58 @@ class Supra(yaml.YAMLObject):
                 print(f"Supra/check_dimensions: override dimensions for {self.name} from {self.struct}")
                 print(self)
 
+    def get_names(self, mname: str, is2D: bool, verbose: bool = False):
+        """
+        return names for Markers
+        """
+        solid_names = []
         
+        prefix = ""
+        if mname:
+            prefix = f"{mname}_"
+        
+        # # load yaml
+        # from . import SupraStructure
+        # hts = SupraStructure.HTSinsert()
+        # hts.loadCfg(f'{self.struct}')
+        hts = self.get_magnet_struct()
+        self.check_dimensions(hts)
+
+        # TODO take into account supra detail
+        if self.detail == "None":
+            solid_names.append(f"{prefix}{self.name}_S")
+        else:
+
+            n_dp = len(hts.dblpancakes)
+            cadname = self.struct.replace(".json", "")
+            for i, dp in enumerate(hts.dblpancakes):
+                dp_name = f"{prefix}{self.name}{cadname}_dp{i}"
+                if self.detail == "dblpancake":
+                    solid_names.append(f"{dp_name}")
+
+                if self.detail == "pancake":
+                    solid_names.append(f"{dp_name}_p0")
+                    solid_names.append(f"{dp_name}_p1")
+                    solid_names.append(f"{dp_name}_i")
+                if self.detail == "tape":
+                    solid_names.append(f"{dp_name}_p0_Mandrin")
+                    for j in range(dp.pancake.n):
+                        solid_names.append(f"{dp_name}_p0_t{j}_SC")
+                        solid_names.append(f"{dp_name}_p0_t{j}_Duromag")
+                    solid_names.append(f"{dp_name}_p1_Mandrin")
+                    for j in range(dp.pancake.n):
+                        solid_names.append(f"{dp_name}_p1_t{j}_SC")
+                        solid_names.append(f"{dp_name}_p1_t{j}_Duromag")
+                    solid_names.append(f"{dp_name}_i")
+
+            for i, dp in enumerate(hts.dblpancakes):
+                if i != n_dp - 1:
+                    solid_names.append(f"{prefix}{self.name}{cadname}_i{i}")
+
+        if verbose:
+            print(f"Supra_Gmsh: solid_names {len(solid_names)}")
+        return solid_names
+    
     def __repr__(self):
         """
         representation of object

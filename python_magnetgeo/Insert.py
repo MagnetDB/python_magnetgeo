@@ -7,6 +7,7 @@ import datetime
 import json
 import yaml
 from . import deserialize
+from . import InnerCurrentLead
 
 class Insert(yaml.YAMLObject):
     """
@@ -37,6 +38,119 @@ class Insert(yaml.YAMLObject):
         self.innerBore = innerbore
         self.outerBore = outerbore
 
+    def get_channels(self, hideIsolant: bool, debug: bool = False):
+        """
+        return channels
+        """
+    
+        Channels = []
+        NHelices = len(self.Helices)
+        NChannels = NHelices + 1  # To be updated if there is any htype==HR in Insert
+
+        for i in range(0, NChannels):
+            names = []
+            inames = []
+            if i == 0:
+                names.append(f"R{i+1}_R0n")  # check Ring nummerotation
+            if i >= 1:
+                names.append(f"H{i}_rExt")
+                if not hideIsolant:
+                    isolant_names = [f"H{i}_IrExt"]
+                    kapton_names = [f"H{i}_kaptonsIrExt"]
+                    names = names + isolant_names + kapton_names
+                    # inames = inames + isolant_names + kapton_names
+            if i >= 2:
+                names.append(f"R{i-1}_R1n")
+            if i < NChannels:
+                names.append(f"H{i+1}_rInt")
+                if not hideIsolant:
+                    isolant_names = [f"H{i+1}_IrInt"]
+                    kapton_names = [f"H{i+1}_kaptonsIrInt"]
+                    names = names + isolant_names + kapton_names
+                    # inames = inames + isolant_names + kapton_names
+        
+            # Better? if i+1 < nchannels:
+            if i != 0 and i + 1 < NChannels:
+                names.append(f"R{i}_CoolingSlits")
+                names.append(f"R{i}_R0n")
+            Channels.append(names)
+            #
+            # For the moment keep iChannel_Submeshes into
+            # iChannel_Submeshes.append(inames)
+
+        if debug:
+            print("Channels:")
+            for channel in Channels:
+                print(f"\t{channel}")
+
+    def get_names(self, mname: str, is2D: bool, verbose: bool = False):
+        """
+        return names for Markers
+        """
+        prefix = ""
+        if mname:
+            prefix = f"{mname}_"
+        solid_names = []
+
+        NHelices = len(self.Helices)
+        NChannels = NHelices + 1  # To be updated if there is any htype==HR in Insert
+        NIsolants = []  # To be computed depend on htype and dble
+        for i, helix in enumerate(self.Helices):
+            hHelix = None
+            Ninsulators = 0
+            with open(helix + ".yaml", "r") as f:
+                hHelix = yaml.load(f, Loader=yaml.FullLoader)
+
+            h_solid_names = hHelix.get_names(mname, is2D, verbose)
+            for k, sname in enumerate(h_solid_names):
+                h_solid_names[k] = f"{prefix}H{i+1}_{sname}"
+            solid_names += h_solid_names
+
+        for i, ring in enumerate(self.Rings):
+            if verbose:
+                print(f"ring: {ring}")
+            solid_names.append(f"{prefix}R{i+1}")
+        # print(f'Insert_Gmsh: ring_ids={ring_ids}')
+
+        if not is2D:
+            for i, Lead in enumerate(self.CurrentLeads):
+                with open(Lead + ".yaml", "r") as f:
+                    clLead = yaml.load(f, Loader=yaml.FullLoader)
+                prefix = "o"
+                if isinstance(clLead, InnerCurrentLead.InnerCurrentLead):
+                    prefix = "i"
+                solid_names.append(f"{prefix}L{i+1}")
+
+        if verbose:
+            print(f"Insert_Gmsh: solid_names {len(solid_names)}")
+        return solid_names
+
+    def get_dictnames(self, mname: str, is2D: bool, verbose: bool = False):
+        """
+        return names for Markers
+        """
+        ring_ids = {}
+
+        NHelices = len(self.Helices)
+        NChannels = NHelices + 1  # To be updated if there is any htype==HR in Insert
+        NIsolants = []  # To be computed depend on htype and dble
+        for i, helix in enumerate(self.Helices):
+            hHelix = None
+            Ninsulators = 0
+            with open(helix + ".yaml", "r") as f:
+                hHelix = yaml.load(f, Loader=yaml.FullLoader)
+
+            h_solid_names = hHelix.get_names(mname, is2D, verbose)
+            ring_ids[helix] = f"H{i+1}"
+
+        for i, ring in enumerate(self.Rings):
+            if verbose:
+                print(f"ring: {ring}")
+            ring_ids[ring] = f"R{i+1}"
+        # print(f'Insert_Gmsh: ring_ids={ring_ids}')
+
+        return (NHelices, NChannels, NIsolants, ring_ids)
+    
     def __repr__(self):
         """representation"""
         return "%s(name=%r, Helices=%r, Rings=%r, CurrentLeads=%r, HAngles=%r, RAngles=%r, innerbore=%r, outerbore=%r)" % \
