@@ -125,31 +125,15 @@ class Insert(yaml.YAMLObject):
             print(f"Insert_Gmsh: solid_names {len(solid_names)}")
         return solid_names
 
-    def get_dictnames(self, mname: str, is2D: bool, verbose: bool = False):
+    def get_dictnames(self):
         """
         return names for Markers
         """
-        ring_ids = {}
-
+        
         NHelices = len(self.Helices)
         NChannels = NHelices + 1  # To be updated if there is any htype==HR in Insert
         NIsolants = []  # To be computed depend on htype and dble
-        for i, helix in enumerate(self.Helices):
-            hHelix = None
-            Ninsulators = 0
-            with open(helix + ".yaml", "r") as f:
-                hHelix = yaml.load(f, Loader=yaml.FullLoader)
-
-            h_solid_names = hHelix.get_names(mname, is2D, verbose)
-            ring_ids[helix] = f"H{i+1}"
-
-        for i, ring in enumerate(self.Rings):
-            if verbose:
-                print(f"ring: {ring}")
-            ring_ids[ring] = f"R{i+1}"
-        # print(f'Insert_Gmsh: ring_ids={ring_ids}')
-
-        return (NHelices, NChannels, NIsolants, ring_ids)
+        return (NHelices, NChannels, NIsolants)
     
     def __repr__(self):
         """representation"""

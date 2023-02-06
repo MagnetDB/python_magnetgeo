@@ -11,7 +11,6 @@ import gmsh
 def create_physicalgroups(
     tree,
     solid_names: list,
-    ring_ids: dict,
     GeomParams: dict,
     hideIsolant: bool,
     groupIsolant: bool,
@@ -28,12 +27,14 @@ def create_physicalgroups(
             sname = solid_names[j]
             oname = sname
             print(f"sname={sname}: child.attrib={child.attrib}")
+            """
             if "name" in child.attrib and child.attrib["name"] != "":
                 # print(f"sname={sname}, {child.attrib['name']}")
                 sname = child.attrib["name"].replace("from_", "")
                 # print(f'sname={sname}')
                 if sname.startswith("Ring-H"):
                     sname = ring_ids[sname]
+            """
 
             indices = int(child.attrib["index"]) + 1
             if debug:
@@ -76,7 +77,6 @@ def create_physicalgroups(
 
 def create_bcs(
     tree,
-    ring_ids,
     gname,
     GeomParams,
     NHelices,
@@ -92,10 +92,12 @@ def create_bcs(
 
     tr_elements = tree.xpath("//group")
 
+    """
     if debug:
         print("Ring_ids")
         for rkey in ring_ids:
             print(f"rkey={rkey}, rvalue={ring_ids[rkey]}")
+    """
 
     bctags = {}
     for i, group in enumerate(tr_elements):
@@ -121,6 +123,7 @@ def create_bcs(
             if debug:
                 print(f"sname={sname}")
 
+            """
             if not ring_ids is None:
                 if sname.endswith("_rInt") or sname.endswith("_rExt"):
                     for rkey in ring_ids:
@@ -131,6 +134,7 @@ def create_bcs(
                     for rkey in ring_ids:
                         if sname.startswith(rkey):
                             sname = sname.replace(rkey, ring_ids[rkey])
+            """
 
             sname = sname.replace("Air_", "")
             if debug:
@@ -138,6 +142,7 @@ def create_bcs(
 
             skip = False
 
+            """
             # remove unneeded surfaces for Rings: BP for even rings and HP for odd rings
             if sname.startswith("R") and ("_BP" in sname or "_HP" in sname):
                 num = int(sname.split("_")[0].replace("R", ""))
@@ -150,6 +155,7 @@ def create_bcs(
                         sname = re.sub("R\d+_", "", sname)
 
                 print(f"{group.attrib['name']}, sname={sname}, num={num}, skip={skip}")
+            """
 
             # keep only H0_V0 if no innerlead otherwise keep Lead_V0
             # keep only H14_V1 if not outerlead otherwise keep outerlead V1
