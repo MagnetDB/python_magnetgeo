@@ -61,7 +61,7 @@ RUN apt update \
     && apt update \
     && apt-get -y install python3-nptdms python3-freesteam python3-nlopt python3-tabulate \
     && apt-get -y install python3-ht python3-pyclaw python3-yaml  \
-    && apt-get -y install python3-chevron python3-magnettools python3-gmsh
+    && apt-get -y install python3-gmsh
 
 # Install latest gsh dev version (support for BoundingBox) ?
 #RUN python3 -m pip install -i https://gmsh.info/python-packages --force-reinstall --no-cache-dir gmsh-dev
