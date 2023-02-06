@@ -97,9 +97,9 @@ class Supra(yaml.YAMLObject):
         else:
 
             n_dp = len(hts.dblpancakes)
-            cadname = self.struct.replace(".json", "")
+            cadname = f'{prefix}{self.name}'
             for i, dp in enumerate(hts.dblpancakes):
-                dp_name = f"{prefix}{self.name}{cadname}_dp{i}"
+                dp_name = f"{cadname}_dp{i}"
                 if self.detail == "dblpancake":
                     solid_names.append(f"{dp_name}")
 
@@ -120,7 +120,7 @@ class Supra(yaml.YAMLObject):
 
             for i, dp in enumerate(hts.dblpancakes):
                 if i != n_dp - 1:
-                    solid_names.append(f"{prefix}{self.name}{cadname}_i{i}")
+                    solid_names.append(f"{cadname}_i{i}")
 
         if verbose:
             print(f"Supra_Gmsh: solid_names {len(solid_names)}")

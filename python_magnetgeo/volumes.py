@@ -115,10 +115,13 @@ def create_bcs(
             for child in group:
                 indices.append(int(child.attrib["index"]) + 1)
 
+            sname = group.attrib["name"]
+            """
             # get bc name
             insert_id = gname.replace("_withAir", "")
             sname = group.attrib["name"].replace(insert_id + "_", "")
             sname = sname.replace("===", "_")
+            """
 
             if debug:
                 print(f"sname={sname}")
