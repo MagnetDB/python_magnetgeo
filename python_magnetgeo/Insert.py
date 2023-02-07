@@ -38,11 +38,15 @@ class Insert(yaml.YAMLObject):
         self.innerBore = innerbore
         self.outerBore = outerbore
 
-    def get_channels(self, hideIsolant: bool, debug: bool = False):
+    def get_channels(self, mname: str = None, hideIsolant: bool = True, debug: bool = False):
         """
         return channels
         """
     
+        prefix = ""
+        if mname:
+            prefix = f"{mname}_"
+
         Channels = []
         NHelices = len(self.Helices)
         NChannels = NHelices + 1  # To be updated if there is any htype==HR in Insert
@@ -51,28 +55,28 @@ class Insert(yaml.YAMLObject):
             names = []
             inames = []
             if i == 0:
-                names.append(f"R{i+1}_R0n")  # check Ring nummerotation
+                names.append(f"{prefix}R{i+1}_R0n")  # check Ring nummerotation
             if i >= 1:
-                names.append(f"H{i}_rExt")
+                names.append(f"{prefix}H{i}_rExt")
                 if not hideIsolant:
-                    isolant_names = [f"H{i}_IrExt"]
-                    kapton_names = [f"H{i}_kaptonsIrExt"]
+                    isolant_names = [f"{prefix}H{i}_IrExt"]
+                    kapton_names = [f"{prefix}H{i}_kaptonsIrExt"]
                     names = names + isolant_names + kapton_names
                     # inames = inames + isolant_names + kapton_names
             if i >= 2:
-                names.append(f"R{i-1}_R1n")
+                names.append(f"{prefix}R{i-1}_R1n")
             if i < NChannels:
-                names.append(f"H{i+1}_rInt")
+                names.append(f"{prefix}H{i+1}_rInt")
                 if not hideIsolant:
-                    isolant_names = [f"H{i+1}_IrInt"]
-                    kapton_names = [f"H{i+1}_kaptonsIrInt"]
+                    isolant_names = [f"{prefix}H{i+1}_IrInt"]
+                    kapton_names = [f"{prefix}H{i+1}_kaptonsIrInt"]
                     names = names + isolant_names + kapton_names
                     # inames = inames + isolant_names + kapton_names
         
             # Better? if i+1 < nchannels:
             if i != 0 and i + 1 < NChannels:
-                names.append(f"R{i}_CoolingSlits")
-                names.append(f"R{i}_R0n")
+                names.append(f"{prefix}R{i}_CoolingSlits")
+                names.append(f"{prefix}R{i}_R0n")
             Channels.append(names)
             #
             # For the moment keep iChannel_Submeshes into
@@ -82,6 +86,13 @@ class Insert(yaml.YAMLObject):
             print("Channels:")
             for channel in Channels:
                 print(f"\t{channel}")
+        return Channels
+
+    def get_isolants(self, mname: str = None, debug: bool = False):
+        """
+        return isolants
+        """
+        return {}
 
     def get_names(self, mname: str, is2D: bool, verbose: bool = False):
         """
@@ -125,15 +136,12 @@ class Insert(yaml.YAMLObject):
             print(f"Insert_Gmsh: solid_names {len(solid_names)}")
         return solid_names
 
-    def get_dictnames(self):
+    def get_nhelices(self):
         """
         return names for Markers
         """
         
-        NHelices = len(self.Helices)
-        NChannels = NHelices + 1  # To be updated if there is any htype==HR in Insert
-        NIsolants = []  # To be computed depend on htype and dble
-        return (NHelices, NChannels, NIsolants)
+        return len(self.Helices)
     
     def __repr__(self):
         """representation"""

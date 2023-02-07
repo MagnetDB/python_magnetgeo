@@ -39,6 +39,12 @@ class Bitter(yaml.YAMLObject):
         self.z = z
         self.axi = axi
 
+    def get_channels(self, mname: str, hideIsolant: bool, debug: bool = False):
+        """
+        return channels
+        """
+        return []
+
     def get_names(self, mname: str, is2D: bool, verbose: bool = False):
         """
         return names for Markers

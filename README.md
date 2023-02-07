@@ -37,7 +37,9 @@ Examples
 ========
 
 ```
-python3 -m python_magnetgeo.xao --wd /data/geometries Pancakes-pancake-Axi.xao mesh --geo HTS-pancake-test.yaml []
+python3 -m python_magnetgeo.xao --wd /data/geometries test-Axi.xao --geo test.yaml mesh --group CoolingChannels
+python3 -m python_magnetgeo.xao --wd /data/geometries M9_HLtest-Axi.xao --geo M9_HLtest.yaml mesh --group CoolingChannels
+python3 -m python_magnetgeo.xao --wd /data/geometries Pancakes-pancake-Axi.xao --geo HTS-pancake-test.yaml [mesh []]
 ```
 
 Credits
