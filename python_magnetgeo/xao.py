@@ -32,7 +32,6 @@ from . import MSite
 
 from .utils import load_Xao
 from .volumes import create_physicalgroups, create_bcs
-from .volumes import create_channels
 
 
 def Supra_Gmsh(
@@ -99,8 +98,12 @@ def Insert_Gmsh(
     """ Load Insert """
     print(f"Insert_Gmsh: mname={mname}, cad={cad.name}, gname={gname}")
     solid_names = cad.get_names(mname, is2D, verbose)
-    (NHelices, NChannels, NIsolants) = cad.get_dictnames()
-    return (solid_names, NHelices, NChannels, NIsolants)
+    NHelices = cad.get_nhelices()
+    Channels = cad.get_channels(mname, True, verbose)
+    Isolants = cad.get_isolants(mname)
+    print(f"Channels: {Channels}")
+    print(f"Isolants: {Isolants}")
+    return (solid_names, NHelices, Channels, Isolants)
 
 
 def Magnet_Gmsh(mname: str, cad, gname: str, is2D: bool, verbose: bool = False):
@@ -108,8 +111,8 @@ def Magnet_Gmsh(mname: str, cad, gname: str, is2D: bool, verbose: bool = False):
     print(f"Magnet_Gmsh: mname={mname}, cad={cad}, gname={gname}")
     solid_names = []
     NHelices = []
-    NChannels = []
-    NIsolants = []
+    Channels = {}
+    Isolants = {}
     Boxes = {}
 
     cfgfile = cad + ".yaml"
@@ -121,34 +124,38 @@ def Magnet_Gmsh(mname: str, cad, gname: str, is2D: bool, verbose: bool = False):
     if isinstance(pcad, Bitter.Bitter):
         solid_names += Bitter_Gmsh(mname, pcad, pname, is2D, verbose)
         NHelices.append(0)
-        NChannels.append(0)
-        NIsolants.append(0)
+        Channels[pname] = []
+        Isolants[pname] = []
         Boxes[pname] = ("Bitter", pcad.boundingBox())
         # TODO prepend name with part name
     elif isinstance(pcad, Supra.Supra):
         solid_names += Supra_Gmsh(mname, pcad, pname, is2D, verbose)
         NHelices.append(0)
-        NChannels.append(0)
-        NIsolants.append(0)
+        Channels[pname] = []
+        Isolants[pname] = []
         Boxes[pname] = ("Supra", pcad.boundingBox())
         # TODO prepend name with part name
     elif isinstance(pcad, Insert.Insert):
         # keep pname
         # print(f'Insert: {pname}')
-        (_names, _NHelices, _NChannels, _NIsolants) = Insert_Gmsh(
+        (_names, _NHelices, _Channels, _Isolants) = Insert_Gmsh(
             mname, pcad, pname, is2D, verbose
         )
         solid_names += _names
         NHelices.append(_NHelices)
-        NChannels.append(_NChannels)
-        NIsolants.append(_NIsolants)
+        prefix = pname
+        if mname:
+            prefix = f"{mname}"
+
+        Channels[prefix] = _Channels
+        Isolants[prefix] = _Isolants
         Boxes[pname] = ("Insert", pcad.boundingBox())
         # print(f'Boxes[{pname}]={Boxes[pname]}')
         # TODO prepend name with part name
     if verbose:
         print(f"Magnet_Gmsh: {cad} Done [solids {len(solid_names)}]")
         print(f"Magnet_Gmsh: Boxes={Boxes}")
-    return (pname, solid_names, NHelices, NChannels, NIsolants, Boxes)
+    return (pname, solid_names, NHelices, Channels, Isolants, Boxes)
 
 
 def MSite_Gmsh(cad, gname, is2D, verbose):
@@ -161,20 +168,21 @@ def MSite_Gmsh(cad, gname, is2D, verbose):
     compound = []
     solid_names = []
     NHelices = []
-    NChannels = []
-    NIsolants = []
+    Channels = {}
+    Isolants = {}
     Boxes = []
 
     def ddd(mname, cad_data, solid_names, NHelices, NChannels, NIsolants):
         print(f"ddd: mname={mname}, cad_data={cad_data}")
-        (pname, _names, _NHelices, _NChannels, _NIsolants, _Boxes) = Magnet_Gmsh(
+        (pname, _names, _NHelices, _Channels, _Isolants, _Boxes) = Magnet_Gmsh(
             mname, cad_data, gname, is2D, verbose
         )
+        print(f"_Channels: {_Channels}")
         compound.append(cad_data)
         solid_names += _names
         NHelices += _NHelices
-        NChannels += _NChannels
-        NIsolants += _NIsolants
+        Channels.update(_Channels)
+        Isolants.update(_Isolants)
         Boxes.append(_Boxes)
         if verbose:
             print(
@@ -183,19 +191,20 @@ def MSite_Gmsh(cad, gname, is2D, verbose):
 
     if isinstance(cad.magnets, str):
         print(f"magnet={cad.magnets}, type={type(cad.magnets)}")
-        ddd(cad.magnets, cad.magnets, solid_names, NHelices, NChannels, NIsolants)
+        ddd(cad.magnets, cad.magnets, solid_names, NHelices, Channels, Isolants)
     elif isinstance(cad.magnets, dict):
         for key in cad.magnets:
             print(f"magnet={key}, dict")
             if isinstance(cad.magnets[key], str):
-                ddd(key, cad.magnets[key], solid_names, NHelices, NChannels, NIsolants)
+                ddd(key, cad.magnets[key], solid_names, NHelices, Channels, Isolants)
             elif isinstance(cad.magnets[key], list):
                 for mpart in cad.magnets[key]:
-                    ddd(key, mpart, solid_names, NHelices, NChannels, NIsolants)
+                    ddd(key, mpart, solid_names, NHelices, Channels, Isolants)
 
+    print(f"Channels: {Channels}")
     if verbose:
         print(f"MSite_Gmsh: {cad} Done [solids {len(solid_names)}]")
-    return (compound, solid_names, NHelices, NChannels, NIsolants, Boxes)
+    return (compound, solid_names, NHelices, Channels, Isolants, Boxes)
 
 
 def main():
@@ -348,7 +357,7 @@ def main():
     innerLead_exist = False
     outerLead_exist = False
     NHelices = 0
-    NChannels = 0
+    Channels = []
     Boxes = []
 
     if args.geo != "None":
@@ -368,7 +377,7 @@ def main():
         if isinstance(cad, MSite.MSite):
             if args.verbose:
                 print("load cfg MSite")
-            (compound, _names, NHelices, NChannels, NIsolants, _Boxes) = MSite_Gmsh(
+            (compound, _names, NHelices, Channels, Isolants, _Boxes) = MSite_Gmsh(
                 cad, gname, is2D, args.verbose
             )
             # print(f'_Boxes: {_Boxes}, {len(_Boxes)}')
@@ -402,7 +411,7 @@ def main():
             if args.verbose:
                 print("load cfg Insert")
             mname = ""
-            (_names, NHelices, NChannels, NIsolants) = Insert_Gmsh(
+            (_names, NHelices, Channels, Isolants) = Insert_Gmsh(
                 mname, cad, gname, is2D, args.verbose
             )
             Boxes.append({cad.name: ("Insert", cad.boundingBox())})
@@ -430,7 +439,7 @@ def main():
 
     print(f"compound = {compound}")
     print(f"NHelices = {NHelices}")
-    print(f"NChannels = {NChannels}")
+    print(f"Channels = {Channels}")
     print(f"Boxes = {Boxes}")
 
     # use yaml data to identify solids id...
@@ -439,10 +448,6 @@ def main():
     stags = create_physicalgroups(
         tree, solid_names, GeomParams, hideIsolant, groupIsolant, args.debug
     )
-
-    # TODO review if several insert in msite
-    # so far assume only one insert that appears as first magnets
-    Channel_Submeshes = create_channels(NChannels, hideIsolant, args.debug)
 
     # get groups
     bctags = create_bcs(
@@ -453,7 +458,7 @@ def main():
         innerLead_exist,
         outerLead_exist,
         groupCoolingChannels,
-        Channel_Submeshes,
+        Channels,
         compound,
         hideIsolant,
         groupIsolant,
