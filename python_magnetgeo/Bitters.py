@@ -3,7 +3,6 @@
 
 """defines Bitter Insert structure"""
 
-import datetime
 import json
 import yaml
 from . import deserialize
@@ -22,7 +21,7 @@ class Bitters(yaml.YAMLObject):
     def __init__(self, name: str, magnets: list, innerbore=None, outerbore=None):
         """constructor"""
         self.name = name
-        self.amgnets = magnets
+        self.magnets = magnets
         self.innerbore = innerbore
         self.outerbore = outerbore
 
@@ -34,6 +33,71 @@ class Bitters(yaml.YAMLObject):
                 self.magnets,
                 self.innerbore,
                 self.outerbore)
+
+    def get_channels(self, mname: str = None, hideIsolant: bool = True, debug: bool = False):
+        """
+        get Channels def as dict
+        """
+        print(f'Bitters/get_channels:')
+        Channels = {}
+        if isinstance(self.magnets, str):
+            YAMLFile = f'{self.magnets}.yaml' 
+            with open(YAMLFile, "r") as f:
+                Object = yaml.load(f, Loader=yaml.FullLoader)
+                
+            Channels[self.magnets] = Object.get_channels(self.name, hideIsolant, debug)
+        elif isinstance(self.magnets, list):
+            for magnet in self.magnets:
+                YAMLFile = f'{magnet}.yaml' 
+                with open(YAMLFile, "r") as f:
+                    Object = yaml.load(f, Loader=yaml.FullLoader)
+
+                Channels[magnet] = Object.get_channels(magnet, hideIsolant, debug)
+        elif isinstance(self.magnets, dict):
+            for key in self.magnets:
+                magnet = self.magnets[key]
+                YAMLFile = f'{magnet}.yaml' 
+                with open(YAMLFile, "r") as f:
+                    Object = yaml.load(f, Loader=yaml.FullLoader)
+
+                Channels[key] = Object.get_channels(key, hideIsolant, debug)
+        else:
+            raise RuntimeError(f'Bitters: unsupported type of magnets ({type(self.magnets)})')
+        
+        return Channels
+        
+    def get_names(self, mname: str = None, is2D: bool = False, verbose: bool = False):
+        """
+        return names for Markers
+        """
+        solid_names = []
+        if isinstance(self.magnets, str):
+            YAMLFile = f'{self.magnets}.yaml' 
+            with open(YAMLFile, "r") as f:
+                Object = yaml.load(f, Loader=yaml.FullLoader)
+                
+            solid_names += Object.get_names(self.name, is2D, verbose)
+        elif isinstance(self.magnets, list):
+            for magnet in self.magnets:
+                YAMLFile = f'{magnet}.yaml' 
+                with open(YAMLFile, "r") as f:
+                    Object = yaml.load(f, Loader=yaml.FullLoader)
+
+                solid_names += Object.get_names(magnet, is2D, verbose)
+        elif isinstance(self.magnets, dict):
+            for key in self.magnets:
+                magnet = self.magnets[key]
+                YAMLFile = f'{magnet}.yaml' 
+                with open(YAMLFile, "r") as f:
+                    Object = yaml.load(f, Loader=yaml.FullLoader)
+
+                solid_names += Object.get_names(self.name, is2D, verbose)
+        else:
+            raise RuntimeError(f'Bitters/get_names: unsupported type of magnets ({type(self.magnets)})')
+
+        if verbose:
+            print(f"Bitters/get_names: solid_names {len(solid_names)}")
+        return solid_names
 
     def dump(self):
         """dump to a yaml file name.yaml"""

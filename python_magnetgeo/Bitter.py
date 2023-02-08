@@ -30,7 +30,7 @@ class Bitter(yaml.YAMLObject):
 
     yaml_tag = "Bitter"
 
-    def __init__(self, name, r: List[float], z: List[float], axi=ModelAxi.ModelAxi()):
+    def __init__(self, name, r: List[float], z: List[float], axi=ModelAxi.ModelAxi(), coolingslits: List = None, tierods: List = None):
         """
         initialize object
         """
@@ -38,14 +38,28 @@ class Bitter(yaml.YAMLObject):
         self.r = r
         self.z = z
         self.axi = axi
+        self.coolingslits = coolingslits
+        self.tierods = tierods
 
-    def get_channels(self, mname: str, hideIsolant: bool, debug: bool = False):
+    def get_channels(self, mname: str = None, hideIsolant: bool = True, debug: bool = False):
         """
         return channels
         """
-        return []
+        print(f'Bitter({self.name}): CoolingSlits={self.coolingslits}')
+        n_slits = 0
+        for data in self.coolingslits:
+            if 'r' in data:
+                n_slits = len(data['r'])
+                break
+        
+        prefix = {self.name}
+        if mname:
+            prefix = f"{mname}_{self.name}"
+        Channels = [f'{prefix}_slit{i}' for i in range(n_slits)]
+        print(f"Bitter({prefix}): {Channels}")            
+        return Channels
 
-    def get_names(self, mname: str, is2D: bool, verbose: bool = False):
+    def get_names(self, mname: str = None, is2D: bool = False, verbose: bool = False):
         """
         return names for Markers
         """
@@ -57,8 +71,11 @@ class Bitter(yaml.YAMLObject):
         
         if is2D:
             nsection = len(self.axi.turns)
-            for j in range(nsection):
-                solid_names.append(f"{prefix}{self.name}_B{j+1}")
+            if nsection == 1:
+                solid_names.append(f"{prefix}{self.name}")
+            else:
+                for j in range(nsection):
+                    solid_names.append(f"{prefix}{self.name}_B{j+1}")
         else:
             solid_names.append(f"{prefix}{self.name}_B")
         if verbose:
@@ -69,12 +86,14 @@ class Bitter(yaml.YAMLObject):
         """
         representation of object
         """
-        return "%s(name=%r, r=%r, z=%r, axi=%r)" % (
+        return "%s(name=%r, r=%r, z=%r, axi=%r, coolingslits=%r, tierods=%r)" % (
             self.__class__.__name__,
             self.name,
             self.r,
             self.z,
             self.axi,
+            self.coolingslits,
+            self.tierods,
         )
 
     def dump(self):
@@ -104,6 +123,8 @@ class Bitter(yaml.YAMLObject):
         self.r = data.r
         self.z = data.z
         self.axi = data.axi
+        self.coolingslits = data.coolingslits
+        self.tierods = data.tierods
 
     def to_json(self):
         """
@@ -351,8 +372,10 @@ def Bitter_constructor(loader, node):
     r = values["r"]
     z = values["z"]
     axi = values["axi"]
+    coolingslits = values["coolingslits"]
+    tierods = values["tierods"]
 
-    return Bitter(name, r, z, axi)
+    return Bitter(name, r, z, axi, coolingslits, tierods)
 
 
 yaml.add_constructor(u"!Bitter", Bitter_constructor)

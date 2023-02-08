@@ -29,7 +29,7 @@ class Screen(yaml.YAMLObject):
         self.r = r
         self.z = z
 
-    def get_names(self, mname: str, is2D: bool, verbose: bool = False):
+    def get_names(self, mname: str = None, is2D: bool = False, verbose: bool = False):
         """
         return names for Markers
         """

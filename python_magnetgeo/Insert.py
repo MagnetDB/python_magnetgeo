@@ -60,18 +60,16 @@ class Insert(yaml.YAMLObject):
                 names.append(f"{prefix}H{i}_rExt")
                 if not hideIsolant:
                     isolant_names = [f"{prefix}H{i}_IrExt"]
-                    kapton_names = [f"{prefix}H{i}_kaptonsIrExt"]
+                    kapton_names = [f"{prefix}H{i}_kaptonsIrExt"] # Only for HR
                     names = names + isolant_names + kapton_names
-                    # inames = inames + isolant_names + kapton_names
             if i >= 2:
                 names.append(f"{prefix}R{i-1}_R1n")
             if i < NChannels:
                 names.append(f"{prefix}H{i+1}_rInt")
                 if not hideIsolant:
                     isolant_names = [f"{prefix}H{i+1}_IrInt"]
-                    kapton_names = [f"{prefix}H{i+1}_kaptonsIrInt"]
+                    kapton_names = [f"{prefix}H{i+1}_kaptonsIrInt"] # Only for HR
                     names = names + isolant_names + kapton_names
-                    # inames = inames + isolant_names + kapton_names
         
             # Better? if i+1 < nchannels:
             if i != 0 and i + 1 < NChannels:
@@ -94,7 +92,7 @@ class Insert(yaml.YAMLObject):
         """
         return {}
 
-    def get_names(self, mname: str, is2D: bool, verbose: bool = False):
+    def get_names(self, mname: str = None, is2D: bool = False, verbose: bool = False):
         """
         return names for Markers
         """
@@ -245,6 +243,8 @@ class Insert(yaml.YAMLObject):
 
         zb[0] -= ring_dz_max
         zb[1] += ring_dz_max
+        
+        # TODO add Leads
         
         return (rb, zb)
 

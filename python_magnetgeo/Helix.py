@@ -49,6 +49,11 @@ class Helix(yaml.YAMLObject):
         self.m3d = m3d
         self.shape = shape
 
+    def get_type(self):
+        if self.m3d.with_shapes and self.m3d.with_channels:
+            return "HR"
+        return "HL"
+
     def get_names(self, mname: str, is2D: bool, verbose: bool = False):
         """
         return names for Markers
@@ -79,7 +84,7 @@ class Helix(yaml.YAMLObject):
             if self.dble:
                 nInsulators = 2
             if verbose:
-                print("helix:", gname, htype, nturns)
+                print("helix:", self.name, htype, nturns)
 
         if is2D:
             nsection = len(self.axi.turns)

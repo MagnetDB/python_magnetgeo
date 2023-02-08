@@ -74,7 +74,7 @@ class Supra(yaml.YAMLObject):
                 print(f"Supra/check_dimensions: override dimensions for {self.name} from {self.struct}")
                 print(self)
 
-    def get_names(self, mname: str, is2D: bool, verbose: bool = False):
+    def get_names(self, mname: str = None, is2D: bool = False, verbose: bool = False):
         """
         return names for Markers
         """
@@ -93,7 +93,7 @@ class Supra(yaml.YAMLObject):
 
         # TODO take into account supra detail
         if self.detail == "None":
-            solid_names.append(f"{prefix}{self.name}_S")
+            solid_names.append(f"{prefix}{self.name}")
         else:
 
             n_dp = len(hts.dblpancakes)

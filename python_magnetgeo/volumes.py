@@ -142,12 +142,14 @@ def create_bcs(
                             for j, channel in enumerate(Channels[key]):
                                 for cname in channel:
                                     if sname.endswith(cname):
+                                        print(f'sname={sname}, cname={cname}, channel={channel}, key={key} dictcase')
                                         sname = f"{key}_Channel{j}"
                                         break
                 if isinstance(Channels, list):
                     for j, channel in enumerate(Channels):
                         for cname in channel:
                             if sname.endswith(cname):
+                                print(f'sname={sname}, cname={cname} listcase')
                                 sname = f"Channel{j}"
                                 break
 

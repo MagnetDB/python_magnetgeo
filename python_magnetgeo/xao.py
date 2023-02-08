@@ -99,11 +99,7 @@ def Insert_Gmsh(
     print(f"Insert_Gmsh: mname={mname}, cad={cad.name}, gname={gname}")
     solid_names = cad.get_names(mname, is2D, verbose)
     NHelices = cad.get_nhelices()
-    Channels = cad.get_channels(mname, True, verbose)
-    Isolants = cad.get_isolants(mname)
-    print(f"Channels: {Channels}")
-    print(f"Isolants: {Isolants}")
-    return (solid_names, NHelices, Channels, Isolants)
+    return (solid_names, NHelices)
 
 
 def Magnet_Gmsh(mname: str, cad, gname: str, is2D: bool, verbose: bool = False):
@@ -111,8 +107,6 @@ def Magnet_Gmsh(mname: str, cad, gname: str, is2D: bool, verbose: bool = False):
     print(f"Magnet_Gmsh: mname={mname}, cad={cad}, gname={gname}")
     solid_names = []
     NHelices = []
-    Channels = {}
-    Isolants = {}
     Boxes = {}
 
     cfgfile = cad + ".yaml"
@@ -124,21 +118,17 @@ def Magnet_Gmsh(mname: str, cad, gname: str, is2D: bool, verbose: bool = False):
     if isinstance(pcad, Bitter.Bitter):
         solid_names += Bitter_Gmsh(mname, pcad, pname, is2D, verbose)
         NHelices.append(0)
-        Channels[pname] = []
-        Isolants[pname] = []
         Boxes[pname] = ("Bitter", pcad.boundingBox())
         # TODO prepend name with part name
     elif isinstance(pcad, Supra.Supra):
         solid_names += Supra_Gmsh(mname, pcad, pname, is2D, verbose)
         NHelices.append(0)
-        Channels[pname] = []
-        Isolants[pname] = []
         Boxes[pname] = ("Supra", pcad.boundingBox())
         # TODO prepend name with part name
     elif isinstance(pcad, Insert.Insert):
         # keep pname
         # print(f'Insert: {pname}')
-        (_names, _NHelices, _Channels, _Isolants) = Insert_Gmsh(
+        (_names, _NHelices) = Insert_Gmsh(
             mname, pcad, pname, is2D, verbose
         )
         solid_names += _names
@@ -147,15 +137,13 @@ def Magnet_Gmsh(mname: str, cad, gname: str, is2D: bool, verbose: bool = False):
         if mname:
             prefix = f"{mname}"
 
-        Channels[prefix] = _Channels
-        Isolants[prefix] = _Isolants
         Boxes[pname] = ("Insert", pcad.boundingBox())
         # print(f'Boxes[{pname}]={Boxes[pname]}')
         # TODO prepend name with part name
     if verbose:
         print(f"Magnet_Gmsh: {cad} Done [solids {len(solid_names)}]")
         print(f"Magnet_Gmsh: Boxes={Boxes}")
-    return (pname, solid_names, NHelices, Channels, Isolants, Boxes)
+    return (pname, solid_names, NHelices, Boxes)
 
 
 def MSite_Gmsh(cad, gname, is2D, verbose):
@@ -164,25 +152,23 @@ def MSite_Gmsh(cad, gname, is2D, verbose):
     """
 
     print("MSite_Gmsh:", cad)
+    print("MSite_Gmsh Channels:", cad.get_channels() )
 
     compound = []
     solid_names = []
     NHelices = []
-    Channels = {}
-    Isolants = {}
+    Channels = cad.get_channels()
+    Isolants = cad.get_isolants()
     Boxes = []
 
-    def ddd(mname, cad_data, solid_names, NHelices, NChannels, NIsolants):
-        print(f"ddd: mname={mname}, cad_data={cad_data}")
-        (pname, _names, _NHelices, _Channels, _Isolants, _Boxes) = Magnet_Gmsh(
+    def ddd(mname, cad_data, solid_names, NHelices):
+        # print(f"ddd: mname={mname}, cad_data={cad_data}")
+        (pname, _names, _NHelices,_Boxes) = Magnet_Gmsh(
             mname, cad_data, gname, is2D, verbose
         )
-        print(f"_Channels: {_Channels}")
         compound.append(cad_data)
         solid_names += _names
         NHelices += _NHelices
-        Channels.update(_Channels)
-        Isolants.update(_Isolants)
         Boxes.append(_Boxes)
         if verbose:
             print(
@@ -191,15 +177,15 @@ def MSite_Gmsh(cad, gname, is2D, verbose):
 
     if isinstance(cad.magnets, str):
         print(f"magnet={cad.magnets}, type={type(cad.magnets)}")
-        ddd(cad.magnets, cad.magnets, solid_names, NHelices, Channels, Isolants)
+        ddd(cad.magnets, cad.magnets, solid_names, NHelices)
     elif isinstance(cad.magnets, dict):
         for key in cad.magnets:
             print(f"magnet={key}, dict")
             if isinstance(cad.magnets[key], str):
-                ddd(key, cad.magnets[key], solid_names, NHelices, Channels, Isolants)
+                ddd(key, cad.magnets[key], solid_names, NHelices)
             elif isinstance(cad.magnets[key], list):
                 for mpart in cad.magnets[key]:
-                    ddd(key, mpart, solid_names, NHelices, Channels, Isolants)
+                    ddd(key, mpart, solid_names, NHelices)
 
     print(f"Channels: {Channels}")
     if verbose:

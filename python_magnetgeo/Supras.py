@@ -3,7 +3,6 @@
 
 """defines Supra Insert structure"""
 
-import datetime
 import json
 import yaml
 from . import deserialize
@@ -34,6 +33,39 @@ class Supras(yaml.YAMLObject):
                 self.magnets,
                 self.innerbore,
                 self.outerbore)
+
+    def get_names(self, mname: str = None, is2D: bool = False, verbose: bool = False):
+        """
+        return names for Markers
+        """
+        solid_names = []
+        if isinstance(self.magnets, str):
+            YAMLFile = f'{self.magnets}.yaml' 
+            with open(YAMLFile, "r") as f:
+                Object = yaml.load(f, Loader=yaml.FullLoader)
+                
+            solid_names += Object.get_names(self.name, is2D, verbose)
+        elif isinstance(self.magnets, list):
+            for magnet in self.magnets:
+                YAMLFile = f'{magnet}.yaml' 
+                with open(YAMLFile, "r") as f:
+                    Object = yaml.load(f, Loader=yaml.FullLoader)
+
+                solid_names += Object.get_names(magnet, is2D, verbose)
+        elif isinstance(self.magnets, dict):
+            for key in self.magnets:
+                magnet = self.magnets[key]
+                YAMLFile = f'{magnet}.yaml' 
+                with open(YAMLFile, "r") as f:
+                    Object = yaml.load(f, Loader=yaml.FullLoader)
+
+                solid_names += Object.get_names(self.name, is2D, verbose)
+        else:
+            raise RuntimeError(f'Supras/get_names: unsupported type of magnets ({type(self.magnets)})')
+
+        if verbose:
+            print(f"Supras_Gmsh: solid_names {len(solid_names)}")
+        return solid_names
 
     def dump(self):
         """dump to a yaml file name.yaml"""
