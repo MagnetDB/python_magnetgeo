@@ -9,6 +9,7 @@ Provides definition for Helix:
 * Model 3D: actual 3D CAD
 * Shape: definition of Shape eventually added to the helical cut
 """
+from typing import List, Type
 
 import math
 import json
@@ -35,7 +36,7 @@ class Helix(yaml.YAMLObject):
 
     yaml_tag = 'Helix'
 
-    def __init__(self, name, r=[], z=[], cutwidth=0.0, odd=False, dble=False, axi=ModelAxi.ModelAxi(), m3d=Model3D.Model3D(), shape=Shape.Shape()):
+    def __init__(self, name: str, r: List[float], z: List[float], cutwidth: float, odd: bool, dble: bool, axi: ModelAxi.ModelAxi, m3d: Model3D.Model3D, shape: Shape.Shape) -> None:
         """
         initialize object
         """
@@ -67,7 +68,7 @@ class Helix(yaml.YAMLObject):
             sInsulator = "Kapton"
             htype = "HR"
             angle = self.shape.angle
-            nshapes = nturns * (360 / float(angle))
+            nshapes = nturns * (360 / float(angle[0])) # only one angle to be checked
             if verbose:
                 print("shapes: ", nshapes, math.floor(nshapes), math.ceil(nshapes))
 
@@ -101,7 +102,7 @@ class Helix(yaml.YAMLObject):
         if verbose:
             print(f"Helix_Gmsh[{htype}]: solid_names {len(solid_names)}")
         return solid_names
-    
+
     def __repr__(self):
         """
         representation of object
@@ -124,9 +125,8 @@ class Helix(yaml.YAMLObject):
         dump object to file
         """
         try:
-            ostream = open(self.name + '.yaml', 'w')
-            yaml.dump(self, stream=ostream)
-            ostream.close()
+            with open(f'{self.name}.yaml', 'w') as ostream:
+                yaml.dump(self, stream=ostream)
         except:
             raise Exception("Failed to Helix dump")
 
@@ -136,9 +136,8 @@ class Helix(yaml.YAMLObject):
         """
         data = None
         try:
-            istream = open(self.name + '.yaml', 'r')
-            data = yaml.load(stream=istream)
-            istream.close()
+            with open(f'{self.name}.yaml', 'r') as istream:
+                data = yaml.load(stream=istream, Loader=yaml.FullLoader)
         except:
             raise Exception("Failed to load Helix data %s.yaml"%self.name)
 
@@ -159,7 +158,7 @@ class Helix(yaml.YAMLObject):
         return json.dumps(self, default=deserialize.serialize_instance, sort_keys=True, indent=4)
 
 
-    def from_json(self, string):
+    def from_json(self, string: str):
         """
         convert from json to yaml
         """
@@ -169,30 +168,27 @@ class Helix(yaml.YAMLObject):
         """
         write from json file
         """
-        ostream = open(self.name + '.json', 'w')
-        jsondata = self.to_json()
-        ostream.write(str(jsondata))
-        ostream.close()
+        with open(f'{self.name}.json', 'w') as ostream:
+            jsondata = self.to_json()
+            ostream.write(str(jsondata))
 
     def read_from_json(self):
         """
         read from json file
         """
-        istream = open(self.name + '.json', 'r')
-        jsondata = self.from_json(istream.read())
-        print (type(jsondata))
-        istream.close()
+        with open(f'{self.name}.json', 'r') as istream:
+            jsondata = self.from_json(istream.read())
 
-    def get_Nturns(self):
+    def get_Nturns(self) -> float:
         """
         returns the number of turn
         """
         return self.axi.get_Nturns()
 
     def compact(self):
-        def indices(lst, item):
+        def indices(lst: list, item: float):
             return [i for i, x in enumerate(lst) if abs(1-item/x) <= 1.e-6]
-            
+
         List = self.axi.pitch
         duplicates = dict((x, indices(List, x)) for x in set(List) if List.count(x) > 1)
         print(f'duplicates: {duplicates}')
@@ -212,9 +208,9 @@ class Helix(yaml.YAMLObject):
                     sum_index[index] = [index]
                     search_index = sum_index[index]
                     search_elem = search_index[-1]
-                            
+
         print(f'sum_index: {sum_index}')
-        
+
         remove_ids = []
         for i in sum_index:
             for item in sum_index[i]:
@@ -231,72 +227,27 @@ class Helix(yaml.YAMLObject):
         new_turns = [p for i,p in enumerate(self.axi.turns) if not i in remove_ids]
         print(f'new_turns={new_turns}')
 
+    def boundingBox(self) -> tuple:
         """
-  int t = Magnet_Stack.back();
+        return Bounding as r[], z[]
 
-  MyDouble r1 = Tubes[t].get_R_int();
-  MyDouble r2 = Tubes[t].get_R_ext();
-  MyDouble h  = Tubes[t].get_Half_Electrical_Length();
-  MyDouble z0 = Tubes[t].get_Z0();
-
-  MyDouble z = (z0 + h);
-  MyDouble theta = 0;
-
-  MyDouble units = 1.e+3;
-  MyDouble angle_units = M_PI/180.;
-
-  MyDouble z_offset = 0;
-
-  string ident = filename;
-  string in_suffix;
-
-  remove_file_extension(ident, in_suffix);
-
-  cut_helix_file << "#theta[rad] \tShape_id[]\tZ[mm]\n";
-  cut_helix_file << "#\n";
-  cut_helix_file << setw(12) << setprecision(8) << theta * (-sign) << "\t";
-  cut_helix_file << setw(12) << setprecision(8) << 0 << "\t";
-  cut_helix_file << setw(12) << setprecision(8) << (z + z_offset) * units << "\n";
-
-  vector<BitterMagnet>::const_iterator Magnet = Helix.begin();
-  for (int s=Magnet_Stack.size()-1; s>=0; s--){
-     int stack = Magnet_Stack[s];
-
-     for (int n=Tubes[stack].get_n_elem()-1; n>=0; n--){
-	 int num = n + Tubes[stack].get_index();
-	 Magnet = Helix.begin();
-	 Magnet += num;
-
-	 MyDouble pitch = Tubes[stack].get_pitch(n);
-	 MyDouble Nturns = Tubes[stack].get_nturn(n); // = fabs(Magnet->get_Z_sup() - Magnet->get_Z_inf()) / pitch;
-
-	 z -= pitch * Nturns;
-	 theta += Nturns * 2 * M_PI; // in radians
-
-	 cut_helix_file << setw(12) << setprecision(8) << theta * (-sign) << "\t";
-	 cut_helix_file << setw(12) << setprecision(8) << 0 << "\t";
-	 cut_helix_file << setw(12) << setprecision(8) << (z + z_offset) * units << "\n";
-     }
-  }
-        
+        so far exclude Leads
         """
+        return (self.r, self.z)
 
-
-
-    
-    def gmsh(self, debug=False):
+    def gmsh(self, debug: bool = False) -> list:
         """
         create gmsh geometry
         """
         import gmsh
 
-       
+
         # TODO get axi model
         gmsh_ids = []
         x = self.r[0]
         dr = self.r[1] - self.r[0]
         y = -self.axi.h
-        
+
         _id = gmsh.model.occ.addRectangle(self.r[0], self.z[0], 0, dr, y-self.z[0])
         gmsh_ids.append(_id)
 
@@ -304,7 +255,7 @@ class Helix(yaml.YAMLObject):
             dz = n * pitch
             _id = gmsh.model.occ.addRectangle(x, y, 0, dr, dz)
             gmsh_ids.append(_id)
-                
+
             y += dz
 
         _id = gmsh.model.occ.addRectangle(self.r[0], y, 0, dr, self.z[1]-y)
@@ -317,20 +268,20 @@ class Helix(yaml.YAMLObject):
 
         return gmsh_ids
 
-    def gmsh_bcs(self, name, ids, debug=False):
+    def gmsh_bcs(self, name: str, ids: List[int], debug : bool = False) -> tuple:
         """
         retreive ids for bcs in gmsh geometry
         """
 
         defs = {}
         import gmsh
-        
+
         # set physical name
         for i,id in enumerate(ids):
             ps = gmsh.model.addPhysicalGroup(2, [id])
             gmsh.model.setPhysicalName(2, ps, "%s_Cu%d" % (name, i))
             defs["%s_Cu%d" % (name, i)] = ps
-        
+
         # get BC ids
         gmsh.option.setNumber("Geometry.OCCBoundsUseStl", 1)
 
@@ -338,7 +289,7 @@ class Helix(yaml.YAMLObject):
         # TODO: if z[xx] < 0 multiply by 1+eps to get a min by 1-eps to get a max
         zmin = self.z[0]* (1+eps)
         zmax = self.z[1]* (1+eps)
-        
+
         ov = gmsh.model.getEntitiesInBoundingBox(self.r[0]* (1-eps), zmin, 0,
                                                  self.r[0]* (1+eps), zmax, 0, 1)
         r0_bc_ids = [tag for (dim,tag) in ov]
@@ -362,7 +313,7 @@ class Helix(yaml.YAMLObject):
         """
         return name and number of insulators depending on htype
         """
-        
+
         sInsulator = "Glue"
         nInsulators = 1
         if self.htype() == "HL":
@@ -370,13 +321,13 @@ class Helix(yaml.YAMLObject):
         else:
             sInsulator = "Kapton"
             angle = self.shape.angle
-            nshapes = self.axi.nturns * (360 / float(angle))
+            nshapes = self.get_Nturns() * (360 / float(angle[0]))
             # print("shapes: ", nshapes, math.floor(nshapes), math.ceil(nshapes))
-                    
+
             nshapes = (lambda x: math.ceil(x) if math.ceil(x) - x < x - math.floor(x) else math.floor(x))(nshapes)
             nInsulators = int(nshapes)
             # print("nKaptons=", nInsulators)
-    
+
         return (sInsulator, nInsulators)
 
 def Helix_constructor(loader, node):

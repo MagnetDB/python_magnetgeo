@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-#-*- coding:utf-8 -*-
+# -*- coding:utf-8 -*-
 
 """
 Provides definiton for Helix:
@@ -9,6 +9,7 @@ Provides definiton for Helix:
 * Model 3D: actual 3D CAD
 * Shape: definition of Shape eventually added to the helical cut
 """
+from typing import List
 
 import json
 import yaml
@@ -23,9 +24,15 @@ class ModelAxi(yaml.YAMLObject):
     pitch :
     """
 
-    yaml_tag = 'ModelAxi'
+    yaml_tag = "ModelAxi"
 
-    def __init__(self, name="", h=0.0, turns=[], pitch=[]):
+    def __init__(
+        self,
+        name: str = "",
+        h: float = 0.0,
+        turns: List[float] = [],
+        pitch: List[float] = [],
+    ) -> None:
         """
         initialize object
         """
@@ -38,31 +45,34 @@ class ModelAxi(yaml.YAMLObject):
         """
         representation of object
         """
-        return "%s(name=%r, h=%r, turns=%r, pitch=%r)" % \
-               (self.__class__.__name__,
-                self.name,
-                self.h,
-                self.turns,
-                self.pitch
-               )
+        return "%s(name=%r, h=%r, turns=%r, pitch=%r)" % (
+            self.__class__.__name__,
+            self.name,
+            self.h,
+            self.turns,
+            self.pitch,
+        )
 
     def to_json(self):
         """
         convert from yaml to json
         """
-        return json.dumps(self, default=deserialize.serialize_instance, sort_keys=True, indent=4)
+        return json.dumps(
+            self, default=deserialize.serialize_instance, sort_keys=True, indent=4
+        )
 
-    def from_json(string):
+    def from_json(self, string: str):
         """
         convert from json to yaml
         """
         return json.loads(string, object_hook=deserialize.unserialize_object)
 
-    def get_Nturns(self):
+    def get_Nturns(self) -> float:
         """
         returns the number of turn
         """
         return sum(self.turns)
+
 
 def ModelAxi_constructor(loader, node):
     """
@@ -76,4 +86,4 @@ def ModelAxi_constructor(loader, node):
     return ModelAxi(name, h, turns, pitch)
 
 
-yaml.add_constructor(u'!ModelAxi', ModelAxi_constructor)
+yaml.add_constructor(u"!ModelAxi", ModelAxi_constructor)

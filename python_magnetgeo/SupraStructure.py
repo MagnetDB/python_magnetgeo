@@ -1,14 +1,16 @@
 """
 Define HTS insert geometry
 """
+from typing import Union, List, Type
 
-import os
-import sys
 import gmsh
 
-def flatten(S: list):
+
+def flatten(S: list) -> list:
     from pandas.core.common import flatten as pd_flatten
+
     return list(pd_flatten(S))
+
 
 class tape:
     """
@@ -19,20 +21,20 @@ class tape:
     e: thickness of co-wound durnomag
     """
 
-    def __init__(self, w: float = 0, h: float = 0, e: float = 0):
-        self.w = w
-        self.h = h
-        self.e = e
-
+    def __init__(self, w: float = 0, h: float = 0, e: float = 0) -> None:
+        self.w: float = w
+        self.h: float = h
+        self.e: float = e
 
     @classmethod
     def from_data(cls, data: dict):
+        w = h = e = 0
         if "w" in data:
-            w = data["w"]
+            w: float = data["w"]
         if "h" in data:
-            h = data["h"]
+            h: float = data["h"]
         if "e" in data:
-            e = data["e"]
+            e: float = data["e"]
         return cls(w, h, e)
 
     def __str__(self) -> str:
@@ -42,43 +44,43 @@ class tape:
         msg += f"e: {self.e} [mm]\n"
         return msg
 
-    def getH(self):
+    def getH(self) -> float:
         """
         get tape height
         """
         return self.h
 
-    def getW(self):
+    def getW(self) -> float:
         """
         get total width
         """
         return self.w + self.e
 
-    def getW_Sc(self):
+    def getW_Sc(self) -> float:
         """
         get Sc width
         """
         return self.w
 
-    def getW_Isolation(self):
+    def getW_Isolation(self) -> float:
         """
         get Isolation width
         """
         return self.e
 
-    def getArea(self):
+    def getArea(self) -> float:
         """
         get tape cross section surface
         """
         return (self.w + self.e) * self.h
 
-    def getFillingFactor(self):
+    def getFillingFactor(self) -> float:
         """
         get tape filling factor (aka ratio of superconductor over tape section)
         """
-        return  (self.w * self.h) / self.getArea()
+        return (self.w * self.h) / self.getArea()
 
-    def gmsh(self, x0: float, y0: float, detail: str):
+    def gmsh(self, x0: float, y0: float, detail: str) -> list:
         """
         create tape for gmsh
 
@@ -94,7 +96,7 @@ class tape:
         # TODO return either whole tape or details
 
         _tape = gmsh.model.occ.addRectangle(x0, y0, 0, self.w, self.h)
-        _e = gmsh.model.occ.addRectangle(x0+self.w, y0, 0, self.e, self.h)
+        _e = gmsh.model.occ.addRectangle(x0 + self.w, y0, 0, self.e, self.h)
 
         """
         lcar = self.getW()/3.
@@ -116,7 +118,9 @@ class pancake:
     n: number of tapes
     """
 
-    def __init__(self, r0: float = 0, tape: tape = tape(), n: int = 0, mandrin: int = 0):
+    def __init__(
+        self, r0: float = 0, tape: tape = tape(), n: int = 0, mandrin: int = 0
+    ) -> None:
         self.mandrin = mandrin
         self.tape = tape
         self.n = n
@@ -124,6 +128,10 @@ class pancake:
 
     @classmethod
     def from_data(cls, data={}):
+        r0 = 0
+        n = 0
+        t_ = tape()
+        mandrin = 0
         if "r0" in data:
             r0 = data["r0"]
         if "mandrin" in data:
@@ -149,7 +157,7 @@ class pancake:
         """
         return self.n
 
-    def getTape(self):
+    def getTape(self) -> tape:
         """
         return tape object
         """
@@ -171,9 +179,9 @@ class pancake:
         """
         get pancake outer radius
         """
-        return self.n * (self.tape.w+self.tape.e) + self.r0
+        return self.n * (self.tape.w + self.tape.e) + self.r0
 
-    def getR(self):
+    def getR(self) -> List[float]:
         """
         get list of tapes inner radius
         """
@@ -195,7 +203,7 @@ class pancake:
         return S_tapes / self.getArea()
 
     def getW(self) -> float:
-        return (self.getR1() - self.getR0())
+        return self.getR1() - self.getR0()
 
     def getH(self) -> float:
         return self.tape.getH()
@@ -203,7 +211,7 @@ class pancake:
     def getArea(self) -> float:
         return (self.getR1() - self.getR0()) * self.getH()
 
-    def gmsh(self, x0: float, y0: float, detail: str):
+    def gmsh(self, x0: float, y0: float, detail: str) -> Union[int, list]:
         """
         create pancake for gmsh
 
@@ -215,11 +223,13 @@ class pancake:
         returns gmsh ids
         ie. [_mandrin, [tape_id]]
         """
-        #print("gmsh/pancake")
+        # print("gmsh/pancake")
 
         # TODO return either pancake as a whole or detailed
         if detail == "pancake":
-            _id = gmsh.model.occ.addRectangle(self.getR0(), y0, 0, self.getW(), self.getH())
+            _id = gmsh.model.occ.addRectangle(
+                self.getR0(), y0, 0, self.getW(), self.getH()
+            )
 
             """
             lcar = (self.getR1()-self.getR1())/10.
@@ -227,7 +237,9 @@ class pancake:
             """
             return _id
         else:
-            _mandrin = gmsh.model.occ.addRectangle(self.r0-self.mandrin, y0, 0, self.mandrin, self.getH())
+            _mandrin = gmsh.model.occ.addRectangle(
+                self.r0 - self.mandrin, y0, 0, self.mandrin, self.getH()
+            )
             # print("pancake/gmsh: create mandrin {_mandrin}")
             x0 = self.r0
             tape_ids = []
@@ -236,8 +248,9 @@ class pancake:
                 x0 = x0 + self.tape.getW()
                 tape_ids.append(tape_id)
 
-            #gmsh.model.occ.synchronize()
+            # gmsh.model.occ.synchronize()
             return [_mandrin, tape_ids]
+
 
 class isolation:
     """
@@ -254,7 +267,10 @@ class isolation:
         self.h = h
 
     @classmethod
-    def from_data(cls, data={}):
+    def from_data(cls, data: dict):
+        r0 = 0
+        w = []
+        h = []
         if "r0" in data:
             r0 = data["r0"]
         if "w" in data:
@@ -265,9 +281,9 @@ class isolation:
 
     def __str__(self) -> str:
         msg = "\n"
-        msg += f'r0: {self.r0} [mm]\n'
-        msg += f'w: {self.w} \n'
-        msg += f'h: {self.h} \n'
+        msg += f"r0: {self.r0} [mm]\n"
+        msg += f"w: {self.w} \n"
+        msg += f"h: {self.h} \n"
         return msg
         pass
 
@@ -330,6 +346,7 @@ class isolation:
         # return _ids
         """
 
+
 class dblpancake:
     """
     Double Pancake structure
@@ -339,17 +356,22 @@ class dblpancake:
     isolation: isolation between pancakes
     """
 
-    def __init__(self, z0: float, pancake: pancake = pancake(), isolation: isolation = isolation()):
+    def __init__(
+        self,
+        z0: float,
+        pancake: pancake = pancake(),
+        isolation: isolation = isolation(),
+    ):
         self.z0 = z0
         self.pancake = pancake
         self.isolation = isolation
 
     def __str__(self) -> str:
-        msg = f'r0={self.pancake.getR0()}, '
-        msg += f'r1={self.pancake.getR1()}, '
-        msg += f'z1={self.getZ0() - self.getH()/2.}, '
-        msg += f'z2={self.getZ0() + self.getH()/2.}'
-        msg += f'(z0={self.getZ0()}, h={self.getH()})'
+        msg = f"r0={self.pancake.getR0()}, "
+        msg += f"r1={self.pancake.getR1()}, "
+        msg += f"z1={self.getZ0() - self.getH()/2.}, "
+        msg += f"z2={self.getZ0() + self.getH()/2.}"
+        msg += f"(z0={self.getZ0()}, h={self.getH()})"
         return msg
 
     def getPancake(self):
@@ -364,21 +386,21 @@ class dblpancake:
         """
         return self.isolation
 
-    def setZ0(self, z0) -> float:
+    def setZ0(self, z0) -> None:
         self.z0 = z0
 
-    def setPancake(self, pancake):
+    def setPancake(self, pancake) -> None:
         self.pancake = pancake
 
-    def setIsolation(self, isolation):
+    def setIsolation(self, isolation) -> None:
         self.isolation = isolation
 
     def getFillingFactor(self) -> float:
         """
         ratio of the surface occupied by the tapes / total surface
         """
-        S_tapes = 2. * self.pancake.n * self.pancake.tape.w * self.pancake.tape.h
-        return (S_tapes / self.getArea())
+        S_tapes = 2.0 * self.pancake.n * self.pancake.tape.w * self.pancake.tape.h
+        return S_tapes / self.getArea()
 
     def getR0(self) -> float:
         return self.pancake.getR0()
@@ -393,10 +415,10 @@ class dblpancake:
         return self.pancake.getW()
 
     def getH(self) -> float:
-        return 2.*self.pancake.getH() + self.isolation.getH()
+        return 2.0 * self.pancake.getH() + self.isolation.getH()
 
     def getArea(self) -> float:
-        return ((self.pancake.getR1() - self.pancake.getR0()) * self.getH())
+        return (self.pancake.getR1() - self.pancake.getR0()) * self.getH()
 
     def gmsh(self, x0: float, y0: float, detail: str):
         """
@@ -410,10 +432,12 @@ class dblpancake:
         """
         # print("gmsh/dblpancake")
 
-        #TODO if detail="pancake" return the pancake as a whole
+        # TODO if detail="pancake" return the pancake as a whole
         #     otherwise do like bellow
         if detail == "dblpancake":
-            _id = gmsh.model.occ.addRectangle(self.getR0(), y0, 0, self.getW(), self.getH())
+            _id = gmsh.model.occ.addRectangle(
+                self.getR0(), y0, 0, self.getW(), self.getH()
+            )
             """
             lcar = self.getW() / 10.
             gmsh.model.mesh.setSize(gmsh.model.getBoundary([(2, _id)], False, False, True), lcar)
@@ -432,8 +456,9 @@ class dblpancake:
             _id = self.pancake.gmsh(x0, y0, detail)
             p_ids.append(_id)
 
-            #gmsh.model.occ.synchronize()
+            # gmsh.model.occ.synchronize()
             return [p_ids, _isolation_id]
+
 
 class HTSinsert:
     """
@@ -445,7 +470,17 @@ class HTSinsert:
     TODO: add possibility to use 2 different pancake
     """
 
-    def __init__(self, z0: float = 0, h: float = 0, r0: float = 0, r1: float = 0, z1: float = 0, n: int = 0, dblpancakes: list = [], isolations: list = []):
+    def __init__(
+        self,
+        z0: float = 0,
+        h: float = 0,
+        r0: float = 0,
+        r1: float = 0,
+        z1: float = 0,
+        n: int = 0,
+        dblpancakes: list = [],
+        isolations: list = [],
+    ):
         self.z0 = z0
         self.h = h
         self.r0 = r0
@@ -592,7 +627,6 @@ class HTSinsert:
             w_.append(dp.getIsolation().getH())
         return w_
 
-
     def getWDblPancake(self) -> list:
         """
         returns the width of dblpancake as a list
@@ -626,7 +660,7 @@ class HTSinsert:
         """
         w_ = []
         for isolant in self.isolations:
-            w_.append(isolant.getR0() +  isolant.getH())
+            w_.append(isolant.getR0() + isolant.getH())
         return w_
 
     def getW_Isolation(self) -> list:
@@ -677,17 +711,17 @@ class HTSinsert:
             if "tape" in data:
                 mytape = tape.from_data(data["tape"])
 
-            mypancake = None
+            mypancake = pancake()
             if "pancake" in data:
                 mypancake = pancake.from_data(data["pancake"])
                 if debug:
-                    print(f'mypancake={mypancake}')
+                    print(f"mypancake={mypancake}")
 
-            myisolation = None
+            myisolation = isolation()
             if "isolation" in data:
                 myisolation = isolation.from_data(data["isolation"])
                 if debug:
-                    print(f'myisolation={myisolation}')
+                    print(f"myisolation={myisolation}")
 
             z = 0
             if "dblpancakes" in data:
@@ -701,26 +735,29 @@ class HTSinsert:
                     if debug:
                         print(f"Loading {self.n} similar dblpancakes, z={z}")
                     if "isolation" in data["dblpancakes"]:
-                        dpisolation = isolation.from_data(data["dblpancakes"]["isolation"])
+                        dpisolation = isolation.from_data(
+                            data["dblpancakes"]["isolation"]
+                        )
                     else:
                         dpisolation = myisolation
                     if debug:
-                        print(f'dpisolation={dpisolation}')
-                        print(f'dp={dp}')
+                        print(f"dpisolation={dpisolation}")
 
                     for i in range(self.n):
                         dp = dblpancake(z, mypancake, myisolation)
+                        if debug:
+                            print(f"dp={dp}")
 
                         self.setDblpancake(dp)
                         self.setIsolation(dpisolation)
 
                         if debug:
-                            print(f'dblpancake[{i}]:')
+                            print(f"dblpancake[{i}]:")
 
                         z += dp.getH()
                         # print(f'z={z} dp_H={dp.getH()}')
-                        if i != self.n-1:
-                            z += dpisolation.getH() # isolation between D
+                        if i != self.n - 1:
+                            z += dpisolation.getH()  # isolation between D
                         # print(f'z={z} dp_i={dpisolation.getH()}')
 
                     self.h = z
@@ -732,14 +769,18 @@ class HTSinsert:
                     if debug:
                         print(f"Loading different dblpancakes, z={z}")
                     self.n = 0
-                    for dp in data['dblpancakes']:
+                    for dp in data["dblpancakes"]:
                         self.n += 1
                         if debug:
-                            print("dp:", dp, data['dblpancakes'][dp]["pancake"])
-                        mypancake = pancake.from_data(data['dblpancakes'][dp]["pancake"])
+                            print("dp:", dp, data["dblpancakes"][dp]["pancake"])
+                        mypancake = pancake.from_data(
+                            data["dblpancakes"][dp]["pancake"]
+                        )
 
-                        if "isolation" in data['isolations'][dp]:
-                            dpisolation = isolation.from_data(data['isolations'][dp]["isolation"])
+                        if "isolation" in data["isolations"][dp]:
+                            dpisolation = isolation.from_data(
+                                data["isolations"][dp]["isolation"]
+                            )
                         else:
                             dpisolation = myisolation
                         self.setIsolation(dpisolation)
@@ -749,23 +790,23 @@ class HTSinsert:
                         self.r1 = max(self.r1, dp_.pancake.getR1())
                         self.setDblpancake(dp_)
                         if debug:
-                            print(f'mypancake: {mypancake}')
-                            print(f'dpisolant: {dpisolation}')
-                            print(f'dp: {dp_}')
+                            print(f"mypancake: {mypancake}")
+                            print(f"dpisolant: {dpisolation}")
+                            print(f"dp: {dp_}")
 
                         z += dp_.getH()
-                        z += myisolation.getH() # isolation between DP
+                        z += myisolation.getH()  # isolation between DP
 
                     self.h = z - myisolation.getH()
                     # print(f"h= {self.h} [mm] = {z}-{myisolation.getH()} ({self.n} dblpancakes)")
 
             # shift insert by z0-z/2.
-            self.z1 = self.z0 - self.h/2.
+            self.z1 = self.z0 - self.h / 2.0
             z = self.z1
             # print(f'shift insert by {z} = {self.z0}-{self.h}/2.')
             for i in range(len(self.dblpancakes)):
                 _h = self.dblpancakes[i].getH()
-                self.dblpancakes[i].setZ0(z + _h/2.)
+                self.dblpancakes[i].setZ0(z + _h / 2.0)
                 # print(f'dp[{i}]: z0={z+_h/2.}, z1={z}, z2={z+_h}')
                 z += _h + myisolation.getH()
 
@@ -796,17 +837,19 @@ class HTSinsert:
         """
 
         x0 = self.r0
-        y0 = self.z0-self.getH()/2.
+        y0 = self.z0 - self.getH() / 2.0
         n_dp = len(self.dblpancakes)
 
         if detail == "None":
             #
-            id = gmsh.model.occ.addRectangle(self.r0, y0, 0, (self.r1-self.r0), self.getH())
+            id = gmsh.model.occ.addRectangle(
+                self.r0, y0, 0, (self.r1 - self.r0), self.getH()
+            )
 
             # Now create air
             if AirData:
                 r0_air = 0
-                dr_air = (self.r1-self.r0) * AirData[0]
+                dr_air = (self.r1 - self.r0) * AirData[0]
                 z0_air = y0 * AirData[1]
                 dz_air = (2 * abs(y0)) * AirData[1]
                 _id = gmsh.model.occ.addRectangle(r0_air, z0_air, 0, dr_air, dz_air)
@@ -823,12 +866,12 @@ class HTSinsert:
                 dp_id = dp.gmsh(x0, y0, detail)
                 dp_ids.append(dp_id)
                 y0 += dp.getH()
-                if i != n_dp-1:
+                if i != n_dp - 1:
                     _id = self.isolations[i].gmsh(x0, y0, detail)
                     y0 += self.isolations[i].getH()
                     i_ids.append(_id)
 
-            #for i,ids in enumerate(i_ids):
+            # for i,ids in enumerate(i_ids):
             #    print(f"i_ids[{i}]={ids}")
 
             # Perform BooleanFragment
@@ -846,10 +889,16 @@ class HTSinsert:
                                 # print(f"HTSInsert gmsh: dp[{j}] len(p)={len(p)}, p={p}, i_ids={len(i_ids)}")
 
                                 if j >= 1:
-                                    ov, ovv = gmsh.model.occ.fragment([(2, p[0])], [(2, i_ids[j-1])])
-                                if j < n_dp-1:
-                                    ov, ovv = gmsh.model.occ.fragment([(2, p[1])], [(2, i_ids[j])])
-                                ov, ovv = gmsh.model.occ.fragment([(2, dp[-1])], [(2, p[0]), (2, p[1])])
+                                    ov, ovv = gmsh.model.occ.fragment(
+                                        [(2, p[0])], [(2, i_ids[j - 1])]
+                                    )
+                                if j < n_dp - 1:
+                                    ov, ovv = gmsh.model.occ.fragment(
+                                        [(2, p[1])], [(2, i_ids[j])]
+                                    )
+                                ov, ovv = gmsh.model.occ.fragment(
+                                    [(2, dp[-1])], [(2, p[0]), (2, p[1])]
+                                )
 
                             else:
                                 # detail == tape
@@ -858,10 +907,18 @@ class HTSinsert:
                                 flat_p0 = flatten(p[0])
                                 flat_p1 = flatten(p[1])
                                 if j >= 1:
-                                    ov, ovv = gmsh.model.occ.fragment([(2, i_ids[j-1])], [(2, l) for l in flat_p0])
-                                if j < n_dp-1:
-                                    ov, ovv = gmsh.model.occ.fragment([(2, i_ids[j])], [(2, l) for l in flat_p1])
-                                ov, ovv = gmsh.model.occ.fragment([(2, dp[-1])], [(2, l) for l in flat_p0] + [(2, l) for l in flat_p1])
+                                    ov, ovv = gmsh.model.occ.fragment(
+                                        [(2, i_ids[j - 1])], [(2, l) for l in flat_p0]
+                                    )
+                                if j < n_dp - 1:
+                                    ov, ovv = gmsh.model.occ.fragment(
+                                        [(2, i_ids[j])], [(2, l) for l in flat_p1]
+                                    )
+                                ov, ovv = gmsh.model.occ.fragment(
+                                    [(2, dp[-1])],
+                                    [(2, l) for l in flat_p0]
+                                    + [(2, l) for l in flat_p1],
+                                )
 
                                 """
                                 for t in p:
@@ -874,15 +931,17 @@ class HTSinsert:
                 else:
                     # detail == dblpancake
                     if j >= 1:
-                        ov, ovv = gmsh.model.occ.fragment([(2, dp)], [(2, i_ids[j-1])])
-                    if j < n_dp-1:
+                        ov, ovv = gmsh.model.occ.fragment(
+                            [(2, dp)], [(2, i_ids[j - 1])]
+                        )
+                    if j < n_dp - 1:
                         ov, ovv = gmsh.model.occ.fragment([(2, dp)], [(2, i_ids[j])])
 
             # Now create air
             if AirData:
-                y0 = self.z0-self.getH()/2. # need to force y0 to init value
+                y0 = self.z0 - self.getH() / 2.0  # need to force y0 to init value
                 r0_air = 0
-                dr_air = (self.r1-self.r0) * 2
+                dr_air = (self.r1 - self.r0) * 2
                 z0_air = y0 * 1.2
                 dz_air = (2 * abs(y0)) * 1.2
                 _id = gmsh.model.occ.addRectangle(r0_air, z0_air, 0, dr_air, dz_air)
@@ -897,7 +956,9 @@ class HTSinsert:
                     if isinstance(dp, list):
                         # detail == pancake|tape
                         # print(_id, flatten(dp))
-                        ov, ovv = gmsh.model.occ.fragment([(2, _id)], [(2, l) for l in flatten(dp)])
+                        ov, ovv = gmsh.model.occ.fragment(
+                            [(2, _id)], [(2, l) for l in flatten(dp)]
+                        )
                     else:
                         # detail == dblpancake
                         ov, ovv = gmsh.model.occ.fragment([(2, _id)], [(2, dp)])
@@ -956,14 +1017,20 @@ class HTSinsert:
                         if isinstance(t, list):
                             for l, t_id in enumerate(t):
                                 ps = gmsh.model.addPhysicalGroup(2, [t_id[0]])
-                                gmsh.model.setPhysicalName(2, ps, f"{name}_sc{l}_p{0}_dp{i}")
+                                gmsh.model.setPhysicalName(
+                                    2, ps, f"{name}_sc{l}_p{0}_dp{i}"
+                                )
                                 defs[f"{name}_sc{l}_p{0}_dp{i}"] = ps
                                 ps = gmsh.model.addPhysicalGroup(2, [t_id[1]])
-                                gmsh.model.setPhysicalName(2, ps, f"{name}_du{l}_p{0}_dp{i}")
+                                gmsh.model.setPhysicalName(
+                                    2, ps, f"{name}_du{l}_p{0}_dp{i}"
+                                )
                                 defs[f"{name}_du{l}_p{0}_dp{i}"] = ps
                         else:
                             ps = gmsh.model.addPhysicalGroup(2, [t])
-                            gmsh.model.setPhysicalName(2, ps, f"{name}_mandrin_p{0}_dp{i}")
+                            gmsh.model.setPhysicalName(
+                                2, ps, f"{name}_mandrin_p{0}_dp{i}"
+                            )
                             defs[f"{name}_mandrin_p{0}_dp{i}"] = ps
                             print(f"HTSInsert/gmsh_bcs: mandrin {t}: {ps}")
                     for t in dp[0][1]:
@@ -971,14 +1038,20 @@ class HTSinsert:
                         if isinstance(t, list):
                             for l, t_id in enumerate(t):
                                 ps = gmsh.model.addPhysicalGroup(2, [t_id[0]])
-                                gmsh.model.setPhysicalName(2, ps, f"{name}_sc{l}_p{1}_dp{i}")
+                                gmsh.model.setPhysicalName(
+                                    2, ps, f"{name}_sc{l}_p{1}_dp{i}"
+                                )
                                 defs[f"{name}_sc{l}_p{1}_dp{i}"] = ps
                                 ps = gmsh.model.addPhysicalGroup(2, [t_id[1]])
-                                gmsh.model.setPhysicalName(2, ps, f"{name}_du{l}_p{1}_dp{i}")
+                                gmsh.model.setPhysicalName(
+                                    2, ps, f"{name}_du{l}_p{1}_dp{i}"
+                                )
                                 defs[f"{name}_du{l}_p{1}_dp{i}"] = ps
                         else:
                             ps = gmsh.model.addPhysicalGroup(2, [t])
-                            gmsh.model.setPhysicalName(2, ps, f"{name}_mandrin_p{1}_dp{i}")
+                            gmsh.model.setPhysicalName(
+                                2, ps, f"{name}_mandrin_p{1}_dp{i}"
+                            )
                             defs[f"{name}_mandrin_p{1}_dp{i}"] = ps
                             print(f"HTSInsert/gmsh_bcs: mandrin {t}: {ps}")
         else:
@@ -992,29 +1065,57 @@ class HTSinsert:
         # Select the corner point by searching for it geometrically:
         eps = 1e-3
         gmsh.option.setNumber("Geometry.OCCBoundsUseStl", 1)
-        ov = gmsh.model.getEntitiesInBoundingBox(self.getR0()* (1-eps), (self.z0-self.getH()/2.)* (1-eps), 0,
-                                                 self.getR1()* (1+eps), (self.z0-self.getH()/2.)* (1+eps), 0, 1)
+        ov = gmsh.model.getEntitiesInBoundingBox(
+            self.getR0() * (1 - eps),
+            (self.z0 - self.getH() / 2.0) * (1 - eps),
+            0,
+            self.getR1() * (1 + eps),
+            (self.z0 - self.getH() / 2.0) * (1 + eps),
+            0,
+            1,
+        )
         print("BoundingBox Bottom:", ov, type(ov))
         ps = gmsh.model.addPhysicalGroup(1, [tag for (dim, tag) in ov])
         gmsh.model.setPhysicalName(1, ps, f"{name}_Bottom")
         defs[f"{name}_Bottom"] = ps
 
-        ov = gmsh.model.getEntitiesInBoundingBox(self.getR0()* (1-eps), (self.z0+self.getH()/2.)* (1-eps), 0,
-                                                 self.getR1()* (1+eps), (self.z0+self.getH()/2.)* (1+eps), 0, 1)
+        ov = gmsh.model.getEntitiesInBoundingBox(
+            self.getR0() * (1 - eps),
+            (self.z0 + self.getH() / 2.0) * (1 - eps),
+            0,
+            self.getR1() * (1 + eps),
+            (self.z0 + self.getH() / 2.0) * (1 + eps),
+            0,
+            1,
+        )
         print("BoundingBox Top:", ov, type(ov))
         ps = gmsh.model.addPhysicalGroup(1, [tag for (dim, tag) in ov])
         gmsh.model.setPhysicalName(1, ps, f"{name}_Top")
         defs[f"{name}_Top"] = ps
 
-        ov = gmsh.model.getEntitiesInBoundingBox(self.getR0()* (1-eps), (self.z0-self.getH()/2.)* (1-eps), 0,
-                                                 self.getR0()* (1+eps), (self.z0+self.getH()/2.)* (1+eps), 0, 1)
+        ov = gmsh.model.getEntitiesInBoundingBox(
+            self.getR0() * (1 - eps),
+            (self.z0 - self.getH() / 2.0) * (1 - eps),
+            0,
+            self.getR0() * (1 + eps),
+            (self.z0 + self.getH() / 2.0) * (1 + eps),
+            0,
+            1,
+        )
         print("BoundingBox Rint:", ov, type(ov))
         ps = gmsh.model.addPhysicalGroup(1, [tag for (dim, tag) in ov])
         gmsh.model.setPhysicalName(1, ps, f"{name}_Rint")
         defs[f"{name}_Rint"] = ps
 
-        ov = gmsh.model.getEntitiesInBoundingBox(self.getR1()* (1-eps), (self.z0-self.getH()/2.)* (1-eps), 0,
-                                                 self.getR1()* (1+eps), (self.z0+self.getH()/2.)* (1+eps), 0, 1)
+        ov = gmsh.model.getEntitiesInBoundingBox(
+            self.getR1() * (1 - eps),
+            (self.z0 - self.getH() / 2.0) * (1 - eps),
+            0,
+            self.getR1() * (1 + eps),
+            (self.z0 + self.getH() / 2.0) * (1 + eps),
+            0,
+            1,
+        )
         print("BoundingBox Rext:", ov, type(ov))
         ps = gmsh.model.addPhysicalGroup(1, [tag for (dim, tag) in ov])
         gmsh.model.setPhysicalName(1, ps, f"{name}_Rext")
@@ -1031,21 +1132,35 @@ class HTSinsert:
             # TODO: Axis, Inf
             gmsh.option.setNumber("Geometry.OCCBoundsUseStl", 1)
 
-            eps = 1.e-6
+            eps = 1.0e-6
 
-            ov = gmsh.model.getEntitiesInBoundingBox(-eps, z0_air-eps, 0, +eps, z0_air+dz_air+eps, 0, 1)
+            ov = gmsh.model.getEntitiesInBoundingBox(
+                -eps, z0_air - eps, 0, +eps, z0_air + dz_air + eps, 0, 1
+            )
             print("ov:", len(ov))
             ps = gmsh.model.addPhysicalGroup(1, [tag for (dim, tag) in ov])
             gmsh.model.setPhysicalName(1, ps, "Axis")
             defs["Axis"] = ps
 
-            ov = gmsh.model.getEntitiesInBoundingBox(-eps, z0_air-eps, 0, dr_air+eps, z0_air+eps, 0, 1)
+            ov = gmsh.model.getEntitiesInBoundingBox(
+                -eps, z0_air - eps, 0, dr_air + eps, z0_air + eps, 0, 1
+            )
             print("ov:", len(ov))
 
-            ov += gmsh.model.getEntitiesInBoundingBox(dr_air-eps, z0_air-eps, 0, dr_air+eps, z0_air+dz_air+eps, 0, 1)
+            ov += gmsh.model.getEntitiesInBoundingBox(
+                dr_air - eps, z0_air - eps, 0, dr_air + eps, z0_air + dz_air + eps, 0, 1
+            )
             print("ov:", len(ov))
 
-            ov += gmsh.model.getEntitiesInBoundingBox(-eps, z0_air+dz_air-eps, 0, dr_air+eps, z0_air+dz_air+eps, 0, 1)
+            ov += gmsh.model.getEntitiesInBoundingBox(
+                -eps,
+                z0_air + dz_air - eps,
+                0,
+                dr_air + eps,
+                z0_air + dz_air + eps,
+                0,
+                1,
+            )
             print("ov:", len(ov))
 
             ps = gmsh.model.addPhysicalGroup(1, [tag for (dim, tag) in ov])
@@ -1077,32 +1192,27 @@ class HTSinsert:
         option = dblpancake|pancake|tape control the precision of the model
         """
 
-        details = {
-            "tape" : 0,
-            "pancake" : 1,
-            "dblpancake" : 2,
-            "None" : 3
-        }
+        details = {"tape": 0, "pancake": 1, "dblpancake": 2, "None": 3}
 
         print("ISolations:", len(self.isolations))
         print("=== Save to geo gmsh: NB use gmsh 4.9 or later")
         import getpass
+
         UserName = getpass.getuser()
 
         max_mandrin = max(self.getMandrinPancake())
         min_r_ = min(self.getR0Pancake_Isolation())
         min_r_dp = min(self.getR0_Isolation())
-        xmin = min(self.getR0()-max_mandrin, min_r_dp, min_r_)
+        xmin = min(self.getR0() - max_mandrin, min_r_dp, min_r_)
 
-
-        rmin = min(self.getR0()-max_mandrin, min_r_dp, min_r_)
+        rmin = min(self.getR0() - max_mandrin, min_r_dp, min_r_)
         rmax = 0
         for i, dp in enumerate(self.dblpancakes):
             r_dp = self.isolations[i].getR0()
             r_ = dp.getIsolation().getR0()
             rmax = max(rmax, dp.getPancake().getR0(), r_dp, r_)
         if rmax > self.getR0():
-            print(f"ATTENTION rmax={rmax} > r0={self.getRO()}")
+            print(f"ATTENTION rmax={rmax} > r0={self.getR0()}")
         """
         # To be checked if r_ and/or r_dp > r0
         for r in r_dp:
@@ -1121,35 +1231,48 @@ class HTSinsert:
 
         # Some data will be stored as list (str(...)
         data_dict = {
-            'detail': details[detail],
-            'z0':self.getZ0()-self.getH()/2.,
-            'r0':self.getR0(),
-            'z1':self.getZ0()+self.getH()/2.,
-            'r1':self.getR1(),
-            'n_dp':self.getN(),
-            'e_dp':str(self.getWDblPancake()).replace('[', '{').replace(']', '}'),
-            'h_dp':str(self.getHDblPancake()).replace('[', '{').replace(']', '}'),
-            'h_dp_isolation':str(self.getH_Isolation()).replace('[', '{').replace(']', '}'),
-            'r_dp':str(self.getR0_Isolation()).replace('[', '{').replace(']', '}'),
-            'e_p':str(self.getWPancake()).replace('[', '{').replace(']', '}'),
-            'e_dp_isolation':str(self.getW_Isolation()).replace('[', '{').replace(']', '}'),
-            'mandrin':str(self.getMandrinPancake()).replace('[', '{').replace(']', '}'),
-            'h_tape':str(self.getHtapes()).replace('[', '{').replace(']', '}'),
-            'h_isolation':str(self.getHPancake_Isolation()).replace('[', '{').replace(']', '}'),
-            'r_':str(self.getR0Pancake_Isolation()).replace('[', '{').replace(']', '}'),
-            'e_isolation':str(self.getWPancake_Isolation()).replace('[', '{').replace(']', '}'),
-            'n_t':str(self.getNtapes()).replace('[', '{').replace(']', '}'),
-            'e_t':str(self.getWtapes_Isolation()).replace('[', '{').replace(']', '}'),
-            'w_t':str(self.getWtapes_SC()).replace('[', '{').replace(']', '}'),
-            'emin':min(self.getWtapes_Isolation()),
-            'xmin':xmin,
-            'rmin':rmin,
-            'rmax':rmax,
-            'xmax':xmax,
+            "detail": details[detail],
+            "z0": self.getZ0() - self.getH() / 2.0,
+            "r0": self.getR0(),
+            "z1": self.getZ0() + self.getH() / 2.0,
+            "r1": self.getR1(),
+            "n_dp": self.getN(),
+            "e_dp": str(self.getWDblPancake()).replace("[", "{").replace("]", "}"),
+            "h_dp": str(self.getHDblPancake()).replace("[", "{").replace("]", "}"),
+            "h_dp_isolation": str(self.getH_Isolation())
+            .replace("[", "{")
+            .replace("]", "}"),
+            "r_dp": str(self.getR0_Isolation()).replace("[", "{").replace("]", "}"),
+            "e_p": str(self.getWPancake()).replace("[", "{").replace("]", "}"),
+            "e_dp_isolation": str(self.getW_Isolation())
+            .replace("[", "{")
+            .replace("]", "}"),
+            "mandrin": str(self.getMandrinPancake())
+            .replace("[", "{")
+            .replace("]", "}"),
+            "h_tape": str(self.getHtapes()).replace("[", "{").replace("]", "}"),
+            "h_isolation": str(self.getHPancake_Isolation())
+            .replace("[", "{")
+            .replace("]", "}"),
+            "r_": str(self.getR0Pancake_Isolation())
+            .replace("[", "{")
+            .replace("]", "}"),
+            "e_isolation": str(self.getWPancake_Isolation())
+            .replace("[", "{")
+            .replace("]", "}"),
+            "n_t": str(self.getNtapes()).replace("[", "{").replace("]", "}"),
+            "e_t": str(self.getWtapes_Isolation()).replace("[", "{").replace("]", "}"),
+            "w_t": str(self.getWtapes_SC()).replace("[", "{").replace("]", "}"),
+            "emin": min(self.getWtapes_Isolation()),
+            "xmin": xmin,
+            "rmin": rmin,
+            "rmax": rmax,
+            "xmax": xmax,
         }
 
         # Load template file (TODO use jinja2 instead? or chevron)
         import chevron
+
         geofile = chevron.render("template-hts.mustache", data_dict)
 
         # print("geofile:", geofile)

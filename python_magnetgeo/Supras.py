@@ -2,10 +2,12 @@
 # encoding: UTF-8
 
 """defines Supra Insert structure"""
+from typing import List
 
 import json
 import yaml
 from . import deserialize
+
 
 class Supras(yaml.YAMLObject):
     """
@@ -16,9 +18,11 @@ class Supras(yaml.YAMLObject):
     outerbore:
     """
 
-    yaml_tag = 'Supras'
+    yaml_tag = "Supras"
 
-    def __init__(self, name: str, magnets: list, innerbore=None, outerbore=None):
+    def __init__(
+        self, name: str, magnets: list, innerbore: float, outerbore: float
+    ) -> None:
         """constructor"""
         self.name = name
         self.magnets = magnets
@@ -27,27 +31,30 @@ class Supras(yaml.YAMLObject):
 
     def __repr__(self):
         """representation"""
-        return "%s(name=%r, magnets=%r, innerbore=%r, outerbore=%r)" % \
-               (self.__class__.__name__,
-                self.name,
-                self.magnets,
-                self.innerbore,
-                self.outerbore)
+        return "%s(name=%r, magnets=%r, innerbore=%r, outerbore=%r)" % (
+            self.__class__.__name__,
+            self.name,
+            self.magnets,
+            self.innerbore,
+            self.outerbore,
+        )
 
-    def get_names(self, mname: str = None, is2D: bool = False, verbose: bool = False):
+    def get_names(
+        self, mname: str, is2D: bool = False, verbose: bool = False
+    ) -> List[str]:
         """
         return names for Markers
         """
         solid_names = []
         if isinstance(self.magnets, str):
-            YAMLFile = f'{self.magnets}.yaml' 
+            YAMLFile = f"{self.magnets}.yaml"
             with open(YAMLFile, "r") as f:
                 Object = yaml.load(f, Loader=yaml.FullLoader)
-                
+
             solid_names += Object.get_names(self.name, is2D, verbose)
         elif isinstance(self.magnets, list):
             for magnet in self.magnets:
-                YAMLFile = f'{magnet}.yaml' 
+                YAMLFile = f"{magnet}.yaml"
                 with open(YAMLFile, "r") as f:
                     Object = yaml.load(f, Loader=yaml.FullLoader)
 
@@ -55,13 +62,15 @@ class Supras(yaml.YAMLObject):
         elif isinstance(self.magnets, dict):
             for key in self.magnets:
                 magnet = self.magnets[key]
-                YAMLFile = f'{magnet}.yaml' 
+                YAMLFile = f"{magnet}.yaml"
                 with open(YAMLFile, "r") as f:
                     Object = yaml.load(f, Loader=yaml.FullLoader)
 
                 solid_names += Object.get_names(self.name, is2D, verbose)
         else:
-            raise RuntimeError(f'Supras/get_names: unsupported type of magnets ({type(self.magnets)})')
+            raise RuntimeError(
+                f"Supras/get_names: unsupported type of magnets ({type(self.magnets)})"
+            )
 
         if verbose:
             print(f"Supras_Gmsh: solid_names {len(solid_names)}")
@@ -70,8 +79,8 @@ class Supras(yaml.YAMLObject):
     def dump(self):
         """dump to a yaml file name.yaml"""
         try:
-            ostream = open(f'{self.name}.yaml', 'w')
-            yaml.dump(self, stream=ostream)
+            with open(f"{self.name}.yaml", "w") as ostream:
+                yaml.dump(self, stream=ostream)
         except:
             raise Exception("Failed to Supras dump")
 
@@ -79,8 +88,8 @@ class Supras(yaml.YAMLObject):
         """load from a yaml file"""
         data = None
         try:
-            istream = open(f'{self.name}.yaml', 'r')
-            data = yaml.load(stream=istream)
+            with open(f"{self.name}.yaml", "r") as istream:
+                data = yaml.load(stream=istream, Loader=yaml.FullLoader)
         except:
             raise Exception(f"Failed to load Insert data {self.name}.yaml")
 
@@ -92,32 +101,31 @@ class Supras(yaml.YAMLObject):
 
     def to_json(self):
         """convert from yaml to json"""
-        return json.dumps(self, default=deserialize.serialize_instance, \
-            sort_keys=True, indent=4)
+        return json.dumps(
+            self, default=deserialize.serialize_instance, sort_keys=True, indent=4
+        )
 
-    def from_json(self, string):
+    def from_json(self, string: str):
         """get from json"""
         return json.loads(string, object_hook=deserialize.unserialize_object)
 
     def write_to_json(self):
         """write to a json file"""
-        ostream = open(f'{self.name}.son', 'w')
-        jsondata = self.to_json()
-        ostream.write(str(jsondata))
-        ostream.close()
+        with open(f"{self.name}.son", "w") as ostream:
+            jsondata = self.to_json()
+            ostream.write(str(jsondata))
 
     def read_from_json(self):
         """read from a json file"""
-        istream = open(f'{self.name}.json', 'r')
-        jsondata = self.from_json(istream.read())
-        istream.close()
+        with open(f"{self.name}.json", "r") as istream:
+            jsondata = self.from_json(istream.read())
 
     ###################################################################
     #
     #
     ###################################################################
 
-    def boundingBox(self):
+    def boundingBox(self) -> tuple:
         """
         return Bounding as r[], z[]
 
@@ -129,7 +137,7 @@ class Supras(yaml.YAMLObject):
 
         for i, mname in enumerate(self.magnets):
             Supra = None
-            with open(f'{mname}.yaml', 'r') as f:
+            with open(f"{mname}.yaml", "r") as f:
                 Supra = yaml.load(f, Loader=yaml.FullLoader)
 
             if i == 0:
@@ -154,8 +162,8 @@ class Supras(yaml.YAMLObject):
 
         # TODO take into account Mandrin and Isolation even if detail="None"
         collide = False
-        isR = abs(r_i[0] - r[0]) < abs(r_i[1]-r_i[0] + r[0] + r[1]) /2.
-        isZ = abs(z_i[0] - z[0]) < abs(z_i[1]-z_i[0] + z[0] + z[1]) /2.
+        isR = abs(r_i[0] - r[0]) < abs(r_i[1] - r_i[0] + r[0] + r[1]) / 2.0
+        isZ = abs(z_i[0] - z[0]) < abs(z_i[1] - z_i[0] + z[0] + z[1]) / 2.0
         if isR and isZ:
             collide = True
         return collide
@@ -196,6 +204,7 @@ class Supras(yaml.YAMLObject):
         """
         pass
 
+
 def Supras_constructor(loader, node):
     values = loader.construct_mapping(node)
     name = values["name"]
@@ -203,10 +212,10 @@ def Supras_constructor(loader, node):
     innerbore = 0
     if "innerbore":
         innerbore = values["innerbore"]
-    innerbore = 0
+    outerbore = 0
     if "outerbore":
         outerbore = values["outerbore"]
     return Supras(name, magnets, innerbore, outerbore)
 
-yaml.add_constructor(u'!Supras', Supras_constructor)
 
+yaml.add_constructor("!Supras", Supras_constructor)

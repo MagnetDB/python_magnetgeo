@@ -30,7 +30,15 @@ class Bitter(yaml.YAMLObject):
 
     yaml_tag = "Bitter"
 
-    def __init__(self, name, r: List[float], z: List[float], axi=ModelAxi.ModelAxi(), coolingslits: List = None, tierods: List = None):
+    def __init__(
+        self,
+        name,
+        r: List[float],
+        z: List[float],
+        axi: ModelAxi.ModelAxi,
+        coolingslits: List = [],
+        tierods: List = [],
+    ) -> None:
         """
         initialize object
         """
@@ -41,25 +49,29 @@ class Bitter(yaml.YAMLObject):
         self.coolingslits = coolingslits
         self.tierods = tierods
 
-    def get_channels(self, mname: str = None, hideIsolant: bool = True, debug: bool = False):
+    def get_channels(
+        self, mname: str, hideIsolant: bool = True, debug: bool = False
+    ) -> List[str]:
         """
         return channels
         """
-        print(f'Bitter({self.name}): CoolingSlits={self.coolingslits}')
+        print(f"Bitter({self.name}): CoolingSlits={self.coolingslits}")
         n_slits = 0
         for data in self.coolingslits:
-            if 'r' in data:
-                n_slits = len(data['r'])
+            if "r" in data:
+                n_slits = len(data["r"])
                 break
-        
+
         prefix = {self.name}
         if mname:
             prefix = f"{mname}_{self.name}"
-        Channels = [f'{prefix}_slit{i}' for i in range(n_slits)]
-        print(f"Bitter({prefix}): {Channels}")            
+        Channels = [f"{prefix}_slit{i}" for i in range(n_slits)]
+        print(f"Bitter({prefix}): {Channels}")
         return Channels
 
-    def get_names(self, mname: str = None, is2D: bool = False, verbose: bool = False):
+    def get_names(
+        self, mname: str, is2D: bool = False, verbose: bool = False
+    ) -> List[str]:
         """
         return names for Markers
         """
@@ -68,7 +80,7 @@ class Bitter(yaml.YAMLObject):
         prefix = ""
         if mname:
             prefix = f"{mname}_"
-        
+
         if is2D:
             nsection = len(self.axi.turns)
             if nsection == 1:
@@ -81,7 +93,7 @@ class Bitter(yaml.YAMLObject):
         if verbose:
             print(f"Bitter/get_names: solid_names {len(solid_names)}")
         return solid_names
-        
+
     def __repr__(self):
         """
         representation of object
@@ -101,9 +113,8 @@ class Bitter(yaml.YAMLObject):
         dump object to file
         """
         try:
-            ostream = open(f"{self.name}.yaml", "w")
-            yaml.dump(self, stream=ostream)
-            ostream.close()
+            with open(f"{self.name}.yaml", "w") as ostream:
+                yaml.dump(self, stream=ostream)
         except:
             raise Exception("Failed to Bitter dump")
 
@@ -113,9 +124,8 @@ class Bitter(yaml.YAMLObject):
         """
         data = None
         try:
-            istream = open(f"{self.name}.yaml", "r")
-            data = yaml.load(stream=istream)
-            istream.close()
+            with open(f"{self.name}.yaml", "r") as istream:
+                data = yaml.load(stream=istream, Loader=yaml.FullLoader)
         except:
             raise Exception(f"Failed to load Bitter data {self.name}.yaml")
 
@@ -144,33 +154,31 @@ class Bitter(yaml.YAMLObject):
         """
         write from json file
         """
-        ostream = open(self.name + ".json", "w")
-        jsondata = self.to_json()
-        ostream.write(str(jsondata))
-        ostream.close()
+        with open(f"{self.name}.json", "w") as ostream:
+            jsondata = self.to_json()
+            ostream.write(str(jsondata))
 
     def read_from_json(self):
         """
         read from json file
         """
-        istream = open(self.name + ".json", "r")
-        jsondata = self.from_json(istream.read())
-        istream.close()
+        with open(f"{self.name}.json", "r") as istream:
+            jsondata = self.from_json(istream.read())
 
-    def get_Nturns(self):
+    def get_Nturns(self) -> float:
         """
         returns the number of turn
         """
         return self.axi.get_Nturns()
 
-    def boundingBox(self):
+    def boundingBox(self) -> tuple:
         """
         return Bounding as r[], z[]
         """
 
         return (self.r, self.z)
 
-    def intersect(self, r, z):
+    def intersect(self, r: List[float], z: List[float]) -> bool:
         """
         Check if intersection with rectangle defined by r,z is empty or not
 
@@ -185,7 +193,7 @@ class Bitter(yaml.YAMLObject):
             collide = True
         return collide
 
-    def gmsh(self, AirData=None, debug=False):
+    def gmsh(self, AirData: tuple, debug: bool = False) -> tuple:
         """
         create gmsh geometry
         """
@@ -215,7 +223,7 @@ class Bitter(yaml.YAMLObject):
 
         return (gmsh_ids, None)
 
-    def gmsh_bcs(self, ids: tuple, debug=False):
+    def gmsh_bcs(self, ids: tuple, debug: bool = False) -> dict:
         """
         retreive ids for bcs in gmsh geometry
         """
@@ -246,7 +254,7 @@ class Bitter(yaml.YAMLObject):
         )
         ps = gmsh.model.addPhysicalGroup(1, [tag for (dim, tag) in ov])
         gmsh.model.setPhysicalName(1, ps, f"{self.name}_HP")
-        defs[f"{self.nqme}_HP"] = ps
+        defs[f"{self.name}_HP"] = ps
 
         ov = gmsh.model.getEntitiesInBoundingBox(
             self.r[0] * (1 - eps),
@@ -378,5 +386,4 @@ def Bitter_constructor(loader, node):
     return Bitter(name, r, z, axi, coolingslits, tierods)
 
 
-yaml.add_constructor(u"!Bitter", Bitter_constructor)
-
+yaml.add_constructor("!Bitter", Bitter_constructor)

@@ -2,6 +2,7 @@
 # encoding: UTF-8
 
 """defines Insert structure"""
+from typing import List
 
 import datetime
 import json
@@ -38,11 +39,11 @@ class Insert(yaml.YAMLObject):
         self.innerBore = innerbore
         self.outerBore = outerbore
 
-    def get_channels(self, mname: str = None, hideIsolant: bool = True, debug: bool = False):
+    def get_channels(self, mname: str, hideIsolant: bool = True, debug: bool = False) -> List[list]:
         """
         return channels
         """
-    
+
         prefix = ""
         if mname:
             prefix = f"{mname}_"
@@ -70,7 +71,7 @@ class Insert(yaml.YAMLObject):
                     isolant_names = [f"{prefix}H{i+1}_IrInt"]
                     kapton_names = [f"{prefix}H{i+1}_kaptonsIrInt"] # Only for HR
                     names = names + isolant_names + kapton_names
-        
+
             # Better? if i+1 < nchannels:
             if i != 0 and i + 1 < NChannels:
                 names.append(f"{prefix}R{i}_CoolingSlits")
@@ -86,13 +87,13 @@ class Insert(yaml.YAMLObject):
                 print(f"\t{channel}")
         return Channels
 
-    def get_isolants(self, mname: str = None, debug: bool = False):
+    def get_isolants(self, mname: str, debug: bool = False):
         """
         return isolants
         """
         return {}
 
-    def get_names(self, mname: str = None, is2D: bool = False, verbose: bool = False):
+    def get_names(self, mname: str, is2D: bool = False, verbose: bool = False) -> List[str]:
         """
         return names for Markers
         """
@@ -138,9 +139,9 @@ class Insert(yaml.YAMLObject):
         """
         return names for Markers
         """
-        
+
         return len(self.Helices)
-    
+
     def __repr__(self):
         """representation"""
         return "%s(name=%r, Helices=%r, Rings=%r, CurrentLeads=%r, HAngles=%r, RAngles=%r, innerbore=%r, outerbore=%r)" % \
@@ -157,8 +158,8 @@ class Insert(yaml.YAMLObject):
     def dump(self):
         """dump to a yaml file name.yaml"""
         try:
-            ostream = open(self.name + '.yaml', 'w')
-            yaml.dump(self, stream=ostream)
+            with open(f'{self.name}.yaml', 'w') as ostream:
+                yaml.dump(self, stream=ostream)
         except:
             print ("Failed to Insert dump")
 
@@ -166,8 +167,8 @@ class Insert(yaml.YAMLObject):
         """load from a yaml file"""
         data = None
         try:
-            istream = open(self.name + '.yaml', 'r')
-            data = yaml.load(stream=istream)
+            with open(f'{self.name}.yaml', 'r') as istream:
+                data = yaml.load(stream=istream, Loader=yaml.FullLoader)
         except:
             raise Exception("Failed to load Insert data %s" % (self.name+".yaml"))
 
@@ -209,16 +210,16 @@ class Insert(yaml.YAMLObject):
     #
     ###################################################################
 
-    def boundingBox(self):
+    def boundingBox(self) -> tuple:
         """
         return Bounding as r[], z[]
-        
+
         so far exclude Leads
         """
 
         rb = [0,0]
         zb = [0,0]
-        
+
         for i, name in enumerate(self.Helices):
             Helix = None
             with open(name+".yaml", 'r') as f:
@@ -227,7 +228,7 @@ class Insert(yaml.YAMLObject):
             if i == 0:
                 rb = Helix.r
                 zb = Helix.z
-                
+
             rb[0] = min(rb[0], Helix.r[0])
             zb[0] = min(zb[0], Helix.z[0])
             rb[1] = max(rb[1], Helix.r[1])
@@ -243,15 +244,15 @@ class Insert(yaml.YAMLObject):
 
         zb[0] -= ring_dz_max
         zb[1] += ring_dz_max
-        
+
         # TODO add Leads
-        
+
         return (rb, zb)
 
     def intersect(self, r, z):
         """
         Check if intersection with rectangle defined by r,z is empty or not
-        
+
         return False if empty, True otherwise
         """
 
@@ -290,7 +291,7 @@ class Insert(yaml.YAMLObject):
 
             r.append(Helix.r[1])
             z0.append(Helix.z[0])
-            
+
 
         # loop over Rings
         R_ids = []
@@ -302,7 +303,7 @@ class Insert(yaml.YAMLObject):
             x = 0
             y = z[i]
             z1.append(y+(Ring.z[-1]-Ring.z[0]))
-            
+
             if i%2 != 0:
                 y -= (Ring.z[-1]-Ring.z[0])
                 z1.append(y)
@@ -311,7 +312,7 @@ class Insert(yaml.YAMLObject):
             R_ids.append(R_id)
             # fragment
             if i%2 != 0:
-                ov, ovv = gmsh.model.occ.fragment([(2, R_id)], [(2, H_ids[i][0]), (2, H_ids[i+1][0])] )    
+                ov, ovv = gmsh.model.occ.fragment([(2, R_id)], [(2, H_ids[i][0]), (2, H_ids[i+1][0])] )
             else:
                 ov, ovv = gmsh.model.occ.fragment([(2, R_id)], [(2, H_ids[i][-1]), (2, H_ids[i+1][-1])] )
 
@@ -319,7 +320,7 @@ class Insert(yaml.YAMLObject):
                 print("Insert/Ring[%d]:" % i, "R_id=%d" % R_id, " fragment produced volumes:", len(ov), len(ovv))
                 for e in ov:
                     print(e)
-        
+
         # Now create air
         if AirData:
             r0_air = 0
@@ -327,7 +328,7 @@ class Insert(yaml.YAMLObject):
             z0_air = min(z0) * 1.2
             dz_air = max(z1) * 1.2 - z0_air
             _id = gmsh.model.occ.addRectangle(r0_air, z0_air, 0, dr_air, dz_air)
-        
+
             flat_list = []
             for sublist in H_ids:
                 for item in sublist:
@@ -350,7 +351,7 @@ class Insert(yaml.YAMLObject):
 
         eps =1.e-3
         defs = {}
-        
+
         # loop over Helices
         z = []
         H_Bc_ids = []
@@ -369,7 +370,7 @@ class Insert(yaml.YAMLObject):
             H_Bc_ids.append((r0_ids, r1_ids))
             for key in hdefs:
                 defs[key] = hdefs[key]
-            
+
             if i == 0:
                 ov = gmsh.model.getEntitiesInBoundingBox(Helix.r[0]-eps, Helix.z[0]-eps, 0, Helix.r[1]+eps, Helix.z[0]+eps, 0, 1)
                 print("ov:", len(ov))
@@ -388,7 +389,7 @@ class Insert(yaml.YAMLObject):
             y = z[i]
             if i%2 != 0:
                 y -= (Ring.z[-1]-Ring.z[0])
-            
+
             rname = "R%d" % (i+1)
             (r0_ids, r1_ids, slit_ids) = Ring.gmsh_bcs(rname, (i%2 != 0), y, R_ids[i], debug)
             R_Bc_ids.append((r0_ids, r1_ids, slit_ids))
@@ -420,11 +421,11 @@ class Insert(yaml.YAMLObject):
                     #names.append("R%d_R0n" % (i+1))
                     if i < NRings:
                         Channel_id += R_Bc_ids[i][0]
-            
+
             ps = gmsh.model.addPhysicalGroup(1, Channel_id)
             gmsh.model.setPhysicalName(1, ps, "Channel%d" % i)
             defs["Channel%d" % i] = ps
-        
+
         # TODO: Air
         if Air_data:
             (Air_id, dr_air, z0_air, dz_air) = Air_data
@@ -435,26 +436,26 @@ class Insert(yaml.YAMLObject):
 
             # TODO: Axis, Inf
             gmsh.option.setNumber("Geometry.OCCBoundsUseStl", 1)
-            
+
             eps = 1.e-6
-            
+
             ov = gmsh.model.getEntitiesInBoundingBox(-eps, z0_air-eps, 0, +eps, z0_air+dz_air+eps, 0, 1)
             print("ov:", len(ov))
             ps = gmsh.model.addPhysicalGroup(1, [tag for (dim,tag) in ov])
             gmsh.model.setPhysicalName(1, ps, "Axis")
-            
+
             ov = gmsh.model.getEntitiesInBoundingBox(-eps, z0_air-eps, 0, dr_air+eps, z0_air+eps, 0, 1)
             print("ov:", len(ov))
-            
+
             ov += gmsh.model.getEntitiesInBoundingBox(dr_air-eps, z0_air-eps, 0, dr_air+eps, z0_air+dz_air+eps, 0, 1)
             print("ov:", len(ov))
-            
+
             ov += gmsh.model.getEntitiesInBoundingBox(-eps, z0_air+dz_air-eps, 0, dr_air+eps, z0_air+dz_air+eps, 0, 1)
             print("ov:", len(ov))
-            
+
             ps = gmsh.model.addPhysicalGroup(1, [tag for (dim,tag) in ov])
             gmsh.model.setPhysicalName(1, ps, "Inf")
-            defs["Infty" % self.name] = ps        
+            defs["Infty" % self.name] = ps
 
         return defs
 
@@ -472,7 +473,7 @@ class Insert(yaml.YAMLObject):
         gmsh.model.mesh.setSize(gmsh.model.getBoundary(tapes, False, False, True), lcar_tape)
         """
         pass
-    
+
 
     def Create_AxiGeo(self, AirData):
         """
@@ -488,10 +489,10 @@ class Insert(yaml.YAMLObject):
         geofile = open(geofilename, "w")
 
         # Preambule
-        geofile.write("//%s\n" % self.name)
+        geofile.write(f"//{self.name}\n")
         geofile.write("// AxiSymetrical Geometry Model\n")
-        geofile.write("//%s\n" % UserName)
-        geofile.write("//%s\n" % (datetime.datetime.now().strftime("%y-%m-%d %Hh%M")))
+        geofile.write(f"//{UserName}\n")
+        geofile.write(f"//{datetime.datetime.now().strftime('%y-%m-%d %Hh%M')}\n")
         geofile.write("\n")
 
         # Mesh Preambule
@@ -544,8 +545,8 @@ class Insert(yaml.YAMLObject):
 
             Helix = None
             with open(name+".yaml", 'r') as f:
-                Helix = yaml.load(f)
-            geofile.write("// H%d : %s\n" % (i+1, Helix.name))
+                Helix = yaml.load(f, Loader=yaml.FullLoader)
+            geofile.write(f"// H{i+1} : {Helix.name}\n")
             geofile.write(onelab_r0 % (i+1, Helix.r[0], i+1))
             geofile.write(onelab_r1 % (i+1, Helix.r[1], i+1))
             geofile.write(onelab_z0 % (i+1, Helix.z[0], i+1))
@@ -554,10 +555,10 @@ class Insert(yaml.YAMLObject):
 
             axi = Helix.axi # h, turns, pitch
 
-            geofile.write(onelab_pointx % (point, "r0_H%d"%(i+1), "z0_H%d"%(i+1), i+1))
-            geofile.write(onelab_pointx % (point+1, "r1_H%d"%(i+1), "z0_H%d"%(i+1), i+1))
-            geofile.write(onelab_point % (point+2, "r1_H%d"%(i+1), -axi.h, i+1))
-            geofile.write(onelab_point % (point+3, "r0_H%d"%(i+1), -axi.h, i+1))
+            geofile.write(onelab_pointx % (point, f"r0_H{i+1}", f"z0_H{i+1}", i+1))
+            geofile.write(onelab_pointx % (point+1, f"r1_H{i+1}", f"z0_H{i+1}", i+1))
+            geofile.write(onelab_point % (point+2, f"r1_H{i+1}", -axi.h, i+1))
+            geofile.write(onelab_point % (point+3, f"r0_H{i+1}", -axi.h, i+1))
 
             geofile.write(onelab_line % (line, point, point+1))
             geofile.write(onelab_line % (line+1, point+1, point+2))
@@ -661,7 +662,7 @@ class Insert(yaml.YAMLObject):
 
             Ring = None
             with open(name+".yaml", 'r') as f:
-                Ring = yaml.load(f)
+                Ring = yaml.load(f, Loader=yaml.FullLoader)
             geofile.write("// R%d [%d, H%d] : %s\n"%(i+1, H0+1, H1+1, Ring.name))
             geofile.write(onelab_z_R%(i+1, (Ring.z[1]-Ring.z[0]), i+1))
             geofile.write(onelab_lc_R%(i+1, (Ring.r[3]-Ring.r[0])/5., i+1))
@@ -782,10 +783,10 @@ class Insert(yaml.YAMLObject):
             H0 = 0
             Hn = len(self.Helices)-1
 
-            geofile.write(onelab_pointx % (point, "0", "z_Air * z0_H%d"%(H0+1), i+1))
-            geofile.write(onelab_pointx % (point+1, "r_Air * r1_H%d"%(Hn+1), "z_Air * z0_H%d"%(H0+1), i+1))
-            geofile.write(onelab_pointx % (point+2, "r_Air * r1_H%d"%(Hn+1), "z_Air * z1_H%d"%(Hn+1), i+1))
-            geofile.write(onelab_pointx % (point+3, "0", "z_Air * z1_H%d"%(Hn+1), i+1))
+            geofile.write(onelab_pointx % (point, "0", f"z_Air * z0_H{H0+1}", H0+1))
+            geofile.write(onelab_pointx % (point+1, f"r_Air * r1_H{Hn+1}", "z_Air * z0_H%d"%(H0+1), H0+1))
+            geofile.write(onelab_pointx % (point+2, f"r_Air * r1_H{Hn+1}", "z_Air * z1_H%d"%(Hn+1), Hn+1))
+            geofile.write(onelab_pointx % (point+3, f"0", "z_Air * z1_H{Hn+1}", Hn+1))
 
             geofile.write(onelab_line % (line, point, point+1))
             geofile.write(onelab_line % (line+1, point+1, point+2))
@@ -797,9 +798,9 @@ class Insert(yaml.YAMLObject):
             geofile.write("Plane Surface(%d)= {%d, " % (planesurf, lineloop))
             for _ids in H_ids:
                 for _id in _ids:
-                    geofile.write("%d," % (-_id))
+                    geofile.write(f"{-_id}")
             for _id in dR_ids:
-                geofile.write("%d" % (-_id))
+                geofile.write(f"{-_id}")
                 if _id != dR_ids[-1]:
                     geofile.write(",")
             Air_ids.append(planesurf)
@@ -834,9 +835,9 @@ class Insert(yaml.YAMLObject):
 
             Hn = len(self.Helices)
 
-            geofile.write(onelab_point_gen % (point, "0", "-Val_Rint * r1_H%d" % Hn, "lc_infty"))
-            geofile.write(onelab_point_gen % (point+1, "Val_Rint * r1_H%d" % Hn, "0", "lc_infty"))
-            geofile.write(onelab_point_gen % (point+2, "0", "Val_Rint * r1_H%d" % Hn, "lc_infty"))
+            geofile.write(onelab_point_gen % (point, "0", f"-Val_Rint * r1_H{Hn}", "lc_infty"))
+            geofile.write(onelab_point_gen % (point+1, f"Val_Rint * r1_H{Hn}", "0", "lc_infty"))
+            geofile.write(onelab_point_gen % (point+2, "0", f"Val_Rint * r1_H{Hn}", "lc_infty"))
 
             geofile.write(onelab_circle % (line, point, center, point+1))
             geofile.write(onelab_circle % (line+1, point+1, center, point+2))

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-#-*- coding:utf-8 -*-
+# -*- coding:utf-8 -*-
 
 """
 Provides definiton for Helix:
@@ -9,6 +9,7 @@ Provides definiton for Helix:
 * Model 3D: actual 3D CAD
 * Shape: definition of Shape eventually added to the helical cut
 """
+from typing import List
 
 import json
 import yaml
@@ -17,6 +18,7 @@ from . import deserialize
 # from Shape import *
 # from ModelAxi import *
 # from Model3D import *
+
 
 class Shape(yaml.YAMLObject):
     """
@@ -30,9 +32,18 @@ class Shape(yaml.YAMLObject):
       onturns : specify on which turns to add cuts - single value or list
       position : ABOVE|BELLOW|ALTERNATE
     """
-    yaml_tag = 'Shape'
 
-    def __init__(self, name="None", profile="", length=[0.], angle=[0.], onturns=[1], position="ABOVE"):
+    yaml_tag = "Shape"
+
+    def __init__(
+        self,
+        name: str,
+        profile: str,
+        length: List[float] = [0.0],
+        angle: List[float] = [0.0],
+        onturns: List[int] = [1],
+        position: str = "ABOVE",
+    ):
         """
         initialize object
         """
@@ -47,23 +58,28 @@ class Shape(yaml.YAMLObject):
         """
         representation of object
         """
-        return "%s(name=%r, profile=%r, length=%r, angle=%r, onturns=%r, position=%r)" % \
-               (self.__class__.__name__,
+        return (
+            "%s(name=%r, profile=%r, length=%r, angle=%r, onturns=%r, position=%r)"
+            % (
+                self.__class__.__name__,
                 self.name,
                 self.profile,
                 self.length,
                 self.angle,
                 self.onturns,
-                self.position
-               )
+                self.position,
+            )
+        )
 
     def to_json(self):
         """
         convert from yaml to json
         """
-        return json.dumps(self, default=deserialize.serialize_instance, sort_keys=True, indent=4)
+        return json.dumps(
+            self, default=deserialize.serialize_instance, sort_keys=True, indent=4
+        )
 
-    def from_json(string):
+    def from_json(self, string: str):
         """
         convert from json to yaml
         """
@@ -83,4 +99,5 @@ def Shape_constructor(loader, node):
     position = values["position"]
     return Shape(name, profile, length, angle, onturns, position)
 
-yaml.add_constructor(u'!Shape', Shape_constructor)
+
+yaml.add_constructor(u"!Shape", Shape_constructor)

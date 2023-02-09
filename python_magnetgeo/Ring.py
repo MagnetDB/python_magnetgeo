@@ -5,6 +5,7 @@
 Provides definition for Ring:
 
 """
+from typing import List
 
 import json
 import yaml
@@ -23,7 +24,16 @@ class Ring(yaml.YAMLObject):
 
     yaml_tag = "Ring"
 
-    def __init__(self, name="", r=[], z=[], n=0, angle=0, BPside=True, fillets=False):
+    def __init__(
+        self,
+        name: str,
+        r: List[float],
+        z: List[float],
+        n: int = 0,
+        angle: float = 0,
+        BPside: bool = True,
+        fillets: bool = False,
+    ) -> None:
         """
         initialize object
         """
@@ -55,8 +65,8 @@ class Ring(yaml.YAMLObject):
         dump object to file
         """
         try:
-            ostream = open(self.name + ".yaml", "w")
-            yaml.dump(self, stream=ostream)
+            with open(f"{self.name}.yaml", "w") as ostream:
+                yaml.dump(self, stream=ostream)
         except:
             raise Exception("Failed to dump Ring data")
 
@@ -66,11 +76,10 @@ class Ring(yaml.YAMLObject):
         """
         data = None
         try:
-            istream = open(self.name + ".yaml", "r")
-            data = yaml.load(stream=istream)
-            istream.close()
+            with open(f"{self.name.yaml}", "r") as istream:
+                data = yaml.load(stream=istream, Loader=yaml.FullLoader)
         except:
-            raise Exception("Failed to load Ring data %s.yaml" % self.name)
+            raise Exception(f"Failed to load Ring data {self.name}.yaml")
 
         self.name = data.name
         self.r = data.r
@@ -88,7 +97,7 @@ class Ring(yaml.YAMLObject):
             self, default=deserialize.serialize_instance, sort_keys=True, indent=4
         )
 
-    def from_json(self, string):
+    def from_json(self, string: str):
         """
         convert from json to yaml
         """
@@ -98,21 +107,18 @@ class Ring(yaml.YAMLObject):
         """
         write from json file
         """
-        ostream = open(self.name + ".json", "w")
-        jsondata = self.to_json()
-        ostream.write(str(jsondata))
-        ostream.close()
+        with open(f"{self.name}.json", "w") as ostream:
+            jsondata = self.to_json()
+            ostream.write(str(jsondata))
 
     def read_from_json(self):
         """
         read from json file
         """
-        istream = open(self.name + ".json", "r")
-        jsondata = self.from_json(istream.read())
-        print(type(jsondata))
-        istream.close()
+        with open(f"{self.name}.json", "r") as istream:
+            jsondata = self.from_json(istream.read())
 
-    def gmsh(self, x, y, debug=False):
+    def gmsh(self, x: float, y: float, debug: bool = False) -> int:
         """
         create gmsh geometry
         """
@@ -125,7 +131,9 @@ class Ring(yaml.YAMLObject):
 
         return _id
 
-    def gmsh_bcs(self, name: str, hp: bool, y: float, id: int, debug: bool = False):
+    def gmsh_bcs(
+        self, name: str, hp: bool, y: float, id: int, debug: bool = False
+    ) -> tuple:
         """
         create gmsh geometry
         """
@@ -149,7 +157,7 @@ class Ring(yaml.YAMLObject):
                 1,
             )
             ps = gmsh.model.addPhysicalGroup(1, [tag for (dim, tag) in ov])
-            gmsh.model.setPhysicalName(1, ps, "%s_HP" % name)
+            gmsh.model.setPhysicalName(1, ps, f"{name}_HP")
         else:
             ov = gmsh.model.getEntitiesInBoundingBox(
                 self.r[0] * (1 - eps),
@@ -161,7 +169,7 @@ class Ring(yaml.YAMLObject):
                 1,
             )
             ps = gmsh.model.addPhysicalGroup(1, [tag for (dim, tag) in ov])
-            gmsh.model.setPhysicalName(1, ps, "%s_BP" % name)
+            gmsh.model.setPhysicalName(1, ps, f"{name}_BP")
 
         ov = gmsh.model.getEntitiesInBoundingBox(
             self.r[0] * (1 - eps),
@@ -215,5 +223,4 @@ def Ring_constructor(loader, node):
     return Ring(name, r, z, n, angle, BPside, fillets)
 
 
-yaml.add_constructor(u"!Ring", Ring_constructor)
-
+yaml.add_constructor("!Ring", Ring_constructor)

@@ -35,7 +35,7 @@ from .volumes import create_physicalgroups, create_bcs
 
 
 def Supra_Gmsh(
-    mname: str, cad: Type[Supra.Supra], gname: str, is2D: bool, verbose: bool = False
+    mname: str, cad: Supra.Supra, gname: str, is2D: bool, verbose: bool = False
 ):
     """ Load Supra cad """
     print(f"Supra_Gmsh: mname={mname}, cad={cad.name}, gname={gname}")
@@ -43,7 +43,7 @@ def Supra_Gmsh(
 
 
 def Bitter_Gmsh(
-    mname: str, cad: Type[Bitter.Bitter], gname: str, is2D: bool, verbose: bool = False
+    mname: str, cad: Bitter.Bitter, gname: str, is2D: bool, verbose: bool = False
 ):
     """ Load Bitter cad """
     print(f"Bitter_Gmsh: cad={cad.name}, gname={gname}")
@@ -51,7 +51,7 @@ def Bitter_Gmsh(
 
 
 def Helix_Gmsh(
-    mname: str, cad: Type[Helix.Helix], gname: str, is2D: bool, verbose: bool = False
+    mname: str, cad: Helix.Helix, gname: str, is2D: bool, verbose: bool = False
 ):
     """ Load Helix cad """
     print(f"Helix_Gmsh: mname={mname}, cad={cad.name}, gname={gname}")
@@ -60,7 +60,7 @@ def Helix_Gmsh(
 
 def Bitters_Gmsh(
     mname: str,
-    cad: Type[Bitters.Bitters],
+    cad: Bitters.Bitters,
     gname: str,
     is2D: bool,
     verbose: bool = False,
@@ -78,7 +78,7 @@ def Bitters_Gmsh(
 
 
 def Supras_Gmsh(
-    mname: str, cad: Type[Supras.Supras], gname: str, is2D: bool, verbose: bool = False
+    mname: str, cad: Supras.Supras, gname: str, is2D: bool, verbose: bool = False
 ):
     """ Load Supras """
     print(f"Supras_Gmsh: mname={mname}, gname={gname}")
@@ -93,7 +93,7 @@ def Supras_Gmsh(
 
 
 def Insert_Gmsh(
-    mname: str, cad: Type[Insert.Insert], gname: str, is2D: bool, verbose: bool = False
+    mname: str, cad: Insert.Insert, gname: str, is2D: bool, verbose: bool = False
 ):
     """ Load Insert """
     print(f"Insert_Gmsh: mname={mname}, cad={cad.name}, gname={gname}")
@@ -128,9 +128,7 @@ def Magnet_Gmsh(mname: str, cad, gname: str, is2D: bool, verbose: bool = False):
     elif isinstance(pcad, Insert.Insert):
         # keep pname
         # print(f'Insert: {pname}')
-        (_names, _NHelices) = Insert_Gmsh(
-            mname, pcad, pname, is2D, verbose
-        )
+        (_names, _NHelices) = Insert_Gmsh(mname, pcad, pname, is2D, verbose)
         solid_names += _names
         NHelices.append(_NHelices)
         prefix = pname
@@ -152,7 +150,7 @@ def MSite_Gmsh(cad, gname, is2D, verbose):
     """
 
     print("MSite_Gmsh:", cad)
-    print("MSite_Gmsh Channels:", cad.get_channels() )
+    print("MSite_Gmsh Channels:", cad.get_channels())
 
     compound = []
     solid_names = []
@@ -163,7 +161,7 @@ def MSite_Gmsh(cad, gname, is2D, verbose):
 
     def ddd(mname, cad_data, solid_names, NHelices):
         # print(f"ddd: mname={mname}, cad_data={cad_data}")
-        (pname, _names, _NHelices,_Boxes) = Magnet_Gmsh(
+        (pname, _names, _NHelices, _Boxes) = Magnet_Gmsh(
             mname, cad_data, gname, is2D, verbose
         )
         compound.append(cad_data)
@@ -353,10 +351,9 @@ def main():
     print("cfgfile:", cfgfile)
 
     compound = []
-    if cfgfile:
-        cad = None
-        with open(cfgfile, "r") as cfgdata:
-            cad = yaml.load(cfgdata, Loader=yaml.FullLoader)
+    cad = None
+    with open(cfgfile, "r") as cfgdata:
+        cad = yaml.load(cfgdata, Loader=yaml.FullLoader)
 
         print(f"cfgfile: {cad}")
         # TODO get solid names (see Salome HiFiMagnet plugin)
@@ -397,9 +394,7 @@ def main():
             if args.verbose:
                 print("load cfg Insert")
             mname = ""
-            (_names, NHelices, Channels, Isolants) = Insert_Gmsh(
-                mname, cad, gname, is2D, args.verbose
-            )
+            (_names, NHelices) = Insert_Gmsh(mname, cad, gname, is2D, args.verbose)
             Boxes.append({cad.name: ("Insert", cad.boundingBox())})
             solid_names += _names
         elif isinstance(cad, Helix.Helix):
@@ -411,12 +406,12 @@ def main():
         else:
             raise Exception(f"unsupported type of cad {type(cad)}")
 
-        if "Air" in args.input_file:
-            solid_names.append("Air")
-            if hideIsolant:
-                raise Exception(
-                    "--hide Isolants cannot be used since cad contains Air region"
-                )
+    if "Air" in args.input_file:
+        solid_names.append("Air")
+        if hideIsolant:
+            raise Exception(
+                "--hide Isolants cannot be used since cad contains Air region"
+            )
 
     nsolids = len(gmsh.model.getEntities(GeomParams["Solid"][0]))
     assert (
