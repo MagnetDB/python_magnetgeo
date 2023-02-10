@@ -230,11 +230,6 @@ class pancake:
             _id = gmsh.model.occ.addRectangle(
                 self.getR0(), y0, 0, self.getW(), self.getH()
             )
-
-            """
-            lcar = (self.getR1()-self.getR1())/10.
-            gmsh.model.mesh.setSize(gmsh.model.getBoundary([(2, _id)], False, False, True), lcar)
-            """
             return _id
         else:
             _mandrin = gmsh.model.occ.addRectangle(
@@ -337,14 +332,6 @@ class isolation:
         # TODO: return either isolation as a whole or detail
         _id = gmsh.model.occ.addRectangle(self.r0, y0, 0, self.getW(), self.getH())
         return _id
-        """
-        _ids = []
-        for i in range(self.getLayer()):
-            _id = gmsh.model.occ.addRectangle(self.r0, y0, 0, self.getW_Layer(i), self.getH_Layer(i))
-            _ids.append(_id)
-        # gmsh.model.occ.synchronize()
-        # return _ids
-        """
 
 
 class dblpancake:

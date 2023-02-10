@@ -104,20 +104,18 @@ class Supra(yaml.YAMLObject):
 
                 if self.detail == "pancake":
                     solid_names.append(f"{dp_name}_p0")
-                    solid_names.append(f"{dp_name}_p1")
                     solid_names.append(f"{dp_name}_i")
+                    solid_names.append(f"{dp_name}_p1")
                 if self.detail == "tape":
                     solid_names.append(f"{dp_name}_p0_Mandrin")
                     for j in range(dp.pancake.n):
                         solid_names.append(f"{dp_name}_p0_t{j}_SC")
                         solid_names.append(f"{dp_name}_p0_t{j}_Duromag")
+                    solid_names.append(f"{dp_name}_i")
                     solid_names.append(f"{dp_name}_p1_Mandrin")
                     for j in range(dp.pancake.n):
                         solid_names.append(f"{dp_name}_p1_t{j}_SC")
                         solid_names.append(f"{dp_name}_p1_t{j}_Duromag")
-                solid_names.append(f"{dp_name}_i")
-
-            for i, dp in enumerate(hts.dblpancakes):
                 if i != n_dp - 1:
                     solid_names.append(f"{cadname}_i{i}")
 
