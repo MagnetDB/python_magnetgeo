@@ -49,10 +49,7 @@ class Supra(yaml.YAMLObject):
         self.detail = "None"  # ['None', 'dblpancake', 'pancake', 'tape']
 
     def get_magnet_struct(self) -> SupraStructure.HTSinsert:
-        magnet = SupraStructure.HTSinsert()
-        if self.struct:
-            magnet.loadCfg(self.struct)
-        return magnet
+        return SupraStructure.HTSinsert.fromcfg(self.struct)
 
     def check_dimensions(self, magnet: SupraStructure.HTSinsert):
         # TODO: if struct load r,z and n from struct data
@@ -282,8 +279,7 @@ class Supra(yaml.YAMLObject):
             return (_id, None)
         else:
             # load struct
-            nougat = SupraStructure.HTSinsert()
-            nougat.loadCfg(self.struct)
+            nougat = SupraStructure.HTSinsert.fromcfg(self.struct)
 
             # call gmsh for struct
             gmsh_ids = nougat.gmsh(self.detail, AirData, debug)
@@ -432,8 +428,7 @@ class Supra(yaml.YAMLObject):
 
         else:
             # load struct
-            nougat = SupraStructure.HTSinsert()
-            nougat.loadCfg(self.struct)
+            nougat = SupraStructure.HTSinsert.fromcfg(self.struct)
 
             # call gmsh for struct
             nougat.gmsh_bcs(self.name, self.detail, ids, debug)

@@ -1,7 +1,7 @@
 """
 Define HTS insert geometry
 """
-from typing import Union, List, Type
+from typing import Union, List, Optional
 
 import gmsh
 
@@ -490,6 +490,159 @@ class HTSinsert:
         self.dblpancakes = dblpancakes
         self.isolations = isolations
 
+    @classmethod
+    def fromcfg(cls, inputcfg: str, debug: Optional[bool] = False):
+        """create from a file"""
+        import json
+
+        with open(inputcfg) as f:
+            data = json.load(f)
+            if debug:
+                print("HTSinsert data:", data)
+
+            """
+            print("List main keys:")
+            for key in data:
+                print("key:", key)
+            """
+
+            mytape = None
+            if "tape" in data:
+                mytape = tape.from_data(data["tape"])
+
+            mypancake = pancake()
+            if "pancake" in data:
+                mypancake = pancake.from_data(data["pancake"])
+                if debug:
+                    print(f"mypancake={mypancake}")
+
+            myisolation = isolation()
+            if "isolation" in data:
+                myisolation = isolation.from_data(data["isolation"])
+                if debug:
+                    print(f"myisolation={myisolation}")
+
+            z = 0
+            r0 = r1 = z0 = z1 = h = 0
+            n = 0
+            dblpancakes = []
+            isolations = []
+            if "dblpancakes" in data:
+                if debug:
+                    print(f"DblPancake data:", data["dblpancakes"])
+
+                # if n defined use the same pancakes and isolations
+                # else loop to load pancake and isolation structure definitions
+                if "n" in data["dblpancakes"]:
+                    n = data["dblpancakes"]["n"]
+                    if debug:
+                        print(f"Loading {n} similar dblpancakes, z={z}")
+                    if "isolation" in data["dblpancakes"]:
+                        dpisolation = isolation.from_data(
+                            data["dblpancakes"]["isolation"]
+                        )
+                    else:
+                        dpisolation = myisolation
+                    if debug:
+                        print(f"dpisolation={dpisolation}")
+
+                    for i in range(n):
+                        dp = dblpancake(z, mypancake, myisolation)
+                        if debug:
+                            print(f"dp={dp}")
+
+                        dblpancakes.append(dp)
+                        isolations.append(dpisolation)
+
+                        if debug:
+                            print(f"dblpancake[{i}]:")
+
+                        z += dp.getH()
+                        # print(f'z={z} dp_H={dp.getH()}')
+                        if i != n - 1:
+                            z += dpisolation.getH()  # isolation between D
+                        # print(f'z={z} dp_i={dpisolation.getH()}')
+
+                    h = z
+                    # print(f"h= {self.h} [mm] = {z}")
+
+                    r0 = dblpancakes[0].getR0()
+                    r1 = dblpancakes[0].getR0() + dblpancakes[0].getW()
+                else:
+                    if debug:
+                        print(f"Loading different dblpancakes, z={z}")
+                    n = 0
+                    for dp in data["dblpancakes"]:
+                        n += 1
+                        if debug:
+                            print("dp:", dp, data["dblpancakes"][dp]["pancake"])
+                        mypancake = pancake.from_data(
+                            data["dblpancakes"][dp]["pancake"]
+                        )
+
+                        if "isolation" in data["isolations"][dp]:
+                            dpisolation = isolation.from_data(
+                                data["isolations"][dp]["isolation"]
+                            )
+                        else:
+                            dpisolation = myisolation
+                        isolations.append(dpisolation)
+
+                        dp_ = dblpancake(z, mypancake, myisolation)
+                        r0 = min(r0, dp_.getR0())
+                        r1 = max(r1, dp_.pancake.getR1())
+                        dblpancakes.append(dp_)
+                        if debug:
+                            print(f"mypancake: {mypancake}")
+                            print(f"dpisolant: {dpisolation}")
+                            print(f"dp: {dp_}")
+
+                        z += dp_.getH()
+                        z += myisolation.getH()  # isolation between DP
+
+                    h = z - myisolation.getH()
+                    # print(f"h= {self.h} [mm] = {z}-{myisolation.getH()} ({self.n} dblpancakes)")
+
+            # shift insert by z0-z/2.
+            z1 = z0 - h / 2.0
+            z = z1
+            # print(f'shift insert by {z} = {self.z0}-{self.h}/2.')
+            for i in range(len(dblpancakes)):
+                _h = dblpancakes[i].getH()
+                dblpancakes[i].setZ0(z + _h / 2.0)
+                # print(f'dp[{i}]: z0={z+_h/2.}, z1={z}, z2={z+_h}')
+                z += _h + myisolation.getH()
+
+            if debug:
+                print("=== Load cfg:")
+                print(f"r0= {r0} [mm]")
+                print(f"r1= {r1} [mm]")
+                print(f"z1= {z0-h/2.} [mm]")
+                print(f"z2= {z0+h/2.} [mm]")
+                print(f"z0= {z0} [mm]")
+                print(f"h= {h} [mm]")
+                print(f"n= {len(dblpancakes)}")
+
+                for i, dp in enumerate(dblpancakes):
+                    print(f"dblpancakes[{i}]: {dp}")
+                print("===")
+
+            return cls(z0, h, r0, r1, z1, n, dblpancakes, isolations)
+
+    def __repr__(self):
+        """
+        representation of object
+        """
+        return "%s(r0=%r, r1=%r, z0=%r, h=%r, n=%r, dblpancakes=%r, isolations=%r)" % (
+            self.r0,
+            self.r1,
+            self.z0,
+            self.h,
+            self.n,
+            self.dblpancakes,
+            self.isolations,
+        )
+
     def setDblpancake(self, dblpancake):
         self.dblpancakes.append(dblpancake)
 
@@ -689,140 +842,6 @@ class HTSinsert:
 
     def getArea(self) -> float:
         return (self.getR1() - self.getR0()) * self.getH()
-
-    def loadCfg(self, inputcfg: str, debug: bool = False):
-        """
-        Load insert params from json
-        """
-        import json
-
-        with open(inputcfg) as f:
-            data = json.load(f)
-            if debug:
-                print("HTSinsert data:", data)
-
-            """
-            print("List main keys:")
-            for key in data:
-                print("key:", key)
-            """
-
-            mytape = None
-            if "tape" in data:
-                mytape = tape.from_data(data["tape"])
-
-            mypancake = pancake()
-            if "pancake" in data:
-                mypancake = pancake.from_data(data["pancake"])
-                if debug:
-                    print(f"mypancake={mypancake}")
-
-            myisolation = isolation()
-            if "isolation" in data:
-                myisolation = isolation.from_data(data["isolation"])
-                if debug:
-                    print(f"myisolation={myisolation}")
-
-            z = 0
-            if "dblpancakes" in data:
-                if debug:
-                    print(f"DblPancake data:", data["dblpancakes"])
-
-                # if n defined use the same pancakes and isolations
-                # else loop to load pancake and isolation structure definitions
-                if "n" in data["dblpancakes"]:
-                    self.n = data["dblpancakes"]["n"]
-                    if debug:
-                        print(f"Loading {self.n} similar dblpancakes, z={z}")
-                    if "isolation" in data["dblpancakes"]:
-                        dpisolation = isolation.from_data(
-                            data["dblpancakes"]["isolation"]
-                        )
-                    else:
-                        dpisolation = myisolation
-                    if debug:
-                        print(f"dpisolation={dpisolation}")
-
-                    for i in range(self.n):
-                        dp = dblpancake(z, mypancake, myisolation)
-                        if debug:
-                            print(f"dp={dp}")
-
-                        self.setDblpancake(dp)
-                        self.setIsolation(dpisolation)
-
-                        if debug:
-                            print(f"dblpancake[{i}]:")
-
-                        z += dp.getH()
-                        # print(f'z={z} dp_H={dp.getH()}')
-                        if i != self.n - 1:
-                            z += dpisolation.getH()  # isolation between D
-                        # print(f'z={z} dp_i={dpisolation.getH()}')
-
-                    self.h = z
-                    # print(f"h= {self.h} [mm] = {z}")
-
-                    self.r0 = self.dblpancakes[0].getR0()
-                    self.r1 = self.dblpancakes[0].getR0() + self.dblpancakes[0].getW()
-                else:
-                    if debug:
-                        print(f"Loading different dblpancakes, z={z}")
-                    self.n = 0
-                    for dp in data["dblpancakes"]:
-                        self.n += 1
-                        if debug:
-                            print("dp:", dp, data["dblpancakes"][dp]["pancake"])
-                        mypancake = pancake.from_data(
-                            data["dblpancakes"][dp]["pancake"]
-                        )
-
-                        if "isolation" in data["isolations"][dp]:
-                            dpisolation = isolation.from_data(
-                                data["isolations"][dp]["isolation"]
-                            )
-                        else:
-                            dpisolation = myisolation
-                        self.setIsolation(dpisolation)
-
-                        dp_ = dblpancake(z, mypancake, myisolation)
-                        self.r0 = min(self.r0, dp_.getR0())
-                        self.r1 = max(self.r1, dp_.pancake.getR1())
-                        self.setDblpancake(dp_)
-                        if debug:
-                            print(f"mypancake: {mypancake}")
-                            print(f"dpisolant: {dpisolation}")
-                            print(f"dp: {dp_}")
-
-                        z += dp_.getH()
-                        z += myisolation.getH()  # isolation between DP
-
-                    self.h = z - myisolation.getH()
-                    # print(f"h= {self.h} [mm] = {z}-{myisolation.getH()} ({self.n} dblpancakes)")
-
-            # shift insert by z0-z/2.
-            self.z1 = self.z0 - self.h / 2.0
-            z = self.z1
-            # print(f'shift insert by {z} = {self.z0}-{self.h}/2.')
-            for i in range(len(self.dblpancakes)):
-                _h = self.dblpancakes[i].getH()
-                self.dblpancakes[i].setZ0(z + _h / 2.0)
-                # print(f'dp[{i}]: z0={z+_h/2.}, z1={z}, z2={z+_h}')
-                z += _h + myisolation.getH()
-
-            if debug:
-                print("=== Load cfg:")
-                print(f"r0= {self.r0} [mm]")
-                print(f"r1= {self.r1} [mm]")
-                print(f"z1= {self.getZ0()-self.getH()/2.} [mm]")
-                print(f"z2= {self.getZ0()+self.getH()/2.} [mm]")
-                print(f"z0= {self.z0} [mm]")
-                print(f"h= {self.h} [mm]")
-                print(f"n= {len(self.dblpancakes)}")
-
-                for i, dp in enumerate(self.dblpancakes):
-                    print(f"dblpancakes[{i}]: {dp}")
-                print("===")
 
     def gmsh(self, detail: str, AirData: tuple = (), debug: bool = False):
         """
