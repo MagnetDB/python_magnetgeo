@@ -89,17 +89,11 @@ class Supra(yaml.YAMLObject):
         if mname:
             prefix = f"{mname}_"
 
-        # # load yaml
-        # from . import SupraStructure
-        # hts = SupraStructure.HTSinsert()
-        # hts.loadCfg(f'{self.struct}')
-        hts = self.get_magnet_struct()
-        self.check_dimensions(hts)
-
-        # TODO take into account supra detail
         if self.detail == "None":
             solid_names.append(f"{prefix}{self.name}")
         else:
+            hts = self.get_magnet_struct()
+            self.check_dimensions(hts)
 
             n_dp = len(hts.dblpancakes)
             cadname = f"{prefix}{self.name}"
