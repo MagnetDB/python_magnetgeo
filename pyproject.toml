@@ -10,8 +10,6 @@ authors = ["Christophe Trophime <christophe.trophime@lncmi.cnrs.fr>",
 [tool.poetry.dependencies]
 python = "^3.8"
 PyYAML = "^5"
-lxml = "^4.9.2"
-gmsh = "^4.9.5"
 
 [tool.poetry.dev-dependencies]
 
