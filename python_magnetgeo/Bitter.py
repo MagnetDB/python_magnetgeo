@@ -62,10 +62,10 @@ class Bitter(yaml.YAMLObject):
                 n_slits = len(data["r"])
                 break
 
-        prefix = {self.name}
+        prefix = ""
         if mname:
-            prefix = f"{mname}_{self.name}"
-        Channels = [f"{prefix}_slit{i}" for i in range(n_slits)]
+            prefix = f"{mname}_"
+        Channels = [f"{prefix}slit{i}" for i in range(n_slits)]
         print(f"Bitter({prefix}): {Channels}")
         return Channels
 
@@ -192,6 +192,7 @@ class Bitter(yaml.YAMLObject):
         if isR and isZ:
             collide = True
         return collide
+
 
 def Bitter_constructor(loader, node):
     """
