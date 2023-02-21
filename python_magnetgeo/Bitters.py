@@ -203,33 +203,6 @@ class Bitters(yaml.YAMLObject):
             collide = True
         return collide
 
-    def gmsh(self, AirData: tuple, debug: bool = False):
-        """
-        create gmsh geometry
-        """
-        pass
-
-    def gmsh_bcs(self, ids: tuple, debug: bool = False):
-        """
-        retreive ids for bcs in gmsh geometry
-        """
-        pass
-
-    def gmsh_msh(self, defs: dict, lc: list):
-        print("TODO: set characteristic lengths")
-        """
-        lcar = (nougat.getR1() - nougat.R(0) ) / 10.
-        lcar_dp = nougat.dblpancakes[0].getW() / 10.
-        lcar_p = nougat.dblpancakes[0].getPancake().getW() / 10.
-        lcar_tape = nougat.dblpancakes[0].getPancake().getW()/3.
-
-        gmsh.model.mesh.setSize(gmsh.model.getEntities(0), lcar)
-        # Override this constraint on the points of the tapes:
-
-        gmsh.model.mesh.setSize(gmsh.model.getBoundary(tapes, False, False, True), lcar_tape)
-        """
-        pass
-
     def Create_AxiGeo(self, AirData):
         """
         create Axisymetrical Geo Model for gmsh
