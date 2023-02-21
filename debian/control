@@ -6,9 +6,7 @@ Build-Depends: debhelper-compat (= 12),
  dh-python,
  python3-setuptools,
  python3-all,
- python3-gmsh,
  python3-yaml,
- python3-lxml,
  python3-pytest-runner
 Standards-Version: 4.6.0
 Homepage: https://github.com/Trophime/python_magnetgeo
@@ -24,8 +22,6 @@ Suggests: python-python-magnetgeo-doc
 Description: Magnet Geometry Python module (Python 3)
  This module enable to perform the following operations
  * Define Magnet geometry as yaml file
- * Load/Create CA and Mesh with Salome (see hifimanget.salome)
- * Create Gmsh mesh from Salome XAO format
  .
  This package installs the library for Python 3.
 
@@ -36,7 +32,5 @@ Depends: ${sphinxdoc:Depends}, ${misc:Depends}
 Description: <insert up to 60 chars description> (common documentation)
  This module enable to perform the following operations
  * Define Magnet geometry as yaml file
- * Load/Create CA and Mesh with Salome (see hifimanget.salome)
- * Create Gmsh mesh from Salome XAO format
  .
  This package installs the library for Python 3.
