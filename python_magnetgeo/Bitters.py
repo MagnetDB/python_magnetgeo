@@ -41,26 +41,26 @@ class Bitters(yaml.YAMLObject):
 
     def get_channels(
         self, mname: str, hideIsolant: bool = True, debug: bool = False
-    ) -> List:
+    ) -> dict:
         """
         get Channels def as dict
         """
         print(f"Bitters/get_channels:")
-        Channels = []
+        Channels = {}
 
         if isinstance(self.magnets, str):
             YAMLFile = f"{self.magnets}.yaml"
             with open(YAMLFile, "r") as f:
                 Object = yaml.load(f, Loader=yaml.FullLoader)
 
-            Channels = Object.get_channels(self.name, hideIsolant, debug)
+            Channels[self.name] = Object.get_channels(self.name, hideIsolant, debug)
         elif isinstance(self.magnets, list):
             for magnet in self.magnets:
                 YAMLFile = f"{magnet}.yaml"
                 with open(YAMLFile, "r") as f:
                     Object = yaml.load(f, Loader=yaml.FullLoader)
 
-                Channels += Object.get_channels(magnet, hideIsolant, debug)
+                Channels[magnet] = Object.get_channels(magnet, hideIsolant, debug)
 
         elif isinstance(self.magnets, dict):
             for key in self.magnets:
@@ -69,13 +69,19 @@ class Bitters(yaml.YAMLObject):
                 with open(YAMLFile, "r") as f:
                     Object = yaml.load(f, Loader=yaml.FullLoader)
 
-                Channels += Object.get_channels(key, hideIsolant, debug)
+                Channels[magnet] = Object.get_channels(key, hideIsolant, debug)
         else:
             raise RuntimeError(
                 f"Bitters: unsupported type of magnets ({type(self.magnets)})"
             )
 
         return Channels
+
+    def get_isolants(self, mname: str, debug: bool = False) -> dict:
+        """
+        return isolants
+        """
+        return {}
 
     def get_names(
         self, mname: str, is2D: bool = False, verbose: bool = False

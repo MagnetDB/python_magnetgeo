@@ -91,7 +91,7 @@ class Insert(yaml.YAMLObject):
         """
         return isolants
         """
-        return {}
+        return []
 
     def get_names(self, mname: str, is2D: bool = False, verbose: bool = False) -> List[str]:
         """

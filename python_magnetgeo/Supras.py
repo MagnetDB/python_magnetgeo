@@ -41,8 +41,14 @@ class Supras(yaml.YAMLObject):
 
     def get_channels(
         self, mname: str, hideIsolant: bool = True, debug: bool = False
-    ) -> list:
-        return []
+    ) -> dict:
+        return {}
+
+    def get_isolants(self, mname: str, debug: bool = False) -> dict:
+        """
+        return isolants
+        """
+        return {}
 
     def get_names(
         self, mname: str, is2D: bool = False, verbose: bool = False

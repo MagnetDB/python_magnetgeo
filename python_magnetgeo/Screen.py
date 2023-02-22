@@ -35,6 +35,12 @@ class Screen(yaml.YAMLObject):
     ) -> list:
         return []
 
+    def get_isolants(self, mname: str, debug: bool = False):
+        """
+        return isolants
+        """
+        return []
+
     def get_names(
         self, mname: str, is2D: bool = False, verbose: bool = False
     ) -> List[str]:

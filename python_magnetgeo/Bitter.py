@@ -51,7 +51,7 @@ class Bitter(yaml.YAMLObject):
 
     def get_channels(
         self, mname: str, hideIsolant: bool = True, debug: bool = False
-    ) -> List[str]:
+    ) -> List[list]:
         """
         return channels
         """
@@ -65,9 +65,15 @@ class Bitter(yaml.YAMLObject):
         prefix = ""
         if mname:
             prefix = f"{mname}_"
-        Channels = [f"{prefix}slit{i}" for i in range(n_slits)]
+        Channels = [[f"{prefix}slit{i}"] for i in range(n_slits)]
         print(f"Bitter({prefix}): {Channels}")
         return Channels
+
+    def get_isolants(self, mname: str, debug: bool = False):
+        """
+        return isolants
+        """
+        return []
 
     def get_names(
         self, mname: str, is2D: bool = False, verbose: bool = False
