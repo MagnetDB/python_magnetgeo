@@ -31,12 +31,7 @@ class Supra(yaml.YAMLObject):
     yaml_tag = "Supra"
 
     def __init__(
-        self,
-        name: str,
-        r: List[float],
-        z: List[float],
-        n: int = 0,
-        struct: str = "",
+        self, name: str, r: List[float], z: List[float], n: int = 0, struct: str = ""
     ) -> None:
         """
         initialize object
@@ -76,6 +71,11 @@ class Supra(yaml.YAMLObject):
                     f"Supra/check_dimensions: override dimensions for {self.name} from {self.struct}"
                 )
                 print(self)
+
+    def get_channels(
+        self, mname: str, hideIsolant: bool = True, debug: bool = False
+    ) -> list:
+        return []
 
     def get_names(
         self, mname: str, is2D: bool = False, verbose: bool = False

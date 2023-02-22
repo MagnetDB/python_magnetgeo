@@ -39,6 +39,11 @@ class Supras(yaml.YAMLObject):
             self.outerbore,
         )
 
+    def get_channels(
+        self, mname: str, hideIsolant: bool = True, debug: bool = False
+    ) -> list:
+        return []
+
     def get_names(
         self, mname: str, is2D: bool = False, verbose: bool = False
     ) -> List[str]:

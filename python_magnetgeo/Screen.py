@@ -30,6 +30,11 @@ class Screen(yaml.YAMLObject):
         self.r = r
         self.z = z
 
+    def get_channels(
+        self, mname: str, hideIsolant: bool = True, debug: bool = False
+    ) -> list:
+        return []
+
     def get_names(
         self, mname: str, is2D: bool = False, verbose: bool = False
     ) -> List[str]:
