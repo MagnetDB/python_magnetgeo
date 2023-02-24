@@ -72,6 +72,13 @@ class Supra(yaml.YAMLObject):
                 )
                 print(self)
 
+    def get_lc(self):
+        if self.detail == "None":
+            return (self.r[1] - self.r[0]) / 5.0
+        else:
+            hts = self.get_magnet_struct()
+            return hts.get_lc()
+
     def get_channels(
         self, mname: str, hideIsolant: bool = True, debug: bool = False
     ) -> list:

@@ -69,10 +69,23 @@ class Bitter(yaml.YAMLObject):
         print(f"Bitter({prefix}): {Channels}")
         return Channels
 
-    def get_lc(self):
-        return (self.r[1] - self.r[0]) / 10.0
+    def get_lc(self) -> float:
+        lc = (self.r[1] - self.r[0]) / 10.0
+        if self.coolingslits:
+            x: float = self.r[0]
+            dr: List[float] = []
+            for data in self.coolingslits:
+                if "r" in data:
+                    for _x in data["r"]:
+                        dr.append(_x - x)
+                        x = _x
+            dr.append(self.r[1] - x)
+            # print(f"Bitter: dr={dr}")
+            lc = min(dr) / 5.0
 
-    def get_isolants(self, mname: str, debug: bool = False):
+        return lc
+
+    def get_isolants(self, mname: str, debug: bool = False) -> List[str]:
         """
         return isolants
         """

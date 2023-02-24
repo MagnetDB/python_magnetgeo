@@ -3,6 +3,7 @@ Define HTS insert geometry
 """
 from typing import Union, List, Optional
 
+
 def flatten(S: list) -> list:
     from pandas.core.common import flatten as pd_flatten
 
@@ -710,6 +711,22 @@ class HTSinsert:
 
     def getArea(self) -> float:
         return (self.getR1() - self.getR0()) * self.getH()
+
+    def get_lc(self):
+        _i = self.isolations[0].getH() / 10.0
+        _dp = self.dblpancakes[0].getH() / 10.0
+        _p = self.dblpancakes[0].pancake.getH() / 10.0
+        _i_dp = self.dblpancakes[0].isolation.getH() / 10.0
+        _Mandrin = (
+            abs(
+                self.dblpancakes[0].pancake.getMandrin()
+                - self.dblpancakes[0].pancake.getR0()
+            )
+            / 10.0
+        )
+        _Sc = self.dblpancakes[0].pancake.tape.getW_Sc() / 10.0
+        _Du = self.dblpancakes[0].pancake.tape.getW_Isolation() / 10.0
+        return (_i, _dp, _p, _i_dp, _Mandrin, _Sc, _Du)
 
     # TODO move the template in a well defined directory (defined in config file for magnetgeo)
     def template_gmsh(self, name: str, detail: str) -> None:
