@@ -59,9 +59,7 @@ RUN apt update \
     && cp /usr/share/keyrings/debian-maintainers.gpg /etc/apt/trusted.gpg.d \
     && echo "deb http://euler.GRENOBLE.LNCMI.LOCAL/~trophime/debian/ $(lsb_release -cs) main" > /etc/apt/sources.list.d/lncmi.list \
     && apt update \
-    && apt-get -y install python3-nptdms python3-freesteam python3-nlopt python3-tabulate \
-    && apt-get -y install python3-ht python3-pyclaw python3-yaml  \
-    && apt-get -y install python3-gmsh
+    && apt-get -y install python3-chevron
 
 # Install latest gsh dev version (support for BoundingBox) ?
 #RUN python3 -m pip install -i https://gmsh.info/python-packages --force-reinstall --no-cache-dir gmsh-dev
