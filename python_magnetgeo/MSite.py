@@ -154,6 +154,8 @@ class MSite(yaml.YAMLObject):
                 f"MSite/get_names: unsupported type of magnets ({type(self.magnets)})"
             )
 
+        # TODO add Screens
+
         if verbose:
             print(f"MSite/get_names: solid_names {len(solid_names)}")
         return solid_names

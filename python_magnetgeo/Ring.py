@@ -60,6 +60,9 @@ class Ring(yaml.YAMLObject):
             self.fillets,
         )
 
+    def get_lc(self):
+        return (self.r[1] - self.r[0]) / 10.0
+
     def dump(self):
         """
         dump object to file
@@ -117,6 +120,7 @@ class Ring(yaml.YAMLObject):
         """
         with open(f"{self.name}.json", "r") as istream:
             jsondata = self.from_json(istream.read())
+
 
 def Ring_constructor(loader, node):
     """

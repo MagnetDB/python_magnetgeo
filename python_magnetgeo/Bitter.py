@@ -69,6 +69,9 @@ class Bitter(yaml.YAMLObject):
         print(f"Bitter({prefix}): {Channels}")
         return Channels
 
+    def get_lc(self):
+        return (self.r[1] - self.r[0]) / 10.0
+
     def get_isolants(self, mname: str, debug: bool = False):
         """
         return isolants

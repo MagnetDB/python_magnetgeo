@@ -50,12 +50,15 @@ class Helix(yaml.YAMLObject):
         self.m3d = m3d
         self.shape = shape
 
-    def get_type(self):
+    def get_type(self) -> str:
         if self.m3d.with_shapes and self.m3d.with_channels:
             return "HR"
         return "HL"
 
-    def get_names(self, mname: str, is2D: bool, verbose: bool = False):
+    def get_lc(self) -> float:
+        return (self.r[1] - self.r[0] ) / 10.
+
+    def get_names(self, mname: str, is2D: bool, verbose: bool = False) -> List[str]:
         """
         return names for Markers
         """

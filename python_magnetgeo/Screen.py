@@ -30,6 +30,9 @@ class Screen(yaml.YAMLObject):
         self.r = r
         self.z = z
 
+    def get_lc(self):
+        return (self.r[1] - self.r[0]) / 10.0
+
     def get_channels(
         self, mname: str, hideIsolant: bool = True, debug: bool = False
     ) -> list:

@@ -108,7 +108,7 @@ class Insert(yaml.YAMLObject):
         for i, helix in enumerate(self.Helices):
             hHelix = None
             Ninsulators = 0
-            with open(helix + ".yaml", "r") as f:
+            with open(f"{helix}.yaml", "r") as f:
                 hHelix = yaml.load(f, Loader=yaml.FullLoader)
 
             if is2D:
