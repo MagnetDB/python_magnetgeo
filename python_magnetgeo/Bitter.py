@@ -40,7 +40,7 @@ class Bitter(yaml.YAMLObject):
         odd: bool,
         axi: ModelAxi,
         coolingslits: List[CoolingSlit],
-        tierods: List[Tierod],
+        tierods: Tierod,
     ) -> None:
         """
         initialize object
@@ -219,6 +219,13 @@ class Bitter(yaml.YAMLObject):
             collide = True
         return collide
 
+    def get_params(self, workingDir: str = ".") -> tuple:
+        Dh = [slit.n * slit.dh for slit in self.coolingslits]
+        Sh = [slit.n * slit.sh for slit in self.coolingslits]
+
+        return (len(self.coolingslits), self.z[0], self.z[1], Sh)
+
+
 
 def Bitter_constructor(loader, node):
     """
@@ -236,11 +243,29 @@ def Bitter_constructor(loader, node):
     return Bitter(name, r, z, odd, axi, coolingslits, tierods)
 
 
-def get_params(self, workingDir: str = ".") -> tuple:
-    Dh = [slit.n * slit.dh for slit in self.coolingslits]
-    Sh = [slit.n * slit.Sh for slit in self.coolingslits]
-
-    return (len(self.coolingslits), self.z[0], self.z[1], Sh)
-
-
 yaml.add_constructor("!Bitter", Bitter_constructor)
+
+if __name__ == "__main__":
+    import os
+    from .Shape2D import Shape2D
+
+    Square = Shape2D("square", [[0, 0], [1, 0], [1, 1], [0, 1]])
+    tierod = Tierod(2, 20, Square)
+
+    Square = Shape2D("square", [[0, 0], [1, 0], [1, 1], [0, 1]])
+    slit1 = CoolingSlit(2, 5, 20, 0.1, 0.2, Square)
+    slit2 = CoolingSlit(10, 5, 20, 0.1, 0.2, Square)
+    coolingSlits = [slit1, slit2]
+    
+    Axi = ModelAxi('test', 0.9, [2], [0.9])
+
+    bitter = Bitter('B', [1,2], [-1, 1], True, Axi, coolingSlits, tierod)
+    bitter.dump()
+    
+    with open("B.yaml", 'r') as f:
+        bitter = yaml.load(f, Loader=yaml.FullLoader)
+
+    print(bitter)
+    for i,slit in enumerate(bitter.coolingslits):
+        print(f'slit[{i}]: {slit}, shape={slit.shape}')
+

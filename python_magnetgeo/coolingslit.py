@@ -1,28 +1,45 @@
+#!/usr/bin/env python3
+# -*- coding:utf-8 -*-
+
+"""
+Provides definiton for CoolingSlits:
+"""
+from typing import Union
+
 import yaml
 
 from .Shape2D import Shape2D
 
 
-class CoolingSlit:
+class CoolingSlit(yaml.YAMLObject):
+    """
+    r: radius
+    angle: anglar shift from tierod
+    n: 
+    dh:
+    sh:
+    shape:
+    """
+    
     yaml_tag = "Slit"
 
     def __init__(
         self, r: float, angle: float, n: int, dh: float, sh: float, shape: Shape2D
     ) -> None:
-        self.r = r
-        self.angle = angle
-        self.n = n
-        self.dh = dh
-        self.sh = sh
-        self.shape = shape
+        self.r: float = r
+        self.angle: float = angle
+        self.n: int = n
+        self.dh: float = dh
+        self.sh: float = sh
+        self.shape: Shape2D = shape
 
     def __repr__(self):
-        return "r=%r, angle=%r, n=%r, dh=%r, sh=%r, shape=%r)" % (
+        return "%s(r=%r, angle=%r, n=%r, dh=%r, sh=%r, shape=%r)" % (
+            self.__class__.__name__,
             self.r,
             self.angle,
             self.n,
             self.dh,
-            self.sh,
             self.sh,
             self.shape,
         )
@@ -66,12 +83,13 @@ def CoolingSlit_constructor(loader, node):
     n = values["n"]
     dh = values["dh"]
     sh = values["sh"]
+    print(f"constructor: {type(values['shape'])}")
     shape = values["shape"]
 
     return CoolingSlit(r, angle, n, dh, sh, shape)
 
 
-yaml.add_constructor("!Slit", CoolingSlit_constructor)
+yaml.add_constructor(u"!Slit", CoolingSlit_constructor)
 
 if __name__ == "__main__":
     Square = Shape2D("square", [[0, 0], [1, 0], [1, 1], [0, 1]])
