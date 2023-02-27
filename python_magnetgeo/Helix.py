@@ -16,9 +16,9 @@ import json
 import yaml
 from . import deserialize
 
-from . import Shape
-from . import ModelAxi
-from . import Model3D
+from .Shape import Shape
+from .ModelAxi import ModelAxi
+from .Model3D import Model3D
 
 class Helix(yaml.YAMLObject):
     """
@@ -36,7 +36,7 @@ class Helix(yaml.YAMLObject):
 
     yaml_tag = 'Helix'
 
-    def __init__(self, name: str, r: List[float], z: List[float], cutwidth: float, odd: bool, dble: bool, axi: ModelAxi.ModelAxi, m3d: Model3D.Model3D, shape: Shape.Shape) -> None:
+    def __init__(self, name: str, r: List[float], z: List[float], cutwidth: float, odd: bool, dble: bool, axi: ModelAxi, m3d: Model3D, shape: Shape) -> None:
         """
         initialize object
         """
