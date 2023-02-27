@@ -14,7 +14,9 @@ import json
 import yaml
 from . import deserialize
 
-from . import ModelAxi
+from .ModelAxi import ModelAxi
+from .coolingslit import CoolingSlit
+from .tierod import Tierod
 
 
 class Bitter(yaml.YAMLObject):
@@ -24,7 +26,7 @@ class Bitter(yaml.YAMLObject):
     z :
 
     axi :
-    coolingslits: [(r, angle, n, dh, sh)]
+    coolingslits: [(r, angle, n, dh, sh, shape)]
     tierods: [r, n, shape]
     """
 
@@ -35,9 +37,10 @@ class Bitter(yaml.YAMLObject):
         name,
         r: List[float],
         z: List[float],
-        axi: ModelAxi.ModelAxi,
-        coolingslits: List = [],
-        tierods: List = [],
+        odd: bool,
+        axi: ModelAxi,
+        coolingslits: List[CoolingSlit],
+        tierods: List[Tierod],
     ) -> None:
         """
         initialize object
@@ -45,6 +48,7 @@ class Bitter(yaml.YAMLObject):
         self.name = name
         self.r = r
         self.z = z
+        self.odd = odd
         self.axi = axi
         self.coolingslits = coolingslits
         self.tierods = tierods
@@ -56,11 +60,7 @@ class Bitter(yaml.YAMLObject):
         return channels
         """
         print(f"Bitter({self.name}): CoolingSlits={self.coolingslits}")
-        n_slits = 0
-        for data in self.coolingslits:
-            if "r" in data:
-                n_slits = len(data["r"])
-                break
+        n_slits = len(self.coolingslits)
 
         prefix = ""
         if mname:
@@ -74,11 +74,10 @@ class Bitter(yaml.YAMLObject):
         if self.coolingslits:
             x: float = self.r[0]
             dr: List[float] = []
-            for data in self.coolingslits:
-                if "r" in data:
-                    for _x in data["r"]:
-                        dr.append(_x - x)
-                        x = _x
+            for slit in self.coolingslits:
+                _x = slit.r
+                dr.append(_x - x)
+                x = _x
             dr.append(self.r[1] - x)
             # print(f"Bitter: dr={dr}")
             lc = min(dr) / 5.0
@@ -120,14 +119,18 @@ class Bitter(yaml.YAMLObject):
         """
         representation of object
         """
-        return "%s(name=%r, r=%r, z=%r, axi=%r, coolingslits=%r, tierods=%r)" % (
-            self.__class__.__name__,
-            self.name,
-            self.r,
-            self.z,
-            self.axi,
-            self.coolingslits,
-            self.tierods,
+        return (
+            "%s(name=%r, r=%r, z=%r, odd=%r, axi=%r, coolingslits=%r, tierods=%r)"
+            % (
+                self.__class__.__name__,
+                self.name,
+                self.r,
+                self.z,
+                self.odd,
+                self.axi,
+                self.coolingslits,
+                self.tierods,
+            )
         )
 
     def dump(self):
@@ -154,6 +157,7 @@ class Bitter(yaml.YAMLObject):
         self.name = data.name
         self.r = data.r
         self.z = data.z
+        self.odd = data.odd
         self.axi = data.axi
         self.coolingslits = data.coolingslits
         self.tierods = data.tierods
@@ -178,7 +182,7 @@ class Bitter(yaml.YAMLObject):
         """
         with open(f"{self.name}.json", "w") as ostream:
             jsondata = self.to_json()
-            ostream.write(str(jsondata))
+            ostream.write(jsondata)
 
     def read_from_json(self):
         """
@@ -224,11 +228,19 @@ def Bitter_constructor(loader, node):
     name = values["name"]
     r = values["r"]
     z = values["z"]
+    odd = values["odd"]
     axi = values["axi"]
     coolingslits = values["coolingslits"]
     tierods = values["tierods"]
 
-    return Bitter(name, r, z, axi, coolingslits, tierods)
+    return Bitter(name, r, z, odd, axi, coolingslits, tierods)
+
+
+def get_params(self, workingDir: str = ".") -> tuple:
+    Dh = [slit.n * slit.dh for slit in self.coolingslits]
+    Sh = [slit.n * slit.Sh for slit in self.coolingslits]
+
+    return (len(self.coolingslits), self.z[0], self.z[1], Sh)
 
 
 yaml.add_constructor("!Bitter", Bitter_constructor)
