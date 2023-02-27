@@ -4,6 +4,7 @@
 """defines Insert structure"""
 from typing import List
 
+import math
 import datetime
 import json
 import yaml
@@ -708,6 +709,76 @@ class Insert(yaml.YAMLObject):
         geofile.close()
 
         return (H_ids, Ring_ids, BC_ids, Air_ids, BC_Air_ids)
+
+    def get_params(self, workingDir: str = ".") -> tuple:
+        """
+        get params
+        
+        R1
+        R2
+        Z1
+        Z2
+        Zmin,
+        Zmax,
+        Dh,
+        Sh,
+        """
+        
+        NHelices = len(self.Helices)
+        NRings = len(self.Rings)
+        NChannels = NChannels = NHelices + 1
+
+        Nsections = []
+        Nturns_h = []
+        R1 = []
+        R2 = []
+        Z1 = []
+        Z2 = []
+        Nsections = []
+        Nturns_h = []
+        Zmin = []
+        Zmax = []
+        Dh = []
+        Sh = []
+
+        for i, helix in enumerate(self.Helices):
+            hhelix = None
+            with open(f"{workingDir}/{helix}.yaml", "r") as f:
+                hhelix = yaml.load(f, Loader=yaml.FullLoader)
+            n_sections = len(hhelix.axi.turns)
+            Nsections.append(n_sections)
+            Nturns_h.append(hhelix.axi.turns)
+
+            R1.append(hhelix.r[0])
+            R2.append(hhelix.r[1])
+            Z1.append(hhelix.z[0])
+            Z2.append(hhelix.z[1])
+
+        Ri = self.innerbore
+        Re = self.outerbore
+
+        zm1 = Z1[0]
+        zm2 = Z2[0]
+
+        for i in range(NHelices):
+
+            Zmin.append(min(Z1[i], zm1))
+            Zmax.append(min(Z2[i], zm2))
+
+            Dh.append(2 * (R1[i] - Ri))
+            Sh.append(math.pi * (R1[i] - Ri) * (R1[i] + Ri))
+
+            Ri = R1[i]
+            zm1 = Z1[i]
+            zm2 = Z2[i]
+
+        Zmin.append(zm1)
+        Zmax.append(zm2)
+
+        Dh.append(2 * (Re - Ri))
+        Sh.append(math.pi * (Re - Ri) * (Re + Ri))
+        return (NHelices, NRings, NChannels, Nsections, R1, R2, Z1, Z2, Zmin, Zmax, Dh, Sh)
+
 
 def Insert_constructor(loader, node):
     print ("Insert_constructor")
