@@ -20,7 +20,6 @@ Features
 
 -   Define Magnet geometry as yaml files
 -   Load/Create CAD and Mesh with Salome (see hifimagnet.salome)
--   Create Gmsh mesh from Salome XAO format
 
 INSTALL
 =======
@@ -36,11 +35,6 @@ pip install -r requirements.txt
 Examples
 ========
 
-```
-python3 -m python_magnetgeo.xao --wd /data/geometries test-Axi.xao --geo test.yaml mesh --group CoolingChannels
-python3 -m python_magnetgeo.xao --wd /data/geometries M9_HLtest-Axi.xao --geo M9_HLtest.yaml mesh --group CoolingChannels
-python3 -m python_magnetgeo.xao --wd /data/geometries Pancakes-pancake-Axi.xao --geo HTS-pancake-test.yaml [mesh []]
-```
 
 Credits
 =======

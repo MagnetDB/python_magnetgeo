@@ -10,6 +10,7 @@ authors = ["Christophe Trophime <christophe.trophime@lncmi.cnrs.fr>",
 [tool.poetry.dependencies]
 python = "^3.8"
 PyYAML = "^5"
+chevron
 
 [tool.poetry.dev-dependencies]
 
