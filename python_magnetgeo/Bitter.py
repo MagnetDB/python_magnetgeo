@@ -104,11 +104,14 @@ class Bitter(yaml.YAMLObject):
 
         if is2D:
             nsection = len(self.axi.turns)
-            if nsection == 1:
-                solid_names.append(f"{prefix}{self.name}")
-            else:
-                for j in range(nsection):
-                    solid_names.append(f"{prefix}{self.name}_B{j+1}")
+            if self.z[0] < - self.axi.h:
+                solid_names.append(f"{prefix}{self.name}_B0")
+            
+            for j in range(nsection):
+                solid_names.append(f"{prefix}{self.name}_B{j+1}")
+
+            if self.z[1] > self.axi.h:
+                solid_names.append(f"{prefix}{self.name}_B{nsection+1}")
         else:
             solid_names.append(f"{prefix}{self.name}_B")
         if verbose:
