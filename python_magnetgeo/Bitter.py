@@ -40,7 +40,7 @@ class Bitter(yaml.YAMLObject):
         odd: bool,
         axi: ModelAxi,
         coolingslits: List[CoolingSlit],
-        tierods: Tierod,
+        tierod: Tierod,
     ) -> None:
         """
         initialize object
@@ -51,7 +51,7 @@ class Bitter(yaml.YAMLObject):
         self.odd = odd
         self.axi = axi
         self.coolingslits = coolingslits
-        self.tierods = tierods
+        self.tierod = tierod
 
     def get_channels(
         self, mname: str, hideIsolant: bool = True, debug: bool = False
@@ -123,7 +123,7 @@ class Bitter(yaml.YAMLObject):
         representation of object
         """
         return (
-            "%s(name=%r, r=%r, z=%r, odd=%r, axi=%r, coolingslits=%r, tierods=%r)"
+            "%s(name=%r, r=%r, z=%r, odd=%r, axi=%r, coolingslits=%r, tierod=%r)"
             % (
                 self.__class__.__name__,
                 self.name,
@@ -132,7 +132,7 @@ class Bitter(yaml.YAMLObject):
                 self.odd,
                 self.axi,
                 self.coolingslits,
-                self.tierods,
+                self.tierod,
             )
         )
 
@@ -163,7 +163,7 @@ class Bitter(yaml.YAMLObject):
         self.odd = data.odd
         self.axi = data.axi
         self.coolingslits = data.coolingslits
-        self.tierods = data.tierods
+        self.tierod = data.tierod
 
     def to_json(self):
         """
@@ -241,9 +241,9 @@ def Bitter_constructor(loader, node):
     odd = values["odd"]
     axi = values["axi"]
     coolingslits = values["coolingslits"]
-    tierods = values["tierods"]
+    tierod = values["tierod"]
 
-    return Bitter(name, r, z, odd, axi, coolingslits, tierods)
+    return Bitter(name, r, z, odd, axi, coolingslits, tierod)
 
 
 yaml.add_constructor("!Bitter", Bitter_constructor)
