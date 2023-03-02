@@ -71,3 +71,17 @@ def Shape_constructor(loader, node):
 
 
 yaml.add_constructor(u"!Shape2D", Shape_constructor)
+
+def create_circle(r: float, n: int = 20) -> Shape2D:
+    from math import pi, cos, sin
+    
+    name = f'circle-{2*r}-mm'
+    pts = []
+    theta = 2 * pi / float(n)
+    for i in range(n):
+        x = r * cos(i* theta)
+        y = r * sin(i * theta)
+        pts.append([x,y])
+
+    return Shape2D(name, pts)
+
