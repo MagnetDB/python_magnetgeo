@@ -28,19 +28,26 @@ class MSite(yaml.YAMLObject):
         name: str,
         magnets: Union[str, list, dict],
         screens: Optional[Union[str, list, dict]],
+        z_offset: Optional[List[float]],
+        r_offset: Optional[List[float]],
+        paralax: Optional[List[float]]
     ) -> None:
         """
         initialize onject
         """
         self.name = name
         self.magnets = magnets
-        self.screens = screens
+        self.screens = screens        
+        self.z_offset = z_offset
+        self.r_offset = r_offset
+        self.paralax = paralax
+
 
     def __repr__(self):
         """
         representation of object
         """
-        return f"name: {self.name}, magnets:{self.magnets}, screens: {self.screens}"
+        return f"name: {self.name}, magnets:{self.magnets}, screens: {self.screens}, z_offset={self.z_offset}, r_offset={self.r_offset}, paralax_offset={self.paralax}"
 
     def get_channels(
         self, mname: str, hideIsolant: bool = True, debug: bool = False
@@ -291,7 +298,10 @@ def MSite_constructor(loader, node):
     name = values["name"]
     magnets = values["magnets"]
     screens = values["screens"]
-    return MSite(name, magnets, screens)
+    z_offset = values['z_offset']
+    r_offset = values['r_offset']
+    paralax = values['paralax']
+    return MSite(name, magnets, screens, z_offset, r_offset, paralax)
 
 
 yaml.add_constructor("!MSite", MSite_constructor)
