@@ -341,6 +341,7 @@ class HTSinsert:
 
     def __init__(
         self,
+        name: str ="",
         z0: float = 0,
         h: float = 0,
         r0: float = 0,
@@ -350,6 +351,7 @@ class HTSinsert:
         dblpancakes: list = [],
         isolations: list = [],
     ):
+        self.name = self.name
         self.z0 = z0
         self.h = h
         self.r0 = r0
@@ -496,13 +498,15 @@ class HTSinsert:
                     print(f"dblpancakes[{i}]: {dp}")
                 print("===")
 
-            return cls(z0, h, r0, r1, z1, n, dblpancakes, isolations)
+            name = inputcfg.replace('.json','')
+            return cls(name, z0, h, r0, r1, z1, n, dblpancakes, isolations)
 
     def __repr__(self):
         """
         representation of object
         """
-        return "%s(r0=%r, r1=%r, z0=%r, h=%r, n=%r, dblpancakes=%r, isolations=%r)" % (
+        return "%s(name=%s, r0=%r, r1=%r, z0=%r, h=%r, n=%r, dblpancakes=%r, isolations=%r)" % (
+            self.name,
             self.r0,
             self.r1,
             self.z0,
