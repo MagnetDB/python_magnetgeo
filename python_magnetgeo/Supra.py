@@ -14,7 +14,7 @@ import json
 import yaml
 from . import deserialize
 
-from . import SupraStructure
+from .SupraStructure import HTSinsert
 
 
 class Supra(yaml.YAMLObject):
@@ -43,10 +43,10 @@ class Supra(yaml.YAMLObject):
         self.struct = struct
         self.detail = "None"  # ['None', 'dblpancake', 'pancake', 'tape']
 
-    def get_magnet_struct(self) -> SupraStructure.HTSinsert:
-        return SupraStructure.HTSinsert.fromcfg(self.struct)
+    def get_magnet_struct(self) -> HTSinsert:
+        return HTSinsert.fromcfg(self.struct)
 
-    def check_dimensions(self, magnet: SupraStructure.HTSinsert):
+    def check_dimensions(self, magnet: HTSinsert):
         # TODO: if struct load r,z and n from struct data
         if self.struct:
             changed = False
@@ -96,20 +96,25 @@ class Supra(yaml.YAMLObject):
         """
         return names for Markers
         """
-        solid_names = []
-
         prefix = ""
         if mname:
             prefix = f"{mname}_"
 
         if self.detail == "None":
-            solid_names.append(f"{prefix}{self.name}")
+            return [f'{prefix}{self.name}']
         else:
             hts = self.get_magnet_struct()
             self.check_dimensions(hts)
 
+            return hts.get_names(f'{prefix}{self.name}', self.detail, verbose)
+
+        """
             n_dp = len(hts.dblpancakes)
             cadname = f"{prefix}{self.name}"
+
+            dp_ids = []
+            i_ids = []
+
             for i, dp in enumerate(hts.dblpancakes):
                 dp_name = f"{cadname}_dp{i}"
                 if self.detail == "dblpancake":
@@ -132,9 +137,13 @@ class Supra(yaml.YAMLObject):
                 if i != n_dp - 1:
                     solid_names.append(f"{cadname}_i{i}")
 
-        if verbose:
-            print(f"Supra_Gmsh: solid_names {len(solid_names)}")
-        return solid_names
+            if self.detail == "dblpancake":
+                return [dp_ids, i_ids]
+            else:
+                return [flatten(dp_ids, False), i_ids]
+            if verbose:
+                print(f"Supra_Gmsh: solid_names {len(solid_names)}")
+        """
 
     def __repr__(self):
         """

@@ -35,12 +35,27 @@ class tape:
             e: float = data["e"]
         return cls(w, h, e)
 
+    def __repr__(self):
+        """
+        representation of object
+        """
+        return "tape(w=%r, h=%r, e=%r)" % (
+            self.w,
+            self.h,
+            self.e
+        )
+
     def __str__(self) -> str:
         msg = "\n"
         msg += f"width: {self.w} [mm]\n"
         msg += f"height: {self.h} [mm]\n"
         msg += f"e: {self.e} [mm]\n"
         return msg
+
+    def get_names(self, name: str, detail: str, verbose: bool = False) -> List[str]:
+        _tape = f"{name}_SC"
+        _e = f"{name}_Duromag"
+        return [_tape, _e]
 
     def getH(self) -> float:
         """
@@ -113,6 +128,16 @@ class pancake:
             n = data["ntapes"]
         return cls(r0, t_, n, mandrin)
 
+    def __repr__(self):
+        """
+        representation of object
+        """
+        return "pancake(r0=%r, n=%r, tape=%r, mandrin=%r)" % (
+            self.r0,
+            self.n,
+            self.tape,
+            self.mandrin
+        )
     def __str__(self) -> str:
         msg = "\n"
         msg += f"r0: {self.r0} [m]\n"
@@ -120,6 +145,22 @@ class pancake:
         msg += f"ntapes: {self.n} \n"
         msg += f"tape: {self.tape}***\n"
         return msg
+        pass
+
+    def get_names(self, name: str, detail: str, verbose: bool = False) -> Union[str, List[str]]:
+        if detail == "pancake":
+            return name
+        else:
+            _mandrin = f"{name}_Mandrin"
+            tape_ = self.tape
+            tape_ids = []
+            for i in range(self.n):
+                tape_id = tape_.get_names(f"{name}_t{i}", detail)
+                tape_ids.append(tape_id)
+
+            if verbose:
+                print(f"pancake: mandrin (1), tapes ({len(tape_ids)})")
+            return flatten([[_mandrin], flatten(tape_ids)])
         pass
 
     def getN(self) -> int:
@@ -210,6 +251,16 @@ class isolation:
             h = data["h"]
         return cls(r0, w, h)
 
+    def __repr__(self):
+        """
+        representation of object
+        """
+        return "isolation(r0=%r, w=%r, h=%r)" % (
+            self.r0,
+            self.w,
+            self.h
+        )
+
     def __str__(self) -> str:
         msg = "\n"
         msg += f"r0: {self.r0} [mm]\n"
@@ -217,6 +268,9 @@ class isolation:
         msg += f"h: {self.h} \n"
         return msg
         pass
+
+    def get_names(self, name: str, detail: str, verbose: bool = False) -> str:
+        return name
 
     def getR0(self) -> float:
         """
@@ -274,6 +328,16 @@ class dblpancake:
         self.pancake = pancake
         self.isolation = isolation
 
+    def __repr__(self):
+        """
+        representation of object
+        """
+        return "dblpancake(z0=%r, pancake=%r, isolation=%r)" % (
+            self.z0,
+            self.pancake,
+            self.isolation
+        )
+
     def __str__(self) -> str:
         msg = f"r0={self.pancake.getR0()}, "
         msg += f"r1={self.pancake.getR1()}, "
@@ -281,6 +345,33 @@ class dblpancake:
         msg += f"z2={self.getZ0() + self.getH()/2.}"
         msg += f"(z0={self.getZ0()}, h={self.getH()})"
         return msg
+
+    def get_names(self, name: str, detail: str, verbose: bool = False) -> Union[str, List[str]]:
+        if detail == "dblpancake":
+            return name
+        else:
+            p_ids = []
+
+            p_ = self.pancake
+            _id = p_.get_names(f"{name}_p0", detail)
+            p_ids.append(_id)
+
+            dp_i = self.isolation
+            if verbose:
+                print(f"dblepancake.salome: isolation={dp_i}")
+            _isolation_id = dp_i.get_names(f"{name}_i", detail)
+
+            _id = p_.get_names(f"{name}_p1", detail)
+            p_ids.append(_id)
+
+            if verbose:
+                print(
+                    f"dblpancake: pancakes ({len(p_ids)}, {type(p_ids[0])}), isolations (1)"
+                )
+            if isinstance(p_ids[0], list):
+                return flatten([flatten(p_ids), [_isolation_id]])
+            else:
+                return flatten([p_ids, [_isolation_id]])
 
     def getPancake(self):
         """
@@ -348,10 +439,10 @@ class HTSinsert:
         r1: float = 0,
         z1: float = 0,
         n: int = 0,
-        dblpancakes: list = [],
-        isolations: list = [],
+        dblpancakes: List[dblpancake] = [],
+        isolations: List[isolation] = [],
     ):
-        self.name = self.name
+        self.name = name
         self.z0 = z0
         self.h = h
         self.r0 = r0
@@ -505,7 +596,7 @@ class HTSinsert:
         """
         representation of object
         """
-        return "%s(name=%s, r0=%r, r1=%r, z0=%r, h=%r, n=%r, dblpancakes=%r, isolations=%r)" % (
+        return "htsinsert(name=%s, r0=%r, r1=%r, z0=%r, h=%r, n=%r, dblpancakes=%r, isolations=%r)" % (
             self.name,
             self.r0,
             self.r1,
@@ -515,6 +606,37 @@ class HTSinsert:
             self.dblpancakes,
             self.isolations,
         )
+
+    def get_names(self, mname: str, detail: str, verbose: bool = False) -> List[str]:
+        dp_ids = []
+        i_ids = []
+
+        prefix = ''
+        if mname:
+            prefix = f'{mname}_'
+
+        n_dp = len(self.dblpancakes)
+        for i, dp in enumerate(self.dblpancakes):
+            if verbose:
+                print(f"HTSInsert.names: dblpancakes[{i}]: dp={dp}")
+
+            dp_name = f"{prefix}dp{i}"
+            dp_id = dp.get_names(dp_name, detail, verbose)
+            dp_ids.append(dp_id)
+
+            if i != n_dp - 1:
+                dp_i = self.isolations[i]
+
+                _name = f"{prefix}i{i}"
+                _id = dp_i.get_names(_name, detail, verbose)
+                i_ids.append(_id)
+
+        if detail == "dblpancake":
+            return flatten([dp_ids, i_ids])
+        else:
+            return flatten([flatten(dp_ids), i_ids])
+
+
 
     def setDblpancake(self, dblpancake):
         self.dblpancakes.append(dblpancake)
