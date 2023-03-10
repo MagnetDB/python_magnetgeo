@@ -73,6 +73,105 @@ class ModelAxi(yaml.YAMLObject):
         """
         return sum(self.turns)
 
+    def compact(self):
+        def indices(lst: list, item: float):
+            return [i for i, x in enumerate(lst) if abs(1-item/x) <= 1.e-6]
+
+        List = self.pitch
+        duplicates = dict((x, indices(List, x)) for x in set(List) if List.count(x) > 1)
+        print(f'duplicates: {duplicates}')
+
+        sum_index = {}
+        for key in duplicates:
+            index_fst = duplicates[key][0]
+            sum_index[index_fst] = [index_fst]
+            search_index = sum_index[index_fst]
+            search_elem = search_index[-1]
+            for index in duplicates[key]:
+                print(f'index={index}, search_elem={search_elem}')
+                if index-search_elem == 1:
+                    search_index.append(index)
+                    search_elem = index
+                else:
+                    sum_index[index] = [index]
+                    search_index = sum_index[index]
+                    search_elem = search_index[-1]
+
+        print(f'sum_index: {sum_index}')
+
+        remove_ids = []
+        for i in sum_index:
+            for item in sum_index[i]:
+                if item != i:
+                    remove_ids.append(item)
+
+        new_pitch = [p for i,p in enumerate(self.pitch) if not i in remove_ids]
+        print(f'new_pitch={new_pitch}')
+
+        new_turns = self.turns # use deepcopy: import copy and copy.deepcopy(self.axi.turns)
+        for i in sum_index:
+            for item in sum_index[i]:
+                new_turns[i] += self.turns[item]
+        new_turns = [p for i,p in enumerate(self.turns) if not i in remove_ids]
+        print(f'new_turns={new_turns}')
+
+        return new_turns, new_pitch
+
+    def create_cut(self, format: str, z0: float, sign: int, name: str, append: bool=False):
+        """
+        create cut file
+        """
+
+        dformat = {
+            'salome': {'run': self.salome_cut, 'extension': '_cut_salome.dat'},
+        }
+
+        try:
+            write_cut = dformat[format]['run']
+            ext = dformat[format]['extension']
+            filename = f'{name}{ext}'
+            return write_cut(z0, sign, filename, append)
+        except:
+            raise RuntimeError(f'create_cut: format={format} unsupported')
+
+    def salome_cut(self, z0: float, sign: int, filename: str, append: bool):
+        """
+        for salome
+        see: MagnetTools/MagnetField/Stack.cc write_salome_paramfile L1011
+
+        for case wwith shapes
+        see README files in calcul19 ~/github/hifimanget/projects
+        for example HR-54/README:
+        H2: Shape_HR-54-116.dat - HR-54-254
+        H1: Shape_HR-54-117.dat - HR-54-260
+
+        run add_shape from magnettools
+
+        add_shape --angle="30" --shape_angular_length=8 \
+            --shape=HR-54-116 05012011Pbis_H2 --format=LNCMI --position="ABOVE"
+        add_shape --angle="36" --shape_angular_length=13 \
+            --shape=HR-54-116 05012011Pbis_H1 --format=LNCMI --position="ABOVE"
+        """
+        from math import pi
+
+        z = z0
+        theta = 0
+        shape_id = 0
+        tab = '\t'
+
+        # 'x' create file, 'a' append to file, Append and Read (‘a+’)
+        flag = 'x'
+        if append:
+            flag = 'a'
+        with open(filename, flag) as f:
+            f.write('#theta[rad]{tab}Shape_id[]{tab}tZ[mm]')
+
+            # TODO use compact to reduce size of cuts
+            for i, (turn, pitch) in enumerate(zip(self.turns, self.pitch)):
+                theta += turn * pi
+                z -= turn * pitch
+                f.write(f'{theta*(-sign):12.8f}{tab}{shape_id:8}{tab}{z:12.8f}')
+
 
 def ModelAxi_constructor(loader, node):
     """
