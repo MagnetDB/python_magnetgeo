@@ -188,47 +188,23 @@ class Helix(yaml.YAMLObject):
         """
         return self.axi.get_Nturns()
 
-    def compact(self):
-        def indices(lst: list, item: float):
-            return [i for i, x in enumerate(lst) if abs(1-item/x) <= 1.e-6]
+    def create_cut(self, format: str):
+        """
+        create cut files
+        """
 
-        List = self.axi.pitch
-        duplicates = dict((x, indices(List, x)) for x in set(List) if List.count(x) > 1)
-        print(f'duplicates: {duplicates}')
+        z0 = self.axi.h
+        sign = 1
+        if self.odd:
+            sign = -1
 
-        sum_index = {}
-        for key in duplicates:
-            index_fst = duplicates[key][0]
-            sum_index[index_fst] = [index_fst]
-            search_index = sum_index[index_fst]
-            search_elem = search_index[-1]
-            for index in duplicates[key]:
-                print(f'index={index}, search_elem={search_elem}')
-                if index-search_elem == 1:
-                    search_index.append(index)
-                    search_elem = index
-                else:
-                    sum_index[index] = [index]
-                    search_index = sum_index[index]
-                    search_elem = search_index[-1]
+        self.axi.create_cut(format, z0, sign, self.name)
 
-        print(f'sum_index: {sum_index}')
+        if self.m3d.with_shapes:
+            angles = ' '.join(f'{t:4.2f}' for t in self.shape.angle if t != 0)
+            cmd = f'add_shape --angle=\"{angles}\" --shape_angular_length={self.shape.length} --shape={self.shape.name} --format={format} --position=\"{self.shape.position}\"'
+            print(f'create_cut: with_shapes not implemented - shall run {cmd}')
 
-        remove_ids = []
-        for i in sum_index:
-            for item in sum_index[i]:
-                if item != i:
-                    remove_ids.append(item)
-
-        new_pitch = [p for i,p in enumerate(self.axi.pitch) if not i in remove_ids]
-        print(f'new_pitch={new_pitch}')
-
-        new_turns = self.axi.turns # use deepcopy: import copy and copy.deepcopy(self.axi.turns)
-        for i in sum_index:
-            for item in sum_index[i]:
-                new_turns[i] += self.axi.turns[item]
-        new_turns = [p for i,p in enumerate(self.axi.turns) if not i in remove_ids]
-        print(f'new_turns={new_turns}')
 
     def boundingBox(self) -> tuple:
         """
