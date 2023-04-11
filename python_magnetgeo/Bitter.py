@@ -106,7 +106,7 @@ class Bitter(yaml.YAMLObject):
             nsection = len(self.axi.turns)
             if self.z[0] < - self.axi.h:
                 solid_names.append(f"{prefix}{self.name}_B0")
-            
+
             for j in range(nsection):
                 solid_names.append(f"{prefix}{self.name}_B{j+1}")
 
@@ -226,9 +226,19 @@ class Bitter(yaml.YAMLObject):
         Dh = [slit.n * slit.dh for slit in self.coolingslits]
         Sh = [slit.n * slit.sh for slit in self.coolingslits]
 
-        return (len(self.coolingslits), self.z[0], self.z[1], Sh)
+        return (len(self.coolingslits), self.z[0], self.z[1], Dh, Sh)
 
+    def create_cut(self, format: str):
+        """
+        create cut files
+        """
 
+        z0 = self.axi.h
+        sign = 1
+        if self.odd:
+            sign = -1
+
+        self.axi.create_cut(format, z0, sign, self.name)
 
 def Bitter_constructor(loader, node):
     """
@@ -259,12 +269,12 @@ if __name__ == "__main__":
     slit1 = CoolingSlit(2, 5, 20, 0.1, 0.2, Square)
     slit2 = CoolingSlit(10, 5, 20, 0.1, 0.2, Square)
     coolingSlits = [slit1, slit2]
-    
+
     Axi = ModelAxi('test', 0.9, [2], [0.9])
 
     bitter = Bitter('B', [1,2], [-1, 1], True, Axi, coolingSlits, tierod)
     bitter.dump()
-    
+
     with open("B.yaml", 'r') as f:
         bitter = yaml.load(f, Loader=yaml.FullLoader)
 
