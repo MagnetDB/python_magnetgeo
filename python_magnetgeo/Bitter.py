@@ -226,7 +226,7 @@ class Bitter(yaml.YAMLObject):
         Dh = [slit.n * slit.dh for slit in self.coolingslits]
         Sh = [slit.n * slit.sh for slit in self.coolingslits]
 
-        return (len(self.coolingslits), self.z[0], self.z[1], Sh)
+        return (len(self.coolingslits), self.z[0], self.z[1], Dh, Sh)
 
     def create_cut(self, format: str):
         """
