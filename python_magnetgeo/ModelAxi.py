@@ -127,12 +127,14 @@ class ModelAxi(yaml.YAMLObject):
         }
 
         try:
-            write_cut = dformat[format]['run']
-            ext = dformat[format]['extension']
-            filename = f'{name}{ext}'
-            return write_cut(z0, sign, filename, append)
+            format_cut = dformat[format]
         except:
-            raise RuntimeError(f'create_cut: format={format} unsupported')
+            raise RuntimeError(f'create_cut: format={format} unsupported\nallowed formats are: {dformat.keys()}')
+
+        write_cut = format_cut['run']
+        ext = format_cut['extension']
+        filename = f'{name}{ext}'
+        write_cut(z0, sign, filename, append)
 
     def salome_cut(self, z0: float, sign: int, filename: str, append: bool):
         """
@@ -164,13 +166,14 @@ class ModelAxi(yaml.YAMLObject):
         if append:
             flag = 'a'
         with open(filename, flag) as f:
-            f.write('#theta[rad]{tab}Shape_id[]{tab}tZ[mm]')
+            f.write('#theta[rad]{tab}Shape_id[]{tab}tZ[mm]\n')
+            f.write(f'{theta*(-sign):12.8f}{tab}{shape_id:8}{tab}{z:12.8f}\n')
 
             # TODO use compact to reduce size of cuts
             for i, (turn, pitch) in enumerate(zip(self.turns, self.pitch)):
-                theta += turn * pi
+                theta += turn * (2 * pi) * sign
                 z -= turn * pitch
-                f.write(f'{theta*(-sign):12.8f}{tab}{shape_id:8}{tab}{z:12.8f}')
+                f.write(f'{theta*(-sign):12.8f}{tab}{shape_id:8}{tab}{z:12.8f}\n')
 
 
 def ModelAxi_constructor(loader, node):
