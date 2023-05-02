@@ -43,8 +43,8 @@ class Supra(yaml.YAMLObject):
         self.struct = struct
         self.detail = "None"  # ['None', 'dblpancake', 'pancake', 'tape']
 
-    def get_magnet_struct(self) -> HTSinsert:
-        return HTSinsert.fromcfg(self.struct)
+    def get_magnet_struct(self, directory: str = None) -> HTSinsert:
+        return HTSinsert.fromcfg(self.struct, directory)
 
     def check_dimensions(self, magnet: HTSinsert):
         # TODO: if struct load r,z and n from struct data
@@ -265,7 +265,16 @@ class Supra(yaml.YAMLObject):
             collide = True
         return collide
 
-
+    # def getFillingFactor(self) -> float:
+    #     # self.detail = "None"  # ['None', 'dblpancake', 'pancake', 'tape']
+    #     if self.detail == "None":
+    #         return 1/self.get_Nturns()
+    #     # else:
+    #     #     # load HTSinsert
+    #     #     # return fillingfactor according to self.detail:
+    #     #     # aka tape.getFillingFactor() with tape = HTSinsert.tape when detail == "tape"
+            
+    
 def Supra_constructor(loader, node):
     """
     build an supra object

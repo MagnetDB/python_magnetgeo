@@ -453,11 +453,16 @@ class HTSinsert:
         self.isolations = isolations
 
     @classmethod
-    def fromcfg(cls, inputcfg: str, debug: Optional[bool] = False):
+    def fromcfg(cls, inputcfg: str, directory: str = None, debug: Optional[bool] = False):
         """create from a file"""
         import json
 
-        with open(inputcfg) as f:
+        filename = inputcfg
+        if not directory is None:
+            filename = f'{directory}/{filename}'
+        print(f'SupraStructure:fromcfg({filename})')
+
+        with open(filename) as f:
             data = json.load(f)
             if debug:
                 print("HTSinsert data:", data)
