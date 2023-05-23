@@ -73,13 +73,13 @@ class ModelAxi(yaml.YAMLObject):
         """
         return sum(self.turns)
 
-    def compact(self):
+    def compact(self, tol: float):
         def indices(lst: list, item: float):
-            return [i for i, x in enumerate(lst) if abs(1-item/x) <= 1.e-6]
+            return [i for i, x in enumerate(lst) if abs(1 - item / x) <= tol]
 
         List = self.pitch
         duplicates = dict((x, indices(List, x)) for x in set(List) if List.count(x) > 1)
-        print(f'duplicates: {duplicates}')
+        # print(f"duplicates: {duplicates}")
 
         sum_index = {}
         for key in duplicates:
@@ -88,8 +88,8 @@ class ModelAxi(yaml.YAMLObject):
             search_index = sum_index[index_fst]
             search_elem = search_index[-1]
             for index in duplicates[key]:
-                print(f'index={index}, search_elem={search_elem}')
-                if index-search_elem == 1:
+                # print(f"index={index}, search_elem={search_elem}")
+                if index - search_elem == 1:
                     search_index.append(index)
                     search_elem = index
                 else:
@@ -97,7 +97,7 @@ class ModelAxi(yaml.YAMLObject):
                     search_index = sum_index[index]
                     search_elem = search_index[-1]
 
-        print(f'sum_index: {sum_index}')
+        # print(f"sum_index: {sum_index}")
 
         remove_ids = []
         for i in sum_index:
@@ -105,35 +105,43 @@ class ModelAxi(yaml.YAMLObject):
                 if item != i:
                     remove_ids.append(item)
 
-        new_pitch = [p for i,p in enumerate(self.pitch) if not i in remove_ids]
-        print(f'new_pitch={new_pitch}')
+        new_pitch = [p for i, p in enumerate(self.pitch) if not i in remove_ids]
+        print(f"pitch={self.pitch}")
+        print(f"new_pitch={new_pitch}")
 
-        new_turns = self.turns # use deepcopy: import copy and copy.deepcopy(self.axi.turns)
+        new_turns = (
+            self.turns
+        )  # use deepcopy: import copy and copy.deepcopy(self.axi.turns)
         for i in sum_index:
             for item in sum_index[i]:
                 new_turns[i] += self.turns[item]
-        new_turns = [p for i,p in enumerate(self.turns) if not i in remove_ids]
-        print(f'new_turns={new_turns}')
+        new_turns = [p for i, p in enumerate(self.turns) if not i in remove_ids]
+        print(f"turns={self.turns}")
+        print(f"new_turns={new_turns}")
 
         return new_turns, new_pitch
 
-    def create_cut(self, format: str, z0: float, sign: int, name: str, append: bool=False):
+    def create_cut(
+        self, format: str, z0: float, sign: int, name: str, append: bool = False
+    ):
         """
         create cut file
         """
 
         dformat = {
-            'salome': {'run': self.salome_cut, 'extension': '_cut_salome.dat'},
+            "salome": {"run": self.salome_cut, "extension": "_cut_salome.dat"},
         }
 
         try:
             format_cut = dformat[format]
         except:
-            raise RuntimeError(f'create_cut: format={format} unsupported\nallowed formats are: {dformat.keys()}')
+            raise RuntimeError(
+                f"create_cut: format={format} unsupported\nallowed formats are: {dformat.keys()}"
+            )
 
-        write_cut = format_cut['run']
-        ext = format_cut['extension']
-        filename = f'{name}{ext}'
+        write_cut = format_cut["run"]
+        ext = format_cut["extension"]
+        filename = f"{name}{ext}"
         write_cut(z0, sign, filename, append)
 
     def salome_cut(self, z0: float, sign: int, filename: str, append: bool):
@@ -159,21 +167,21 @@ class ModelAxi(yaml.YAMLObject):
         z = z0
         theta = 0
         shape_id = 0
-        tab = '\t'
+        tab = "\t"
 
         # 'x' create file, 'a' append to file, Append and Read (‘a+’)
-        flag = 'x'
+        flag = "x"
         if append:
-            flag = 'a'
+            flag = "a"
         with open(filename, flag) as f:
-            f.write('#theta[rad]{tab}Shape_id[]{tab}tZ[mm]\n')
-            f.write(f'{theta*(-sign):12.8f}{tab}{shape_id:8}{tab}{z:12.8f}\n')
+            f.write("#theta[rad]{tab}Shape_id[]{tab}tZ[mm]\n")
+            f.write(f"{theta*(-sign):12.8f}{tab}{shape_id:8}{tab}{z:12.8f}\n")
 
             # TODO use compact to reduce size of cuts
             for i, (turn, pitch) in enumerate(zip(self.turns, self.pitch)):
                 theta += turn * (2 * pi) * sign
                 z -= turn * pitch
-                f.write(f'{theta*(-sign):12.8f}{tab}{shape_id:8}{tab}{z:12.8f}\n')
+                f.write(f"{theta*(-sign):12.8f}{tab}{shape_id:8}{tab}{z:12.8f}\n")
 
 
 def ModelAxi_constructor(loader, node):
@@ -188,4 +196,4 @@ def ModelAxi_constructor(loader, node):
     return ModelAxi(name, h, turns, pitch)
 
 
-yaml.add_constructor(u"!ModelAxi", ModelAxi_constructor)
+yaml.add_constructor("!ModelAxi", ModelAxi_constructor)

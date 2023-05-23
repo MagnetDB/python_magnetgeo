@@ -16,7 +16,9 @@ def filter(data: List[float], tol: float):
     result = []
     ndata = len(data)
     for i in range(ndata):
-        result += [j for j in range(ndata) if i != j and abs(data[i] - data[j]) <= tol]
+        result += [
+            j for j in range(i, ndata) if i != j and abs(data[i] - data[j]) <= tol
+        ]
     print(f"duplicate index: {result}")
 
     # remove result from data
@@ -926,6 +928,8 @@ class Insert(yaml.YAMLObject):
         Sh,
         """
 
+        tol = 1.0e-6
+
         NHelices = len(self.Helices)
         NRings = len(self.Rings)
         NChannels = NChannels = NHelices + 1
@@ -958,21 +962,17 @@ class Insert(yaml.YAMLObject):
             Z2.append(hhelix.z[1])
 
             z = -hhelix.axi.h
-            (turns, pitch) = hhelix.axi.compact()
+            (turns, pitch) = hhelix.axi.compact(tol)
 
             tZh = []
             tZh.append(hhelix.z[0])
             tZh.append(z)
             for n, p in zip(turns, pitch):
-                z -= n * p
-                tZh.append(p)
+                z += n * p
+                tZh.append(z)
             tZh.append(hhelix.z[1])
             Zh.append(tZh)
             # flatten Zh
-
-        # add last channel
-        Zh.append(Zh[-1])
-        print(f"Zh({len(Zh)}): {Zh}")
 
         Ri = self.innerbore
         Re = self.outerbore
@@ -995,16 +995,20 @@ class Insert(yaml.YAMLObject):
         Zmax.append(zm2)
 
         # get Z per Channel for Tw(z) estimate
+        Zc = []
         Zi = []
         for i in range(NChannels - 1):
             nZh = Zh[i] + Zi
             nZh.sort()
+            Zc.append(filter(nZh, tol))
             # remove duplicates (requires to have a compare method with a tolerance: |z[i] - z[j]| <= tol means z[i] == z[j])
             Zi = Zh[i]
-            Zh[i] = nZh
-            # print(f"Zh[{i}]: type={type(Zh[i])}")
-            print(f"filtered={filter(Zh[i], 1.e-6)}")
-        # print(f"Zh({len(Zh)}): {Zh}")
+
+            # print(f"Zh[{i}]={Zh[i]}")
+            # print(f"Zc[{i}]={Zc[-1]}")
+
+        Zc.append(Zh[-1])
+        # print(f"Zc[{NChannels-1}]={Zc[-1]}")
 
         Dh.append(2 * (Re - Ri))
         Sh.append(math.pi * (Re - Ri) * (Re + Ri))
