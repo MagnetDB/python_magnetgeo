@@ -779,12 +779,12 @@ class Insert(yaml.YAMLObject):
         for i in range(NHelices):
 
             Zmin.append(min(Z1[i], zm1))
-            Zmax.append(min(Z2[i], zm2))
+            Zmax.append(max(Z2[i], zm2))
 
             Dh.append(2 * (R1[i] - Ri))
             Sh.append(math.pi * (R1[i] - Ri) * (R1[i] + Ri))
 
-            Ri = R1[i]
+            Ri = R2[i]
             zm1 = Z1[i]
             zm2 = Z2[i]
 
@@ -806,7 +806,7 @@ class Insert(yaml.YAMLObject):
 
         Dh.append(2 * (Re - Ri))
         Sh.append(math.pi * (Re - Ri) * (Re + Ri))
-        return (NHelices, NRings, NChannels, Nsections, R1, R2, Z1, Z2, Zmin, Zmax, Dh, Sh)
+        return (NHelices, NRings, NChannels, Nsections, Zmin, Zmax, Dh, Sh)
 
 
 def Insert_constructor(loader, node):
