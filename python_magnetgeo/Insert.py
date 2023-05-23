@@ -11,6 +11,7 @@ import yaml
 from . import deserialize
 from . import InnerCurrentLead
 
+
 class Insert(yaml.YAMLObject):
     """
     name :
@@ -25,22 +26,34 @@ class Insert(yaml.YAMLObject):
     outerbore:
     """
 
-    yaml_tag = 'Insert'
+    yaml_tag = "Insert"
 
-    def __init__(self, name, Helices=[], Rings=[], CurrentLeads=[], HAngles=[], RAngles=[], innerbore=None, outerbore=None):
+    def __init__(
+        self,
+        name,
+        Helices=[],
+        Rings=[],
+        CurrentLeads=[],
+        HAngles=[],
+        RAngles=[],
+        innerbore=None,
+        outerbore=None,
+    ):
         """constructor"""
         self.name = name
         self.Helices = Helices
         self.HAngles = HAngles
         for Angle in self.HAngles:
-            print ("Angle: ", Angle)
+            print("Angle: ", Angle)
         self.Rings = Rings
         self.RAngles = RAngles
         self.CurrentLeads = CurrentLeads
         self.innerBore = innerbore
         self.outerBore = outerbore
 
-    def get_channels(self, mname: str, hideIsolant: bool = True, debug: bool = False) -> List[list]:
+    def get_channels(
+        self, mname: str, hideIsolant: bool = True, debug: bool = False
+    ) -> List[list]:
         """
         return channels
         """
@@ -62,7 +75,7 @@ class Insert(yaml.YAMLObject):
                 names.append(f"{prefix}H{i}_rExt")
                 if not hideIsolant:
                     isolant_names = [f"{prefix}H{i}_IrExt"]
-                    kapton_names = [f"{prefix}H{i}_kaptonsIrExt"] # Only for HR
+                    kapton_names = [f"{prefix}H{i}_kaptonsIrExt"]  # Only for HR
                     names = names + isolant_names + kapton_names
             if i >= 2:
                 names.append(f"{prefix}R{i-1}_R1n")
@@ -70,7 +83,7 @@ class Insert(yaml.YAMLObject):
                 names.append(f"{prefix}H{i+1}_rInt")
                 if not hideIsolant:
                     isolant_names = [f"{prefix}H{i+1}_IrInt"]
-                    kapton_names = [f"{prefix}H{i+1}_kaptonsIrInt"] # Only for HR
+                    kapton_names = [f"{prefix}H{i+1}_kaptonsIrInt"]  # Only for HR
                     names = names + isolant_names + kapton_names
 
             # Better? if i+1 < nchannels:
@@ -94,7 +107,9 @@ class Insert(yaml.YAMLObject):
         """
         return []
 
-    def get_names(self, mname: str, is2D: bool = False, verbose: bool = False) -> List[str]:
+    def get_names(
+        self, mname: str, is2D: bool = False, verbose: bool = False
+    ) -> List[str]:
         """
         return names for Markers
         """
@@ -118,7 +133,7 @@ class Insert(yaml.YAMLObject):
                     h_solid_names[k] = f"{prefix}H{i+1}_{sname}"
                 solid_names += h_solid_names
             else:
-                solid_names.append(f'H{i+1}')
+                solid_names.append(f"H{i+1}")
 
         for i, ring in enumerate(self.Rings):
             if verbose:
@@ -148,8 +163,10 @@ class Insert(yaml.YAMLObject):
 
     def __repr__(self):
         """representation"""
-        return "%s(name=%r, Helices=%r, Rings=%r, CurrentLeads=%r, HAngles=%r, RAngles=%r, innerbore=%r, outerbore=%r)" % \
-               (self.__class__.__name__,
+        return (
+            "%s(name=%r, Helices=%r, Rings=%r, CurrentLeads=%r, HAngles=%r, RAngles=%r, innerbore=%r, outerbore=%r)"
+            % (
+                self.__class__.__name__,
                 self.name,
                 self.Helices,
                 self.Rings,
@@ -157,24 +174,26 @@ class Insert(yaml.YAMLObject):
                 self.HAngles,
                 self.RAngles,
                 self.innerbore,
-                self.outerbore)
+                self.outerbore,
+            )
+        )
 
     def dump(self):
         """dump to a yaml file name.yaml"""
         try:
-            with open(f'{self.name}.yaml', 'w') as ostream:
+            with open(f"{self.name}.yaml", "w") as ostream:
                 yaml.dump(self, stream=ostream)
         except:
-            print ("Failed to Insert dump")
+            print("Failed to Insert dump")
 
     def load(self):
         """load from a yaml file"""
         data = None
         try:
-            with open(f'{self.name}.yaml', 'r') as istream:
+            with open(f"{self.name}.yaml", "r") as istream:
                 data = yaml.load(stream=istream, Loader=yaml.FullLoader)
         except:
-            raise Exception("Failed to load Insert data %s" % (self.name+".yaml"))
+            raise Exception("Failed to load Insert data %s" % (self.name + ".yaml"))
 
         self.name = data.name
         self.Helices = data.Helices
@@ -188,8 +207,9 @@ class Insert(yaml.YAMLObject):
 
     def to_json(self):
         """convert from yaml to json"""
-        return json.dumps(self, default=deserialize.serialize_instance, \
-            sort_keys=True, indent=4)
+        return json.dumps(
+            self, default=deserialize.serialize_instance, sort_keys=True, indent=4
+        )
 
     def from_json(self, string):
         """get from json"""
@@ -197,16 +217,16 @@ class Insert(yaml.YAMLObject):
 
     def write_to_json(self):
         """write to a json file"""
-        ostream = open(self.name + '.json', 'w')
+        ostream = open(self.name + ".json", "w")
         jsondata = self.to_json()
         ostream.write(str(jsondata))
         ostream.close()
 
     def read_from_json(self):
         """read from a json file"""
-        istream = open(self.name + '.json', 'r')
+        istream = open(self.name + ".json", "r")
         jsondata = self.from_json(istream.read())
-        print (type(jsondata))
+        print(type(jsondata))
         istream.close()
 
     ###################################################################
@@ -221,12 +241,12 @@ class Insert(yaml.YAMLObject):
         so far exclude Leads
         """
 
-        rb = [0,0]
-        zb = [0,0]
+        rb = [0, 0]
+        zb = [0, 0]
 
         for i, name in enumerate(self.Helices):
             Helix = None
-            with open(name+".yaml", 'r') as f:
+            with open(name + ".yaml", "r") as f:
                 Helix = yaml.load(f, Loader=yaml.FullLoader)
 
             if i == 0:
@@ -241,10 +261,10 @@ class Insert(yaml.YAMLObject):
         ring_dz_max = 0
         for i, name in enumerate(self.Rings):
             Ring = None
-            with open(name+".yaml", 'r') as f:
-                Ring = yaml.load(f, Loader = yaml.FullLoader)
+            with open(name + ".yaml", "r") as f:
+                Ring = yaml.load(f, Loader=yaml.FullLoader)
 
-            ring_dz_max = abs(Ring.z[-1]-Ring.z[0])
+            ring_dz_max = abs(Ring.z[-1] - Ring.z[0])
 
         zb[0] -= ring_dz_max
         zb[1] += ring_dz_max
@@ -264,8 +284,8 @@ class Insert(yaml.YAMLObject):
 
         # TODO take into account Mandrin and Isolation even if detail="None"
         collide = False
-        isR = abs(r_i[0] - r[0]) < abs(r_i[1]-r_i[0] + r[0] + r[1]) /2.
-        isZ = abs(z_i[0] - z[0]) < abs(z_i[1]-z_i[0] + z[0] + z[1]) /2.
+        isR = abs(r_i[0] - r[0]) < abs(r_i[1] - r_i[0] + r[0] + r[1]) / 2.0
+        isZ = abs(z_i[0] - z[0]) < abs(z_i[1] - z_i[0] + z[0] + z[1]) / 2.0
         if isR and isZ:
             collide = True
         return collide
@@ -278,6 +298,7 @@ class Insert(yaml.YAMLObject):
         H_ids, R_ids, BC_ids, Air_ids, BC_Air_ids
         """
         import getpass
+
         UserName = getpass.getuser()
 
         geofilename = self.name + "_axi.geo"
@@ -294,18 +315,20 @@ class Insert(yaml.YAMLObject):
         geofile.write("// Mesh Preambule\n")
         geofile.write("Mesh.Algorithm=3;\n")
         geofile.write("Mesh.RecombinationAlgorithm=0; // Deactivate Blossom support\n")
-        geofile.write("Mesh.RemeshAlgorithm=1; //(0=no split, 1=automatic, 2=automatic only with metis)\n")
+        geofile.write(
+            "Mesh.RemeshAlgorithm=1; //(0=no split, 1=automatic, 2=automatic only with metis)\n"
+        )
         geofile.write("Mesh.RemeshParametrization=0; //\n\n")
 
         # Define Parameters
         geofile.write("//Geometric Parameters\n")
-        onelab_r0 = "DefineConstant[ r0_H%d = {%g, Name \"Geom/H%d/Rint\"} ];\n" # should add a min and a max
-        onelab_r1 = "DefineConstant[ r1_H%d = {%g, Name \"Geom/H%d/Rext\"} ];\n"
-        onelab_z0 = "DefineConstant[ z0_H%d = {%g, Name \"Geom/H%d/Zinf\"} ];\n" #  should add a min and a max
-        onelab_z1 = "DefineConstant[ z1_H%d = {%g, Name \"Geom/H%d/Zsup\"} ];\n"
-        onelab_lc = "DefineConstant[ lc_H%d = {%g, Name \"Geom/H%d/lc\"} ];\n"
-        onelab_z_R = "DefineConstant[ dz_R%d = {%g, Name \"Geom/R%d/dz\"} ];\n"
-        onelab_lc_R = "DefineConstant[ lc_R%d = {%g, Name \"Geom/R%d/lc\"} ];\n"
+        onelab_r0 = 'DefineConstant[ r0_H%d = {%g, Name "Geom/H%d/Rint"} ];\n'  # should add a min and a max
+        onelab_r1 = 'DefineConstant[ r1_H%d = {%g, Name "Geom/H%d/Rext"} ];\n'
+        onelab_z0 = 'DefineConstant[ z0_H%d = {%g, Name "Geom/H%d/Zinf"} ];\n'  #  should add a min and a max
+        onelab_z1 = 'DefineConstant[ z1_H%d = {%g, Name "Geom/H%d/Zsup"} ];\n'
+        onelab_lc = 'DefineConstant[ lc_H%d = {%g, Name "Geom/H%d/lc"} ];\n'
+        onelab_z_R = 'DefineConstant[ dz_R%d = {%g, Name "Geom/R%d/dz"} ];\n'
+        onelab_lc_R = 'DefineConstant[ lc_R%d = {%g, Name "Geom/R%d/lc"} ];\n'
 
         # Define Geometry
         onelab_point = "Point(%d)= {%s,%g, 0.0, lc_H%d};\n"
@@ -318,7 +341,7 @@ class Insert(yaml.YAMLObject):
         onelab_planesurf = "Plane Surface(%d)= {%d};\n"
         onelab_phys_surf = "Physical Surface(%d) = {%d};\n"
 
-        H_ids = [] # gsmh ids for Helix
+        H_ids = []  # gsmh ids for Helix
         Rint_ids = []
         Rext_ids = []
         BP_ids = []
@@ -339,32 +362,36 @@ class Insert(yaml.YAMLObject):
             dH = []
 
             Helix = None
-            with open(name+".yaml", 'r') as f:
+            with open(name + ".yaml", "r") as f:
                 Helix = yaml.load(f, Loader=yaml.FullLoader)
             geofile.write(f"// H{i+1} : {Helix.name}\n")
-            geofile.write(onelab_r0 % (i+1, Helix.r[0], i+1))
-            geofile.write(onelab_r1 % (i+1, Helix.r[1], i+1))
-            geofile.write(onelab_z0 % (i+1, Helix.z[0], i+1))
-            geofile.write(onelab_z1 % (i+1, Helix.z[1], i+1))
-            geofile.write(onelab_lc % (i+1, (Helix.r[1]-Helix.r[0])/5., i+1))
+            geofile.write(onelab_r0 % (i + 1, Helix.r[0], i + 1))
+            geofile.write(onelab_r1 % (i + 1, Helix.r[1], i + 1))
+            geofile.write(onelab_z0 % (i + 1, Helix.z[0], i + 1))
+            geofile.write(onelab_z1 % (i + 1, Helix.z[1], i + 1))
+            geofile.write(onelab_lc % (i + 1, (Helix.r[1] - Helix.r[0]) / 5.0, i + 1))
 
-            axi = Helix.axi # h, turns, pitch
+            axi = Helix.axi  # h, turns, pitch
 
-            geofile.write(onelab_pointx % (point, f"r0_H{i+1}", f"z0_H{i+1}", i+1))
-            geofile.write(onelab_pointx % (point+1, f"r1_H{i+1}", f"z0_H{i+1}", i+1))
-            geofile.write(onelab_point % (point+2, f"r1_H{i+1}", -axi.h, i+1))
-            geofile.write(onelab_point % (point+3, f"r0_H{i+1}", -axi.h, i+1))
+            geofile.write(onelab_pointx % (point, f"r0_H{i+1}", f"z0_H{i+1}", i + 1))
+            geofile.write(
+                onelab_pointx % (point + 1, f"r1_H{i+1}", f"z0_H{i+1}", i + 1)
+            )
+            geofile.write(onelab_point % (point + 2, f"r1_H{i+1}", -axi.h, i + 1))
+            geofile.write(onelab_point % (point + 3, f"r0_H{i+1}", -axi.h, i + 1))
 
-            geofile.write(onelab_line % (line, point, point+1))
-            geofile.write(onelab_line % (line+1, point+1, point+2))
-            geofile.write(onelab_line % (line+2, point+2, point+3))
-            geofile.write(onelab_line % (line+3, point+3, point))
+            geofile.write(onelab_line % (line, point, point + 1))
+            geofile.write(onelab_line % (line + 1, point + 1, point + 2))
+            geofile.write(onelab_line % (line + 2, point + 2, point + 3))
+            geofile.write(onelab_line % (line + 3, point + 3, point))
             BP_ids.append(line)
-            Rint.append(line+3)
-            Rext.append(line+1)
-            dH.append([line+3, line, line+1])
+            Rint.append(line + 3)
+            Rext.append(line + 1)
+            dH.append([line + 3, line, line + 1])
 
-            geofile.write(onelab_lineloop % (lineloop, line, line+1, line+2, line+3))
+            geofile.write(
+                onelab_lineloop % (lineloop, line, line + 1, line + 2, line + 3)
+            )
             geofile.write(onelab_planesurf % (planesurf, lineloop))
             geofile.write(onelab_phys_surf % (planesurf, planesurf))
             H.append(planesurf)
@@ -376,22 +403,28 @@ class Insert(yaml.YAMLObject):
             planesurf += 1
 
             z = Helix.z[0]
-            dz = 2* axi.h / float(len(axi.pitch))
+            dz = 2 * axi.h / float(len(axi.pitch))
             z = -axi.h
             for n, p in enumerate(axi.pitch):
-                geofile.write(onelab_point % (point, "r0_H%d"%(i+1), z, i+1))
-                geofile.write(onelab_point % (point+1, "r1_H%d"%(i+1), z, i+1))
-                geofile.write(onelab_point % (point+2, "r1_H%d"%(i+1), z+dz, i+1))
-                geofile.write(onelab_point % (point+3, "r0_H%d"%(i+1), z+dz, i+1))
+                geofile.write(onelab_point % (point, "r0_H%d" % (i + 1), z, i + 1))
+                geofile.write(onelab_point % (point + 1, "r1_H%d" % (i + 1), z, i + 1))
+                geofile.write(
+                    onelab_point % (point + 2, "r1_H%d" % (i + 1), z + dz, i + 1)
+                )
+                geofile.write(
+                    onelab_point % (point + 3, "r0_H%d" % (i + 1), z + dz, i + 1)
+                )
 
-                geofile.write(onelab_line % (line, point, point+1))
-                geofile.write(onelab_line % (line+1, point+1, point+2))
-                geofile.write(onelab_line % (line+2, point+2, point+3))
-                geofile.write(onelab_line % (line+3, point+3, point))
-                Rint.append(line+3)
-                Rext.append(line+1)
+                geofile.write(onelab_line % (line, point, point + 1))
+                geofile.write(onelab_line % (line + 1, point + 1, point + 2))
+                geofile.write(onelab_line % (line + 2, point + 2, point + 3))
+                geofile.write(onelab_line % (line + 3, point + 3, point))
+                Rint.append(line + 3)
+                Rext.append(line + 1)
 
-                geofile.write(onelab_lineloop % (lineloop, line, line+1, line+2, line+3))
+                geofile.write(
+                    onelab_lineloop % (lineloop, line, line + 1, line + 2, line + 3)
+                )
                 geofile.write(onelab_planesurf % (planesurf, lineloop))
                 geofile.write(onelab_phys_surf % (planesurf, planesurf))
                 H.append(planesurf)
@@ -404,22 +437,30 @@ class Insert(yaml.YAMLObject):
 
                 z += dz
 
-            geofile.write(onelab_point % (point, "r0_H%d"%(i+1), axi.h, i+1))
-            geofile.write(onelab_point % (point+1, "r1_H%d"%(i+1), axi.h, i+1))
-            geofile.write(onelab_pointx % (point+2, "r1_H%d"%(i+1), "z1_H%d"%(i+1), i+1))
-            geofile.write(onelab_pointx % (point+3, "r0_H%d"%(i+1), "z1_H%d"%(i+1), i+1))
+            geofile.write(onelab_point % (point, "r0_H%d" % (i + 1), axi.h, i + 1))
+            geofile.write(onelab_point % (point + 1, "r1_H%d" % (i + 1), axi.h, i + 1))
+            geofile.write(
+                onelab_pointx
+                % (point + 2, "r1_H%d" % (i + 1), "z1_H%d" % (i + 1), i + 1)
+            )
+            geofile.write(
+                onelab_pointx
+                % (point + 3, "r0_H%d" % (i + 1), "z1_H%d" % (i + 1), i + 1)
+            )
 
-            geofile.write(onelab_line % (line, point, point+1))
-            geofile.write(onelab_line % (line+1, point+1, point+2))
-            geofile.write(onelab_line % (line+2, point+2, point+3))
-            geofile.write(onelab_line % (line+3, point+3, point))
+            geofile.write(onelab_line % (line, point, point + 1))
+            geofile.write(onelab_line % (line + 1, point + 1, point + 2))
+            geofile.write(onelab_line % (line + 2, point + 2, point + 3))
+            geofile.write(onelab_line % (line + 3, point + 3, point))
 
-            geofile.write(onelab_lineloop % (lineloop, line, line+1, line+2, line+3))
+            geofile.write(
+                onelab_lineloop % (lineloop, line, line + 1, line + 2, line + 3)
+            )
             geofile.write(onelab_planesurf % (planesurf, lineloop))
             geofile.write(onelab_phys_surf % (planesurf, planesurf))
             H.append(planesurf)
-            Rint.append(line+3)
-            Rext.append(line+1)
+            Rint.append(line + 3)
+            Rext.append(line + 1)
 
             # dH.append(Rext)
             # dH.append([line+1,line+2, line+3])
@@ -428,11 +469,13 @@ class Insert(yaml.YAMLObject):
             dH.append(lineloop)
 
             H_ids.append(H)
-            HP_ids.append(line+2)
+            HP_ids.append(line + 2)
             Rint_ids.append(Rint)
             Rext_ids.append(Rext)
 
-            dH_ids.append(dH) #### append(reduce(operator.add, dH)) #other way to flatten dH : list(itertools.chain(*dH))
+            dH_ids.append(
+                dH
+            )  #### append(reduce(operator.add, dH)) #other way to flatten dH : list(itertools.chain(*dH))
             geofile.write("\n")
 
             point += 4
@@ -456,54 +499,157 @@ class Insert(yaml.YAMLObject):
             HP = []
 
             Ring = None
-            with open(name+".yaml", 'r') as f:
+            with open(name + ".yaml", "r") as f:
                 Ring = yaml.load(f, Loader=yaml.FullLoader)
-            geofile.write("// R%d [%d, H%d] : %s\n"%(i+1, H0+1, H1+1, Ring.name))
-            geofile.write(onelab_z_R%(i+1, (Ring.z[1]-Ring.z[0]), i+1))
-            geofile.write(onelab_lc_R%(i+1, (Ring.r[3]-Ring.r[0])/5., i+1))
+            geofile.write(
+                "// R%d [%d, H%d] : %s\n" % (i + 1, H0 + 1, H1 + 1, Ring.name)
+            )
+            geofile.write(onelab_z_R % (i + 1, (Ring.z[1] - Ring.z[0]), i + 1))
+            geofile.write(onelab_lc_R % (i + 1, (Ring.r[3] - Ring.r[0]) / 5.0, i + 1))
 
             if Ring.BPside:
-                geofile.write(onelab_pointx % (point, "r0_H%d"%(H0+1), "z1_H%d"%(H0+1), i+1))
-                geofile.write(onelab_pointx % (point+1, "r1_H%d"%(H0+1), "z1_H%d"%(H0+1), i+1))
-                geofile.write(onelab_pointx % (point+2, "r0_H%d"%(H1+1), "z1_H%d"%(H1+1), i+1))
-                geofile.write(onelab_pointx % (point+3, "r1_H%d"%(H1+1), "z1_H%d"%(H1+1), i+1))
+                geofile.write(
+                    onelab_pointx
+                    % (point, "r0_H%d" % (H0 + 1), "z1_H%d" % (H0 + 1), i + 1)
+                )
+                geofile.write(
+                    onelab_pointx
+                    % (point + 1, "r1_H%d" % (H0 + 1), "z1_H%d" % (H0 + 1), i + 1)
+                )
+                geofile.write(
+                    onelab_pointx
+                    % (point + 2, "r0_H%d" % (H1 + 1), "z1_H%d" % (H1 + 1), i + 1)
+                )
+                geofile.write(
+                    onelab_pointx
+                    % (point + 3, "r1_H%d" % (H1 + 1), "z1_H%d" % (H1 + 1), i + 1)
+                )
 
-                geofile.write(onelab_pointx % (point+4, "r1_H%d"%(H1+1), "z1_H%d+dz_R%d"%(H1+1, i+1), i+1))
-                geofile.write(onelab_pointx % (point+5, "r0_H%d"%(H1+1), "z1_H%d+dz_R%d"%(H1+1, i+1), i+1))
-                geofile.write(onelab_pointx % (point+6, "r1_H%d"%(H0+1), "z1_H%d+dz_R%d"%(H0+1, i+1), i+1))
-                geofile.write(onelab_pointx % (point+7, "r0_H%d"%(H0+1), "z1_H%d+dz_R%d"%(H0+1, i+1), i+1))
+                geofile.write(
+                    onelab_pointx
+                    % (
+                        point + 4,
+                        "r1_H%d" % (H1 + 1),
+                        "z1_H%d+dz_R%d" % (H1 + 1, i + 1),
+                        i + 1,
+                    )
+                )
+                geofile.write(
+                    onelab_pointx
+                    % (
+                        point + 5,
+                        "r0_H%d" % (H1 + 1),
+                        "z1_H%d+dz_R%d" % (H1 + 1, i + 1),
+                        i + 1,
+                    )
+                )
+                geofile.write(
+                    onelab_pointx
+                    % (
+                        point + 6,
+                        "r1_H%d" % (H0 + 1),
+                        "z1_H%d+dz_R%d" % (H0 + 1, i + 1),
+                        i + 1,
+                    )
+                )
+                geofile.write(
+                    onelab_pointx
+                    % (
+                        point + 7,
+                        "r0_H%d" % (H0 + 1),
+                        "z1_H%d+dz_R%d" % (H0 + 1, i + 1),
+                        i + 1,
+                    )
+                )
             else:
-                geofile.write(onelab_pointx % (point, "r0_H%d"%(H0+1), "z0_H%d-dz_R%d"%(H0+1, i+1), i+1))
-                geofile.write(onelab_pointx % (point+1, "r1_H%d"%(H0+1), "z0_H%d-dz_R%d"%(H0+1, i+1), i+1))
-                geofile.write(onelab_pointx % (point+2, "r0_H%d"%(H1+1), "z0_H%d-dz_R%d"%(H1+1, i+1), i+1))
-                geofile.write(onelab_pointx % (point+3, "r1_H%d"%(H1+1), "z0_H%d-dz_R%d"%(H1+1, i+1), i+1))
+                geofile.write(
+                    onelab_pointx
+                    % (
+                        point,
+                        "r0_H%d" % (H0 + 1),
+                        "z0_H%d-dz_R%d" % (H0 + 1, i + 1),
+                        i + 1,
+                    )
+                )
+                geofile.write(
+                    onelab_pointx
+                    % (
+                        point + 1,
+                        "r1_H%d" % (H0 + 1),
+                        "z0_H%d-dz_R%d" % (H0 + 1, i + 1),
+                        i + 1,
+                    )
+                )
+                geofile.write(
+                    onelab_pointx
+                    % (
+                        point + 2,
+                        "r0_H%d" % (H1 + 1),
+                        "z0_H%d-dz_R%d" % (H1 + 1, i + 1),
+                        i + 1,
+                    )
+                )
+                geofile.write(
+                    onelab_pointx
+                    % (
+                        point + 3,
+                        "r1_H%d" % (H1 + 1),
+                        "z0_H%d-dz_R%d" % (H1 + 1, i + 1),
+                        i + 1,
+                    )
+                )
 
-                geofile.write(onelab_pointx % (point+4, "r1_H%d"%(H1+1), "z0_H%d"%(H1+1), i+1))
-                geofile.write(onelab_pointx % (point+5, "r0_H%d"%(H1+1), "z0_H%d"%(H1+1), i+1))
-                geofile.write(onelab_pointx % (point+6, "r1_H%d"%(H0+1), "z0_H%d"%(H0+1), i+1))
-                geofile.write(onelab_pointx % (point+7, "r0_H%d"%(H0+1), "z0_H%d"%(H0+1), i+1))
+                geofile.write(
+                    onelab_pointx
+                    % (point + 4, "r1_H%d" % (H1 + 1), "z0_H%d" % (H1 + 1), i + 1)
+                )
+                geofile.write(
+                    onelab_pointx
+                    % (point + 5, "r0_H%d" % (H1 + 1), "z0_H%d" % (H1 + 1), i + 1)
+                )
+                geofile.write(
+                    onelab_pointx
+                    % (point + 6, "r1_H%d" % (H0 + 1), "z0_H%d" % (H0 + 1), i + 1)
+                )
+                geofile.write(
+                    onelab_pointx
+                    % (point + 7, "r0_H%d" % (H0 + 1), "z0_H%d" % (H0 + 1), i + 1)
+                )
 
-            geofile.write(onelab_line % (line, point, point+1))
-            geofile.write(onelab_line % (line+1, point+1, point+2))
-            geofile.write(onelab_line % (line+2, point+2, point+3))
-            geofile.write(onelab_line % (line+3, point+3, point+4))
-            geofile.write(onelab_line % (line+4, point+4, point+5))
-            geofile.write(onelab_line % (line+5, point+5, point+6))
-            geofile.write(onelab_line % (line+6, point+6, point+7))
-            geofile.write(onelab_line % (line+7, point+7, point))
+            geofile.write(onelab_line % (line, point, point + 1))
+            geofile.write(onelab_line % (line + 1, point + 1, point + 2))
+            geofile.write(onelab_line % (line + 2, point + 2, point + 3))
+            geofile.write(onelab_line % (line + 3, point + 3, point + 4))
+            geofile.write(onelab_line % (line + 4, point + 4, point + 5))
+            geofile.write(onelab_line % (line + 5, point + 5, point + 6))
+            geofile.write(onelab_line % (line + 6, point + 6, point + 7))
+            geofile.write(onelab_line % (line + 7, point + 7, point))
 
             if Ring.BPside:
-                HP_Ring_ids.append([line+4, line+5, line+6])
+                HP_Ring_ids.append([line + 4, line + 5, line + 6])
             else:
-                BP_Ring_ids.append([line+4, line+5, line+6])
+                BP_Ring_ids.append([line + 4, line + 5, line + 6])
 
-            geofile.write(onelab_lineloop_R % (lineloop, line, line+1, line+2, line+3, line+4, line+5, line+6, line+7))
+            geofile.write(
+                onelab_lineloop_R
+                % (
+                    lineloop,
+                    line,
+                    line + 1,
+                    line + 2,
+                    line + 3,
+                    line + 4,
+                    line + 5,
+                    line + 6,
+                    line + 7,
+                )
+            )
             geofile.write(onelab_planesurf % (planesurf, lineloop))
             geofile.write(onelab_phys_surf % (planesurf, planesurf))
             Ring_ids.append(planesurf)
 
-            Rint_ids[H0].append(line+7)
-            Rext_ids[H1].append(line+3)
+            Rint_ids[H0].append(line + 7)
+            Rext_ids[H1].append(line + 3)
             dR_ids.append(lineloop)
 
             H0 = H1
@@ -516,33 +662,33 @@ class Insert(yaml.YAMLObject):
 
         # create physical lines
         for i, r_ids in enumerate(Rint_ids):
-            geofile.write("Physical Line(\"H%dChannel0\") = {" % (i+1))
+            geofile.write('Physical Line("H%dChannel0") = {' % (i + 1))
             for id in r_ids:
-                geofile.write("%d"%id)
+                geofile.write("%d" % id)
                 if id != r_ids[-1]:
                     geofile.write(",")
             geofile.write("};\n")
 
         for i, r_ids in enumerate(Rext_ids):
-            geofile.write("Physical Line(\"H%dChannel1\") = {" % (i+1))
+            geofile.write('Physical Line("H%dChannel1") = {' % (i + 1))
             for id in r_ids:
-                geofile.write("%d"%id)
+                geofile.write("%d" % id)
                 if id != r_ids[-1]:
                     geofile.write(",")
             geofile.write("};\n")
 
-        geofile.write("Physical Line(\"HP_H%d\") = " % (0))
-        geofile.write("{%d};\n"%HP_ids[0])
+        geofile.write('Physical Line("HP_H%d") = ' % (0))
+        geofile.write("{%d};\n" % HP_ids[0])
 
-        if len(self.Helices)%2 == 0:
-            geofile.write("Physical Line(\"HP_H%d\") = " % (len(self.Helices)))
+        if len(self.Helices) % 2 == 0:
+            geofile.write('Physical Line("HP_H%d") = ' % (len(self.Helices)))
             geofile.write("{%d};\n" % HP_ids[-1])
         else:
-            geofile.write("Physical Line(\"BP_H%d\") = " % (len(self.Helices)))
+            geofile.write('Physical Line("BP_H%d") = ' % (len(self.Helices)))
             geofile.write("{%d};\n" % BP_ids[-1])
 
         for i, _ids in enumerate(HP_Ring_ids):
-            geofile.write("Physical Line(\"HP_R%d\") =  {" % (i+1))
+            geofile.write('Physical Line("HP_R%d") =  {' % (i + 1))
             for id in _ids:
                 geofile.write("%d" % id)
                 if id != _ids[-1]:
@@ -550,7 +696,7 @@ class Insert(yaml.YAMLObject):
             geofile.write("};\n")
 
         for i, _ids in enumerate(BP_Ring_ids):
-            geofile.write("Physical Line(\"BP_R%d\") =  {" % (i+1))
+            geofile.write('Physical Line("BP_R%d") =  {' % (i + 1))
             for id in _ids:
                 geofile.write("%d" % id)
                 if id != _ids[-1]:
@@ -560,7 +706,7 @@ class Insert(yaml.YAMLObject):
         # BC_ids should contains "H%dChannel%d", "HP_R%d" and "BP_R%d"
         BC_ids = []
 
-        #Air
+        # Air
         Air_ids = []
         BC_Air_ids = []
         if AirData:
@@ -568,28 +714,48 @@ class Insert(yaml.YAMLObject):
             Infty_ids = []
 
             geofile.write("// Define Air\n")
-            onelab_r_air = "DefineConstant[ r_Air = {%g, Name \"Geom/Air/factor_R\"} ];\n"
-            onelab_z_air = "DefineConstant[ z_Air = {%g, Name \"Geom/Air/factor_Z\"} ];\n" #  should add a min and a max
-            onelab_lc_air = "DefineConstant[ lc_Air = {%g, Name \"Geom/Air/lc\"} ];\n"
+            onelab_r_air = 'DefineConstant[ r_Air = {%g, Name "Geom/Air/factor_R"} ];\n'
+            onelab_z_air = 'DefineConstant[ z_Air = {%g, Name "Geom/Air/factor_Z"} ];\n'  #  should add a min and a max
+            onelab_lc_air = 'DefineConstant[ lc_Air = {%g, Name "Geom/Air/lc"} ];\n'
             geofile.write(onelab_r_air % (1.2))
             geofile.write(onelab_z_air % (1.2))
             geofile.write(onelab_lc_air % (2))
 
             H0 = 0
-            Hn = len(self.Helices)-1
+            Hn = len(self.Helices) - 1
 
-            geofile.write(onelab_pointx % (point, "0", f"z_Air * z0_H{H0+1}", H0+1))
-            geofile.write(onelab_pointx % (point+1, f"r_Air * r1_H{Hn+1}", "z_Air * z0_H%d"%(H0+1), H0+1))
-            geofile.write(onelab_pointx % (point+2, f"r_Air * r1_H{Hn+1}", "z_Air * z1_H%d"%(Hn+1), Hn+1))
-            geofile.write(onelab_pointx % (point+3, f"0", "z_Air * z1_H{Hn+1}", Hn+1))
+            geofile.write(onelab_pointx % (point, "0", f"z_Air * z0_H{H0+1}", H0 + 1))
+            geofile.write(
+                onelab_pointx
+                % (
+                    point + 1,
+                    f"r_Air * r1_H{Hn+1}",
+                    "z_Air * z0_H%d" % (H0 + 1),
+                    H0 + 1,
+                )
+            )
+            geofile.write(
+                onelab_pointx
+                % (
+                    point + 2,
+                    f"r_Air * r1_H{Hn+1}",
+                    "z_Air * z1_H%d" % (Hn + 1),
+                    Hn + 1,
+                )
+            )
+            geofile.write(
+                onelab_pointx % (point + 3, f"0", "z_Air * z1_H{Hn+1}", Hn + 1)
+            )
 
-            geofile.write(onelab_line % (line, point, point+1))
-            geofile.write(onelab_line % (line+1, point+1, point+2))
-            geofile.write(onelab_line % (line+2, point+2, point+3))
-            geofile.write(onelab_line % (line+3, point+3, point))
-            Axis_ids.append(line+3)
+            geofile.write(onelab_line % (line, point, point + 1))
+            geofile.write(onelab_line % (line + 1, point + 1, point + 2))
+            geofile.write(onelab_line % (line + 2, point + 2, point + 3))
+            geofile.write(onelab_line % (line + 3, point + 3, point))
+            Axis_ids.append(line + 3)
 
-            geofile.write(onelab_lineloop % (lineloop, line, line+1, line+2, line+3))
+            geofile.write(
+                onelab_lineloop % (lineloop, line, line + 1, line + 2, line + 3)
+            )
             geofile.write("Plane Surface(%d)= {%d, " % (planesurf, lineloop))
             for _ids in H_ids:
                 for _id in _ids:
@@ -601,12 +767,12 @@ class Insert(yaml.YAMLObject):
             Air_ids.append(planesurf)
 
             geofile.write("};\n")
-            #geofile.write(onelab_planesurf%(planesurf, lineloop))
+            # geofile.write(onelab_planesurf%(planesurf, lineloop))
             geofile.write(onelab_phys_surf % (planesurf, planesurf))
 
             dAir = lineloop
             axis_HP = point
-            axis_BP = point+3
+            axis_BP = point + 3
             Air_line = line
 
             point += 4
@@ -616,9 +782,15 @@ class Insert(yaml.YAMLObject):
 
             # Define Infty
             geofile.write("// Define Infty\n")
-            onelab_rint_infty = "DefineConstant[ Val_Rint = {%g, Name \"Geom/Infty/Val_Rint\"} ];\n"
-            onelab_rext_infty = "DefineConstant[ Val_Rext = {%g, Name \"Geom/Infty/Val_Rext\"} ];\n"
-            onelab_lc_infty = "DefineConstant[ lc_infty = {%g, Name \"Geom/Infty/lc_inft\"} ];\n"
+            onelab_rint_infty = (
+                'DefineConstant[ Val_Rint = {%g, Name "Geom/Infty/Val_Rint"} ];\n'
+            )
+            onelab_rext_infty = (
+                'DefineConstant[ Val_Rext = {%g, Name "Geom/Infty/Val_Rext"} ];\n'
+            )
+            onelab_lc_infty = (
+                'DefineConstant[ lc_infty = {%g, Name "Geom/Infty/lc_inft"} ];\n'
+            )
             onelab_point_infty = "Point(%d)= {%s,%s, 0.0, %s};\n"
             geofile.write(onelab_rint_infty % (4))
             geofile.write(onelab_rext_infty % (5))
@@ -630,32 +802,38 @@ class Insert(yaml.YAMLObject):
 
             Hn = len(self.Helices)
 
-            geofile.write(onelab_point_gen % (point, "0", f"-Val_Rint * r1_H{Hn}", "lc_infty"))
-            geofile.write(onelab_point_gen % (point+1, f"Val_Rint * r1_H{Hn}", "0", "lc_infty"))
-            geofile.write(onelab_point_gen % (point+2, "0", f"Val_Rint * r1_H{Hn}", "lc_infty"))
+            geofile.write(
+                onelab_point_gen % (point, "0", f"-Val_Rint * r1_H{Hn}", "lc_infty")
+            )
+            geofile.write(
+                onelab_point_gen % (point + 1, f"Val_Rint * r1_H{Hn}", "0", "lc_infty")
+            )
+            geofile.write(
+                onelab_point_gen % (point + 2, "0", f"Val_Rint * r1_H{Hn}", "lc_infty")
+            )
 
-            geofile.write(onelab_circle % (line, point, center, point+1))
-            geofile.write(onelab_circle % (line+1, point+1, center, point+2))
-            geofile.write(onelab_line % (line+2, point+2, axis_BP))
-            geofile.write(onelab_line % (line+3, axis_HP, point))
-            Axis_ids.append(line+2)
-            Axis_ids.append(line+3)
+            geofile.write(onelab_circle % (line, point, center, point + 1))
+            geofile.write(onelab_circle % (line + 1, point + 1, center, point + 2))
+            geofile.write(onelab_line % (line + 2, point + 2, axis_BP))
+            geofile.write(onelab_line % (line + 3, axis_HP, point))
+            Axis_ids.append(line + 2)
+            Axis_ids.append(line + 3)
 
             geofile.write("Line Loop(%d) = {" % lineloop)
             geofile.write("%d, " % line)
-            geofile.write("%d, " % (line+1))
-            geofile.write("%d, " % (line+2))
-            geofile.write("%d, " % (-(Air_line+2)))
-            geofile.write("%d, " % (-(Air_line+1)))
+            geofile.write("%d, " % (line + 1))
+            geofile.write("%d, " % (line + 2))
+            geofile.write("%d, " % (-(Air_line + 2)))
+            geofile.write("%d, " % (-(Air_line + 1)))
             geofile.write("%d, " % (-(Air_line)))
-            geofile.write("%d};\n " % (line+3))
+            geofile.write("%d};\n " % (line + 3))
 
             geofile.write(onelab_planesurf % (planesurf, lineloop))
             geofile.write(onelab_phys_surf % (planesurf, planesurf))
             Air_ids.append(planesurf)
 
             axis_HP = point
-            axis_BP = point+2
+            axis_BP = point + 2
             Air_line = line
 
             point += 3
@@ -663,39 +841,47 @@ class Insert(yaml.YAMLObject):
             lineloop += 1
             planesurf += 1
 
-            geofile.write(onelab_point_gen % (point, "0", "-Val_Rext * r1_H%d" % Hn, "lc_infty"))
-            geofile.write(onelab_point_gen % (point+1, "Val_Rext * r1_H%d" % Hn, "0", "lc_infty"))
-            geofile.write(onelab_point_gen % (point+2, "0", "Val_Rext * r1_H%d" % Hn, "lc_infty"))
+            geofile.write(
+                onelab_point_gen % (point, "0", "-Val_Rext * r1_H%d" % Hn, "lc_infty")
+            )
+            geofile.write(
+                onelab_point_gen
+                % (point + 1, "Val_Rext * r1_H%d" % Hn, "0", "lc_infty")
+            )
+            geofile.write(
+                onelab_point_gen
+                % (point + 2, "0", "Val_Rext * r1_H%d" % Hn, "lc_infty")
+            )
 
-            geofile.write(onelab_circle % (line, point, center, point+1))
-            geofile.write(onelab_circle % (line+1, point+1, center, point+2))
-            geofile.write(onelab_line % (line+2, point+2, axis_BP))
-            geofile.write(onelab_line%(line+3, axis_HP, point))
-            Axis_ids.append(line+2)
-            Axis_ids.append(line+3)
+            geofile.write(onelab_circle % (line, point, center, point + 1))
+            geofile.write(onelab_circle % (line + 1, point + 1, center, point + 2))
+            geofile.write(onelab_line % (line + 2, point + 2, axis_BP))
+            geofile.write(onelab_line % (line + 3, axis_HP, point))
+            Axis_ids.append(line + 2)
+            Axis_ids.append(line + 3)
             Infty_ids.append(line)
-            Infty_ids.append(line+1)
+            Infty_ids.append(line + 1)
 
             geofile.write("Line Loop(%d) = {" % lineloop)
             geofile.write("%d, " % line)
-            geofile.write("%d, " % (line+1))
-            geofile.write("%d, " % (line+2))
-            geofile.write("%d, " % (-(Air_line+1)))
+            geofile.write("%d, " % (line + 1))
+            geofile.write("%d, " % (line + 2))
+            geofile.write("%d, " % (-(Air_line + 1)))
             geofile.write("%d, " % (-(Air_line)))
-            geofile.write("%d};\n " % (line+3))
+            geofile.write("%d};\n " % (line + 3))
             geofile.write(onelab_planesurf % (planesurf, lineloop))
             geofile.write(onelab_phys_surf % (planesurf, planesurf))
             Air_ids.append(planesurf)
 
             # Add Physical Lines
-            geofile.write("Physical Line(\"Axis\") =  {")
+            geofile.write('Physical Line("Axis") =  {')
             for id in Axis_ids:
                 geofile.write("%d" % id)
                 if id != Axis_ids[-1]:
                     geofile.write(",")
             geofile.write("};\n")
 
-            geofile.write("Physical Line(\"Infty\") =  {")
+            geofile.write('Physical Line("Infty") =  {')
             for id in Infty_ids:
                 geofile.write("%d" % id)
                 if id != Infty_ids[-1]:
@@ -762,12 +948,15 @@ class Insert(yaml.YAMLObject):
 
             z = -hhelix.axi.h
             (turns, pitch) = hhelix.axi.compact()
-            Zh.append(hhelix.z[0])
-            Zh.append(z)
-            for (n,p) in zip(turns,pitch):
-                z-=n*p
-                Zh.append(p)
-            Zh.append(hhelix.z[1])
+
+            tZh = []
+            tZh.append(hhelix.z[0])
+            tZh.append(z)
+            for n, p in zip(turns, pitch):
+                z -= n * p
+                tZh.append(p)
+            tZh.append(hhelix.z[1])
+            Zh.append(tZh)
             # flatten Zh
 
         Ri = self.innerbore
@@ -777,7 +966,6 @@ class Insert(yaml.YAMLObject):
         zm2 = Z2[0]
 
         for i in range(NHelices):
-
             Zmin.append(min(Z1[i], zm1))
             Zmax.append(min(Z2[i], zm2))
 
@@ -794,23 +982,47 @@ class Insert(yaml.YAMLObject):
         # add last channel
         Zh.append(Zh[-1])
 
+        def filter(data: List[float], tol: float):
+            result = []
+            for i in range(data):
+                result += [
+                    j for j in range(data) if i != j and abs(data[i] - data[j]) <= tol
+                ]
+            print(f"duplicate index: {result}")
+
+            # remove result from data
+            return [data[i] for i in range(data) if not i in result]
+
         # get Z per Channel for Tw(z) estimate
         Zi = []
-        for i in range(NChannels-1):
+        for i in range(NChannels - 1):
             nZh = Zh[i] + Zi
             nZh.sort()
-            # remove duplicates
+            # remove duplicates (requires to have a compare method with a tolerance: |z[i] - z[j]| <= tol means z[i] == z[j])
             Zi = Zh[i]
             Zh[i] = nZh
-        print(f'Zh={Zh}')
+            print(f"Zh[{i}]={filter(Zh[i], 1.e-6)}")
 
         Dh.append(2 * (Re - Ri))
         Sh.append(math.pi * (Re - Ri) * (Re + Ri))
-        return (NHelices, NRings, NChannels, Nsections, R1, R2, Z1, Z2, Zmin, Zmax, Dh, Sh)
+        return (
+            NHelices,
+            NRings,
+            NChannels,
+            Nsections,
+            R1,
+            R2,
+            Z1,
+            Z2,
+            Zmin,
+            Zmax,
+            Dh,
+            Sh,
+        )
 
 
 def Insert_constructor(loader, node):
-    print ("Insert_constructor")
+    print("Insert_constructor")
     values = loader.construct_mapping(node)
     name = values["name"]
     Helices = values["Helices"]
@@ -820,7 +1032,9 @@ def Insert_constructor(loader, node):
     CurrentLeads = values["CurrentLeads"]
     innerbore = values["innerbore"]
     outerbore = values["outerbore"]
-    return Insert(name, Helices, Rings, CurrentLeads, HAngles, RAngles, innerbore, outerbore)
+    return Insert(
+        name, Helices, Rings, CurrentLeads, HAngles, RAngles, innerbore, outerbore
+    )
 
-yaml.add_constructor(u'!Insert', Insert_constructor)
 
+yaml.add_constructor("!Insert", Insert_constructor)
