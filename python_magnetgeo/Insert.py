@@ -713,7 +713,12 @@ class Insert(yaml.YAMLObject):
     def get_params(self, workingDir: str = ".") -> tuple:
         """
         get params
-        
+
+        NHelices,
+        NRings,
+        NChannels,
+        Nsections
+
         R1
         R2
         Z1
@@ -723,7 +728,7 @@ class Insert(yaml.YAMLObject):
         Dh,
         Sh,
         """
-        
+
         NHelices = len(self.Helices)
         NRings = len(self.Rings)
         NChannels = NChannels = NHelices + 1
@@ -741,6 +746,7 @@ class Insert(yaml.YAMLObject):
         Dh = []
         Sh = []
 
+        Zh = []
         for i, helix in enumerate(self.Helices):
             hhelix = None
             with open(f"{workingDir}/{helix}.yaml", "r") as f:
@@ -753,6 +759,16 @@ class Insert(yaml.YAMLObject):
             R2.append(hhelix.r[1])
             Z1.append(hhelix.z[0])
             Z2.append(hhelix.z[1])
+
+            z = -hhelix.axi.h
+            (turns, pitch) = hhelix.axi.compact()
+            Zh.append(hhelix.z[0])
+            Zh.append(z)
+            for (n,p) in zip(turns,pitch):
+                z-=n*p
+                Zh.append(p)
+            Zh.append(hhelix.z[1])
+            # flatten Zh
 
         Ri = self.innerbore
         Re = self.outerbore
@@ -774,6 +790,19 @@ class Insert(yaml.YAMLObject):
 
         Zmin.append(zm1)
         Zmax.append(zm2)
+
+        # add last channel
+        Zh.append(Zh[-1])
+
+        # get Z per Channel for Tw(z) estimate
+        Zi = []
+        for i in range(NChannels-1):
+            nZh = Zh[i] + Zi
+            nZh.sort()
+            # remove duplicates
+            Zi = Zh[i]
+            Zh[i] = nZh
+        print(f'Zh={Zh}')
 
         Dh.append(2 * (Re - Ri))
         Sh.append(math.pi * (Re - Ri) * (Re + Ri))

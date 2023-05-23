@@ -15,12 +15,12 @@ class CoolingSlit(yaml.YAMLObject):
     """
     r: radius
     angle: anglar shift from tierod
-    n: 
-    dh:
+    n:
+    dh: 4*Sh/Ph with Ph wetted perimeter
     sh:
     shape:
     """
-    
+
     yaml_tag = "Slit"
 
     def __init__(
@@ -77,6 +77,7 @@ def CoolingSlit_constructor(loader, node):
     """
     build an coolingslit object
     """
+    print("CoolingSlit_constructor")
     values = loader.construct_mapping(node)
     r = values["r"]
     angle = values["angle"]
