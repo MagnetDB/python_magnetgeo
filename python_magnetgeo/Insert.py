@@ -12,6 +12,17 @@ from . import deserialize
 from . import InnerCurrentLead
 
 
+def filter(data: List[float], tol: float):
+    result = []
+    ndata = len(data)
+    for i in range(ndata):
+        result += [j for j in range(ndata) if i != j and abs(data[i] - data[j]) <= tol]
+    print(f"duplicate index: {result}")
+
+    # remove result from data
+    return [data[i] for i in range(ndata) if not i in result]
+
+
 class Insert(yaml.YAMLObject):
     """
     name :
@@ -959,6 +970,10 @@ class Insert(yaml.YAMLObject):
             Zh.append(tZh)
             # flatten Zh
 
+        # add last channel
+        Zh.append(Zh[-1])
+        print(f"Zh({len(Zh)}): {Zh}")
+
         Ri = self.innerbore
         Re = self.outerbore
 
@@ -979,20 +994,6 @@ class Insert(yaml.YAMLObject):
         Zmin.append(zm1)
         Zmax.append(zm2)
 
-        # add last channel
-        Zh.append(Zh[-1])
-
-        def filter(data: List[float], tol: float):
-            result = []
-            for i in range(data):
-                result += [
-                    j for j in range(data) if i != j and abs(data[i] - data[j]) <= tol
-                ]
-            print(f"duplicate index: {result}")
-
-            # remove result from data
-            return [data[i] for i in range(data) if not i in result]
-
         # get Z per Channel for Tw(z) estimate
         Zi = []
         for i in range(NChannels - 1):
@@ -1001,11 +1002,26 @@ class Insert(yaml.YAMLObject):
             # remove duplicates (requires to have a compare method with a tolerance: |z[i] - z[j]| <= tol means z[i] == z[j])
             Zi = Zh[i]
             Zh[i] = nZh
-            print(f"Zh[{i}]={filter(Zh[i], 1.e-6)}")
+            # print(f"Zh[{i}]: type={type(Zh[i])}")
+            print(f"filtered={filter(Zh[i], 1.e-6)}")
+        # print(f"Zh({len(Zh)}): {Zh}")
 
         Dh.append(2 * (Re - Ri))
         Sh.append(math.pi * (Re - Ri) * (Re + Ri))
-        return (NHelices, NRings, NChannels, Nsections, Zmin, Zmax, Dh, Sh)
+        return (
+            NHelices,
+            NRings,
+            NChannels,
+            Nsections,
+            R1,
+            R2,
+            Z1,
+            Z2,
+            Zmin,
+            Zmax,
+            Dh,
+            Sh,
+        )
 
 
 def Insert_constructor(loader, node):
