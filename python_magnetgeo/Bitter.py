@@ -59,14 +59,16 @@ class Bitter(yaml.YAMLObject):
         """
         return channels
         """
-        print(f"Bitter({self.name}): CoolingSlits={self.coolingslits}")
-        n_slits = len(self.coolingslits)
+        Channels = []
+        if self.coolingslits:
+            n_slits = len(self.coolingslits)
+            print(f"Bitter({self.name}): CoolingSlits={n_slits}")
 
-        prefix = ""
-        if mname:
-            prefix = f"{mname}_"
-        Channels = [[f"{prefix}slit{i}"] for i in range(n_slits)]
-        print(f"Bitter({prefix}): {Channels}")
+            prefix = ""
+            if mname:
+                prefix = f"{mname}_"
+            Channels = [[f"{prefix}slit{i}"] for i in range(n_slits)]
+            print(f"Bitter({prefix}): {Channels}")
         return Channels
 
     def get_lc(self) -> float:
@@ -104,7 +106,7 @@ class Bitter(yaml.YAMLObject):
 
         if is2D:
             nsection = len(self.axi.turns)
-            if self.z[0] < - self.axi.h:
+            if self.z[0] < -self.axi.h:
                 solid_names.append(f"{prefix}{self.name}_B0")
 
             for j in range(nsection):
@@ -122,18 +124,15 @@ class Bitter(yaml.YAMLObject):
         """
         representation of object
         """
-        return (
-            "%s(name=%r, r=%r, z=%r, odd=%r, axi=%r, coolingslits=%r, tierod=%r)"
-            % (
-                self.__class__.__name__,
-                self.name,
-                self.r,
-                self.z,
-                self.odd,
-                self.axi,
-                self.coolingslits,
-                self.tierod,
-            )
+        return "%s(name=%r, r=%r, z=%r, odd=%r, axi=%r, coolingslits=%r, tierod=%r)" % (
+            self.__class__.__name__,
+            self.name,
+            self.r,
+            self.z,
+            self.odd,
+            self.axi,
+            self.coolingslits,
+            self.tierod,
         )
 
     def dump(self):
@@ -223,18 +222,23 @@ class Bitter(yaml.YAMLObject):
         return collide
 
     def get_params(self, workingDir: str = ".") -> tuple:
-        Dh = [slit.n * slit.dh for slit in self.coolingslits]
-        Sh = [slit.n * slit.sh for slit in self.coolingslits]
+        Dh = []
+        Sh = []
+        nslits = 0
+        if self.coolingslits:
+            Dh = [slit.n * slit.dh for slit in self.coolingslits]
+            Sh = [slit.n * slit.sh for slit in self.coolingslits]
+            nslits = len(self.coolingslits)
 
         z = -self.axi.h
         Zh = [self.z[0], z]
-        for (n,p) in zip(self.axi.turns,self.axi.pitch):
-            z-=n*p
+        for (n, p) in zip(self.axi.turns, self.axi.pitch):
+            z -= n * p
             Zh.append(z)
         Zh.append(self.z[1])
-        print(f'Zh={Zh}')
+        print(f"Zh={Zh}")
 
-        return (len(self.coolingslits), self.z[0], self.z[1], Dh, Sh)
+        return (nslits, self.z[0], self.z[1], Dh, Sh)
 
     def create_cut(self, format: str):
         """
@@ -247,6 +251,7 @@ class Bitter(yaml.YAMLObject):
             sign = -1
 
         self.axi.create_cut(format, z0, sign, self.name)
+
 
 def Bitter_constructor(loader, node):
     """
@@ -278,15 +283,14 @@ if __name__ == "__main__":
     slit2 = CoolingSlit(10, 5, 20, 0.1, 0.2, Square)
     coolingSlits = [slit1, slit2]
 
-    Axi = ModelAxi('test', 0.9, [2], [0.9])
+    Axi = ModelAxi("test", 0.9, [2], [0.9])
 
-    bitter = Bitter('B', [1,2], [-1, 1], True, Axi, coolingSlits, tierod)
+    bitter = Bitter("B", [1, 2], [-1, 1], True, Axi, coolingSlits, tierod)
     bitter.dump()
 
-    with open("B.yaml", 'r') as f:
+    with open("B.yaml", "r") as f:
         bitter = yaml.load(f, Loader=yaml.FullLoader)
 
     print(bitter)
-    for i,slit in enumerate(bitter.coolingslits):
-        print(f'slit[{i}]: {slit}, shape={slit.shape}')
-
+    for i, slit in enumerate(bitter.coolingslits):
+        print(f"slit[{i}]: {slit}, shape={slit.shape}")
