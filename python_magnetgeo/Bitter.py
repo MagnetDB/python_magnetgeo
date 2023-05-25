@@ -53,6 +53,17 @@ class Bitter(yaml.YAMLObject):
         self.coolingslits = coolingslits
         self.tierod = tierod
 
+    def equivalent_eps(self, i: int):
+        """
+        eps: thickness of annular ring equivalent to n * coolingslit surface
+        """
+        from math import pi
+        
+        slit = self.coolingslits[i]
+        x = slit.r
+        eps = slit.n * slit.sh / (2 * pi * x) 
+        return eps
+    
     def get_channels(
         self, mname: str, hideIsolant: bool = True, debug: bool = False
     ) -> List[list]:
@@ -226,7 +237,8 @@ class Bitter(yaml.YAMLObject):
         Sh = []
         nslits = 0
         if self.coolingslits:
-            Dh = [slit.n * slit.dh for slit in self.coolingslits]
+            Dh = [self.equivalent_eps(n) for n in range(len(self.coolingslits)]
+            # [slit.n * slit.dh for slit in self.coolingslits]
             Sh = [slit.n * slit.sh for slit in self.coolingslits]
             nslits = len(self.coolingslits)
 
