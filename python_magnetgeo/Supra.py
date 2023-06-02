@@ -101,49 +101,12 @@ class Supra(yaml.YAMLObject):
             prefix = f"{mname}_"
 
         if self.detail == "None":
-            return [f'{prefix}{self.name}']
+            return [f"{prefix}{self.name}"]
         else:
             hts = self.get_magnet_struct()
             self.check_dimensions(hts)
 
-            return hts.get_names(f'{prefix}{self.name}', self.detail, verbose)
-
-        """
-            n_dp = len(hts.dblpancakes)
-            cadname = f"{prefix}{self.name}"
-
-            dp_ids = []
-            i_ids = []
-
-            for i, dp in enumerate(hts.dblpancakes):
-                dp_name = f"{cadname}_dp{i}"
-                if self.detail == "dblpancake":
-                    solid_names.append(f"{dp_name}")
-
-                if self.detail == "pancake":
-                    solid_names.append(f"{dp_name}_p0")
-                    solid_names.append(f"{dp_name}_i")
-                    solid_names.append(f"{dp_name}_p1")
-                if self.detail == "tape":
-                    solid_names.append(f"{dp_name}_p0_Mandrin")
-                    for j in range(dp.pancake.n):
-                        solid_names.append(f"{dp_name}_p0_t{j}_SC")
-                        solid_names.append(f"{dp_name}_p0_t{j}_Duromag")
-                    solid_names.append(f"{dp_name}_i")
-                    solid_names.append(f"{dp_name}_p1_Mandrin")
-                    for j in range(dp.pancake.n):
-                        solid_names.append(f"{dp_name}_p1_t{j}_SC")
-                        solid_names.append(f"{dp_name}_p1_t{j}_Duromag")
-                if i != n_dp - 1:
-                    solid_names.append(f"{cadname}_i{i}")
-
-            if self.detail == "dblpancake":
-                return [dp_ids, i_ids]
-            else:
-                return [flatten(dp_ids, False), i_ids]
-            if verbose:
-                print(f"Supra_Gmsh: solid_names {len(solid_names)}")
-        """
+            return hts.get_names(f"{prefix}{self.name}", self.detail, verbose)
 
     def __repr__(self):
         """
@@ -273,8 +236,8 @@ class Supra(yaml.YAMLObject):
     #     #     # load HTSinsert
     #     #     # return fillingfactor according to self.detail:
     #     #     # aka tape.getFillingFactor() with tape = HTSinsert.tape when detail == "tape"
-            
-    
+
+
 def Supra_constructor(loader, node):
     """
     build an supra object
