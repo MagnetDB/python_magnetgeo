@@ -61,7 +61,19 @@ class Bitters(yaml.YAMLObject):
                     Object = yaml.load(f, Loader=yaml.FullLoader)
 
                 Channels[magnet] = Object.get_channels(magnet, hideIsolant, debug)
-
+                
+            # for 1st magnet remove latest slit if len(self.magnets) > 1
+            # else remove first slit from previous magnet
+            #      if not lates magnet
+            #         add latest slit from previous magnet in first slit
+            for i,magnet in enumerate(self.magnets[:-1]):
+                nmname = self.magnets[i + 1]
+                print(
+                    f"list: Bitters/get_channels/{mname} Bitter[{i}] rExt {nmname} Bitter[{i+1}] rInt"
+                )
+                Channels[magnet][-1] += Channels[nmagnet][0]
+                Channels[nmagnet][0].clear()
+                    
         elif isinstance(self.magnets, dict):
             for key in self.magnets:
                 magnet = self.magnets[key]
@@ -70,12 +82,29 @@ class Bitters(yaml.YAMLObject):
                     Object = yaml.load(f, Loader=yaml.FullLoader)
 
                 Channels[magnet] = Object.get_channels(key, hideIsolant, debug)
+
+            # for 1st magnet remove latest slit if len(self.magnets) > 1
+            # else remove first slit from previous magnet
+            #      if not lates magnet
+            #         add latest slit from previous magnet in first slit
+            lmagnets = list(self.magnets.keys())
+            for i, magnet in enumerate(lmagnets[:-1]):
+                nmname = self.magnets[i + 1]
+                print(
+                    f"list: Bitters/get_channels/{mname} Bitter[{i}] rExt {nmname} Bitter[{i+1}] rInt"
+                )
+                Channels[magnet][-1] += Channels[nmagnet][0]
+                Channels[nmagnet][0].clear()
         else:
             raise RuntimeError(
                 f"Bitters: unsupported type of magnets ({type(self.magnets)})"
             )
 
-        return Channels
+        if debug:
+            print("Channels:")
+            for key, value in Channels:
+                print(f"\t{key}: {value}")
+        return Channels # flatten list?
 
     def get_isolants(self, mname: str, debug: bool = False) -> dict:
         """
@@ -102,7 +131,7 @@ class Bitters(yaml.YAMLObject):
                 with open(YAMLFile, "r") as f:
                     Object = yaml.load(f, Loader=yaml.FullLoader)
 
-                solid_names += Object.get_names(magnet, is2D, verbose)
+                solid_names += Object.get_names(magnet, is2D, verbose) # magnet or Object.name??
         elif isinstance(self.magnets, dict):
             for key in self.magnets:
                 magnet = self.magnets[key]

@@ -58,19 +58,19 @@ class Bitter(yaml.YAMLObject):
         eps: thickness of annular ring equivalent to n * coolingslit surface
         """
         from math import pi
-        
+
         slit = self.coolingslits[i]
         x = slit.r
-        eps = slit.n * slit.sh / (2 * pi * x) 
+        eps = slit.n * slit.sh / (2 * pi * x)
         return eps
-    
+
     def get_channels(
         self, mname: str, hideIsolant: bool = True, debug: bool = False
     ) -> List[list]:
         """
         return channels
         """
-        Channels = []
+        Channels = [f"{prefix}rInt"}]
         if self.coolingslits:
             n_slits = len(self.coolingslits)
             print(f"Bitter({self.name}): CoolingSlits={n_slits}")
@@ -78,7 +78,8 @@ class Bitter(yaml.YAMLObject):
             prefix = ""
             if mname:
                 prefix = f"{mname}_"
-            Channels = [[f"{prefix}slit{i}"] for i in range(n_slits)]
+            Channels += [[f"{prefix}Slit{i+1}"] for i in range(n_slits)]
+            Channels += [f"{prefix}rExt"}]
             print(f"Bitter({prefix}): {Channels}")
         return Channels
 
@@ -115,18 +116,25 @@ class Bitter(yaml.YAMLObject):
         if mname:
             prefix = f"{mname}_"
 
+        Nslits = 0
+        if self.coolingslits:
+            Nslits = len(self.coolingslits)
+
         if is2D:
             nsection = len(self.axi.turns)
             if self.z[0] < -self.axi.h:
-                solid_names.append(f"{prefix}{self.name}_B0")
+                for i in range(Nslits):
+                    solid_names.append(f"{prefix}B0_Slit{i}")
 
             for j in range(nsection):
-                solid_names.append(f"{prefix}{self.name}_B{j+1}")
+                for i in range(Nslits):
+                    solid_names.append(f"{prefix}B{j+1}_Slit{i}")
 
             if self.z[1] > self.axi.h:
-                solid_names.append(f"{prefix}{self.name}_B{nsection+1}")
+                for i in range(Nslits):
+                    solid_names.append(f"{prefix}B{nsection+1}_Slit{i}")
         else:
-            solid_names.append(f"{prefix}{self.name}_B")
+            solid_names.append(f"{prefix}B")
         if verbose:
             print(f"Bitter/get_names: solid_names {len(solid_names)}")
         return solid_names
@@ -237,14 +245,14 @@ class Bitter(yaml.YAMLObject):
         Sh = []
         nslits = 0
         if self.coolingslits:
-            Dh = [2*self.equivalent_eps(n) for n in range(len(self.coolingslits))]
-            # [slit.n * slit.dh for slit in self.coolingslits]
+            # Dh = [slit.dh for slit in  self.coolingslits] ??
+            Dh = [2 * self.equivalent_eps(n) for n in range(len(self.coolingslits))]
             Sh = [slit.n * slit.sh for slit in self.coolingslits]
             nslits = len(self.coolingslits)
 
         z = -self.axi.h
         Zh = [self.z[0], z]
-        for (n, p) in zip(self.axi.turns, self.axi.pitch):
+        for n, p in zip(self.axi.turns, self.axi.pitch):
             z -= n * p
             Zh.append(z)
         Zh.append(self.z[1])
