@@ -41,6 +41,8 @@ class Bitter(yaml.YAMLObject):
         axi: ModelAxi,
         coolingslits: List[CoolingSlit],
         tierod: Tierod,
+        innerbore: float,
+        outerbore: float,
     ) -> None:
         """
         initialize object
@@ -50,6 +52,8 @@ class Bitter(yaml.YAMLObject):
         self.z = z
         self.odd = odd
         self.axi = axi
+        self.innerbore = innerbore
+        self.outerbore = outerbore
         self.coolingslits = coolingslits
         self.tierod = tierod
 
@@ -66,21 +70,23 @@ class Bitter(yaml.YAMLObject):
 
     def get_channels(
         self, mname: str, hideIsolant: bool = True, debug: bool = False
-    ) -> List[list]:
+    ) -> List[str]:
         """
         return channels
         """
-        Channels = [f"{prefix}rInt"}]
+        prefix = ""
+        if mname:
+            prefix = f"{mname}_"
+
+        Channels = [f"{prefix}Slit{0}"]
+        n_slits = 0
         if self.coolingslits:
             n_slits = len(self.coolingslits)
             print(f"Bitter({self.name}): CoolingSlits={n_slits}")
 
-            prefix = ""
-            if mname:
-                prefix = f"{mname}_"
-            Channels += [[f"{prefix}Slit{i+1}"] for i in range(n_slits)]
-            Channels += [f"{prefix}rExt"}]
-            print(f"Bitter({prefix}): {Channels}")
+            Channels += [f"{prefix}Slit{i+1}" for i in range(n_slits)]
+        Channels += [f"{prefix}Slit{n_slits+1}"]
+        print(f"Bitter({prefix}): {Channels}")
         return Channels
 
     def get_lc(self) -> float:
@@ -143,15 +149,20 @@ class Bitter(yaml.YAMLObject):
         """
         representation of object
         """
-        return "%s(name=%r, r=%r, z=%r, odd=%r, axi=%r, coolingslits=%r, tierod=%r)" % (
-            self.__class__.__name__,
-            self.name,
-            self.r,
-            self.z,
-            self.odd,
-            self.axi,
-            self.coolingslits,
-            self.tierod,
+        return (
+            "%s(name=%r, r=%r, z=%r, odd=%r, axi=%r, coolingslits=%r, tierod=%r, innerbore=%r, outerbore=%r)"
+            % (
+                self.__class__.__name__,
+                self.name,
+                self.r,
+                self.z,
+                self.odd,
+                self.axi,
+                self.coolingslits,
+                self.tierod,
+                self.innerbore,
+                self.outerbore,
+            )
         )
 
     def dump(self):
@@ -182,6 +193,8 @@ class Bitter(yaml.YAMLObject):
         self.axi = data.axi
         self.coolingslits = data.coolingslits
         self.tierod = data.tierod
+        self.innerbore = data.innerbore
+        self.outerbore = data.outerbore
 
     def to_json(self):
         """
@@ -241,14 +254,18 @@ class Bitter(yaml.YAMLObject):
         return collide
 
     def get_params(self, workingDir: str = ".") -> tuple:
-        Dh = []
-        Sh = []
+        from math import pi
+
+        Dh = [2 * (self.r[0] - innerbore)]
+        Sh = [pi * (self.r[0] - innerbore) * (self.r[0] + innerbore)]
         nslits = 0
         if self.coolingslits:
-            # Dh = [slit.dh for slit in  self.coolingslits] ??
-            Dh = [2 * self.equivalent_eps(n) for n in range(len(self.coolingslits))]
-            Sh = [slit.n * slit.sh for slit in self.coolingslits]
             nslits = len(self.coolingslits)
+            # Dh = [slit.dh for slit in  self.coolingslits] ??
+            Dh += [2 * self.equivalent_eps(n) for n in range(len(self.coolingslits))]
+            Sh += [slit.n * slit.sh for slit in self.coolingslits]
+        Dh += [2 * (outerbore - self.r[1])]
+        Sh += [pi * (outerbore - self.r[1]) * (outerbore - self.r[1])]
 
         z = -self.axi.h
         Zh = [self.z[0], z]
@@ -285,8 +302,14 @@ def Bitter_constructor(loader, node):
     axi = values["axi"]
     coolingslits = values["coolingslits"]
     tierod = values["tierod"]
+    innerbore = 0
+    if "innerbore":
+        innerbore = values["innerbore"]
+    outerbore = 0
+    if "outerbore":
+        outerbore = values["outerbore"]
 
-    return Bitter(name, r, z, odd, axi, coolingslits, tierod)
+    return Bitter(name, r, z, odd, axi, coolingslits, tierod, innerbore, outerbore)
 
 
 yaml.add_constructor("!Bitter", Bitter_constructor)
@@ -305,7 +328,11 @@ if __name__ == "__main__":
 
     Axi = ModelAxi("test", 0.9, [2], [0.9])
 
-    bitter = Bitter("B", [1, 2], [-1, 1], True, Axi, coolingSlits, tierod)
+    innerbore = 1 - 0.01
+    outerbore = 2 + 0.01
+    bitter = Bitter(
+        "B", [1, 2], [-1, 1], True, Axi, coolingSlits, tierod, innerbore, outerbore
+    )
     bitter.dump()
 
     with open("B.yaml", "r") as f:
