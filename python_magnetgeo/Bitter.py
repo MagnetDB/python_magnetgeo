@@ -256,16 +256,16 @@ class Bitter(yaml.YAMLObject):
     def get_params(self, workingDir: str = ".") -> tuple:
         from math import pi
 
-        Dh = [2 * (self.r[0] - innerbore)]
-        Sh = [pi * (self.r[0] - innerbore) * (self.r[0] + innerbore)]
+        Dh = [2 * (self.r[0] - self.innerbore)]
+        Sh = [pi * (self.r[0] - self.innerbore) * (self.r[0] + self.innerbore)]
         nslits = 0
         if self.coolingslits:
             nslits = len(self.coolingslits)
             # Dh = [slit.dh for slit in  self.coolingslits] ??
             Dh += [2 * self.equivalent_eps(n) for n in range(len(self.coolingslits))]
             Sh += [slit.n * slit.sh for slit in self.coolingslits]
-        Dh += [2 * (outerbore - self.r[1])]
-        Sh += [pi * (outerbore - self.r[1]) * (outerbore - self.r[1])]
+        Dh += [2 * (self.outerbore - self.r[1])]
+        Sh += [pi * (self.outerbore - self.r[1]) * (self.outerbore - self.r[1])]
 
         z = -self.axi.h
         Zh = [self.z[0], z]
