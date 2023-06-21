@@ -1008,7 +1008,10 @@ class Insert(yaml.YAMLObject):
             # print(f"Zc[{i}]={Zc[-1]}")
 
         Zc.append(Zh[-1])
-        # print(f"Zc[{NChannels-1}]={Zc[-1]}")
+        for i, _z in enumerate(Zc):
+            print(f"Zc[Channel{i}]={_z}")
+        print(f"Zmin={Zmin}")
+        print(f"Zmax={Zmax}")
 
         Dh.append(2 * (Re - Ri))
         Sh.append(math.pi * (Re - Ri) * (Re + Ri))
@@ -1025,7 +1028,7 @@ class Insert(yaml.YAMLObject):
             Zmax,
             Dh,
             Sh,
-        )
+        )  # add Zc
 
 
 def Insert_constructor(loader, node):

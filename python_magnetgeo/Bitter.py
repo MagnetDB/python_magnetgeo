@@ -265,7 +265,7 @@ class Bitter(yaml.YAMLObject):
             Dh += [2 * self.equivalent_eps(n) for n in range(len(self.coolingslits))]
             Sh += [slit.n * slit.sh for slit in self.coolingslits]
         Dh += [2 * (self.outerbore - self.r[1])]
-        Sh += [pi * (self.outerbore - self.r[1]) * (self.outerbore - self.r[1])]
+        Sh += [pi * (self.outerbore - self.r[1]) * (self.outerbore + self.r[1])]
 
         z = -self.axi.h
         Zh = [self.z[0], z]
@@ -273,9 +273,10 @@ class Bitter(yaml.YAMLObject):
             z -= n * p
             Zh.append(z)
         Zh.append(self.z[1])
-        print(f"Zh={Zh}")
+        for i, _z in enumerate(Zh):
+            print(f"Zh[Slit{i}]={_z}")
 
-        return (nslits, self.z[0], self.z[1], Dh, Sh)
+        return (nslits, self.z[0], self.z[1], Dh, Sh)  # add Zh
 
     def create_cut(self, format: str):
         """
