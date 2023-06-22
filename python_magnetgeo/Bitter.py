@@ -270,11 +270,10 @@ class Bitter(yaml.YAMLObject):
         z = -self.axi.h
         Zh = [self.z[0], z]
         for n, p in zip(self.axi.turns, self.axi.pitch):
-            z -= n * p
+            z += n * p
             Zh.append(z)
         Zh.append(self.z[1])
-        for i, _z in enumerate(Zh):
-            print(f"Zh[Slit{i}]={_z}")
+        print(f"Zh={Zh}")
 
         return (nslits, self.z[0], self.z[1], Dh, Sh)  # add Zh
 
