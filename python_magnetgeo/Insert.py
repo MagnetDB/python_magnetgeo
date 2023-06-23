@@ -12,7 +12,7 @@ from . import deserialize
 from . import InnerCurrentLead
 
 
-def filter(data: List[float], tol: float):
+def filter(data: List[float], tol: float) -> List[float]:
     result = []
     ndata = len(data)
     for i in range(ndata):
@@ -922,10 +922,9 @@ class Insert(yaml.YAMLObject):
         R2
         Z1
         Z2
-        Zmin,
-        Zmax,
         Dh,
         Sh,
+        Zh
         """
 
         tol = 1.0e-6
@@ -938,12 +937,8 @@ class Insert(yaml.YAMLObject):
         Nturns_h = []
         R1 = []
         R2 = []
-        Z1 = []
-        Z2 = []
         Nsections = []
         Nturns_h = []
-        Zmin = []
-        Zmax = []
         Dh = []
         Sh = []
 
@@ -958,8 +953,6 @@ class Insert(yaml.YAMLObject):
 
             R1.append(hhelix.r[0])
             R2.append(hhelix.r[1])
-            Z1.append(hhelix.z[0])
-            Z2.append(hhelix.z[1])
 
             z = -hhelix.axi.h
             (turns, pitch) = hhelix.axi.compact(tol)
@@ -972,33 +965,49 @@ class Insert(yaml.YAMLObject):
                 tZh.append(z)
             tZh.append(hhelix.z[1])
             Zh.append(tZh)
-            # flatten Zh
+            # print(f"Zh[{i}]: {Zh[-1]}")
 
         Ri = self.innerbore
         Re = self.outerbore
 
-        zm1 = Z1[0]
-        zm2 = Z2[0]
-
         for i in range(NHelices):
-            Zmin.append(min(Z1[i], zm1))
-            Zmax.append(max(Z2[i], zm2))
-
             Dh.append(2 * (R1[i] - Ri))
             Sh.append(math.pi * (R1[i] - Ri) * (R1[i] + Ri))
 
             Ri = R2[i]
-            zm1 = Z1[i]
-            zm2 = Z2[i]
 
-        Zmin.append(zm1)
-        Zmax.append(zm2)
+        Zr = []
+        for i, ring in enumerate(self.Rings):
+            hring = None
+            with open(f"{workingDir}/{ring}.yaml", "r") as f:
+                hring = yaml.load(f, Loader=yaml.FullLoader)
+
+            dz = abs(hring.z[1] - hring.z[0])
+            if i % 2 == 1:
+                # print(f"Ring[{i}]: minus dz_ring={dz} to Zh[i][0]")
+                Zr.append(Zh[i][0] - dz)
+
+            if i % 2 == 0:
+                # print(f"Ring[{i}]: add dz={dz} to Zh[i][-1]")
+                Zr.append(Zh[i][-1] + dz)
+        # print(f"Zr: {Zr}")
 
         # get Z per Channel for Tw(z) estimate
         Zc = []
         Zi = []
         for i in range(NChannels - 1):
             nZh = Zh[i] + Zi
+            # print(f"C{i}:")
+            if i >= 0 and i < NChannels - 2:
+                # print(f"\tR{i}")
+                nZh.append(Zr[i])
+            if i >= 1 and i < NChannels - 2:
+                # print(f"\tR{i-1}")
+                nZh.appedn(Zr[i - 1])
+            if i >= 2 and i < NChannels - 2:
+                # print(f"\tR{i-2}")
+                nZh.append(Zr[i - 2])
+
             nZh.sort()
             Zc.append(filter(nZh, tol))
             # remove duplicates (requires to have a compare method with a tolerance: |z[i] - z[j]| <= tol means z[i] == z[j])
@@ -1007,28 +1016,24 @@ class Insert(yaml.YAMLObject):
             # print(f"Zh[{i}]={Zh[i]}")
             # print(f"Zc[{i}]={Zc[-1]}")
 
-        Zc.append(Zh[-1])
+        # Add latest Channel: Zh[-1] + R[-1]
+        nZh = Zh[-1] + [Zr[-1]]
+        nZh.sort()
+        Zc.append(filter(nZh, tol))
+        nZh = []
+
+        Zmin = 0
+        Zmax = 0
         for i, _z in enumerate(Zc):
+            Zmin = min(Zmin, min(_z))
+            Zmax = max(Zmax, max(_z))
             print(f"Zc[Channel{i}]={_z}")
         print(f"Zmin={Zmin}")
         print(f"Zmax={Zmax}")
 
         Dh.append(2 * (Re - Ri))
         Sh.append(math.pi * (Re - Ri) * (Re + Ri))
-        return (
-            NHelices,
-            NRings,
-            NChannels,
-            Nsections,
-            R1,
-            R2,
-            Z1,
-            Z2,
-            Zmin,
-            Zmax,
-            Dh,
-            Sh,
-        )  # add Zc
+        return (NHelices, NRings, NChannels, Nsections, R1, R2, Dh, Sh, Zc)
 
 
 def Insert_constructor(loader, node):

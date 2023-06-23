@@ -275,7 +275,7 @@ class Bitter(yaml.YAMLObject):
         Zh.append(self.z[1])
         print(f"Zh={Zh}")
 
-        return (nslits, self.z[0], self.z[1], Dh, Sh)  # add Zh
+        return (nslits, Dh, Sh, Zh)
 
     def create_cut(self, format: str):
         """
