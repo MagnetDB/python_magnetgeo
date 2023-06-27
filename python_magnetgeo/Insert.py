@@ -1003,7 +1003,7 @@ class Insert(yaml.YAMLObject):
                 nZh.append(Zr[i])
             if i >= 1 and i < NChannels - 2:
                 # print(f"\tR{i-1}")
-                nZh.appedn(Zr[i - 1])
+                nZh.append(Zr[i - 1])
             if i >= 2 and i < NChannels - 2:
                 # print(f"\tR{i-2}")
                 nZh.append(Zr[i - 2])
