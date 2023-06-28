@@ -106,8 +106,8 @@ class ModelAxi(yaml.YAMLObject):
                     remove_ids.append(item)
 
         new_pitch = [p for i, p in enumerate(self.pitch) if not i in remove_ids]
-        print(f"pitch={self.pitch}")
-        print(f"new_pitch={new_pitch}")
+        # print(f"pitch={self.pitch}")
+        # print(f"new_pitch={new_pitch}")
 
         new_turns = (
             self.turns
@@ -116,8 +116,8 @@ class ModelAxi(yaml.YAMLObject):
             for item in sum_index[i]:
                 new_turns[i] += self.turns[item]
         new_turns = [p for i, p in enumerate(self.turns) if not i in remove_ids]
-        print(f"turns={self.turns}")
-        print(f"new_turns={new_turns}")
+        # print(f"turns={self.turns}")
+        # print(f"new_turns={new_turns}")
 
         return new_turns, new_pitch
 

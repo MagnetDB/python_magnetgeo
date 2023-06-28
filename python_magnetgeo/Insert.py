@@ -19,7 +19,7 @@ def filter(data: List[float], tol: float) -> List[float]:
         result += [
             j for j in range(i, ndata) if i != j and abs(data[i] - data[j]) <= tol
         ]
-    print(f"duplicate index: {result}")
+    # print(f"duplicate index: {result}")
 
     # remove result from data
     return [data[i] for i in range(ndata) if not i in result]
@@ -1027,9 +1027,9 @@ class Insert(yaml.YAMLObject):
         for i, _z in enumerate(Zc):
             Zmin = min(Zmin, min(_z))
             Zmax = max(Zmax, max(_z))
-            print(f"Zc[Channel{i}]={_z}")
-        print(f"Zmin={Zmin}")
-        print(f"Zmax={Zmax}")
+            # print(f"Zc[Channel{i}]={_z}")
+        # print(f"Zmin={Zmin}")
+        # print(f"Zmax={Zmax}")
 
         Dh.append(2 * (Re - Ri))
         Sh.append(math.pi * (Re - Ri) * (Re + Ri))
