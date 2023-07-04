@@ -129,15 +129,15 @@ class Bitter(yaml.YAMLObject):
         if is2D:
             nsection = len(self.axi.turns)
             if self.z[0] < -self.axi.h:
-                for i in range(Nslits):
+                for i in range(Nslits+1):
                     solid_names.append(f"{prefix}B0_Slit{i}")
 
             for j in range(nsection):
-                for i in range(Nslits):
+                for i in range(Nslits+1):
                     solid_names.append(f"{prefix}B{j+1}_Slit{i}")
 
             if self.z[1] > self.axi.h:
-                for i in range(Nslits):
+                for i in range(Nslits+1):
                     solid_names.append(f"{prefix}B{nsection+1}_Slit{i}")
         else:
             solid_names.append(f"{prefix}B")
