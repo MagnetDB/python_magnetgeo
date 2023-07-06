@@ -30,18 +30,17 @@ class MSite(yaml.YAMLObject):
         screens: Optional[Union[str, list, dict]],
         z_offset: Optional[List[float]],
         r_offset: Optional[List[float]],
-        paralax: Optional[List[float]]
+        paralax: Optional[List[float]],
     ) -> None:
         """
         initialize onject
         """
         self.name = name
         self.magnets = magnets
-        self.screens = screens        
+        self.screens = screens
         self.z_offset = z_offset
         self.r_offset = r_offset
         self.paralax = paralax
-
 
     def __repr__(self):
         """
@@ -131,26 +130,30 @@ class MSite(yaml.YAMLObject):
             for key in self.magnets:
                 magnet = self.magnets[key]
                 if isinstance(magnet, str):
+                    mObject = None
                     YAMLFile = f"{magnet}.yaml"
                     with open(YAMLFile, "r") as f:
-                        Object = yaml.load(f, Loader=yaml.FullLoader)
-                        print(f"{magnet}: {Object}")
+                        mObject = yaml.load(f, Loader=yaml.FullLoader)
+                        # print(f"{magnet}: {mObject}")
 
-                    solid_names += Object.get_names(key, is2D, verbose)
+                    solid_names += mObject.get_names(key, is2D, verbose)
 
                 elif isinstance(magnet, list):
                     for part in magnet:
                         if isinstance(part, str):
+                            mObject = None
                             YAMLFile = f"{part}.yaml"
                             with open(YAMLFile, "r") as f:
-                                Object = yaml.load(f, Loader=yaml.FullLoader)
-                                print(f"{part}: {Object}")
+                                mObject = yaml.load(f, Loader=yaml.FullLoader)
+                                # print(f"{part}: {mObject}")
+
+                            solid_names += mObject.get_names(
+                                f"{key}_{mObject.name}", is2D, verbose
+                            )
                         else:
                             raise RuntimeError(
                                 f"MSite(magnets[{key}][{part}]): unsupported type of magnets ({type(part)})"
                             )
-
-                        solid_names += Object.get_names(key, is2D, verbose)
 
                 else:
                     raise RuntimeError(
@@ -298,9 +301,9 @@ def MSite_constructor(loader, node):
     name = values["name"]
     magnets = values["magnets"]
     screens = values["screens"]
-    z_offset = values['z_offset']
-    r_offset = values['r_offset']
-    paralax = values['paralax']
+    z_offset = values["z_offset"]
+    r_offset = values["r_offset"]
+    paralax = values["paralax"]
     return MSite(name, magnets, screens, z_offset, r_offset, paralax)
 
 
