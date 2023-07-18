@@ -141,9 +141,7 @@ class Insert(yaml.YAMLObject):
                 hHelix = yaml.load(f, Loader=yaml.FullLoader)
 
             if is2D:
-                h_solid_names = hHelix.get_names(mname, is2D, verbose)
-                for k, sname in enumerate(h_solid_names):
-                    h_solid_names[k] = f"{prefix}H{i+1}_{sname}"
+                h_solid_names = hHelix.get_names(f'{prefix}H{i+1}', is2D, verbose)
                 solid_names += h_solid_names
             else:
                 solid_names.append(f"H{i+1}")

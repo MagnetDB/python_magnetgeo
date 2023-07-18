@@ -64,6 +64,10 @@ class Helix(yaml.YAMLObject):
         """
         solid_names = []
 
+        prefix = ""
+        if mname:
+            prefix = f'{mname}_'
+
         sInsulator = "Glue"
         nInsulators = 0
         nturns = self.get_Nturns()
@@ -92,10 +96,10 @@ class Helix(yaml.YAMLObject):
 
         if is2D:
             nsection = len(self.axi.turns)
-            solid_names.append(f"Cu{0}")  # HP
+            solid_names.append(f"{prefix}Cu{0}")  # HP
             for j in range(nsection):
-                solid_names.append(f"Cu{j+1}")
-            solid_names.append(f"Cu{nsection+1}")  # BP
+                solid_names.append(f"{prefix}Cu{j+1}")
+            solid_names.append(f"{prefix}Cu{nsection+1}")  # BP
         else:
             solid_names.append("Cu")
             # TODO tell HR from HL
