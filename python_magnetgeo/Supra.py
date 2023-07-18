@@ -96,17 +96,17 @@ class Supra(yaml.YAMLObject):
         """
         return names for Markers
         """
-        prefix = ""
-        if mname:
-            prefix = f"{mname}_"
 
         if self.detail == "None":
+            prefix = ""
+            if mname:
+                prefix = f"{mname}_"
             return [f"{prefix}{self.name}"]
         else:
             hts = self.get_magnet_struct()
             self.check_dimensions(hts)
 
-            return hts.get_names(f"{prefix}{self.name}", self.detail, verbose)
+            return hts.get_names(mname=mname, detail=self.detail, verbose=verbose)
 
     def __repr__(self):
         """
