@@ -174,7 +174,7 @@ class ModelAxi(yaml.YAMLObject):
         if append:
             flag = "a"
         with open(filename, flag) as f:
-            f.write("#theta[rad]{tab}Shape_id[]{tab}tZ[mm]\n")
+            f.write(f"#theta[rad]{tab}Shape_id[]{tab}tZ[mm]\n")
             f.write(f"{theta*(-sign):12.8f}{tab}{shape_id:8}{tab}{z:12.8f}\n")
 
             # TODO use compact to reduce size of cuts
