@@ -102,7 +102,7 @@ class Insert(yaml.YAMLObject):
             # Better? if i+1 < nchannels:
             if i != 0 and i + 1 < NChannels:
                 names.append(f"{prefix}R{i}_CoolingSlits")
-                names.append(f"{prefix}R{i}_R0n")
+                names.append(f"{prefix}R{i+1}_R0n")
             Channels.append(names)
             #
             # For the moment keep iChannel_Submeshes into
@@ -141,7 +141,7 @@ class Insert(yaml.YAMLObject):
                 hHelix = yaml.load(f, Loader=yaml.FullLoader)
 
             if is2D:
-                h_solid_names = hHelix.get_names(f'{prefix}H{i+1}', is2D, verbose)
+                h_solid_names = hHelix.get_names(f"{prefix}H{i+1}", is2D, verbose)
                 solid_names += h_solid_names
             else:
                 solid_names.append(f"H{i+1}")
