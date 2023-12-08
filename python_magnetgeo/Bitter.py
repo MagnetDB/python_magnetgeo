@@ -261,8 +261,8 @@ class Bitter(yaml.YAMLObject):
         nslits = 0
         if self.coolingslits:
             nslits = len(self.coolingslits)
-            # Dh = [slit.dh for slit in  self.coolingslits] ??
-            Dh += [2 * self.equivalent_eps(n) for n in range(len(self.coolingslits))]
+            Dh = [slit.dh for slit in  self.coolingslits]
+            # Dh += [2 * self.equivalent_eps(n) for n in range(len(self.coolingslits))]
             Sh += [slit.n * slit.sh for slit in self.coolingslits]
         Dh += [2 * (self.outerbore - self.r[1])]
         Sh += [pi * (self.outerbore - self.r[1]) * (self.outerbore + self.r[1])]
