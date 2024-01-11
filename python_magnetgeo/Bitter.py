@@ -129,15 +129,15 @@ class Bitter(yaml.YAMLObject):
         if is2D:
             nsection = len(self.axi.turns)
             if self.z[0] < -self.axi.h:
-                for i in range(Nslits+1):
+                for i in range(Nslits + 1):
                     solid_names.append(f"{prefix}B0_Slit{i}")
 
             for j in range(nsection):
-                for i in range(Nslits+1):
+                for i in range(Nslits + 1):
                     solid_names.append(f"{prefix}B{j+1}_Slit{i}")
 
             if self.z[1] > self.axi.h:
-                for i in range(Nslits+1):
+                for i in range(Nslits + 1):
                     solid_names.append(f"{prefix}B{nsection+1}_Slit{i}")
         else:
             solid_names.append(f"{prefix}B")
@@ -258,12 +258,21 @@ class Bitter(yaml.YAMLObject):
 
         Dh = [2 * (self.r[0] - self.innerbore)]
         Sh = [pi * (self.r[0] - self.innerbore) * (self.r[0] + self.innerbore)]
+        filling_factor = [1]
         nslits = 0
         if self.coolingslits:
             nslits = len(self.coolingslits)
-            # Dh = [slit.dh for slit in  self.coolingslits] ??
-            Dh += [2 * self.equivalent_eps(n) for n in range(len(self.coolingslits))]
+            Dh += [slit.dh for slit in self.coolingslits]
+            # Dh += [2 * self.equivalent_eps(n) for n in range(len(self.coolingslits))]
             Sh += [slit.n * slit.sh for slit in self.coolingslits]
+
+            # wetted perimeter per slit: (4*slit.sh)/slit.dh
+            # wetted perimeter for annular ring: 2*pi*(slit.r-eps) + 2*pi*(slit.r+eps)
+            # with eps = self.equivalent_eps(n)
+            filling_factor += [
+                slit.n * ((4 * slit.sh) / slit.dh) / (4 * pi * slit.r)
+                for slit in self.coolingslits
+            ]
         Dh += [2 * (self.outerbore - self.r[1])]
         Sh += [pi * (self.outerbore - self.r[1]) * (self.outerbore + self.r[1])]
 
@@ -275,7 +284,11 @@ class Bitter(yaml.YAMLObject):
         Zh.append(self.z[1])
         print(f"Zh={Zh}")
 
-        return (nslits, Dh, Sh, Zh)
+        filling_factor.append(1)
+        print(f"filling_factor={filling_factor}")
+
+        # return (nslits, Dh, Sh, Zh)
+        return (nslits, Dh, Sh, Zh, filling_factor)
 
     def create_cut(self, format: str):
         """
@@ -315,7 +328,6 @@ def Bitter_constructor(loader, node):
 yaml.add_constructor("!Bitter", Bitter_constructor)
 
 if __name__ == "__main__":
-    import os
     from .Shape2D import Shape2D
 
     Square = Shape2D("square", [[0, 0], [1, 0], [1, 1], [0, 1]])
