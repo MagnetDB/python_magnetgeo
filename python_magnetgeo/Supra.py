@@ -8,7 +8,7 @@ Provides definition for Supra:
 * Model Axi: definition of helical cut (provided from MagnetTools)
 * Model 3D: actual 3D CAD
 """
-from typing import List, Type
+from typing import List, Optional
 
 import json
 import yaml
@@ -43,7 +43,7 @@ class Supra(yaml.YAMLObject):
         self.struct = struct
         self.detail = "None"  # ['None', 'dblpancake', 'pancake', 'tape']
 
-    def get_magnet_struct(self, directory: str = None) -> HTSinsert:
+    def get_magnet_struct(self, directory: Optional[str] = None) -> HTSinsert:
         return HTSinsert.fromcfg(self.struct, directory)
 
     def check_dimensions(self, magnet: HTSinsert):
@@ -183,7 +183,7 @@ class Supra(yaml.YAMLObject):
         read from json file
         """
         with open(f"{self.name}.json", "r") as istream:
-            jsondata = self.from_json(istream.read())
+            self.from_json(istream.read())
 
     def get_Nturns(self) -> int:
         """

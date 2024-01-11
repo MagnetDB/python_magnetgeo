@@ -1,7 +1,7 @@
 """
 Define HTS insert geometry
 """
-from typing import Union, List, Optional
+from typing import Self, Optional
 
 
 def flatten(S: list) -> list:
@@ -25,7 +25,7 @@ class tape:
         self.e: float = e
 
     @classmethod
-    def from_data(cls, data: dict):
+    def from_data(cls, data: dict) -> Self:
         w = h = e = 0
         if "w" in data:
             w: float = data["w"]
@@ -35,15 +35,11 @@ class tape:
             e: float = data["e"]
         return cls(w, h, e)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         """
         representation of object
         """
-        return "tape(w=%r, h=%r, e=%r)" % (
-            self.w,
-            self.h,
-            self.e
-        )
+        return f"tape(w={self.w}, h={self.h}, e={self.e}"
 
     def __str__(self) -> str:
         msg = "\n"
@@ -52,7 +48,7 @@ class tape:
         msg += f"e: {self.e} [mm]\n"
         return msg
 
-    def get_names(self, name: str, detail: str, verbose: bool = False) -> List[str]:
+    def get_names(self, name: str, detail: str, verbose: bool = False) -> list[str]:
         _tape = f"{name}_SC"
         _e = f"{name}_Duromag"
         return [_tape, _e]
@@ -113,7 +109,7 @@ class pancake:
         self.r0 = r0
 
     @classmethod
-    def from_data(cls, data={}):
+    def from_data(cls, data={}) -> Self:
         r0 = 0
         n = 0
         t_ = tape()
@@ -128,16 +124,17 @@ class pancake:
             n = data["ntapes"]
         return cls(r0, t_, n, mandrin)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         """
         representation of object
         """
-        return "pancake(r0=%r, n=%r, tape=%r, mandrin=%r)" % (
+        return "pancake(r0={%r, n=%r, tape=%r, mandrin=%r)" % (
             self.r0,
             self.n,
             self.tape,
-            self.mandrin
+            self.mandrin,
         )
+
     def __str__(self) -> str:
         msg = "\n"
         msg += f"r0: {self.r0} [m]\n"
@@ -145,9 +142,10 @@ class pancake:
         msg += f"ntapes: {self.n} \n"
         msg += f"tape: {self.tape}***\n"
         return msg
-        pass
 
-    def get_names(self, name: str, detail: str, verbose: bool = False) -> Union[str, List[str]]:
+    def get_names(
+        self, name: str, detail: str, verbose: bool = False
+    ) -> str | list[str]:
         if detail == "pancake":
             return name
         else:
@@ -193,7 +191,7 @@ class pancake:
         """
         return self.n * (self.tape.w + self.tape.e) + self.r0
 
-    def getR(self) -> List[float]:
+    def getR(self) -> list[float]:
         """
         get list of tapes inner radius
         """
@@ -239,7 +237,7 @@ class isolation:
         self.h = h
 
     @classmethod
-    def from_data(cls, data: dict):
+    def from_data(cls, data: dict) -> Self:
         r0 = 0
         w = []
         h = []
@@ -251,15 +249,11 @@ class isolation:
             h = data["h"]
         return cls(r0, w, h)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         """
         representation of object
         """
-        return "isolation(r0=%r, w=%r, h=%r)" % (
-            self.r0,
-            self.w,
-            self.h
-        )
+        return f"isolation(r0={self.r0}, w={self.w}, h={self.h}"
 
     def __str__(self) -> str:
         msg = "\n"
@@ -328,15 +322,11 @@ class dblpancake:
         self.pancake = pancake
         self.isolation = isolation
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         """
         representation of object
         """
-        return "dblpancake(z0=%r, pancake=%r, isolation=%r)" % (
-            self.z0,
-            self.pancake,
-            self.isolation
-        )
+        return f"dblpancake(z0={self.z0}, pancake={self.pancake}, isolation={self.isolation}"
 
     def __str__(self) -> str:
         msg = f"r0={self.pancake.getR0()}, "
@@ -346,7 +336,9 @@ class dblpancake:
         msg += f"(z0={self.getZ0()}, h={self.getH()})"
         return msg
 
-    def get_names(self, name: str, detail: str, verbose: bool = False) -> Union[str, List[str]]:
+    def get_names(
+        self, name: str, detail: str, verbose: bool = False
+    ) -> str | list[str]:
         if detail == "dblpancake":
             return name
         else:
@@ -432,15 +424,15 @@ class HTSinsert:
 
     def __init__(
         self,
-        name: str ="",
+        name: str = "",
         z0: float = 0,
         h: float = 0,
         r0: float = 0,
         r1: float = 0,
         z1: float = 0,
         n: int = 0,
-        dblpancakes: List[dblpancake] = [],
-        isolations: List[isolation] = [],
+        dblpancakes: list[dblpancake] = [],
+        isolations: list[isolation] = [],
     ):
         self.name = name
         self.z0 = z0
@@ -453,14 +445,19 @@ class HTSinsert:
         self.isolations = isolations
 
     @classmethod
-    def fromcfg(cls, inputcfg: str, directory: str = None, debug: Optional[bool] = False):
+    def fromcfg(
+        cls,
+        inputcfg: str,
+        directory: Optional[str] = None,
+        debug: Optional[bool] = False,
+    ):
         """create from a file"""
         import json
 
         filename = inputcfg
-        if not directory is None:
-            filename = f'{directory}/{filename}'
-        print(f'SupraStructure:fromcfg({filename})')
+        if directory is not None:
+            filename = f"{directory}/{filename}"
+        print(f"SupraStructure:fromcfg({filename})")
 
         with open(filename) as f:
             data = json.load(f)
@@ -496,7 +493,7 @@ class HTSinsert:
             isolations = []
             if "dblpancakes" in data:
                 if debug:
-                    print(f"DblPancake data:", data["dblpancakes"])
+                    print("DblPancake data:", data["dblpancakes"])
 
                 # if n defined use the same pancakes and isolations
                 # else loop to load pancake and isolation structure definitions
@@ -594,31 +591,34 @@ class HTSinsert:
                     print(f"dblpancakes[{i}]: {dp}")
                 print("===")
 
-            name = inputcfg.replace('.json','')
+            name = inputcfg.replace(".json", "")
             return cls(name, z0, h, r0, r1, z1, n, dblpancakes, isolations)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         """
         representation of object
         """
-        return "htsinsert(name=%s, r0=%r, r1=%r, z0=%r, h=%r, n=%r, dblpancakes=%r, isolations=%r)" % (
-            self.name,
-            self.r0,
-            self.r1,
-            self.z0,
-            self.h,
-            self.n,
-            self.dblpancakes,
-            self.isolations,
+        return (
+            "htsinsert(name=%s, r0=%r, r1=%r, z0=%r, h=%r, n=%r, dblpancakes=%r, isolations=%r)"
+            % (
+                self.name,
+                self.r0,
+                self.r1,
+                self.z0,
+                self.h,
+                self.n,
+                self.dblpancakes,
+                self.isolations,
+            )
         )
 
-    def get_names(self, mname: str, detail: str, verbose: bool = False) -> List[str]:
+    def get_names(self, mname: str, detail: str, verbose: bool = False) -> list[str]:
         dp_ids = []
         i_ids = []
 
-        prefix = ''
+        prefix = ""
         if mname:
-            prefix = f'{mname}_'
+            prefix = f"{mname}_"
 
         n_dp = len(self.dblpancakes)
         for i, dp in enumerate(self.dblpancakes):
@@ -640,8 +640,6 @@ class HTSinsert:
             return flatten([dp_ids, i_ids])
         else:
             return flatten([flatten(dp_ids), i_ids])
-
-
 
     def setDblpancake(self, dblpancake):
         self.dblpancakes.append(dblpancake)

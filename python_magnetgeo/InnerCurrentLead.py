@@ -4,7 +4,6 @@
 """
 Provides Inner and OuterCurrentLead class
 """
-from typing import List
 
 import json
 import yaml
@@ -26,7 +25,7 @@ class InnerCurrentLead(yaml.YAMLObject):
     def __init__(
         self,
         name: str,
-        r: List[float],
+        r: list[float],
         h: float = 0.0,
         holes: list = [],
         support: list = [],

@@ -9,7 +9,6 @@ Provides definiton for Helix:
 * Model 3D: actual 3D CAD
 * Shape: definition of Shape eventually added to the helical cut
 """
-from typing import List
 
 import json
 import yaml
@@ -39,9 +38,9 @@ class Shape(yaml.YAMLObject):
         self,
         name: str,
         profile: str,
-        length: List[float] = [0.0],
-        angle: List[float] = [0.0],
-        onturns: List[int] = [1],
+        length: list[float] = [0.0],
+        angle: list[float] = [0.0],
+        onturns: list[int] = [1],
         position: str = "ABOVE",
     ):
         """

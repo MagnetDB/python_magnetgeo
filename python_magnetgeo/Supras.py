@@ -2,7 +2,6 @@
 # encoding: UTF-8
 
 """defines Supra Insert structure"""
-from typing import List
 
 import json
 import yaml
@@ -52,7 +51,7 @@ class Supras(yaml.YAMLObject):
 
     def get_names(
         self, mname: str, is2D: bool = False, verbose: bool = False
-    ) -> List[str]:
+    ) -> list[str]:
         """
         return names for Markers
         """

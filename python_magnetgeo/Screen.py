@@ -6,7 +6,6 @@ Provides definition for Screen:
 
 * Geom data: r, z
 """
-from typing import List
 
 import json
 import yaml
@@ -22,7 +21,7 @@ class Screen(yaml.YAMLObject):
 
     yaml_tag = "Screen"
 
-    def __init__(self, name: str, r: list, z: list):
+    def __init__(self, name: str, r: list[float], z: list[float]):
         """
         initialize object
         """
@@ -46,7 +45,7 @@ class Screen(yaml.YAMLObject):
 
     def get_names(
         self, mname: str, is2D: bool = False, verbose: bool = False
-    ) -> List[str]:
+    ) -> list[str]:
         """
         return names for Markers
         """
@@ -135,7 +134,7 @@ class Screen(yaml.YAMLObject):
         # TODO take into account Mandrin and Isolation even if detail="None"
         return (self.r, self.z)
 
-    def intersect(self, r: List[float], z: List[float]) -> bool:
+    def intersect(self, r: list[float], z: list[float]) -> bool:
         """
         Check if intersection with rectangle defined by r,z is empty or not
 

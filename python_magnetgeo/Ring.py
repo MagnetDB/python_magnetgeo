@@ -5,7 +5,6 @@
 Provides definition for Ring:
 
 """
-from typing import List
 
 import json
 import yaml
@@ -27,8 +26,8 @@ class Ring(yaml.YAMLObject):
     def __init__(
         self,
         name: str,
-        r: List[float],
-        z: List[float],
+        r: list[float],
+        z: list[float],
         n: int = 0,
         angle: float = 0,
         BPside: bool = True,
