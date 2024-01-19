@@ -4,9 +4,11 @@ from .Shape2D import Shape2D
 
 
 class Tierod(yaml.YAMLObject):
-    yaml_tag = 'Tierod'
+    yaml_tag = "Tierod"
 
-    def __init__(self, r: float, n: int, dh: float, sh: float, shape: Shape2D | str -> None:
+    def __init__(
+        self, r: float, n: int, dh: float, sh: float, shape: Shape2D | str
+    ) -> None:
         self.r = r
         self.n = n
         self.dh: float = dh
@@ -24,7 +26,8 @@ class Tierod(yaml.YAMLObject):
             self.n,
             self.dh,
             self.sh,
-            self.shape)
+            self.shape,
+        )
 
     def dump(self, name: str):
         """
@@ -68,10 +71,10 @@ def Tierod_constructor(loader, node):
     dh = values["dh"]
     sh = values["sh"]
     shape = values["shape"]
-    return Tierod(r, n, shape)
+    return Tierod(r, n, dh, sh, shape)
 
 
-yaml.add_constructor(u'!<Tierod>', Tierod_constructor)
+yaml.add_constructor("!<Tierod>", Tierod_constructor)
 
 if __name__ == "__main__":
     Square = Shape2D("square", [[0, 0], [1, 0], [1, 1], [0, 1]])
