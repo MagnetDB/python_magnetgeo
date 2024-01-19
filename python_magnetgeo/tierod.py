@@ -1,5 +1,3 @@
-from typing import Union
-
 import yaml
 
 from .Shape2D import Shape2D
@@ -8,9 +6,11 @@ from .Shape2D import Shape2D
 class Tierod(yaml.YAMLObject):
     yaml_tag = 'Tierod'
 
-    def __init__(self, r: float, n: int, shape: Union[Shape2D, str]) -> None:
+    def __init__(self, r: float, n: int, dh: float, sh: float, shape: Shape2D | str -> None:
         self.r = r
         self.n = n
+        self.dh: float = dh
+        self.sh: float = sh
         if isinstance(shape, Shape2D):
             self.shape = shape
         else:
@@ -18,7 +18,13 @@ class Tierod(yaml.YAMLObject):
                 self.shape = yaml.load(f, Loader=yaml.FullLoader)
 
     def __repr__(self):
-        return "%s(r=%r, n=%r, shape=%r)" % (self.__class__.__name__,self.r, self.n, self.shape)
+        return "%s(r=%r, n=%r, dh=%r, sh=%r, shape=%r)" % (
+            self.__class__.__name__,
+            self.r,
+            self.n,
+            self.dh,
+            self.sh,
+            self.shape)
 
     def dump(self, name: str):
         """
@@ -43,6 +49,8 @@ class Tierod(yaml.YAMLObject):
 
         self.r = data.r
         self.n = data.n
+        self.dh = data.dh
+        self.sh = data.sh
         if isinstance(data.shape, Shape2D):
             self.shape = data.shape
         else:
@@ -57,6 +65,8 @@ def Tierod_constructor(loader, node):
     values = loader.construct_mapping(node)
     r = values["r"]
     n = values["n"]
+    dh = values["dh"]
+    sh = values["sh"]
     shape = values["shape"]
     return Tierod(r, n, shape)
 
@@ -65,5 +75,5 @@ yaml.add_constructor(u'!<Tierod>', Tierod_constructor)
 
 if __name__ == "__main__":
     Square = Shape2D("square", [[0, 0], [1, 0], [1, 1], [0, 1]])
-    tierod = Tierod(2, 20, Square)
+    tierod = Tierod(2, 20, 1, 4, Square)
     tierod.dump("tierod")
