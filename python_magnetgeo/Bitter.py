@@ -141,6 +141,7 @@ class Bitter(yaml.YAMLObject):
                     solid_names.append(f"{prefix}B{nsection+1}_Slit{i}")
         else:
             solid_names.append(f"{prefix}B")
+            solid_names.append(f"{prefix}Kapton")
         if verbose:
             print(f"Bitter/get_names: solid_names {len(solid_names)}")
         return solid_names
