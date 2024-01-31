@@ -258,6 +258,8 @@ class Bitter(yaml.YAMLObject):
     def get_params(self, workingDir: str = ".") -> tuple:
         from math import pi
 
+        tol = 1.0e-10
+
         Dh = [2 * (self.r[0] - self.innerbore)]
         Sh = [pi * (self.r[0] - self.innerbore) * (self.r[0] + self.innerbore)]
         filling_factor = [1]
@@ -278,12 +280,15 @@ class Bitter(yaml.YAMLObject):
         Dh += [2 * (self.outerbore - self.r[1])]
         Sh += [pi * (self.outerbore - self.r[1]) * (self.outerbore + self.r[1])]
 
+        Zh = [self.z[0]]
         z = -self.axi.h
-        Zh = [self.z[0], z]
+        if abs(self.z[0] - z) >= tol:
+            Zh.append(z)
         for n, p in zip(self.axi.turns, self.axi.pitch):
             z += n * p
             Zh.append(z)
-        Zh.append(self.z[1])
+        if abs(self.z[1] - z) >= tol:
+            Zh.append(self.z[1])
         print(f"Zh={Zh}")
 
         filling_factor.append(1)
