@@ -116,6 +116,7 @@ class Bitter(yaml.YAMLObject):
         """
         return names for Markers
         """
+        tol = 1.0e-10
         solid_names = []
 
         prefix = ""
@@ -128,7 +129,7 @@ class Bitter(yaml.YAMLObject):
 
         if is2D:
             nsection = len(self.axi.turns)
-            if self.z[0] < -self.axi.h:
+            if self.z[0] < -self.axi.h and abs(self.z[0] + self.axi.h) >= tol:
                 for i in range(Nslits + 1):
                     solid_names.append(f"{prefix}B0_Slit{i}")
 
@@ -136,7 +137,7 @@ class Bitter(yaml.YAMLObject):
                 for i in range(Nslits + 1):
                     solid_names.append(f"{prefix}B{j+1}_Slit{i}")
 
-            if self.z[1] > self.axi.h:
+            if self.z[1] > self.axi.h and abs(self.z[1] - self.axi.h) >= tol:
                 for i in range(Nslits + 1):
                     solid_names.append(f"{prefix}B{nsection+1}_Slit{i}")
         else:
@@ -332,7 +333,9 @@ if __name__ == "__main__":
     from .Shape2D import Shape2D
 
     Square = Shape2D("square", [[0, 0], [1, 0], [1, 1], [0, 1]])
-    tierod = Tierod(2, 20, Square)
+    dh = 4 * 1
+    sh = 1 * 1
+    tierod = Tierod(2, 20, dh, sh, Square)
 
     Square = Shape2D("square", [[0, 0], [1, 0], [1, 1], [0, 1]])
     slit1 = CoolingSlit(2, 5, 20, 0.1, 0.2, Square)
