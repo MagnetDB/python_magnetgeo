@@ -61,8 +61,8 @@ class Insert(yaml.YAMLObject):
         self.Rings = Rings
         self.RAngles = RAngles
         self.CurrentLeads = CurrentLeads
-        self.innerBore = innerbore
-        self.outerBore = outerbore
+        self.innerbore = innerbore
+        self.outerbore = outerbore
 
     def get_channels(
         self, mname: str, hideIsolant: bool = True, debug: bool = False
@@ -929,7 +929,7 @@ class Insert(yaml.YAMLObject):
 
         NHelices = len(self.Helices)
         NRings = len(self.Rings)
-        NChannels = NChannels = NHelices + 1
+        NChannels = NHelices + 1
 
         Nsections = []
         Nturns_h = []
@@ -999,10 +999,10 @@ class Insert(yaml.YAMLObject):
             if i >= 0 and i < NChannels - 2:
                 # print(f"\tR{i}")
                 nZh.append(Zr[i])
-            if i >= 1 and i < NChannels - 2:
+            if i >= 1 and i <= NChannels - 2:
                 # print(f"\tR{i-1}")
                 nZh.append(Zr[i - 1])
-            if i >= 2 and i < NChannels - 2:
+            if i >= 2 and i <= NChannels - 2:
                 # print(f"\tR{i-2}")
                 nZh.append(Zr[i - 2])
 
