@@ -153,13 +153,14 @@ class Insert(yaml.YAMLObject):
         # print(f'Insert_Gmsh: ring_ids={ring_ids}')
 
         if not is2D:
-            for i, Lead in enumerate(self.CurrentLeads):
-                with open(Lead + ".yaml", "r") as f:
-                    clLead = yaml.load(f, Loader=yaml.FullLoader)
-                prefix = "o"
-                if isinstance(clLead, InnerCurrentLead.InnerCurrentLead):
-                    prefix = "i"
-                solid_names.append(f"{prefix}L{i+1}")
+            if self.CurrentLeads is not None:
+                for i, Lead in enumerate(self.CurrentLeads):
+                    with open(Lead + ".yaml", "r") as f:
+                        clLead = yaml.load(f, Loader=yaml.FullLoader)
+                    prefix = "o"
+                    if isinstance(clLead, InnerCurrentLead.InnerCurrentLead):
+                        prefix = "i"
+                    solid_names.append(f"{prefix}L{i+1}")
 
         if verbose:
             print(f"Insert_Gmsh: solid_names {len(solid_names)}")
