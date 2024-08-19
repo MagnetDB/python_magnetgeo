@@ -12,9 +12,7 @@
         "-e",
         "DISPLAY=${env:DISPLAY}",
         "-v",
-        "/tmp/.X11-unix:/tmp/.X11-unix",
-        "-v",
-        "${env:DISPLAY}/../python-magnetgeo/data:/data"
+        "/tmp/.X11-unix:/tmp/.X11-unix"
     ],
     "mounts": [
         // "source=${localWorkspaceFolder}\\..\\python_magnetsetup\\data,target=/data,type=bind,consistency=cached"
