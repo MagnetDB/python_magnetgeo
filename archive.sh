@@ -1,5 +1,5 @@
 #! /bin/bash
-
+set +x
 VERSION=0.3.2
 
 # cleanup
@@ -18,3 +18,11 @@ tar \
     --exclude=pyproject.toml \
     --exclude=poetry.lock \
     -zcvf python-magnetgeo_$VERSION.orig.tar.gz python_magnetgeo
+
+mkdir -p tmp
+cd tmp
+cp ../python-magnetgeo_$VERSION.orig.tar.gz .
+tar zxvf ./python-magnetgeo_$VERSION.orig.tar.gz
+cp -r ../python_magnetgeo/debian python_magnetgeo
+cd python_magnetgeo
+DIST=bookworm pdebuild

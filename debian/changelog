@@ -1,8 +1,8 @@
-python-magnetgeo (0.3.2-1) UNRELEASED; urgency=medium
+python-magnetgeo (0.3.2-1) unstable; urgency=medium
 
-  * sync with repo
+  * add tests
 
- -- Christophe Trophime <christophe.trophime@lncmi.cnrs.fr>  Wed, 05 Jul 2023 18:22:01 +0200
+ -- Christophe Trophime <christophe.trophime@lncmi.cnrs.fr>  Mon, 19 Aug 2024 13:34:16 +0200
 
 python-magnetgeo (0.3.1-18) unstable; urgency=medium
 
