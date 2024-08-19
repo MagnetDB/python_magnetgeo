@@ -8,7 +8,7 @@ Provides definition for Supra:
 * Model Axi: definition of helical cut (provided from MagnetTools)
 * Model 3D: actual 3D CAD
 """
-from typing import List, Optional
+from typing import Optional
 
 import json
 import yaml
@@ -31,7 +31,7 @@ class Supra(yaml.YAMLObject):
     yaml_tag = "Supra"
 
     def __init__(
-        self, name: str, r: List[float], z: List[float], n: int = 0, struct: str = ""
+        self, name: str, r: list[float], z: list[float], n: int = 0, struct: str = ""
     ) -> None:
         """
         initialize object
@@ -92,7 +92,7 @@ class Supra(yaml.YAMLObject):
 
     def get_names(
         self, mname: str, is2D: bool = False, verbose: bool = False
-    ) -> List[str]:
+    ) -> list[str]:
         """
         return names for Markers
         """
@@ -160,6 +160,8 @@ class Supra(yaml.YAMLObject):
         """
         convert from yaml to json
         """
+        from . import deserialize
+
         return json.dumps(
             self, default=deserialize.serialize_instance, sort_keys=True, indent=4
         )
@@ -168,6 +170,8 @@ class Supra(yaml.YAMLObject):
         """
         convert from json to yaml
         """
+        from . import deserialize
+
         return json.loads(string, object_hook=deserialize.unserialize_object)
 
     def write_to_json(self):
@@ -183,7 +187,8 @@ class Supra(yaml.YAMLObject):
         read from json file
         """
         with open(f"{self.name}.json", "r") as istream:
-            self.from_json(istream.read())
+            jsondata = self.from_json(istream.read())
+        return jsondata
 
     def get_Nturns(self) -> int:
         """
@@ -213,7 +218,7 @@ class Supra(yaml.YAMLObject):
         # TODO take into account Mandrin and Isolation even if detail="None"
         return (self.r, self.z)
 
-    def intersect(self, r: List[float], z: List[float]) -> bool:
+    def intersect(self, r: list[float], z: list[float]) -> bool:
         """
         Check if intersection with rectangle defined by r,z is empty or not
 

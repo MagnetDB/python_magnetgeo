@@ -1,4 +1,5 @@
 import yaml
+import json
 
 from .Shape2D import Shape2D
 
@@ -60,6 +61,24 @@ class Tierod(yaml.YAMLObject):
             with open(f"{data.shape}.yaml", "r") as f:
                 self.shape = yaml.load(f, Loader=yaml.FullLoader)
 
+    def to_json(self):
+        """
+        convert from yaml to json
+        """
+        from . import deserialize
+
+        return json.dumps(
+            self, default=deserialize.serialize_instance, sort_keys=True, indent=4
+        )
+
+    def from_json(self, string: str):
+        """
+        convert from json to yaml
+        """
+        from . import deserialize
+
+        return json.loads(string, object_hook=deserialize.unserialize_object)
+
 
 def Tierod_constructor(loader, node):
     """
@@ -75,8 +94,3 @@ def Tierod_constructor(loader, node):
 
 
 yaml.add_constructor("!<Tierod>", Tierod_constructor)
-
-if __name__ == "__main__":
-    Square = Shape2D("square", [[0, 0], [1, 0], [1, 1], [0, 1]])
-    tierod = Tierod(2, 20, 1, 4, Square)
-    tierod.dump("tierod")

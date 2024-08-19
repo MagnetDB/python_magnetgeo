@@ -5,7 +5,6 @@
 
 import json
 import yaml
-from . import deserialize
 
 
 class Supras(yaml.YAMLObject):
@@ -25,8 +24,8 @@ class Supras(yaml.YAMLObject):
         """constructor"""
         self.name = name
         self.magnets = magnets
-        self.innerBore = innerbore
-        self.outerBore = outerbore
+        self.innerbore = innerbore
+        self.outerbore = outerbore
 
     def __repr__(self):
         """representation"""
@@ -111,12 +110,16 @@ class Supras(yaml.YAMLObject):
 
     def to_json(self):
         """convert from yaml to json"""
+        from . import deserialize
+
         return json.dumps(
             self, default=deserialize.serialize_instance, sort_keys=True, indent=4
         )
 
     def from_json(self, string: str):
         """get from json"""
+        from . import deserialize
+
         return json.loads(string, object_hook=deserialize.unserialize_object)
 
     def write_to_json(self):
@@ -129,6 +132,7 @@ class Supras(yaml.YAMLObject):
         """read from a json file"""
         with open(f"{self.name}.json", "r") as istream:
             jsondata = self.from_json(istream.read())
+        return jsondata
 
     ###################################################################
     #

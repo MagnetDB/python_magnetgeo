@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-#-*- coding:utf-8 -*-
+# -*- coding:utf-8 -*-
 
 """
 Provides definition for Helix:
@@ -9,16 +9,15 @@ Provides definition for Helix:
 * Model 3D: actual 3D CAD
 * Shape: definition of Shape eventually added to the helical cut
 """
-from typing import List, Type
 
 import math
 import json
 import yaml
-from . import deserialize
 
 from .Shape import Shape
 from .ModelAxi import ModelAxi
 from .Model3D import Model3D
+
 
 class Helix(yaml.YAMLObject):
     """
@@ -34,9 +33,20 @@ class Helix(yaml.YAMLObject):
     shape :
     """
 
-    yaml_tag = 'Helix'
+    yaml_tag = "Helix"
 
-    def __init__(self, name: str, r: List[float], z: List[float], cutwidth: float, odd: bool, dble: bool, axi: ModelAxi, m3d: Model3D, shape: Shape) -> None:
+    def __init__(
+        self,
+        name: str,
+        r: list[float],
+        z: list[float],
+        cutwidth: float,
+        odd: bool,
+        dble: bool,
+        axi: ModelAxi,
+        m3d: Model3D,
+        shape: Shape,
+    ) -> None:
         """
         initialize object
         """
@@ -56,9 +66,9 @@ class Helix(yaml.YAMLObject):
         return "HL"
 
     def get_lc(self) -> float:
-        return (self.r[1] - self.r[0] ) / 10.
+        return (self.r[1] - self.r[0]) / 10.0
 
-    def get_names(self, mname: str, is2D: bool, verbose: bool = False) -> List[str]:
+    def get_names(self, mname: str, is2D: bool, verbose: bool = False) -> list[str]:
         """
         return names for Markers
         """
@@ -66,7 +76,7 @@ class Helix(yaml.YAMLObject):
 
         prefix = ""
         if mname:
-            prefix = f'{mname}_'
+            prefix = f"{mname}_"
 
         sInsulator = "Glue"
         nInsulators = 0
@@ -75,14 +85,16 @@ class Helix(yaml.YAMLObject):
             sInsulator = "Kapton"
             htype = "HR"
             angle = self.shape.angle
-            nshapes = nturns * (360 / float(angle[0])) # only one angle to be checked
+            nshapes = nturns * (360 / float(angle[0]))  # only one angle to be checked
             if verbose:
                 print("shapes: ", nshapes, math.floor(nshapes), math.ceil(nshapes))
 
             nshapes = (
-                lambda x: math.ceil(x)
-                if math.ceil(x) - x < x - math.floor(x)
-                else math.floor(x)
+                lambda x: (
+                    math.ceil(x)
+                    if math.ceil(x) - x < x - math.floor(x)
+                    else math.floor(x)
+                )
             )(nshapes)
             nInsulators = int(nshapes)
             print("nKaptons=", nInsulators)
@@ -114,8 +126,10 @@ class Helix(yaml.YAMLObject):
         """
         representation of object
         """
-        return "%s(name=%r, odd=%r, dble=%r, r=%r, z=%r, cutwidth=%r, axi=%r, m3d=%r, shape=%r)" % \
-               (self.__class__.__name__,
+        return (
+            "%s(name=%r, odd=%r, dble=%r, r=%r, z=%r, cutwidth=%r, axi=%r, m3d=%r, shape=%r)"
+            % (
+                self.__class__.__name__,
                 self.name,
                 self.odd,
                 self.dble,
@@ -124,15 +138,16 @@ class Helix(yaml.YAMLObject):
                 self.cutwidth,
                 self.axi,
                 self.m3d,
-                self.shape
-               )
+                self.shape,
+            )
+        )
 
     def dump(self):
         """
         dump object to file
         """
         try:
-            with open(f'{self.name}.yaml', 'w') as ostream:
+            with open(f"{self.name}.yaml", "w") as ostream:
                 yaml.dump(self, stream=ostream)
         except:
             raise Exception("Failed to Helix dump")
@@ -143,10 +158,10 @@ class Helix(yaml.YAMLObject):
         """
         data = None
         try:
-            with open(f'{self.name}.yaml', 'r') as istream:
+            with open(f"{self.name}.yaml", "r") as istream:
                 data = yaml.load(stream=istream, Loader=yaml.FullLoader)
         except:
-            raise Exception("Failed to load Helix data %s.yaml"%self.name)
+            raise Exception("Failed to load Helix data %s.yaml" % self.name)
 
         self.name = data.name
         self.dble = data.dble
@@ -162,20 +177,25 @@ class Helix(yaml.YAMLObject):
         """
         convert from yaml to json
         """
-        return json.dumps(self, default=deserialize.serialize_instance, sort_keys=True, indent=4)
+        from . import deserialize
 
+        return json.dumps(
+            self, default=deserialize.serialize_instance, sort_keys=True, indent=4
+        )
 
     def from_json(self, string: str):
         """
         convert from json to yaml
         """
+        from . import deserialize
+
         return json.loads(string, object_hook=deserialize.unserialize_object)
 
     def write_to_json(self):
         """
         write from json file
         """
-        with open(f'{self.name}.json', 'w') as ostream:
+        with open(f"{self.name}.json", "w") as ostream:
             jsondata = self.to_json()
             ostream.write(str(jsondata))
 
@@ -183,8 +203,9 @@ class Helix(yaml.YAMLObject):
         """
         read from json file
         """
-        with open(f'{self.name}.json', 'r') as istream:
+        with open(f"{self.name}.json", "r") as istream:
             jsondata = self.from_json(istream.read())
+        return jsondata
 
     def get_Nturns(self) -> float:
         """
@@ -205,10 +226,9 @@ class Helix(yaml.YAMLObject):
         self.axi.create_cut(format, z0, sign, self.name)
 
         if self.m3d.with_shapes:
-            angles = ' '.join(f'{t:4.2f}' for t in self.shape.angle if t != 0)
-            cmd = f'add_shape --angle=\"{angles}\" --shape_angular_length={self.shape.length} --shape={self.shape.name} --format={format} --position=\"{self.shape.position}\"'
-            print(f'create_cut: with_shapes not implemented - shall run {cmd}')
-
+            angles = " ".join(f"{t:4.2f}" for t in self.shape.angle if t != 0)
+            cmd = f'add_shape --angle="{angles}" --shape_angular_length={self.shape.length} --shape={self.shape.name} --format={format} --position="{self.shape.position}"'
+            print(f"create_cut: with_shapes not implemented - shall run {cmd}")
 
     def boundingBox(self) -> tuple:
         """
@@ -242,11 +262,18 @@ class Helix(yaml.YAMLObject):
             nshapes = self.get_Nturns() * (360 / float(angle[0]))
             # print("shapes: ", nshapes, math.floor(nshapes), math.ceil(nshapes))
 
-            nshapes = (lambda x: math.ceil(x) if math.ceil(x) - x < x - math.floor(x) else math.floor(x))(nshapes)
+            nshapes = (
+                lambda x: (
+                    math.ceil(x)
+                    if math.ceil(x) - x < x - math.floor(x)
+                    else math.floor(x)
+                )
+            )(nshapes)
             nInsulators = int(nshapes)
             # print("nKaptons=", nInsulators)
 
         return (sInsulator, nInsulators)
+
 
 def Helix_constructor(loader, node):
     """
@@ -265,5 +292,5 @@ def Helix_constructor(loader, node):
 
     return Helix(name, r, z, cutwidth, odd, dble, axi, m3d, shape)
 
-yaml.add_constructor(u'!Helix', Helix_constructor)
 
+yaml.add_constructor("!Helix", Helix_constructor)

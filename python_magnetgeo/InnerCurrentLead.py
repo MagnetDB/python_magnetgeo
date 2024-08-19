@@ -7,7 +7,6 @@ Provides Inner and OuterCurrentLead class
 
 import json
 import yaml
-from . import deserialize
 
 
 class InnerCurrentLead(yaml.YAMLObject):
@@ -60,7 +59,7 @@ class InnerCurrentLead(yaml.YAMLObject):
         dump object to file
         """
         try:
-            yaml.dump(self, open(f"{self._name}.yaml", "w"))
+            yaml.dump(self, open(f"{self.name}.yaml", "w"))
         except:
             raise Exception("Failed to dump InnerCurrentLead data")
 
@@ -70,12 +69,12 @@ class InnerCurrentLead(yaml.YAMLObject):
         """
         data = None
         try:
-            with open(f"{self._name}.yaml", "r") as istream:
+            with open(f"{self.name}.yaml", "r") as istream:
                 data = yaml.load(istream, Loader=yaml.FullLoader)
         except:
-            raise Exception(f"Failed to load InnerCurrentLead data {self._name}.yaml")
+            raise Exception(f"Failed to load InnerCurrentLead data {self.name}.yaml")
 
-        self._name = data.name
+        self.name = data.name
         self.r = data.r
         self.h = data.h
         self.holes = data.holes
@@ -86,6 +85,8 @@ class InnerCurrentLead(yaml.YAMLObject):
         """
         convert from yaml to json
         """
+        from . import deserialize
+
         return json.dumps(
             self, default=deserialize.serialize_instance, sort_keys=True, indent=4
         )
@@ -94,6 +95,8 @@ class InnerCurrentLead(yaml.YAMLObject):
         """
         convert from json to yaml
         """
+        from . import deserialize
+
         return json.loads(string, object_hook=deserialize.unserialize_object)
 
     def write_to_json(self):
@@ -113,6 +116,7 @@ class InnerCurrentLead(yaml.YAMLObject):
         """
         with open(f"{self.name}.json", "r") as istream:
             jsondata = self.from_json(istream.read())
+        return jsondata
 
 
 def InnerCurrentLead_constructor(loader, node):

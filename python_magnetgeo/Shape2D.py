@@ -6,9 +6,9 @@ Provides definiton for 2D Shape:
 
 * Geom data: x, y
 """
-from typing import List
 
 import yaml
+import json
 
 
 class Shape2D(yaml.YAMLObject):
@@ -21,7 +21,7 @@ class Shape2D(yaml.YAMLObject):
 
     yaml_tag = "Shape2D"
 
-    def __init__(self, name: str, pts: List[List[float]]):
+    def __init__(self, name: str, pts: list[list[float]]):
         """
         initialize object
         """
@@ -58,6 +58,23 @@ class Shape2D(yaml.YAMLObject):
         self.name = name
         self.pts = data.pts
 
+    def to_json(self):
+        """
+        convert from yaml to json
+        """
+        from . import deserialize
+
+        return json.dumps(
+            self, default=deserialize.serialize_instance, sort_keys=True, indent=4
+        )
+
+    def from_json(self, string: str):
+        """
+        convert from json to yaml
+        """
+        from . import deserialize
+
+        return json.loads(string, object_hook=deserialize.unserialize_object)
 
 
 def Shape_constructor(loader, node):
@@ -70,100 +87,105 @@ def Shape_constructor(loader, node):
     return Shape2D(name, pts)
 
 
-yaml.add_constructor(u"!Shape2D", Shape_constructor)
+yaml.add_constructor("!Shape2D", Shape_constructor)
+
 
 def create_circle(r: float, n: int = 20) -> Shape2D:
     from math import pi, cos, sin
-    
+
     if n < 0:
-        raise RuntimeError(f'create_rectangle: n got {n}, expect a positive integer')
-    
-    name = f'circle-{2*r}-mm'
+        raise RuntimeError(f"create_rectangle: n got {n}, expect a positive integer")
+
+    name = f"circle-{2*r}-mm"
     pts = []
     theta = 2 * pi / float(n)
     for i in range(n):
-        x = r * cos(i* theta)
+        x = r * cos(i * theta)
         y = r * sin(i * theta)
-        pts.append([x,y])
+        pts.append([x, y])
 
     return Shape2D(name, pts)
 
-def create_rectangle(x: float, y: float, dx: float, dy: float, fillet: int = 0) -> Shape2D:
-    from math import pi, cos, sin
-    
-    if fillet < 0:
-        raise RuntimeError(f'create_rectangle: fillet got {fillet}, expect a positive integer')
 
-    name = f'rectangle-{dx}-{dy}-mm'
+def create_rectangle(
+    x: float, y: float, dx: float, dy: float, fillet: int = 0
+) -> Shape2D:
+    from math import pi, cos, sin
+
+    if fillet < 0:
+        raise RuntimeError(
+            f"create_rectangle: fillet got {fillet}, expect a positive integer"
+        )
+
+    name = f"rectangle-{dx}-{dy}-mm"
     if fillet == 0:
-        pts = [
-            [x,y],
-            [x+dx, y],
-            [x+dx, y+dy],
-            [x, y+dy]
-        ]
+        pts = [[x, y], [x + dx, y], [x + dx, y + dy], [x, y + dy]]
     else:
 
-        pts = [ [x,y] ]
+        pts = [[x, y]]
         theta = pi / float(fillet)
-        xc = (x+dx)/2.
+        xc = (x + dx) / 2.0
         yc = y
-        r = dx/2.
+        r = dx / 2.0
         for i in range(fillet):
             _x = xc + r * cos(pi + i * theta)
             _y = yc + r * cos(pi + i * theta)
             pts.append([_x, _y])
-        yc = y+dy
+        yc = y + dy
         for i in range(fillet):
             _x = xc + r * cos(i * theta)
             _y = yc + r * cos(i * theta)
             pts.append([_x, _y])
-        
+
     return Shape2D(name, pts)
 
-def create_angularslit(x: float, angle: float, dx: float, n: int = 10, fillet: int = 0) -> Shape2D:
-    from math import pi, cos, sin
-    
-    if fillet < 0:
-        raise RuntimeError(f'create_angularslit: fillet got {fillet}, expect a positive integer')
-    if n < 0:
-        raise RuntimeError(f'create_angularslit: n got {n}, expect a positive integer')
 
-    name = f'angularslit-{dx}-{angle}-mm'
+def create_angularslit(
+    x: float, angle: float, dx: float, n: int = 10, fillet: int = 0
+) -> Shape2D:
+    from math import pi, cos, sin
+
+    if fillet < 0:
+        raise RuntimeError(
+            f"create_angularslit: fillet got {fillet}, expect a positive integer"
+        )
+    if n < 0:
+        raise RuntimeError(f"create_angularslit: n got {n}, expect a positive integer")
+
+    name = f"angularslit-{dx}-{angle}-mm"
 
     pts = []
     theta = angle * pi / float(n)
     theta_ = pi / float(fillet)
     r = x
-    r_ = dx/2.
+    r_ = dx / 2.0
 
     for i in range(n):
-        x = r * cos(angle/2. - i * theta)
-        y = r * sin(angle/2. - i * theta)
+        x = r * cos(angle / 2.0 - i * theta)
+        y = r * sin(angle / 2.0 - i * theta)
         pts.append([x, y])
-        
+
     if fillet > 0:
-        xc = (r + dx) * cos(-angle/2.) / 2
-        yc = (r + dx) * sin(-angle/2.) / 2
-        r_ = dx/2.
+        xc = (r + dx) * cos(-angle / 2.0) / 2
+        yc = (r + dx) * sin(-angle / 2.0) / 2
+        r_ = dx / 2.0
         for i in range(fillet):
             _x = xc + r_ * cos(pi + i * theta)
             _y = yc + r_ * cos(pi + i * theta)
             pts.append([_x, _y])
-            
+
     r = x + dx
     for i in range(n):
-        x = r * cos(-angle/2. + i * theta)
-        y = r * sin(-angle/2. + i * theta)
+        x = r * cos(-angle / 2.0 + i * theta)
+        y = r * sin(-angle / 2.0 + i * theta)
         pts.append([x, y])
-        
+
     if fillet > 0:
-        xc = (r + dx) * cos(angle/2.) / 2
-        yc = (r + dx) * sin(angle/2.) / 2
+        xc = (r + dx) * cos(angle / 2.0) / 2
+        yc = (r + dx) * sin(angle / 2.0) / 2
         for i in range(fillet):
             _x = xc + r_ * cos(pi + i * theta)
             _y = yc + r_ * cos(pi + i * theta)
             pts.append([_x, _y])
-        
-    return Shape2D(name, pts)
 
+    return Shape2D(name, pts)

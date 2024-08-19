@@ -5,21 +5,21 @@
 Provides tools to un/serialize data from json
 """
 
-from . import Shape
-from . import ModelAxi
-from . import Model3D
-from . import Helix
-from . import Ring
-from . import InnerCurrentLead
-from . import OuterCurrentLead
-from . import Insert
-from . import Bitter
-from . import Supra
-from . import Screen
-from . import MSite
-from . import Bitters
-from . import Supras
-from . import Shape2D
+from .Shape import Shape
+from .ModelAxi import ModelAxi
+from .Model3D import Model3D
+from .Helix import Helix
+from .Ring import Ring
+from .InnerCurrentLead import InnerCurrentLead
+from .OuterCurrentLead import OuterCurrentLead
+from .Insert import Insert
+from .Bitter import Bitter
+from .Supra import Supra
+from .Screen import Screen
+from .MSite import MSite
+from .Bitters import Bitters
+from .Supras import Supras
+from .Shape2D import Shape2D
 from .tierod import Tierod
 from .coolingslit import CoolingSlit
 

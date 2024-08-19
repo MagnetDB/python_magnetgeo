@@ -4,7 +4,6 @@
 """
 Provides definiton for CoolingSlits:
 """
-from typing import Union
 
 import yaml
 
@@ -72,6 +71,24 @@ class CoolingSlit(yaml.YAMLObject):
         self.sh = data.sh
         self.shape = data.shape
 
+    def to_json(self):
+        """
+        convert from yaml to json
+        """
+        from . import deserialize
+
+        return json.dumps(
+            self, default=deserialize.serialize_instance, sort_keys=True, indent=4
+        )
+
+    def from_json(self, string: str):
+        """
+        convert from json to yaml
+        """
+        from . import deserialize
+
+        return json.loads(string, object_hook=deserialize.unserialize_object)
+
 
 def CoolingSlit_constructor(loader, node):
     """
@@ -90,9 +107,4 @@ def CoolingSlit_constructor(loader, node):
     return CoolingSlit(r, angle, n, dh, sh, shape)
 
 
-yaml.add_constructor(u"!Slit", CoolingSlit_constructor)
-
-if __name__ == "__main__":
-    Square = Shape2D("square", [[0, 0], [1, 0], [1, 1], [0, 1]])
-    slit = CoolingSlit(2, 5, 20, 0.1, 0.2, Square)
-    slit.dump("slit")
+yaml.add_constructor("!Slit", CoolingSlit_constructor)

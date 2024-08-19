@@ -12,7 +12,6 @@ Provides definiton for Helix:
 
 import json
 import yaml
-from . import deserialize
 
 # from Shape import *
 # from ModelAxi import *
@@ -74,6 +73,8 @@ class Shape(yaml.YAMLObject):
         """
         convert from yaml to json
         """
+        from . import deserialize
+
         return json.dumps(
             self, default=deserialize.serialize_instance, sort_keys=True, indent=4
         )
@@ -82,6 +83,8 @@ class Shape(yaml.YAMLObject):
         """
         convert from json to yaml
         """
+        from . import deserialize
+
         return json.loads(string, object_hook=deserialize.unserialize_object)
 
 
@@ -99,4 +102,4 @@ def Shape_constructor(loader, node):
     return Shape(name, profile, length, angle, onturns, position)
 
 
-yaml.add_constructor(u"!Shape", Shape_constructor)
+yaml.add_constructor("!Shape", Shape_constructor)

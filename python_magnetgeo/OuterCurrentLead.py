@@ -8,7 +8,6 @@ Provides Inner and OuterCurrentLead class
 import os
 import json
 import yaml
-from . import deserialize
 
 
 class OuterCurrentLead(yaml.YAMLObject):
@@ -83,6 +82,8 @@ class OuterCurrentLead(yaml.YAMLObject):
         """
         convert from yaml to json
         """
+        from . import deserialize
+
         return json.dumps(
             self, default=deserialize.serialize_instance, sort_keys=True, indent=4
         )
@@ -91,6 +92,8 @@ class OuterCurrentLead(yaml.YAMLObject):
         """
         convert from json to yaml
         """
+        from . import deserialize
+
         return json.loads(string, object_hook=deserialize.unserialize_object)
 
     def write_to_json(self):

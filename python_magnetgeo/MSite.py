@@ -5,13 +5,12 @@
 Provides definition for Site:
 
 """
-from typing import Union, Optional, List
+from typing import Union, Optional
 
 import os
 
 import json
 import yaml
-from . import deserialize
 
 
 class MSite(yaml.YAMLObject):
@@ -28,9 +27,9 @@ class MSite(yaml.YAMLObject):
         name: str,
         magnets: Union[str, list, dict],
         screens: Optional[Union[str, list, dict]],
-        z_offset: Optional[List[float]],
-        r_offset: Optional[List[float]],
-        paralax: Optional[List[float]],
+        z_offset: Optional[list[float]],
+        r_offset: Optional[list[float]],
+        paralax: Optional[list[float]],
     ) -> None:
         """
         initialize onject
@@ -114,7 +113,7 @@ class MSite(yaml.YAMLObject):
 
     def get_names(
         self, mname: str, is2D: bool = False, verbose: bool = False
-    ) -> List[str]:
+    ) -> list[str]:
         """
         return names for Markers
         """
@@ -202,6 +201,8 @@ class MSite(yaml.YAMLObject):
         """
         convert from yaml to json
         """
+        from . import deserialize
+
         return json.dumps(
             self, default=deserialize.serialize_instance, sort_keys=True, indent=4
         )
@@ -210,6 +211,8 @@ class MSite(yaml.YAMLObject):
         """
         convert from json to yaml
         """
+        from . import deserialize
+
         return json.loads(string, object_hook=deserialize.unserialize_object)
 
     def write_to_json(self):

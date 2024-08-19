@@ -9,11 +9,9 @@ Provides definiton for Helix:
 * Model 3D: actual 3D CAD
 * Shape: definition of Shape eventually added to the helical cut
 """
-from typing import List
 
 import json
 import yaml
-from . import deserialize
 
 
 class ModelAxi(yaml.YAMLObject):
@@ -30,8 +28,8 @@ class ModelAxi(yaml.YAMLObject):
         self,
         name: str = "",
         h: float = 0.0,
-        turns: List[float] = [],
-        pitch: List[float] = [],
+        turns: list[float] = [],
+        pitch: list[float] = [],
     ) -> None:
         """
         initialize object
@@ -57,6 +55,8 @@ class ModelAxi(yaml.YAMLObject):
         """
         convert from yaml to json
         """
+        from . import deserialize
+
         return json.dumps(
             self, default=deserialize.serialize_instance, sort_keys=True, indent=4
         )
@@ -65,6 +65,8 @@ class ModelAxi(yaml.YAMLObject):
         """
         convert from json to yaml
         """
+        from . import deserialize
+
         return json.loads(string, object_hook=deserialize.unserialize_object)
 
     def get_Nturns(self) -> float:

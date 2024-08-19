@@ -2,11 +2,9 @@
 # encoding: UTF-8
 
 """defines Bitter Insert structure"""
-from typing import List
 
 import json
 import yaml
-from . import deserialize
 
 
 class Bitters(yaml.YAMLObject):
@@ -90,7 +88,7 @@ class Bitters(yaml.YAMLObject):
 
     def get_names(
         self, mname: str, is2D: bool = False, verbose: bool = False
-    ) -> List[str]:
+    ) -> list[str]:
         """
         return names for Markers
         """
@@ -152,12 +150,16 @@ class Bitters(yaml.YAMLObject):
 
     def to_json(self):
         """convert from yaml to json"""
+        from . import deserialize
+
         return json.dumps(
             self, default=deserialize.serialize_instance, sort_keys=True, indent=4
         )
 
     def from_json(self, string):
         """get from json"""
+        from . import deserialize
+
         return json.loads(string, object_hook=deserialize.unserialize_object)
 
     def write_to_json(self):
@@ -170,6 +172,7 @@ class Bitters(yaml.YAMLObject):
         """read from a json file"""
         with open(f"{self.name}.json", "r") as istream:
             jsondata = self.from_json(istream.read())
+        return jsondata
 
     ###################################################################
     #
@@ -202,7 +205,7 @@ class Bitters(yaml.YAMLObject):
 
         return (rb, zb)
 
-    def intersect(self, r: List[float], z: List[float]) -> bool:
+    def intersect(self, r: list[float], z: list[float]) -> bool:
         """
         Check if intersection with rectangle defined by r,z is empty or not
         return False if empty, True otherwise

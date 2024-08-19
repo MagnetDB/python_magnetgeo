@@ -9,7 +9,6 @@ Provides definition for Screen:
 
 import json
 import yaml
-from . import deserialize
 
 
 class Screen(yaml.YAMLObject):
@@ -101,6 +100,8 @@ class Screen(yaml.YAMLObject):
         """
         convert from yaml to json
         """
+        from . import deserialize
+
         return json.dumps(
             self, default=deserialize.serialize_instance, sort_keys=True, indent=4
         )
@@ -109,6 +110,8 @@ class Screen(yaml.YAMLObject):
         """
         convert from json to yaml
         """
+        from . import deserialize
+
         return json.loads(string, object_hook=deserialize.unserialize_object)
 
     def write_to_json(self):
@@ -126,6 +129,7 @@ class Screen(yaml.YAMLObject):
         """
         with open(f"{self.name}.json", "r") as istream:
             jsondata = self.from_json(istream.read())
+        return jsondata
 
     def boundingBox(self) -> tuple:
         """

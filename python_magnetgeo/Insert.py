@@ -2,17 +2,15 @@
 # encoding: UTF-8
 
 """defines Insert structure"""
-from typing import List
 
 import math
 import datetime
 import json
 import yaml
-from . import deserialize
 from . import InnerCurrentLead
 
 
-def filter(data: List[float], tol: float) -> List[float]:
+def filter(data: list[float], tol: float) -> list[float]:
     result = []
     ndata = len(data)
     for i in range(ndata):
@@ -49,8 +47,8 @@ class Insert(yaml.YAMLObject):
         CurrentLeads=[],
         HAngles=[],
         RAngles=[],
-        innerbore=None,
-        outerbore=None,
+        innerbore: float = 0,
+        outerbore: float = 0,
     ):
         """constructor"""
         self.name = name
@@ -66,7 +64,7 @@ class Insert(yaml.YAMLObject):
 
     def get_channels(
         self, mname: str, hideIsolant: bool = True, debug: bool = False
-    ) -> List[list]:
+    ) -> list[list]:
         """
         return channels
         """
@@ -122,7 +120,7 @@ class Insert(yaml.YAMLObject):
 
     def get_names(
         self, mname: str, is2D: bool = False, verbose: bool = False
-    ) -> List[str]:
+    ) -> list[str]:
         """
         return names for Markers
         """
@@ -219,12 +217,16 @@ class Insert(yaml.YAMLObject):
 
     def to_json(self):
         """convert from yaml to json"""
+        from . import deserialize
+
         return json.dumps(
             self, default=deserialize.serialize_instance, sort_keys=True, indent=4
         )
 
     def from_json(self, string):
         """get from json"""
+        from . import deserialize
+
         return json.loads(string, object_hook=deserialize.unserialize_object)
 
     def write_to_json(self):
@@ -240,6 +242,7 @@ class Insert(yaml.YAMLObject):
         jsondata = self.from_json(istream.read())
         print(type(jsondata))
         istream.close()
+        return jsondata
 
     ###################################################################
     #
@@ -966,14 +969,14 @@ class Insert(yaml.YAMLObject):
             Zh.append(tZh)
             # print(f"Zh[{i}]: {Zh[-1]}")
 
-        Ri = self.innerbore
-        Re = self.outerbore
+        Rint = self.innerbore
+        Rext = self.outerbore
 
         for i in range(NHelices):
-            Dh.append(2 * (R1[i] - Ri))
-            Sh.append(math.pi * (R1[i] - Ri) * (R1[i] + Ri))
+            Dh.append(2 * (R1[i] - Rint))
+            Sh.append(math.pi * (R1[i] - Rint) * (R1[i] + Rint))
 
-            Ri = R2[i]
+            Rint = R2[i]
 
         Zr = []
         for i, ring in enumerate(self.Rings):
@@ -1030,8 +1033,8 @@ class Insert(yaml.YAMLObject):
         # print(f"Zmin={Zmin}")
         # print(f"Zmax={Zmax}")
 
-        Dh.append(2 * (Re - Ri))
-        Sh.append(math.pi * (Re - Ri) * (Re + Ri))
+        Dh.append(2 * (Rext - Rint))
+        Sh.append(math.pi * (Rext - Rint) * (Rext + Rint))
         return (NHelices, NRings, NChannels, Nsections, R1, R2, Dh, Sh, Zc)
 
 

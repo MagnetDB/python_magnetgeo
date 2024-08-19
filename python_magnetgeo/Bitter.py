@@ -8,11 +8,9 @@ Provides definition for Bitter:
 * Model Axi: definition of helical cut (provided from MagnetTools)
 * Model 3D: actual 3D CAD
 """
-from typing import List
 
 import json
 import yaml
-from . import deserialize
 
 from .ModelAxi import ModelAxi
 from .coolingslit import CoolingSlit
@@ -35,11 +33,11 @@ class Bitter(yaml.YAMLObject):
     def __init__(
         self,
         name,
-        r: List[float],
-        z: List[float],
+        r: list[float],
+        z: list[float],
         odd: bool,
         axi: ModelAxi,
-        coolingslits: List[CoolingSlit],
+        coolingslits: list[CoolingSlit],
         tierod: Tierod,
         innerbore: float,
         outerbore: float,
@@ -70,7 +68,7 @@ class Bitter(yaml.YAMLObject):
 
     def get_channels(
         self, mname: str, hideIsolant: bool = True, debug: bool = False
-    ) -> List[str]:
+    ) -> list[str]:
         """
         return channels
         """
@@ -93,7 +91,7 @@ class Bitter(yaml.YAMLObject):
         lc = (self.r[1] - self.r[0]) / 10.0
         if self.coolingslits:
             x: float = self.r[0]
-            dr: List[float] = []
+            dr: list[float] = []
             for slit in self.coolingslits:
                 _x = slit.r
                 dr.append(_x - x)
@@ -104,7 +102,7 @@ class Bitter(yaml.YAMLObject):
 
         return lc
 
-    def get_isolants(self, mname: str, debug: bool = False) -> List[str]:
+    def get_isolants(self, mname: str, debug: bool = False) -> list[str]:
         """
         return isolants
         """
@@ -112,7 +110,7 @@ class Bitter(yaml.YAMLObject):
 
     def get_names(
         self, mname: str, is2D: bool = False, verbose: bool = False
-    ) -> List[str]:
+    ) -> list[str]:
         """
         return names for Markers
         """
@@ -202,6 +200,8 @@ class Bitter(yaml.YAMLObject):
         """
         convert from yaml to json
         """
+        from . import deserialize
+
         return json.dumps(
             self, default=deserialize.serialize_instance, sort_keys=True, indent=4
         )
@@ -210,6 +210,8 @@ class Bitter(yaml.YAMLObject):
         """
         convert from json to yaml
         """
+        from . import deserialize
+
         return json.loads(string, object_hook=deserialize.unserialize_object)
 
     def write_to_json(self):
@@ -226,6 +228,7 @@ class Bitter(yaml.YAMLObject):
         """
         with open(f"{self.name}.json", "r") as istream:
             jsondata = self.from_json(istream.read())
+        return jsondata
 
     def get_Nturns(self) -> float:
         """
@@ -240,7 +243,7 @@ class Bitter(yaml.YAMLObject):
 
         return (self.r, self.z)
 
-    def intersect(self, r: List[float], z: List[float]) -> bool:
+    def intersect(self, r: list[float], z: list[float]) -> bool:
         """
         Check if intersection with rectangle defined by r,z is empty or not
 
@@ -333,32 +336,3 @@ def Bitter_constructor(loader, node):
 
 
 yaml.add_constructor("!Bitter", Bitter_constructor)
-
-if __name__ == "__main__":
-    from .Shape2D import Shape2D
-
-    Square = Shape2D("square", [[0, 0], [1, 0], [1, 1], [0, 1]])
-    dh = 4 * 1
-    sh = 1 * 1
-    tierod = Tierod(2, 20, dh, sh, Square)
-
-    Square = Shape2D("square", [[0, 0], [1, 0], [1, 1], [0, 1]])
-    slit1 = CoolingSlit(2, 5, 20, 0.1, 0.2, Square)
-    slit2 = CoolingSlit(10, 5, 20, 0.1, 0.2, Square)
-    coolingSlits = [slit1, slit2]
-
-    Axi = ModelAxi("test", 0.9, [2], [0.9])
-
-    innerbore = 1 - 0.01
-    outerbore = 2 + 0.01
-    bitter = Bitter(
-        "B", [1, 2], [-1, 1], True, Axi, coolingSlits, tierod, innerbore, outerbore
-    )
-    bitter.dump()
-
-    with open("B.yaml", "r") as f:
-        bitter = yaml.load(f, Loader=yaml.FullLoader)
-
-    print(bitter)
-    for i, slit in enumerate(bitter.coolingslits):
-        print(f"slit[{i}]: {slit}, shape={slit.shape}")
