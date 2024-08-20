@@ -4,7 +4,6 @@ from python_magnetgeo.ModelAxi import ModelAxi
 from python_magnetgeo.Model3D import Model3D
 from python_magnetgeo.Helix import Helix
 
-import json
 
 
 def test_helix():
@@ -31,5 +30,5 @@ def test_jsonhelix():
     helix.write_to_json()
 
     # load from json
-    jsondata = helix.read_from_json()
+    jsondata = Helix.from_json('Helix.json')
     assert jsondata.name == "Helix" and jsondata.r[0] == 19.3

@@ -28,8 +28,8 @@ class Helix(yaml.YAMLObject):
     dble :
     odd :
 
-    axi :
-    m3d :
+    modelaxi :
+    model3d :
     shape :
     """
 
@@ -43,8 +43,8 @@ class Helix(yaml.YAMLObject):
         cutwidth: float,
         odd: bool,
         dble: bool,
-        axi: ModelAxi,
-        m3d: Model3D,
+        modelaxi: ModelAxi,
+        model3d: Model3D,
         shape: Shape,
     ) -> None:
         """
@@ -56,12 +56,12 @@ class Helix(yaml.YAMLObject):
         self.r = r
         self.z = z
         self.cutwidth = cutwidth
-        self.axi = axi
-        self.m3d = m3d
+        self.modelaxi = modelaxi
+        self.model3d = model3d
         self.shape = shape
 
     def get_type(self) -> str:
-        if self.m3d.with_shapes and self.m3d.with_channels:
+        if self.model3d.with_shapes and self.model3d.with_channels:
             return "HR"
         return "HL"
 
@@ -81,7 +81,7 @@ class Helix(yaml.YAMLObject):
         sInsulator = "Glue"
         nInsulators = 0
         nturns = self.get_Nturns()
-        if self.m3d.with_shapes and self.m3d.with_channels:
+        if self.model3d.with_shapes and self.model3d.with_channels:
             sInsulator = "Kapton"
             htype = "HR"
             angle = self.shape.angle
@@ -107,7 +107,7 @@ class Helix(yaml.YAMLObject):
                 print("helix:", self.name, htype, nturns)
 
         if is2D:
-            nsection = len(self.axi.turns)
+            nsection = len(self.modelaxi.turns)
             solid_names.append(f"{prefix}Cu{0}")  # HP
             for j in range(nsection):
                 solid_names.append(f"{prefix}Cu{j+1}")
@@ -127,7 +127,7 @@ class Helix(yaml.YAMLObject):
         representation of object
         """
         return (
-            "%s(name=%r, odd=%r, dble=%r, r=%r, z=%r, cutwidth=%r, axi=%r, m3d=%r, shape=%r)"
+            "%s(name=%r, odd=%r, dble=%r, r=%r, z=%r, cutwidth=%r, modelaxi=%r, model3d=%r, shape=%r)"
             % (
                 self.__class__.__name__,
                 self.name,
@@ -136,8 +136,8 @@ class Helix(yaml.YAMLObject):
                 self.r,
                 self.z,
                 self.cutwidth,
-                self.axi,
-                self.m3d,
+                self.modelaxi,
+                self.model3d,
                 self.shape,
             )
         )
@@ -169,8 +169,8 @@ class Helix(yaml.YAMLObject):
         self.r = data.r
         self.z = data.z
         self.cutwidth = data.cutwidth
-        self.axi = data.axi
-        self.m3d = data.m3d
+        self.modelaxi = data.modelaxi
+        self.model3d = data.model3d
         self.shape = data.shape
 
     def to_json(self):
@@ -183,14 +183,18 @@ class Helix(yaml.YAMLObject):
             self, default=deserialize.serialize_instance, sort_keys=True, indent=4
         )
 
-    def from_json(self, string: str):
+    @classmethod
+    def from_json(cls, filename: str, debug: bool = False):
         """
         convert from json to yaml
         """
         from . import deserialize
 
-        return json.loads(string, object_hook=deserialize.unserialize_object)
-
+        if debug:
+            print(f'Helix.from_json: filename={filename}')
+        with open(filename, "r") as istream:
+            return json.loads(istream.read(), object_hook=deserialize.unserialize_object)
+    
     def write_to_json(self):
         """
         write from json file
@@ -199,36 +203,38 @@ class Helix(yaml.YAMLObject):
             jsondata = self.to_json()
             ostream.write(str(jsondata))
 
-    def read_from_json(self):
-        """
-        read from json file
-        """
-        with open(f"{self.name}.json", "r") as istream:
-            jsondata = self.from_json(istream.read())
-        return jsondata
+    # def read_from_json(self, debug: bool = False):
+    #    """
+    #    read from json file
+    #    """
+    #    with open(f"{self.name}.json", "r") as istream:
+    #        jsondata = self.from_json(istream.read())
+    #        if debug:
+    #            print(f'Helix.read_from_json: {jsondata}')
+    #    return jsondata
 
     def get_Nturns(self) -> float:
         """
         returns the number of turn
         """
-        return self.axi.get_Nturns()
+        return self.modelaxi.get_Nturns()
 
-    def create_cut(self, format: str):
+    def generate_cut(self, format: str = 'SALOME'):
         """
         create cut files
         """
+        from .cut_utils import create_cut
 
-        z0 = self.axi.h
-        sign = 1
-        if self.odd:
-            sign = -1
-
-        self.axi.create_cut(format, z0, sign, self.name)
-
-        if self.m3d.with_shapes:
+        if self.model3d.with_shapes:
+            create_cut(self, "LNCMI", self.name)
             angles = " ".join(f"{t:4.2f}" for t in self.shape.angle if t != 0)
             cmd = f'add_shape --angle="{angles}" --shape_angular_length={self.shape.length} --shape={self.shape.name} --format={format} --position="{self.shape.position}"'
             print(f"create_cut: with_shapes not implemented - shall run {cmd}")
+            
+            import subprocess
+            subprocess.run(cmd, shell=True, check=True)
+        else:
+            create_cut(self, format, self.name)
 
     def boundingBox(self) -> tuple:
         """
@@ -274,7 +280,6 @@ class Helix(yaml.YAMLObject):
 
         return (sInsulator, nInsulators)
 
-
 def Helix_constructor(loader, node):
     """
     build an helix object
@@ -286,11 +291,13 @@ def Helix_constructor(loader, node):
     odd = values["odd"]
     dble = values["dble"]
     cutwidth = values["cutwidth"]
-    axi = values["axi"]
-    m3d = values["m3d"]
+    modelaxi = values["modelaxi"]
+    model3d = values["model3d"]
     shape = values["shape"]
 
-    return Helix(name, r, z, cutwidth, odd, dble, axi, m3d, shape)
+    print(f'Helix_constructor: modelaxi = {modelaxi}', flush=True)
+
+    return Helix(name, r, z, cutwidth, odd, dble, modelaxi, model3d, shape)
 
 
 yaml.add_constructor("!Helix", Helix_constructor)

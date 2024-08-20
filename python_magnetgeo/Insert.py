@@ -386,7 +386,7 @@ class Insert(yaml.YAMLObject):
             geofile.write(onelab_z1 % (i + 1, Helix.z[1], i + 1))
             geofile.write(onelab_lc % (i + 1, (Helix.r[1] - Helix.r[0]) / 5.0, i + 1))
 
-            axi = Helix.axi  # h, turns, pitch
+            axi = Helix.modelaxi  # h, turns, pitch
 
             geofile.write(onelab_pointx % (point, f"r0_H{i+1}", f"z0_H{i+1}", i + 1))
             geofile.write(
@@ -929,8 +929,6 @@ class Insert(yaml.YAMLObject):
         Zh
         """
 
-        tol = 1.0e-6
-
         NHelices = len(self.Helices)
         NRings = len(self.Rings)
         NChannels = NHelices + 1
@@ -949,15 +947,15 @@ class Insert(yaml.YAMLObject):
             hhelix = None
             with open(f"{workingDir}/{helix}.yaml", "r") as f:
                 hhelix = yaml.load(f, Loader=yaml.FullLoader)
-            n_sections = len(hhelix.axi.turns)
+            n_sections = len(hhelix.modelaxi.turns)
             Nsections.append(n_sections)
-            Nturns_h.append(hhelix.axi.turns)
+            Nturns_h.append(hhelix.modelaxi.turns)
 
             R1.append(hhelix.r[0])
             R2.append(hhelix.r[1])
 
-            z = -hhelix.axi.h
-            (turns, pitch) = hhelix.axi.compact(tol)
+            z = -hhelix.modelaxi.h
+            (turns, pitch) = hhelix.modelaxi.compact()
 
             tZh = []
             tZh.append(hhelix.z[0])

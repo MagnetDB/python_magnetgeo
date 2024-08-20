@@ -36,7 +36,7 @@ class Bitter(yaml.YAMLObject):
         r: list[float],
         z: list[float],
         odd: bool,
-        axi: ModelAxi,
+        modelaxi: ModelAxi,
         coolingslits: list[CoolingSlit],
         tierod: Tierod,
         innerbore: float,
@@ -49,7 +49,7 @@ class Bitter(yaml.YAMLObject):
         self.r = r
         self.z = z
         self.odd = odd
-        self.axi = axi
+        self.modelaxi = modelaxi
         self.innerbore = innerbore
         self.outerbore = outerbore
         self.coolingslits = coolingslits
@@ -126,8 +126,8 @@ class Bitter(yaml.YAMLObject):
             Nslits = len(self.coolingslits)
 
         if is2D:
-            nsection = len(self.axi.turns)
-            if self.z[0] < -self.axi.h and abs(self.z[0] + self.axi.h) >= tol:
+            nsection = len(self.modelaxi.turns)
+            if self.z[0] < -self.modelaxi.h and abs(self.z[0] + self.modelaxi.h) >= tol:
                 for i in range(Nslits + 1):
                     solid_names.append(f"{prefix}B0_Slit{i}")
 
@@ -135,7 +135,7 @@ class Bitter(yaml.YAMLObject):
                 for i in range(Nslits + 1):
                     solid_names.append(f"{prefix}B{j+1}_Slit{i}")
 
-            if self.z[1] > self.axi.h and abs(self.z[1] - self.axi.h) >= tol:
+            if self.z[1] > self.modelaxi.h and abs(self.z[1] - self.modelaxi.h) >= tol:
                 for i in range(Nslits + 1):
                     solid_names.append(f"{prefix}B{nsection+1}_Slit{i}")
         else:
@@ -157,7 +157,7 @@ class Bitter(yaml.YAMLObject):
                 self.r,
                 self.z,
                 self.odd,
-                self.axi,
+                self.modelaxi,
                 self.coolingslits,
                 self.tierod,
                 self.innerbore,
@@ -190,7 +190,7 @@ class Bitter(yaml.YAMLObject):
         self.r = data.r
         self.z = data.z
         self.odd = data.odd
-        self.axi = data.axi
+        self.modelaxi = data.modelaxi
         self.coolingslits = data.coolingslits
         self.tierod = data.tierod
         self.innerbore = data.innerbore
@@ -234,7 +234,7 @@ class Bitter(yaml.YAMLObject):
         """
         returns the number of turn
         """
-        return self.axi.get_Nturns()
+        return self.modelaxi.get_Nturns()
 
     def boundingBox(self) -> tuple:
         """
@@ -284,10 +284,10 @@ class Bitter(yaml.YAMLObject):
         Sh += [pi * (self.outerbore - self.r[1]) * (self.outerbore + self.r[1])]
 
         Zh = [self.z[0]]
-        z = -self.axi.h
+        z = -self.modelaxi.h
         if abs(self.z[0] - z) >= tol:
             Zh.append(z)
-        for n, p in zip(self.axi.turns, self.axi.pitch):
+        for n, p in zip(self.modelaxi.turns, self.modelaxi.pitch):
             z += n * p
             Zh.append(z)
         if abs(self.z[1] - z) >= tol:
@@ -304,13 +304,8 @@ class Bitter(yaml.YAMLObject):
         """
         create cut files
         """
-
-        z0 = self.axi.h
-        sign = 1
-        if self.odd:
-            sign = -1
-
-        self.axi.create_cut(format, z0, sign, self.name)
+        from cut_utils import create_cut
+        create_cut(self, format, self.name)
 
 
 def Bitter_constructor(loader, node):
@@ -322,7 +317,7 @@ def Bitter_constructor(loader, node):
     r = values["r"]
     z = values["z"]
     odd = values["odd"]
-    axi = values["axi"]
+    modelaxi = values["modelaxi"]
     coolingslits = values["coolingslits"]
     tierod = values["tierod"]
     innerbore = 0
@@ -332,7 +327,7 @@ def Bitter_constructor(loader, node):
     if "outerbore":
         outerbore = values["outerbore"]
 
-    return Bitter(name, r, z, odd, axi, coolingslits, tierod, innerbore, outerbore)
+    return Bitter(name, r, z, odd, modelaxi, coolingslits, tierod, innerbore, outerbore)
 
 
 yaml.add_constructor("!Bitter", Bitter_constructor)

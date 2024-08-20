@@ -69,13 +69,30 @@ class ModelAxi(yaml.YAMLObject):
 
         return json.loads(string, object_hook=deserialize.unserialize_object)
 
+    def write_to_json(self):
+        """
+        write from json file
+        """
+        with open(f"{self.name}.json", "w") as ostream:
+            jsondata = self.to_json()
+            ostream.write(str(jsondata))
+
+    def read_from_json(self):
+        """
+        read from json file
+        """
+        with open(f"{self.name}.json", "r") as istream:
+            jsondata = self.from_json(istream.read())
+            print(f'ModelAxi.read_from_json: {jsondata}')
+        return jsondata
+
     def get_Nturns(self) -> float:
         """
         returns the number of turn
         """
         return sum(self.turns)
 
-    def compact(self, tol: float):
+    def compact(self, tol: float = 1.0e-6):
         def indices(lst: list, item: float):
             return [i for i, x in enumerate(lst) if abs(1 - item / x) <= tol]
 
@@ -122,68 +139,6 @@ class ModelAxi(yaml.YAMLObject):
         # print(f"new_turns={new_turns}")
 
         return new_turns, new_pitch
-
-    def create_cut(
-        self, format: str, z0: float, sign: int, name: str, append: bool = False
-    ):
-        """
-        create cut file
-        """
-
-        dformat = {
-            "salome": {"run": self.salome_cut, "extension": "_cut_salome.dat"},
-        }
-
-        try:
-            format_cut = dformat[format]
-        except:
-            raise RuntimeError(
-                f"create_cut: format={format} unsupported\nallowed formats are: {dformat.keys()}"
-            )
-
-        write_cut = format_cut["run"]
-        ext = format_cut["extension"]
-        filename = f"{name}{ext}"
-        write_cut(z0, sign, filename, append)
-
-    def salome_cut(self, z0: float, sign: int, filename: str, append: bool):
-        """
-        for salome
-        see: MagnetTools/MagnetField/Stack.cc write_salome_paramfile L1011
-
-        for case wwith shapes
-        see README files in calcul19 ~/github/hifimanget/projects
-        for example HR-54/README:
-        H2: Shape_HR-54-116.dat - HR-54-254
-        H1: Shape_HR-54-117.dat - HR-54-260
-
-        run add_shape from magnettools
-
-        add_shape --angle="30" --shape_angular_length=8 \
-            --shape=HR-54-116 05012011Pbis_H2 --format=LNCMI --position="ABOVE"
-        add_shape --angle="36" --shape_angular_length=13 \
-            --shape=HR-54-116 05012011Pbis_H1 --format=LNCMI --position="ABOVE"
-        """
-        from math import pi
-
-        z = z0
-        theta = 0
-        shape_id = 0
-        tab = "\t"
-
-        # 'x' create file, 'a' append to file, Append and Read (‘a+’)
-        flag = "x"
-        if append:
-            flag = "a"
-        with open(filename, flag) as f:
-            f.write(f"#theta[rad]{tab}Shape_id[]{tab}tZ[mm]\n")
-            f.write(f"{theta*(-sign):12.8f}{tab}{shape_id:8}{tab}{z:12.8f}\n")
-
-            # TODO use compact to reduce size of cuts
-            for i, (turn, pitch) in enumerate(zip(self.turns, self.pitch)):
-                theta += turn * (2 * pi) * sign
-                z -= turn * pitch
-                f.write(f"{theta*(-sign):12.8f}{tab}{shape_id:8}{tab}{z:12.8f}\n")
 
 
 def ModelAxi_constructor(loader, node):

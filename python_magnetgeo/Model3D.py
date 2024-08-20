@@ -69,6 +69,21 @@ class Model3D(yaml.YAMLObject):
 
         return json.loads(string, object_hook=deserialize.unserialize_object)
 
+    def write_to_json(self):
+        """
+        write from json file
+        """
+        with open(f"{self.name}.json", "w") as ostream:
+            jsondata = self.to_json()
+            ostream.write(str(jsondata))
+
+    def read_from_json(self):
+        """
+        read from json file
+        """
+        with open(f"{self.name}.json", "r") as istream:
+            jsondata = self.from_json(istream.read())
+        return jsondata
 
 def Model3D_constructor(loader, node):
     """

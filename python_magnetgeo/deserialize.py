@@ -57,16 +57,28 @@ def serialize_instance(obj):
     return d
 
 
-def unserialize_object(d):
+def unserialize_object(d, debug: bool = False):
     """
     unserialize_instance of an obj
     """
+    if debug:
+        print(f'unserialize_object: d={d}', flush=True)
+
+    # remove all __classname__ keys
     clsname = d.pop("__classname__", None)
+    if debug:
+        print(f'clsname: {clsname}', flush=True)
     if clsname:
         cls = classes[clsname]
         obj = cls.__new__(cls)  # Make instance without calling __init__
         for key, value in d.items():
-            setattr(obj, key, value)
+            if debug:
+                print(f'key={key}, value={value} type={type(value)}', flush=True)
+            setattr(obj, key.lower(), value)
+        if debug:
+            print(f'obj={obj}', flush=True)
         return obj
     else:
+        if debug:
+            print(f'no classname: {d}', flush=True)
         return d

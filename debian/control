@@ -19,7 +19,7 @@ Rules-Requires-Root: no
 
 Package: python3-magnetgeo
 Architecture: all
-Depends: ${python3:Depends}, ${misc:Depends}
+Depends: magnettools, ${python3:Depends}, ${misc:Depends}
 Suggests: python-python-magnetgeo-doc
 Description: Magnet Geometry Python module (Python 3)
  This module enable to perform the following operations
