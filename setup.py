@@ -35,7 +35,7 @@ setup(
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
     ],
-    description="Python Magnet Geometry contains maget geometrical models",
+    description="Python Magnet Geometry contains magnet geometrical models",
     entry_points={},
     install_requires=requirements,
     license="MIT license",
