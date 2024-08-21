@@ -84,15 +84,6 @@ class InnerCurrentLead(yaml.YAMLObject):
             self, default=deserialize.serialize_instance, sort_keys=True, indent=4
         )
 
-    def from_json(self, string):
-        """
-        convert from json to yaml
-        """
-        from . import deserialize
-
-        print("from_json(%s)" % string)
-        return json.loads(string, object_hook=deserialize.unserialize_object)
-
     def write_to_json(self):
         """
         write from json file
@@ -105,24 +96,18 @@ class InnerCurrentLead(yaml.YAMLObject):
         except:
             raise Exception(f"Failed to write to {self.name}.json")
 
-    def read_from_json(self):
+    @classmethod
+    def from_json(cls, filename: str, debug: bool = False):
         """
-        read from json file
+        convert from json to yaml
         """
-        istream = open(self.name + ".json", "r")
-        jsondata = self.from_json(istream.read())
-        istream.close()
-        print(type(jsondata))
-        print(jsondata.name)
-        try:
-            print(jsondata.r)
-        except:
-            pass
-        print(jsondata.h)
-        print(jsondata.holes)
-        print(jsondata.support)
-        print(jsondata.fillet)
-        return jsondata
+        from . import deserialize
+
+        if debug:
+            print(f'InnerCurrentLead.from_json: filename={filename}')
+        with open(filename, "r") as istream:
+            return json.loads(istream.read(), object_hook=deserialize.unserialize_object)
+    
 
 
 def InnerCurrentLead_constructor(loader, node):
@@ -211,14 +196,6 @@ class OuterCurrentLead(yaml.YAMLObject):
             self, default=deserialize.serialize_instance, sort_keys=True, indent=4
         )
 
-    def from_json(self, string):
-        """
-        convert from json to yaml
-        """
-        from . import deserialize
-
-        return json.loads(string, object_hook=deserialize.unserialize_object)
-
     def write_to_json(self):
         """
         write from json file
@@ -231,16 +208,17 @@ class OuterCurrentLead(yaml.YAMLObject):
         except:
             raise Exception("Failed to write to %s.json" % self.name)
 
-    def read_from_json(self):
+    @classmethod
+    def from_json(cls, filename: str, debug: bool = False):
         """
-        read from json file
+        convert from json to yaml
         """
-        istream = open(self.name + ".json", "r")
-        jsondata = self.from_json(istream.read())
-        istream.close()
-        print(type(jsondata))
-        print(jsondata)
+        from . import deserialize
 
+        if debug:
+            print(f'OuterCurrentLead.from_json: filename={filename}')
+        with open(filename, "r") as istream:
+            return json.loads(istream.read(), object_hook=deserialize.unserialize_object)
 
 def OuterCurrentLead_constructor(loader, node):
     """

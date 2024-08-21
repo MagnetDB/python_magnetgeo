@@ -61,29 +61,25 @@ class Model3D(yaml.YAMLObject):
             self, default=deserialize.serialize_instance, sort_keys=True, indent=4
         )
 
-    def from_json(self, string: str):
+    def write_to_json(self, name: str = ""):
+        """
+        write from json file
+        """
+        with open(f"{name}.json", "w") as ostream:
+            jsondata = self.to_json()
+            ostream.write(str(jsondata))
+
+    @classmethod
+    def from_json(cls, filename: str, debug: bool = False):
         """
         convert from json to yaml
         """
         from . import deserialize
 
-        return json.loads(string, object_hook=deserialize.unserialize_object)
-
-    def write_to_json(self):
-        """
-        write from json file
-        """
-        with open(f"{self.name}.json", "w") as ostream:
-            jsondata = self.to_json()
-            ostream.write(str(jsondata))
-
-    def read_from_json(self):
-        """
-        read from json file
-        """
-        with open(f"{self.name}.json", "r") as istream:
-            jsondata = self.from_json(istream.read())
-        return jsondata
+        if debug:
+            print(f'Model3D.from_json: filename={filename}')
+        with open(filename, "r") as istream:
+            return json.loads(istream.read(), object_hook=deserialize.unserialize_object)
 
 def Model3D_constructor(loader, node):
     """

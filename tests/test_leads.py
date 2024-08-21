@@ -5,7 +5,7 @@ from python_magnetgeo.OuterCurrentLead import OuterCurrentLead
 import json
 
 
-def test_innercurrentlead():
+def test_create_Ilead():
     ofile = open("Inner.yaml", "w")
     r = [38.6 / 2.0, 48.4 / 2.0]
     h = 480.0
@@ -14,7 +14,7 @@ def test_innercurrentlead():
     yaml.dump(InnerCurrentLead("Inner", r, 480.0, bars, support, False), ofile)
 
 
-def test_outercurrentlead():
+def test_create_Olead():
     ofile = open("Outer.yaml", "w")
     r = [172.4, 186]
     h = 10.0
@@ -23,15 +23,15 @@ def test_outercurrentlead():
     yaml.dump(OuterCurrentLead("Outer", r, h, bars, support), ofile)
 
 
-def test_loadlead():
+def test_load():
     lead = yaml.load(open("Inner.yaml", "r"), Loader=yaml.FullLoader)
     assert lead.r[0] == 19.3
 
 
-def test_jsonlead():
+def test_json():
     lead = yaml.load(open("Inner.yaml", "r"), Loader=yaml.FullLoader)
     lead.write_to_json()
 
     # load from json
-    jsondata = lead.read_from_json()
+    jsondata = InnerCurrentLead.from_json('Inner.json')
     assert jsondata.name == "Inner" and jsondata.r[0] == 19.3

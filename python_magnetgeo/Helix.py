@@ -203,16 +203,12 @@ class Helix(yaml.YAMLObject):
             jsondata = self.to_json()
             ostream.write(str(jsondata))
 
-    # def read_from_json(self, debug: bool = False):
-    #    """
-    #    read from json file
-    #    """
-    #    with open(f"{self.name}.json", "r") as istream:
-    #        jsondata = self.from_json(istream.read())
-    #        if debug:
-    #            print(f'Helix.read_from_json: {jsondata}')
-    #    return jsondata
-
+    def getModelAxi(self):
+        return self.modelaxi
+    
+    def getModel3D(self):
+        return self.model3d
+    
     def get_Nturns(self) -> float:
         """
         returns the number of turn

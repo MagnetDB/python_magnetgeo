@@ -8,7 +8,7 @@ import yaml
 import pytest
 
 
-def test_create_Bitter():
+def test_create():
 
     Square = Shape2D("square", [[0, 0], [1, 0], [1, 1], [0, 1]])
     dh = 4 * 1
@@ -25,13 +25,29 @@ def test_create_Bitter():
     innerbore = 1 - 0.01
     outerbore = 2 + 0.01
     bitter = Bitter(
-        "B", [1, 2], [-1, 1], True, Axi, coolingSlits, tierod, innerbore, outerbore
+        "Bitter", [1, 2], [-1, 1], True, Axi, coolingSlits, tierod, innerbore, outerbore
     )
     bitter.dump()
+    assert bitter.r[0] == 1
 
-    with open("B.yaml", "r") as f:
+    """    
+    with open("Bitter.yaml", "r") as f:
         bitter = yaml.load(f, Loader=yaml.FullLoader)
 
     print(bitter)
     for i, slit in enumerate(bitter.coolingslits):
         print(f"slit[{i}]: {slit}, shape={slit.shape}")
+    """
+
+def test_load():
+    object = yaml.load(open("Bitter.yaml", "r"), Loader=yaml.FullLoader)
+    assert object.r[0] == 1
+
+
+def test_json():
+    object = yaml.load(open("Bitter.yaml", "r"), Loader=yaml.FullLoader)
+    object.write_to_json()
+
+    # load from json
+    jsondata = Bitter.from_json('Bitter.json')
+    assert jsondata.name == "Bitter" and jsondata.r[0] == 1

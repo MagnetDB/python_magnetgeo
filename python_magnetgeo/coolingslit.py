@@ -6,7 +6,7 @@ Provides definiton for CoolingSlits:
 """
 
 import yaml
-
+import json
 from .Shape2D import Shape2D
 
 
@@ -81,13 +81,17 @@ class CoolingSlit(yaml.YAMLObject):
             self, default=deserialize.serialize_instance, sort_keys=True, indent=4
         )
 
-    def from_json(self, string: str):
+    @classmethod
+    def from_json(cls, filename: str, debug: bool = False):
         """
         convert from json to yaml
         """
         from . import deserialize
 
-        return json.loads(string, object_hook=deserialize.unserialize_object)
+        if debug:
+            print(f'Coolingslit.from_json: filename={filename}')
+        with open(filename, "r") as istream:
+            return json.loads(istream.read(), object_hook=deserialize.unserialize_object)
 
 
 def CoolingSlit_constructor(loader, node):

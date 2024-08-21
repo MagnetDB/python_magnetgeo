@@ -5,7 +5,7 @@ import yaml
 import pytest
 
 
-def test_tierod():
+def test_create():
     Square = Shape2D("square", [[0, 0], [1, 0], [1, 1], [0, 1]])
     tierod = Tierod(2, 20, 1, 4, Square)
     tierod.dump("tierod")

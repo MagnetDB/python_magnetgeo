@@ -61,14 +61,6 @@ class ModelAxi(yaml.YAMLObject):
             self, default=deserialize.serialize_instance, sort_keys=True, indent=4
         )
 
-    def from_json(self, string: str):
-        """
-        convert from json to yaml
-        """
-        from . import deserialize
-
-        return json.loads(string, object_hook=deserialize.unserialize_object)
-
     def write_to_json(self):
         """
         write from json file
@@ -77,14 +69,18 @@ class ModelAxi(yaml.YAMLObject):
             jsondata = self.to_json()
             ostream.write(str(jsondata))
 
-    def read_from_json(self):
+    @classmethod
+    def from_json(cls, filename: str, debug: bool = False):
         """
-        read from json file
+        convert from json to yaml
         """
-        with open(f"{self.name}.json", "r") as istream:
-            jsondata = self.from_json(istream.read())
-            print(f'ModelAxi.read_from_json: {jsondata}')
-        return jsondata
+        from . import deserialize
+
+        if debug:
+            print(f'ModelAxi.from_json: filename={filename}')
+        with open(filename, "r") as istream:
+            return json.loads(istream.read(), object_hook=deserialize.unserialize_object)
+    
 
     def get_Nturns(self) -> float:
         """

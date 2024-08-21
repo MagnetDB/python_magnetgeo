@@ -88,14 +88,6 @@ class OuterCurrentLead(yaml.YAMLObject):
             self, default=deserialize.serialize_instance, sort_keys=True, indent=4
         )
 
-    def from_json(self, string: str):
-        """
-        convert from json to yaml
-        """
-        from . import deserialize
-
-        return json.loads(string, object_hook=deserialize.unserialize_object)
-
     def write_to_json(self):
         """
         write from json file
@@ -107,14 +99,18 @@ class OuterCurrentLead(yaml.YAMLObject):
         except:
             raise Exception(f"Failed to write to {self.name}.json")
 
-    def read_from_json(self):
+    @classmethod
+    def from_json(cls, filename: str, debug: bool = False):
         """
-        read from json file
+        convert from json to yaml
         """
-        with open(f"{self.name}.json", "r") as istream:
-            jsondata = self.from_json(istream.read())
-            istream.close()
+        from . import deserialize
 
+        if debug:
+            print(f'OuterCurrentLead.from_json: filename={filename}')
+        with open(filename, "r") as istream:
+            return json.loads(istream.read(), object_hook=deserialize.unserialize_object)
+    
 
 def OuterCurrentLead_constructor(loader, node):
     """
@@ -132,44 +128,3 @@ def OuterCurrentLead_constructor(loader, node):
 yaml.add_constructor("!OuterCurrentLead", OuterCurrentLead_constructor)
 
 
-#
-# To operate from command line
-
-if __name__ == "__main__":
-    import argparse
-
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "name",
-        help="name of the Outer currentlead model to be stored",
-        type=str,
-        nargs="?",
-    )
-    parser.add_argument("--tojson", help="convert to json", action="store_true")
-    args = parser.parse_args()
-
-    if not args.name:
-        r = [172.4, 186]
-        h = 10.0
-        bars = [10, 18, 15, 499]
-        support = [48.2, 10, 18, 45]
-        lead = OuterCurrentLead("Outer", r, h, bars, support)
-        lead.dump()
-    else:
-        try:
-            with open(args.name, "r") as file:
-                lead = yaml.load(file, Loader=yaml.FullLoader)
-            print("lead=", lead)
-        except:
-            print("Failed to load yaml Outer CurrentLead definition, try json format")
-            try:
-                # remove extension from args.name
-                name = os.path.splitext(args.name)
-                lead = OuterCurrentLead(args.name)
-                lead.read_from_json()
-                print(lead)
-            except:
-                print("Failed to load Outer currentlead definition from %s" % args.name)
-
-    if args.tojson:
-        lead.write_to_json()

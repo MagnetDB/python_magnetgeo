@@ -78,7 +78,7 @@ class Ring(yaml.YAMLObject):
         """
         data = None
         try:
-            with open(f"{self.name.yaml}", "r") as istream:
+            with open(f"{self.name}.yaml", "r") as istream:
                 data = yaml.load(stream=istream, Loader=yaml.FullLoader)
         except:
             raise Exception(f"Failed to load Ring data {self.name}.yaml")
@@ -101,14 +101,6 @@ class Ring(yaml.YAMLObject):
             self, default=deserialize.serialize_instance, sort_keys=True, indent=4
         )
 
-    def from_json(self, string: str):
-        """
-        convert from json to yaml
-        """
-        from . import deserialize
-
-        return json.loads(string, object_hook=deserialize.unserialize_object)
-
     def write_to_json(self):
         """
         write from json file
@@ -117,13 +109,18 @@ class Ring(yaml.YAMLObject):
             jsondata = self.to_json()
             ostream.write(str(jsondata))
 
-    def read_from_json(self):
+    @classmethod
+    def from_json(cls, filename: str, debug: bool = False):
         """
-        read from json file
+        convert from json to yaml
         """
-        with open(f"{self.name}.json", "r") as istream:
-            jsondata = self.from_json(istream.read())
+        from . import deserialize
 
+        if debug:
+            print(f'Ring.from_json: filename={filename}')
+        with open(filename, "r") as istream:
+            return json.loads(istream.read(), object_hook=deserialize.unserialize_object)
+    
 
 def Ring_constructor(loader, node):
     """

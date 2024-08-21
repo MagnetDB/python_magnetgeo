@@ -5,7 +5,7 @@ import yaml
 import pytest
 
 
-def test_tierod():
+def test_create():
     Square = Shape2D("square", [[0, 0], [1, 0], [1, 1], [0, 1]])
     slit = CoolingSlit(2, 5, 20, 0.1, 0.2, Square)
     slit.dump("slit")

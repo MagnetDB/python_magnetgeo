@@ -10,7 +10,7 @@ import yaml
 from . import InnerCurrentLead
 
 
-def filter(data: list[float], tol: float) -> list[float]:
+def filter(data: list[float], tol: float = 1.e-6) -> list[float]:
     result = []
     ndata = len(data)
     for i in range(ndata):
@@ -223,12 +223,6 @@ class Insert(yaml.YAMLObject):
             self, default=deserialize.serialize_instance, sort_keys=True, indent=4
         )
 
-    def from_json(self, string):
-        """get from json"""
-        from . import deserialize
-
-        return json.loads(string, object_hook=deserialize.unserialize_object)
-
     def write_to_json(self):
         """write to a json file"""
         ostream = open(self.name + ".json", "w")
@@ -236,13 +230,17 @@ class Insert(yaml.YAMLObject):
         ostream.write(str(jsondata))
         ostream.close()
 
-    def read_from_json(self):
-        """read from a json file"""
-        istream = open(self.name + ".json", "r")
-        jsondata = self.from_json(istream.read())
-        print(type(jsondata))
-        istream.close()
-        return jsondata
+    @classmethod
+    def from_json(cls, filename: str, debug: bool = False):
+        """
+        convert from json to yaml
+        """
+        from . import deserialize
+
+        if debug:
+            print(f'Insert.from_json: filename={filename}')
+        with open(filename, "r") as istream:
+            return json.loads(istream.read(), object_hook=deserialize.unserialize_object)
 
     ###################################################################
     #
@@ -1009,7 +1007,7 @@ class Insert(yaml.YAMLObject):
                 nZh.append(Zr[i - 2])
 
             nZh.sort()
-            Zc.append(filter(nZh, tol))
+            Zc.append(filter(nZh))
             # remove duplicates (requires to have a compare method with a tolerance: |z[i] - z[j]| <= tol means z[i] == z[j])
             Zi = Zh[i]
 
@@ -1019,7 +1017,7 @@ class Insert(yaml.YAMLObject):
         # Add latest Channel: Zh[-1] + R[-1]
         nZh = Zh[-1] + [Zr[-1]]
         nZh.sort()
-        Zc.append(filter(nZh, tol))
+        Zc.append(filter(nZh))
         nZh = []
 
         Zmin = 0
