@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-#-*- coding:utf-8 -*-
+# -*- coding:utf-8 -*-
 
 """
 Provides definition for Helix:
@@ -13,11 +13,11 @@ Provides definition for Helix:
 import math
 import json
 import yaml
-from . import deserialize
 
-from . import Shape
-from . import ModelAxi
-from . import Model3D
+from .Shape import Shape
+from .ModelAxi import ModelAxi
+from .Model3D import Model3D
+
 
 class Helix(yaml.YAMLObject):
     """
@@ -28,14 +28,25 @@ class Helix(yaml.YAMLObject):
     dble :
     odd :
 
-    axi :
-    m3d :
+    modelaxi :
+    model3d :
     shape :
     """
 
-    yaml_tag = 'Helix'
+    yaml_tag = "Helix"
 
-    def __init__(self, name, r=[], z=[], cutwidth=0.0, odd=False, dble=False, axi=ModelAxi.ModelAxi(), m3d=Model3D.Model3D(), shape=Shape.Shape()):
+    def __init__(
+        self,
+        name: str,
+        r: list[float],
+        z: list[float],
+        cutwidth: float,
+        odd: bool,
+        dble: bool,
+        modelaxi: ModelAxi,
+        model3d: Model3D,
+        shape: Shape,
+    ) -> None:
         """
         initialize object
         """
@@ -45,35 +56,99 @@ class Helix(yaml.YAMLObject):
         self.r = r
         self.z = z
         self.cutwidth = cutwidth
-        self.axi = axi
-        self.m3d = m3d
+        self.modelaxi = modelaxi
+        self.model3d = model3d
         self.shape = shape
+
+    def get_type(self) -> str:
+        if self.model3d.with_shapes and self.model3d.with_channels:
+            return "HR"
+        return "HL"
+
+    def get_lc(self) -> float:
+        return (self.r[1] - self.r[0]) / 10.0
+
+    def get_names(self, mname: str, is2D: bool, verbose: bool = False) -> list[str]:
+        """
+        return names for Markers
+        """
+        solid_names = []
+
+        prefix = ""
+        if mname:
+            prefix = f"{mname}_"
+
+        sInsulator = "Glue"
+        nInsulators = 0
+        nturns = self.get_Nturns()
+        if self.model3d.with_shapes and self.model3d.with_channels:
+            sInsulator = "Kapton"
+            htype = "HR"
+            angle = self.shape.angle
+            nshapes = nturns * (360 / float(angle[0]))  # only one angle to be checked
+            if verbose:
+                print("shapes: ", nshapes, math.floor(nshapes), math.ceil(nshapes))
+
+            nshapes = (
+                lambda x: (
+                    math.ceil(x)
+                    if math.ceil(x) - x < x - math.floor(x)
+                    else math.floor(x)
+                )
+            )(nshapes)
+            nInsulators = int(nshapes)
+            print("nKaptons=", nInsulators)
+        else:
+            htype = "HL"
+            nInsulators = 1
+            if self.dble:
+                nInsulators = 2
+            if verbose:
+                print("helix:", self.name, htype, nturns)
+
+        if is2D:
+            nsection = len(self.modelaxi.turns)
+            solid_names.append(f"{prefix}Cu{0}")  # HP
+            for j in range(nsection):
+                solid_names.append(f"{prefix}Cu{j+1}")
+            solid_names.append(f"{prefix}Cu{nsection+1}")  # BP
+        else:
+            solid_names.append("Cu")
+            # TODO tell HR from HL
+            for j in range(nInsulators):
+                solid_names.append(f"{sInsulator}{j}")
+
+        if verbose:
+            print(f"Helix_Gmsh[{htype}]: solid_names {len(solid_names)}")
+        return solid_names
 
     def __repr__(self):
         """
         representation of object
         """
-        return "%s(name=%r, odd=%r, dble=%r, r=%r, z=%r, cutwidth=%r, axi=%r, m3d=%r, shape=%r)" % \
-               (self.__class__.__name__,
+        return (
+            "%s(name=%r, odd=%r, dble=%r, r=%r, z=%r, cutwidth=%r, modelaxi=%r, model3d=%r, shape=%r)"
+            % (
+                self.__class__.__name__,
                 self.name,
                 self.odd,
                 self.dble,
                 self.r,
                 self.z,
                 self.cutwidth,
-                self.axi,
-                self.m3d,
-                self.shape
-               )
+                self.modelaxi,
+                self.model3d,
+                self.shape,
+            )
+        )
 
     def dump(self):
         """
         dump object to file
         """
         try:
-            ostream = open(self.name + '.yaml', 'w')
-            yaml.dump(self, stream=ostream)
-            ostream.close()
+            with open(f"{self.name}.yaml", "w") as ostream:
+                yaml.dump(self, stream=ostream)
         except:
             raise Exception("Failed to Helix dump")
 
@@ -83,11 +158,10 @@ class Helix(yaml.YAMLObject):
         """
         data = None
         try:
-            istream = open(self.name + '.yaml', 'r')
-            data = yaml.load(stream=istream)
-            istream.close()
+            with open(f"{self.name}.yaml", "r") as istream:
+                data = yaml.load(stream=istream, Loader=yaml.FullLoader)
         except:
-            raise Exception("Failed to load Helix data %s.yaml"%self.name)
+            raise Exception("Failed to load Helix data %s.yaml" % self.name)
 
         self.name = data.name
         self.dble = data.dble
@@ -95,111 +169,76 @@ class Helix(yaml.YAMLObject):
         self.r = data.r
         self.z = data.z
         self.cutwidth = data.cutwidth
-        self.axi = data.axi
-        self.m3d = data.m3d
+        self.modelaxi = data.modelaxi
+        self.model3d = data.model3d
         self.shape = data.shape
 
     def to_json(self):
         """
         convert from yaml to json
         """
-        return json.dumps(self, default=deserialize.serialize_instance, sort_keys=True, indent=4)
+        from . import deserialize
 
+        return json.dumps(
+            self, default=deserialize.serialize_instance, sort_keys=True, indent=4
+        )
 
-    def from_json(self, string):
+    @classmethod
+    def from_json(cls, filename: str, debug: bool = False):
         """
         convert from json to yaml
         """
-        return json.loads(string, object_hook=deserialize.unserialize_object)
+        from . import deserialize
 
+        if debug:
+            print(f'Helix.from_json: filename={filename}')
+        with open(filename, "r") as istream:
+            return json.loads(istream.read(), object_hook=deserialize.unserialize_object)
+    
     def write_to_json(self):
         """
         write from json file
         """
-        ostream = open(self.name + '.json', 'w')
-        jsondata = self.to_json()
-        ostream.write(str(jsondata))
-        ostream.close()
+        with open(f"{self.name}.json", "w") as ostream:
+            jsondata = self.to_json()
+            ostream.write(str(jsondata))
 
-    def read_from_json(self):
-        """
-        read from json file
-        """
-        istream = open(self.name + '.json', 'r')
-        jsondata = self.from_json(istream.read())
-        print (type(jsondata))
-        istream.close()
-
-    def get_Nturns(self):
+    def getModelAxi(self):
+        return self.modelaxi
+    
+    def getModel3D(self):
+        return self.model3d
+    
+    def get_Nturns(self) -> float:
         """
         returns the number of turn
         """
-        return self.axi.get_Nturns()
+        return self.modelaxi.get_Nturns()
 
-    def gmsh(self, debug=False):
+    def generate_cut(self, format: str = 'SALOME'):
         """
-        create gmsh geometry
+        create cut files
         """
-        import gmsh
+        from .cut_utils import create_cut
 
-       
-        # TODO get axi model
-        gmsh_ids = []
-        x = self.r[0]
-        dr = self.r[1] - self.r[0]
-        y = -self.axi.h
-        
-        _id = gmsh.model.occ.addRectangle(self.r[0], self.z[0], 0, dr, y-self.z[0])
-        gmsh_ids.append(_id)
+        if self.model3d.with_shapes:
+            create_cut(self, "LNCMI", self.name)
+            angles = " ".join(f"{t:4.2f}" for t in self.shape.angle if t != 0)
+            cmd = f'add_shape --angle="{angles}" --shape_angular_length={self.shape.length} --shape={self.shape.name} --format={format} --position="{self.shape.position}"'
+            print(f"create_cut: with_shapes not implemented - shall run {cmd}")
+            
+            import subprocess
+            subprocess.run(cmd, shell=True, check=True)
+        else:
+            create_cut(self, format, self.name)
 
-        for i, (n, pitch) in enumerate(zip(self.axi.turns, self.axi.pitch)):
-            dz = n * pitch
-            _id = gmsh.model.occ.addRectangle(x, y, 0, dr, dz)
-            gmsh_ids.append(_id)
-                
-            y += dz
-
-        _id = gmsh.model.occ.addRectangle(self.r[0], y, 0, dr, self.z[1]-y)
-        gmsh_ids.append(_id)
-
-        if debug:
-            print("gmsh_ids:", len(gmsh_ids))
-            for i in gmsh_ids:
-                print(i)
-
-        return gmsh_ids
-
-    def gmsh_bcs(self, name, ids, debug=False):
+    def boundingBox(self) -> tuple:
         """
-        retreive ids for bcs in gmsh geometry
+        return Bounding as r[], z[]
+
+        so far exclude Leads
         """
-
-        defs = {}
-        import gmsh
-        
-        # set physical name
-        for i,id in enumerate(ids):
-            ps = gmsh.model.addPhysicalGroup(2, [id])
-            gmsh.model.setPhysicalName(2, ps, "%s_Cu%d" % (name, i))
-            defs["%s_Cu%d" % (name, i)] = ps
-        
-        # get BC ids
-        gmsh.option.setNumber("Geometry.OCCBoundsUseStl", 1)
-
-        eps = 1.e-3
-        # TODO: if z[xx] < 0 multiply by 1+eps to get a min by 1-eps to get a max
-        zmin = self.z[0]* (1+eps)
-        zmax = self.z[1]* (1+eps)
-        
-        ov = gmsh.model.getEntitiesInBoundingBox(self.r[0]* (1-eps), zmin, 0,
-                                                 self.r[0]* (1+eps), zmax, 0, 1)
-        r0_bc_ids = [tag for (dim,tag) in ov]
-
-        ov = gmsh.model.getEntitiesInBoundingBox(self.r[1]* (1-eps), zmin, 0,
-                                                 self.r[1]* (1+eps), zmax, 0, 1)
-        r1_bc_ids = [tag for (dim,tag) in ov]
-
-        return (r0_bc_ids, r1_bc_ids, defs)
+        return (self.r, self.z)
 
     def htype(self):
         """
@@ -214,7 +253,7 @@ class Helix(yaml.YAMLObject):
         """
         return name and number of insulators depending on htype
         """
-        
+
         sInsulator = "Glue"
         nInsulators = 1
         if self.htype() == "HL":
@@ -222,13 +261,19 @@ class Helix(yaml.YAMLObject):
         else:
             sInsulator = "Kapton"
             angle = self.shape.angle
-            nshapes = self.axi.nturns * (360 / float(angle))
+            nshapes = self.get_Nturns() * (360 / float(angle[0]))
             # print("shapes: ", nshapes, math.floor(nshapes), math.ceil(nshapes))
-                    
-            nshapes = (lambda x: math.ceil(x) if math.ceil(x) - x < x - math.floor(x) else math.floor(x))(nshapes)
+
+            nshapes = (
+                lambda x: (
+                    math.ceil(x)
+                    if math.ceil(x) - x < x - math.floor(x)
+                    else math.floor(x)
+                )
+            )(nshapes)
             nInsulators = int(nshapes)
             # print("nKaptons=", nInsulators)
-    
+
         return (sInsulator, nInsulators)
 
 def Helix_constructor(loader, node):
@@ -242,11 +287,13 @@ def Helix_constructor(loader, node):
     odd = values["odd"]
     dble = values["dble"]
     cutwidth = values["cutwidth"]
-    axi = values["axi"]
-    m3d = values["m3d"]
+    modelaxi = values["modelaxi"]
+    model3d = values["model3d"]
     shape = values["shape"]
 
-    return Helix(name, r, z, cutwidth, odd, dble, axi, m3d, shape)
+    print(f'Helix_constructor: modelaxi = {modelaxi}', flush=True)
 
-yaml.add_constructor(u'!Helix', Helix_constructor)
+    return Helix(name, r, z, cutwidth, odd, dble, modelaxi, model3d, shape)
 
+
+yaml.add_constructor("!Helix", Helix_constructor)

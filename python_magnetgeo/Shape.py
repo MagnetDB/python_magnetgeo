@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-#-*- coding:utf-8 -*-
+# -*- coding:utf-8 -*-
 
 """
 Provides definiton for Helix:
@@ -12,11 +12,11 @@ Provides definiton for Helix:
 
 import json
 import yaml
-from . import deserialize
 
 # from Shape import *
 # from ModelAxi import *
 # from Model3D import *
+
 
 class Shape(yaml.YAMLObject):
     """
@@ -30,9 +30,18 @@ class Shape(yaml.YAMLObject):
       onturns : specify on which turns to add cuts - single value or list
       position : ABOVE|BELLOW|ALTERNATE
     """
-    yaml_tag = 'Shape'
 
-    def __init__(self, name="None", profile="", length=[0.], angle=[0.], onturns=[1], position="ABOVE"):
+    yaml_tag = "Shape"
+
+    def __init__(
+        self,
+        name: str,
+        profile: str,
+        length: list[float] = [0.0],
+        angle: list[float] = [0.0],
+        onturns: list[int] = [1],
+        position: str = "ABOVE",
+    ):
         """
         initialize object
         """
@@ -47,27 +56,40 @@ class Shape(yaml.YAMLObject):
         """
         representation of object
         """
-        return "%s(name=%r, profile=%r, length=%r, angle=%r, onturns=%r, position=%r)" % \
-               (self.__class__.__name__,
+        return (
+            "%s(name=%r, profile=%r, length=%r, angle=%r, onturns=%r, position=%r)"
+            % (
+                self.__class__.__name__,
                 self.name,
                 self.profile,
                 self.length,
                 self.angle,
                 self.onturns,
-                self.position
-               )
+                self.position,
+            )
+        )
 
     def to_json(self):
         """
         convert from yaml to json
         """
-        return json.dumps(self, default=deserialize.serialize_instance, sort_keys=True, indent=4)
+        from . import deserialize
 
-    def from_json(string):
+        return json.dumps(
+            self, default=deserialize.serialize_instance, sort_keys=True, indent=4
+        )
+
+    @classmethod
+    def from_json(cls, filename: str, debug: bool = False):
         """
         convert from json to yaml
         """
-        return json.loads(string, object_hook=deserialize.unserialize_object)
+        from . import deserialize
+
+        if debug:
+            print(f'Shape.from_json: filename={filename}')
+        with open(filename, "r") as istream:
+            return json.loads(istream.read(), object_hook=deserialize.unserialize_object)
 
 
 def Shape_constructor(loader, node):
@@ -83,4 +105,5 @@ def Shape_constructor(loader, node):
     position = values["position"]
     return Shape(name, profile, length, angle, onturns, position)
 
-yaml.add_constructor(u'!Shape', Shape_constructor)
+
+yaml.add_constructor("!Shape", Shape_constructor)

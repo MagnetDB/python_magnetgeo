@@ -5,11 +5,11 @@ Maintainer: Christophe Trophime <christophe.trophime@lncmi.cnrs.fr>
 Build-Depends: debhelper-compat (= 12),
  dh-python,
  python3-setuptools,
+ python3-pip,
+ python3-pip-whl,
  python3-all,
- python3-gmsh,
  python3-yaml,
- python3-lxml,
- python3-pytest-runner
+ python3-pytest
 Standards-Version: 4.6.0
 Homepage: https://github.com/Trophime/python_magnetgeo
 #Vcs-Browser: https://salsa.debian.org/debian/python-magnetgeo
@@ -19,7 +19,7 @@ Rules-Requires-Root: no
 
 Package: python3-magnetgeo
 Architecture: all
-Depends: ${python3:Depends}, ${misc:Depends}
+Depends: magnettools, ${python3:Depends}, ${misc:Depends}
 Suggests: python-python-magnetgeo-doc
 Description: Magnet Geometry Python module (Python 3)
  This module enable to perform the following operations

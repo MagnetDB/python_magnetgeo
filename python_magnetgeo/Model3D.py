@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-#-*- coding:utf-8 -*-
+# -*- coding:utf-8 -*-
 
 """
 Provides definiton for Helix:
@@ -12,7 +12,6 @@ Provides definiton for Helix:
 
 import json
 import yaml
-from . import deserialize
 
 # from Shape import *
 # from ModelAxi import *
@@ -21,6 +20,7 @@ from . import deserialize
 from . import Shape
 from . import ModelAxi
 
+
 class Model3D(yaml.YAMLObject):
     """
     cad :
@@ -28,9 +28,11 @@ class Model3D(yaml.YAMLObject):
     with_channels :
     """
 
-    yaml_tag = 'Model3D'
+    yaml_tag = "Model3D"
 
-    def __init__(self, cad='', with_shapes=False, with_channels=False):
+    def __init__(
+        self, cad: str, with_shapes: bool = False, with_channels: bool = False
+    ) -> None:
         """
         initialize object
         """
@@ -42,25 +44,42 @@ class Model3D(yaml.YAMLObject):
         """
         representation of object
         """
-        return "%s(cad=%r, with_shapes=%r, with_channels=%r)" % \
-               (self.__class__.__name__,
-                self.cad,
-                self.with_shapes,
-                self.with_channels
-               )
+        return "%s(cad=%r, with_shapes=%r, with_channels=%r)" % (
+            self.__class__.__name__,
+            self.cad,
+            self.with_shapes,
+            self.with_channels,
+        )
 
     def to_json(self):
         """
         convert from yaml to json
         """
-        return json.dumps(self, default=deserialize.serialize_instance, sort_keys=True, indent=4)
+        from . import deserialize
 
-    def from_json(string):
+        return json.dumps(
+            self, default=deserialize.serialize_instance, sort_keys=True, indent=4
+        )
+
+    def write_to_json(self, name: str = ""):
+        """
+        write from json file
+        """
+        with open(f"{name}.json", "w") as ostream:
+            jsondata = self.to_json()
+            ostream.write(str(jsondata))
+
+    @classmethod
+    def from_json(cls, filename: str, debug: bool = False):
         """
         convert from json to yaml
         """
-        return json.loads(string, object_hook=deserialize.unserialize_object)
+        from . import deserialize
 
+        if debug:
+            print(f'Model3D.from_json: filename={filename}')
+        with open(filename, "r") as istream:
+            return json.loads(istream.read(), object_hook=deserialize.unserialize_object)
 
 def Model3D_constructor(loader, node):
     """
@@ -73,4 +92,4 @@ def Model3D_constructor(loader, node):
     return Model3D(cad, with_shapes, with_channels)
 
 
-yaml.add_constructor(u'!Model3D', Model3D_constructor)
+yaml.add_constructor("!Model3D", Model3D_constructor)
