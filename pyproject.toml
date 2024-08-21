@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "python_magnetgeo"
-version = "0.3.0"
+version = "0.4.0"
 description = "Python helpers to create HiFiMagnet cads and meshes"
 authors = ["Christophe Trophime <christophe.trophime@lncmi.cnrs.fr>",
            "Romain Vallet <romain.vallet@lncmi.cnrs.fr>",

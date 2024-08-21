@@ -1,3 +1,10 @@
+python-magnetgeo (0.4.0-1) unstable; urgency=medium
+
+  * breaking changes in Helix def
+  * rewrite tests
+
+ -- Christophe Trophime <christophe.trophime@lncmi.cnrs.fr>  Wed, 21 Aug 2024 08:54:37 +0200
+
 python-magnetgeo (0.3.2-8) unstable; urgency=medium
 
   * add Helix tests

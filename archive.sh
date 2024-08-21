@@ -1,6 +1,6 @@
 #! /bin/bash
 set +x
-VERSION=0.3.2
+VERSION=0.4.0
 
 # cleanup
 
@@ -26,3 +26,7 @@ tar zxvf ./python-magnetgeo_$VERSION.orig.tar.gz
 cp -r ../python_magnetgeo/debian python_magnetgeo
 cd python_magnetgeo
 DIST=bookworm pdebuild
+
+cd ..
+rm -rf python-magnetgeo*
+rm -rf python_magnetgeo
