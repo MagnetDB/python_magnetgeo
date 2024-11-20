@@ -12,7 +12,6 @@ from typing import Optional
 
 import json
 import yaml
-from . import deserialize
 
 from .SupraStructure import HTSinsert
 
@@ -166,14 +165,6 @@ class Supra(yaml.YAMLObject):
             self, default=deserialize.serialize_instance, sort_keys=True, indent=4
         )
 
-    def write_to_json(self):
-        """
-        write from json file
-        """
-        with open(f"{self.name}.json", "w") as ostream:
-            jsondata = self.to_json()
-            ostream.write(str(jsondata))
-
     @classmethod
     def from_json(cls, filename: str, debug: bool = False):
         """
@@ -185,6 +176,14 @@ class Supra(yaml.YAMLObject):
             print(f'Supra.from_json: filename={filename}')
         with open(filename, "r") as istream:
             return json.loads(istream.read(), object_hook=deserialize.unserialize_object)
+
+    def write_to_json(self):
+        """
+        write from json file
+        """
+        with open(f"{self.name}.json", "w") as ostream:
+            jsondata = self.to_json()
+            ostream.write(str(jsondata))
 
     def get_Nturns(self) -> int:
         """
