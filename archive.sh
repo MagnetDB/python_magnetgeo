@@ -1,9 +1,42 @@
 #! /bin/bash
-set +x
-VERSION=0.4.0
 
-# cleanup
+# set -x # force debug
+set -eo pipefail # add flag to stop when command returns an error
 
+SRCDIR=python_magnetgeo
+PACKAGE=python-magnetgeo
+
+usage(){
+   echo ""
+   echo "Description:"
+   echo "               Builds a debian package"
+   echo ""
+   echo "Usage:"
+   echo "               archive.sh [ <option> ] ... ]"
+   echo ""
+   echo "Options:"
+   echo "-d             Specify the distribution to use"
+   echo "-v <x.y.z>     Specify version to build."
+   echo ""
+   exit 1
+}
+
+while getopts "hd:v:" option ; do
+   case $option in
+       h ) usage ;;
+       d ) DIST=$OPTARG ;;
+       v ) VERSION=$OPTARG ;;
+       ? ) usage ;;
+   esac
+done
+# shift to have the good number of other args
+shift $((OPTIND - 1))
+
+# add parameters
+: ${VERSION:="0.4.0"}
+: ${DIST:="bookworm"}
+
+# cleanup source
 find . -type d -name __pycache__ | xargs rm -rf
 
 # create archive
@@ -11,22 +44,41 @@ find . -type d -name __pycache__ | xargs rm -rf
 cd ..
 tar \
     --exclude-vcs \
+    --exclude=feelppdb \
+    --exclude=tmp \
     --exclude=data \
     --exclude=debian \
     --exclude=.pc \
+    --exclude=.devcontainer \
+    --exclude=.vscode \
+    --exclude=*.sif \
+    --exclude=*.crt \
+    --exclude=*.pem \
+    --exclude=*.log \
     --exclude=*~ \
+    --exclude=#*# \
     --exclude=pyproject.toml \
     --exclude=poetry.lock \
-    -zcvf python-magnetgeo_$VERSION.orig.tar.gz python_magnetgeo
+    -zcvf ${PACKAGE}_${VERSION}.orig.tar.gz ${SRCDIR}
 
+# build package
+# disable use of hooks in pbuilder
 mkdir -p tmp
 cd tmp
-cp ../python-magnetgeo_$VERSION.orig.tar.gz .
-tar zxvf ./python-magnetgeo_$VERSION.orig.tar.gz
-cp -r ../python_magnetgeo/debian python_magnetgeo
-cd python_magnetgeo
-DIST=bookworm pdebuild
+cp ../${PACKAGE}_${VERSION}.orig.tar.gz .
+tar zxvf ./${PACKAGE}_$VERSION.orig.tar.gz
+cp -r ../${SRCDIR}/debian ${SRCDIR}
+cd ${SRCDIR}
+DIST=${DIST} pdebuild
 
+# clean up
 cd ..
-rm -rf python-magnetgeo*
-rm -rf python_magnetgeo
+rm -rf ${PACKAGE}*
+rm -rf ${SRCDIR}
+
+# # upload new package to Lncmi package repository
+# cd /var/cache/pbuilder/$DIST-amd64/results
+# dupload -t euler_$DIST 
+
+# connect to Lncmi repository server
+# update server
