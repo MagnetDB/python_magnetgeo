@@ -943,6 +943,7 @@ class Insert(yaml.YAMLObject):
         Zh = []
         for i, helix in enumerate(self.Helices):
             hhelix = None
+            print(f"{workingDir}/{helix}.yaml")
             with open(f"{workingDir}/{helix}.yaml", "r") as f:
                 hhelix = yaml.load(f, Loader=yaml.FullLoader)
             n_sections = len(hhelix.modelaxi.turns)

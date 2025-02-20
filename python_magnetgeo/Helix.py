@@ -152,6 +152,14 @@ class Helix(yaml.YAMLObject):
         except:
             raise Exception("Failed to Helix dump")
 
+    @property
+    def axi(self):
+        return self.modelaxi
+
+    @property
+    def m3d(self):
+        return self.model3d
+
     def load(self):
         """
         load object from file
@@ -194,7 +202,7 @@ class Helix(yaml.YAMLObject):
             print(f'Helix.from_json: filename={filename}')
         with open(filename, "r") as istream:
             return json.loads(istream.read(), object_hook=deserialize.unserialize_object)
-    
+
     def write_to_json(self):
         """
         write from json file
@@ -205,10 +213,10 @@ class Helix(yaml.YAMLObject):
 
     def getModelAxi(self):
         return self.modelaxi
-    
+
     def getModel3D(self):
         return self.model3d
-    
+
     def get_Nturns(self) -> float:
         """
         returns the number of turn
@@ -226,7 +234,7 @@ class Helix(yaml.YAMLObject):
             angles = " ".join(f"{t:4.2f}" for t in self.shape.angle if t != 0)
             cmd = f'add_shape --angle="{angles}" --shape_angular_length={self.shape.length} --shape={self.shape.name} --format={format} --position="{self.shape.position}"'
             print(f"create_cut: with_shapes not implemented - shall run {cmd}")
-            
+
             import subprocess
             subprocess.run(cmd, shell=True, check=True)
         else:
