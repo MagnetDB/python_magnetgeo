@@ -8,7 +8,6 @@ Provides definition for Ring:
 
 import json
 import yaml
-from . import deserialize
 
 
 class Ring(yaml.YAMLObject):
@@ -117,10 +116,12 @@ class Ring(yaml.YAMLObject):
         from . import deserialize
 
         if debug:
-            print(f'Ring.from_json: filename={filename}')
+            print(f"Ring.from_json: filename={filename}")
         with open(filename, "r") as istream:
-            return json.loads(istream.read(), object_hook=deserialize.unserialize_object)
-    
+            return json.loads(
+                istream.read(), object_hook=deserialize.unserialize_object
+            )
+
 
 def Ring_constructor(loader, node):
     """
