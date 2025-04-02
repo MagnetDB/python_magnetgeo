@@ -300,7 +300,7 @@ class Bitter(yaml.YAMLObject):
         """
         create cut files
         """
-        from cut_utils import create_cut
+        from .cut_utils import create_cut
         create_cut(self, format, self.name)
 
 
