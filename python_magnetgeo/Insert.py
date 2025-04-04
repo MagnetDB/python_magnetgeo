@@ -193,7 +193,7 @@ class Insert(yaml.YAMLObject):
         try:
             with open(f"{self.name}.yaml", "w") as ostream:
                 yaml.dump(self, stream=ostream)
-        except Exception as e:
+        except Exception:
             print("Failed to Insert dump")
 
     def load(self):
@@ -202,8 +202,8 @@ class Insert(yaml.YAMLObject):
         try:
             with open(f"{self.name}.yaml", "r") as istream:
                 data = yaml.load(stream=istream, Loader=yaml.FullLoader)
-        except Exception as e:
-            raise Exception("Failed to load Insert data %s" % (self.name + ".yaml"))
+        except Exception:
+            raise Exception(f"Failed to load Insert data {self.name}.yaml")
 
         self.name = data.name
         self.Helices = data.Helices
@@ -759,7 +759,7 @@ class Insert(yaml.YAMLObject):
                 )
             )
             geofile.write(
-                onelab_pointx % (point + 3, f"0", "z_Air * z1_H{Hn+1}", Hn + 1)
+                onelab_pointx % (point + 3, "0", "z_Air * z1_H{Hn+1}", Hn + 1)
             )
 
             geofile.write(onelab_line % (line, point, point + 1))

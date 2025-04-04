@@ -21,6 +21,7 @@ from .Bitters import Bitters
 from .Supras import Supras
 from .Shape2D import Shape2D
 from .Chamfer import Chamfer
+from .Groove import Groove
 from .tierod import Tierod
 from .coolingslit import CoolingSlit
 
@@ -45,6 +46,7 @@ classes = {
     "MSite": MSite,
     "Shape2D": Shape2D,
     "Chamfer": Chamfer,
+    "Groove": Groove,
     "Tierod": Tierod,
     "CoolingSlit": CoolingSlit,
 }
@@ -64,23 +66,23 @@ def unserialize_object(d, debug: bool = False):
     unserialize_instance of an obj
     """
     if debug:
-        print(f'unserialize_object: d={d}', flush=True)
+        print(f"unserialize_object: d={d}", flush=True)
 
     # remove all __classname__ keys
     clsname = d.pop("__classname__", None)
     if debug:
-        print(f'clsname: {clsname}', flush=True)
+        print(f"clsname: {clsname}", flush=True)
     if clsname:
         cls = classes[clsname]
         obj = cls.__new__(cls)  # Make instance without calling __init__
         for key, value in d.items():
             if debug:
-                print(f'key={key}, value={value} type={type(value)}', flush=True)
+                print(f"key={key}, value={value} type={type(value)}", flush=True)
             setattr(obj, key.lower(), value)
         if debug:
-            print(f'obj={obj}', flush=True)
+            print(f"obj={obj}", flush=True)
         return obj
     else:
         if debug:
-            print(f'no classname: {d}', flush=True)
+            print(f"no classname: {d}", flush=True)
         return d

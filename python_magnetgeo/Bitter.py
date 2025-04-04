@@ -172,7 +172,7 @@ class Bitter(yaml.YAMLObject):
         try:
             with open(f"{self.name}.yaml", "w") as ostream:
                 yaml.dump(self, stream=ostream)
-        except:
+        except Exception:
             raise Exception("Failed to Bitter dump")
 
     def load(self):
@@ -183,7 +183,7 @@ class Bitter(yaml.YAMLObject):
         try:
             with open(f"{self.name}.yaml", "r") as istream:
                 data = yaml.load(stream=istream, Loader=yaml.FullLoader)
-        except:
+        except Exception:
             raise Exception(f"Failed to load Bitter data {self.name}.yaml")
 
         self.name = data.name
@@ -222,10 +222,12 @@ class Bitter(yaml.YAMLObject):
         from . import deserialize
 
         if debug:
-            print(f'Bitter.from_json: filename={filename}')
+            print(f"Bitter.from_json: filename={filename}")
         with open(filename, "r") as istream:
-            return json.loads(istream.read(), object_hook=deserialize.unserialize_object)
-    
+            return json.loads(
+                istream.read(), object_hook=deserialize.unserialize_object
+            )
+
     def get_Nturns(self) -> float:
         """
         returns the number of turn
@@ -301,6 +303,7 @@ class Bitter(yaml.YAMLObject):
         create cut files
         """
         from .cut_utils import create_cut
+
         create_cut(self, format, self.name)
 
 

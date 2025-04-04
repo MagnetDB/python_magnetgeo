@@ -37,7 +37,7 @@ class Tierod(yaml.YAMLObject):
         try:
             with open(f"{name}.yaml", "w") as ostream:
                 yaml.dump(self, stream=ostream)
-        except:
+        except Exception:
             raise Exception("Failed to Tierod dump")
 
     def load(self, name: str):
@@ -48,8 +48,8 @@ class Tierod(yaml.YAMLObject):
         try:
             with open(f"{name}.yaml", "r") as istream:
                 data = yaml.load(stream=istream, Loader=yaml.FullLoader)
-        except:
-            raise Exception(f"Failed to load Bitter data {name}.yaml")
+        except Exception:
+            raise Exception(f"Failed to load TieRod data {name}.yaml")
 
         self.r = data.r
         self.n = data.n
@@ -79,9 +79,11 @@ class Tierod(yaml.YAMLObject):
         from . import deserialize
 
         if debug:
-            print(f'Tierod.from_json: filename={filename}')
+            print(f"Tierod.from_json: filename={filename}")
         with open(filename, "r") as istream:
-            return json.loads(istream.read(), object_hook=deserialize.unserialize_object)
+            return json.loads(
+                istream.read(), object_hook=deserialize.unserialize_object
+            )
 
 
 def Tierod_constructor(loader, node):
