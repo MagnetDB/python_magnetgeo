@@ -14,6 +14,8 @@ import math
 import json
 import yaml
 
+from .Groove import Groove
+from .Chamfer import Chamfer
 from .Shape import Shape
 from .ModelAxi import ModelAxi
 from .Model3D import Model3D
@@ -31,6 +33,7 @@ class Helix(yaml.YAMLObject):
     modelaxi :
     model3d :
     shape :
+    chamfer
     """
 
     yaml_tag = "Helix"
@@ -46,6 +49,8 @@ class Helix(yaml.YAMLObject):
         modelaxi: ModelAxi,
         model3d: Model3D,
         shape: Shape,
+        chamfers: list[Chamfer] | None = None,
+        grooves: Groove | None = None,
     ) -> None:
         """
         initialize object
@@ -59,6 +64,8 @@ class Helix(yaml.YAMLObject):
         self.modelaxi = modelaxi
         self.model3d = model3d
         self.shape = shape
+        self.chamfers = chamfers
+        self.grooves = grooves
 
     def get_type(self) -> str:
         if self.model3d.with_shapes and self.model3d.with_channels:
@@ -127,7 +134,7 @@ class Helix(yaml.YAMLObject):
         representation of object
         """
         return (
-            "%s(name=%r, odd=%r, dble=%r, r=%r, z=%r, cutwidth=%r, modelaxi=%r, model3d=%r, shape=%r)"
+            "%s(name=%r, odd=%r, dble=%r, r=%r, z=%r, cutwidth=%r, modelaxi=%r, model3d=%r, shape=%r, chamfers=%s, grooves=%s)"
             % (
                 self.__class__.__name__,
                 self.name,
@@ -139,6 +146,8 @@ class Helix(yaml.YAMLObject):
                 self.modelaxi,
                 self.model3d,
                 self.shape,
+                self.chamfers,
+                self.grooves,
             )
         )
 
@@ -149,8 +158,8 @@ class Helix(yaml.YAMLObject):
         try:
             with open(f"{self.name}.yaml", "w") as ostream:
                 yaml.dump(self, stream=ostream)
-        except:
-            raise Exception("Failed to Helix dump")
+        except Exception as e:
+            raise Exception(f"Failed to Helix dump ({e})")
 
     @property
     def axi(self):
@@ -160,6 +169,12 @@ class Helix(yaml.YAMLObject):
     def m3d(self):
         return self.model3d
 
+    def chamfers(self):
+        return self.chamfers
+
+    def grooves(self):
+        return self.grooves
+
     def load(self):
         """
         load object from file
@@ -168,8 +183,8 @@ class Helix(yaml.YAMLObject):
         try:
             with open(f"{self.name}.yaml", "r") as istream:
                 data = yaml.load(stream=istream, Loader=yaml.FullLoader)
-        except:
-            raise Exception("Failed to load Helix data %s.yaml" % self.name)
+        except FileNotFoundError:
+            raise Exception(f"Failed to load Helix data {self.name}.yaml")
 
         self.name = data.name
         self.dble = data.dble
@@ -180,6 +195,12 @@ class Helix(yaml.YAMLObject):
         self.modelaxi = data.modelaxi
         self.model3d = data.model3d
         self.shape = data.shape
+        self.chamfers = None
+        self.grooves = None
+        if hasattr(data, "chamfers"):
+            self.chamfers = data.chamfers
+        if hasattr(data, "grooves"):
+            self.grooves = data.grooves
 
     def to_json(self):
         """
@@ -199,9 +220,11 @@ class Helix(yaml.YAMLObject):
         from . import deserialize
 
         if debug:
-            print(f'Helix.from_json: filename={filename}')
+            print(f"Helix.from_json: filename={filename}")
         with open(filename, "r") as istream:
-            return json.loads(istream.read(), object_hook=deserialize.unserialize_object)
+            return json.loads(
+                istream.read(), object_hook=deserialize.unserialize_object
+            )
 
     def write_to_json(self):
         """
@@ -223,7 +246,7 @@ class Helix(yaml.YAMLObject):
         """
         return self.modelaxi.get_Nturns()
 
-    def generate_cut(self, format: str = 'SALOME'):
+    def generate_cut(self, format: str = "SALOME"):
         """
         create cut files
         """
@@ -236,6 +259,7 @@ class Helix(yaml.YAMLObject):
             print(f"create_cut: with_shapes not implemented - shall run {cmd}")
 
             import subprocess
+
             subprocess.run(cmd, shell=True, check=True)
         else:
             create_cut(self, format, self.name)
@@ -284,6 +308,7 @@ class Helix(yaml.YAMLObject):
 
         return (sInsulator, nInsulators)
 
+
 def Helix_constructor(loader, node):
     """
     build an helix object
@@ -298,10 +323,18 @@ def Helix_constructor(loader, node):
     modelaxi = values["modelaxi"]
     model3d = values["model3d"]
     shape = values["shape"]
+    chamfers = None
+    if "chamfers" in values:
+        chamfers = values["chamfers"]
+    grooves = None
+    if "grooves" in values:
+        grooves = values["grooves"]
 
-    print(f'Helix_constructor: modelaxi = {modelaxi}', flush=True)
+    print(f"Helix_constructor: modelaxi = {modelaxi}", flush=True)
 
-    return Helix(name, r, z, cutwidth, odd, dble, modelaxi, model3d, shape)
+    return Helix(
+        name, r, z, cutwidth, odd, dble, modelaxi, model3d, shape, chamfers, grooves
+    )
 
 
 yaml.add_constructor("!Helix", Helix_constructor)

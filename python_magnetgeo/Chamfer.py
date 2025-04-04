@@ -27,7 +27,15 @@ class Chamfer(yaml.YAMLObject):
 
     yaml_tag = "Chamfer"
 
-    def __init__(self, name: str, side: str, rsdie: str, alpha: float, L: float, radius: float|None):
+    def __init__(
+        self,
+        name: str,
+        side: str,
+        rside: str,
+        alpha: float,
+        L: float,
+        radius: float | None,
+    ):
         """
         initialize object
         """
@@ -39,13 +47,25 @@ class Chamfer(yaml.YAMLObject):
         if radius is not None:
             self.radius = radius
         else:
-            self.radius = chamfer_L * math.sin(chamfer_alpha) / math.cos(chamfer_alpha)
+            self.radius = (
+                L
+                * math.sin(math.pi / 180.0 * alpha)
+                / math.cos(math.pi / 180.0 * alpha)
+            )
 
     def __repr__(self):
         """
         representation of object
         """
-        return "%s(name=%r, side=%r, rside=%r, alpha=%r, L=%r, radius=%r)" % (self.__class__.__name__, self.name, self.pts)
+        return "%s(name=%r, side=%r, rside=%r, alpha=%r, L=%r, radius=%r)" % (
+            self.__class__.__name__,
+            self.name,
+            self.side,
+            self.rside,
+            self.alpha,
+            self.L,
+            self.radius,
+        )
 
     def dump(self, name: str):
         """
@@ -54,7 +74,7 @@ class Chamfer(yaml.YAMLObject):
         try:
             with open(f"{name}.yaml", "w") as ostream:
                 yaml.dump(self, stream=ostream)
-        except:
+        except Exception:
             raise Exception("Failed to Chamfer dump")
 
     def load(self, name: str):
@@ -65,15 +85,19 @@ class Chamfer(yaml.YAMLObject):
         try:
             with open(f"{name}.yaml", "r") as istream:
                 data = yaml.load(stream=istream, Loader=yaml.FullLoader)
-        except:
+        except Exception:
             raise Exception(f"Failed to load Chamfer data {name}.yaml")
 
         self.name = name
-        self.side = chamfer_params[0] # HP/BP
-        self.rside = chamfer_params[1] # rint/rext
-        self.alpha = float(chamfer_params[2])
-        self.L = float(chamfer_params[3])
-        self.radius = L * math.sin(alpha * math.pi/180.) / math.cos(alpha * math.pi/180.)
+        self.side = data.side
+        self.rside = data.rside
+        self.alpha = data.alpha
+        self.L = data.L
+        self.radius = (
+            self.L
+            * math.sin(self.alpha * math.pi / 180.0)
+            / math.cos(self.alpha * math.pi / 180.0)
+        )
 
     def to_json(self):
         """
@@ -93,10 +117,11 @@ class Chamfer(yaml.YAMLObject):
         from . import deserialize
 
         if debug:
-            print(f'Chamfer.from_json: filename={filename}')
+            print(f"Chamfer.from_json: filename={filename}")
         with open(filename, "r") as istream:
-            return json.loads(istream.read(), object_hook=deserialize.unserialize_object)
-    
+            return json.loads(
+                istream.read(), object_hook=deserialize.unserialize_object
+            )
 
 
 def Shape_constructor(loader, node):
@@ -116,4 +141,3 @@ def Shape_constructor(loader, node):
 
 
 yaml.add_constructor("!Chamfer", Shape_constructor)
-
