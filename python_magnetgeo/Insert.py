@@ -10,7 +10,7 @@ import yaml
 from . import InnerCurrentLead
 
 
-def filter(data: list[float], tol: float = 1.e-6) -> list[float]:
+def filter(data: list[float], tol: float = 1.0e-6) -> list[float]:
     result = []
     ndata = len(data)
     for i in range(ndata):
@@ -20,7 +20,7 @@ def filter(data: list[float], tol: float = 1.e-6) -> list[float]:
     # print(f"duplicate index: {result}")
 
     # remove result from data
-    return [data[i] for i in range(ndata) if not i in result]
+    return [data[i] for i in range(ndata) if i not in result]
 
 
 class Insert(yaml.YAMLObject):
@@ -193,7 +193,7 @@ class Insert(yaml.YAMLObject):
         try:
             with open(f"{self.name}.yaml", "w") as ostream:
                 yaml.dump(self, stream=ostream)
-        except:
+        except Exception as e:
             print("Failed to Insert dump")
 
     def load(self):
@@ -202,7 +202,7 @@ class Insert(yaml.YAMLObject):
         try:
             with open(f"{self.name}.yaml", "r") as istream:
                 data = yaml.load(stream=istream, Loader=yaml.FullLoader)
-        except:
+        except Exception as e:
             raise Exception("Failed to load Insert data %s" % (self.name + ".yaml"))
 
         self.name = data.name
@@ -238,9 +238,11 @@ class Insert(yaml.YAMLObject):
         from . import deserialize
 
         if debug:
-            print(f'Insert.from_json: filename={filename}')
+            print(f"Insert.from_json: filename={filename}")
         with open(filename, "r") as istream:
-            return json.loads(istream.read(), object_hook=deserialize.unserialize_object)
+            return json.loads(
+                istream.read(), object_hook=deserialize.unserialize_object
+            )
 
     ###################################################################
     #

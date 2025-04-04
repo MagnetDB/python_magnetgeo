@@ -68,7 +68,7 @@ class Ring(yaml.YAMLObject):
         try:
             with open(f"{self.name}.yaml", "w") as ostream:
                 yaml.dump(self, stream=ostream)
-        except:
+        except Exception as e:
             raise Exception("Failed to dump Ring data")
 
     def load(self):
@@ -79,7 +79,7 @@ class Ring(yaml.YAMLObject):
         try:
             with open(f"{self.name}.yaml", "r") as istream:
                 data = yaml.load(stream=istream, Loader=yaml.FullLoader)
-        except:
+        except Exception as e:
             raise Exception(f"Failed to load Ring data {self.name}.yaml")
 
         self.name = data.name
