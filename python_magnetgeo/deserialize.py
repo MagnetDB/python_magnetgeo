@@ -20,6 +20,7 @@ from .MSite import MSite
 from .Bitters import Bitters
 from .Supras import Supras
 from .Shape2D import Shape2D
+from .Chamfer import Chamfer
 from .tierod import Tierod
 from .coolingslit import CoolingSlit
 
@@ -43,6 +44,7 @@ classes = {
     "Supras": Supras,
     "MSite": MSite,
     "Shape2D": Shape2D,
+    "Chamfer": Chamfer,
     "Tierod": Tierod,
     "CoolingSlit": CoolingSlit,
 }
