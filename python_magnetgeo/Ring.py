@@ -18,6 +18,7 @@ class Ring(yaml.YAMLObject):
     angle :
     BPside :
     fillets :
+    cad :
     """
 
     yaml_tag = "Ring"
@@ -31,6 +32,7 @@ class Ring(yaml.YAMLObject):
         angle: float = 0,
         BPside: bool = True,
         fillets: bool = False,
+        cad: str|None = None
     ) -> None:
         """
         initialize object
@@ -42,12 +44,13 @@ class Ring(yaml.YAMLObject):
         self.angle = angle
         self.BPside = BPside
         self.fillets = fillets
+        self.cad = cad
 
     def __repr__(self):
         """
         representation of object
         """
-        return "%s(name=%r, r=%r, z=%r, n=%r, angle=%r, BPside=%r, fillets=%r)" % (
+        return "%s(name=%r, r=%r, z=%r, n=%r, angle=%r, BPside=%r, fillets=%r, cad=%r)" % (
             self.__class__.__name__,
             self.name,
             self.r,
@@ -56,6 +59,7 @@ class Ring(yaml.YAMLObject):
             self.angle,
             self.BPside,
             self.fillets,
+            self.cad,
         )
 
     def get_lc(self):
@@ -89,6 +93,9 @@ class Ring(yaml.YAMLObject):
         self.angle = data.angle
         self.BPside = data.BPside
         self.fillets = data.fillets
+        self.data = None
+        if hasattr(data, "cad"):
+            self.cad = data.cad
 
     def to_json(self):
         """
@@ -135,7 +142,10 @@ def Ring_constructor(loader, node):
     angle = values["angle"]
     BPside = values["BPside"]
     fillets = values["fillets"]
-    return Ring(name, r, z, n, angle, BPside, fillets)
+    cad = None
+    if "cad" in values:
+        cad = values["cad"]
+    return Ring(name, r, z, n, angle, BPside, fillets, cad)
 
 
 yaml.add_constructor("!Ring", Ring_constructor)
