@@ -8,6 +8,8 @@ Provides definition for Helix:
 * Model Axi: definition of helical cut (provided from MagnetTools)
 * Model 3D: actual 3D CAD
 * Shape: definition of Shape eventually added to the helical cut
+* Chamfers:
+* Grooves:
 """
 
 import math
