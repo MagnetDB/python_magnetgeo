@@ -34,7 +34,7 @@ class Chamfer(yaml.YAMLObject):
         rside: str,
         alpha: float,
         L: float,
-        radius: float | None,
+        radius: float | None = None,
     ):
         """
         initialize object
