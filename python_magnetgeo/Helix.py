@@ -136,7 +136,7 @@ class Helix(yaml.YAMLObject):
         representation of object
         """
         return (
-            "%s(name=%r, odd=%r, dble=%r, r=%r, z=%r, cutwidth=%r, modelaxi=%r, model3d=%r, shape=%r, chamfers=%s, grooves=%s)"
+            "%s(name=%r, odd=%r, dble=%r, r=%r, z=%r, cutwidth=%r, modelaxi=%r, model3d=%r, shape=%r, chamfers=%r, grooves=%r)"
             % (
                 self.__class__.__name__,
                 self.name,

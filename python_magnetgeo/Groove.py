@@ -20,7 +20,7 @@ class Groove(yaml.YAMLObject):
         self.eps: float = eps
 
     def __repr__(self):
-        return "%s(gtype=%r, n=%r, eps=%r)" % (
+        return "%s(gtype=%s, n=%d, eps=%g)" % (
             self.__class__.__name__,
             self.gtype,
             self.n,
