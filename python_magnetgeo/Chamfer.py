@@ -8,7 +8,6 @@ Provides definiton for Chamfer:
 * rside: str for r postion: rint or rext
 * alpha: angle in degree
 * L: height in mm
-* radius: radius of chamfer (optional)
 
 """
 
@@ -34,7 +33,6 @@ class Chamfer(yaml.YAMLObject):
         rside: str,
         alpha: float,
         L: float,
-        radius: float | None = None,
     ):
         """
         initialize object
@@ -44,27 +42,18 @@ class Chamfer(yaml.YAMLObject):
         self.rside = rside
         self.alpha = alpha
         self.L = L
-        if radius is not None:
-            self.radius = radius
-        else:
-            self.radius = (
-                L
-                * math.sin(math.pi / 180.0 * alpha)
-                / math.cos(math.pi / 180.0 * alpha)
-            )
 
     def __repr__(self):
         """
         representation of object
         """
-        return "%s(name=%r, side=%r, rside=%r, alpha=%r, L=%r, radius=%r)" % (
+        return "%s(name=%s, side=%s, rside=%s, alpha=%g, L=%g)" % (
             self.__class__.__name__,
             self.name,
             self.side,
             self.rside,
             self.alpha,
             self.L,
-            self.radius,
         )
 
     def dump(self, name: str):
@@ -93,11 +82,6 @@ class Chamfer(yaml.YAMLObject):
         self.rside = data.rside
         self.alpha = data.alpha
         self.L = data.L
-        self.radius = (
-            self.L
-            * math.sin(self.alpha * math.pi / 180.0)
-            / math.cos(self.alpha * math.pi / 180.0)
-        )
 
     def to_json(self):
         """
@@ -123,8 +107,19 @@ class Chamfer(yaml.YAMLObject):
                 istream.read(), object_hook=deserialize.unserialize_object
             )
 
+    def getRadius(self):
+        """
+        returns chamfer radius 
+        """
+        radius = (
+                self.L
+                * math.sin(math.pi / 180.0 * self.alpha)
+                / math.cos(math.pi / 180.0 * self.alpha)
+            )
+        return radius
 
-def Shape_constructor(loader, node):
+
+def Chamfer_constructor(loader, node):
     """
     build an Shape object
     """
@@ -134,10 +129,7 @@ def Shape_constructor(loader, node):
     rside = values["rside"]
     alpha = values["alpha"]
     L = values["L"]
-    radius = None
-    if "radius" in values:
-        radius = values["radius"]
-    return Chamfer(name, side, rside, alpha, L, radius)
+    return Chamfer(name, side, rside, alpha, L)
 
 
-yaml.add_constructor("!Chamfer", Shape_constructor)
+yaml.add_constructor("!Chamfer", Chamfer_constructor)
