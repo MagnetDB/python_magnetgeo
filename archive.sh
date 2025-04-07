@@ -45,6 +45,7 @@ cd ..
 tar \
     --exclude-vcs \
     --exclude=feelppdb \
+    --exclude=venv \
     --exclude=tmp \
     --exclude=data \
     --exclude=debian \
