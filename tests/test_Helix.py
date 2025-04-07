@@ -21,7 +21,7 @@ def test_helix():
 
 
 def test_loadhelix_oldformat():
-    helix = yaml.load(open("Helix-v0.yaml", "r"), Loader=yaml.FullLoader)
+    helix = yaml.load(open("tests/Helix-v0.yaml", "r"), Loader=yaml.FullLoader)
     assert helix.r[0] == 19.3
 
 def test_loadhelix():

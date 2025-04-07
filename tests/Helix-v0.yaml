@@ -1,0 +1,28 @@
+!<Helix>
+cutwidth: 0.2
+dble: true
+model3d: !<Model3D>
+  cad: test
+  with_channels: false
+  with_shapes: false
+modelaxi: !<ModelAxi>
+  h: 0.0
+  name: ''
+  pitch: []
+  turns: []
+name: Helix
+odd: true
+r:
+- 19.3
+- 24.2
+shape: !<Shape>
+  angle:
+  - 0.0
+  length:
+  - 0.0
+  name: ''
+  onturns:
+  - 1
+  position: ABOVE
+  profile: ''
+z: []
