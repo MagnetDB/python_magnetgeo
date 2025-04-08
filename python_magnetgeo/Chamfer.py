@@ -21,14 +21,16 @@ class Chamfer(yaml.YAMLObject):
     name :
 
     params :
-      x, y: list of points
+      side: BP or HP
+      rside: rint or rext
+      alpha: angle in degree
+      L: height in mm
     """
 
     yaml_tag = "Chamfer"
 
     def __init__(
         self,
-        name: str,
         side: str,
         rside: str,
         alpha: float,
@@ -37,7 +39,6 @@ class Chamfer(yaml.YAMLObject):
         """
         initialize object
         """
-        self.name = name
         self.side = side
         self.rside = rside
         self.alpha = alpha
@@ -47,9 +48,8 @@ class Chamfer(yaml.YAMLObject):
         """
         representation of object
         """
-        return "%s(name=%s, side=%s, rside=%s, alpha=%g, L=%g)" % (
+        return "%s(side=%s, rside=%s, alpha=%g, L=%g)" % (
             self.__class__.__name__,
-            self.name,
             self.side,
             self.rside,
             self.alpha,
@@ -77,7 +77,6 @@ class Chamfer(yaml.YAMLObject):
         except Exception:
             raise Exception(f"Failed to load Chamfer data {name}.yaml")
 
-        self.name = name
         self.side = data.side
         self.rside = data.rside
         self.alpha = data.alpha
@@ -124,12 +123,11 @@ def Chamfer_constructor(loader, node):
     build an Shape object
     """
     values = loader.construct_mapping(node)
-    name = values["name"]
     side = values["side"]
     rside = values["rside"]
     alpha = values["alpha"]
     L = values["L"]
-    return Chamfer(name, side, rside, alpha, L)
+    return Chamfer(side, rside, alpha, L)
 
 
 yaml.add_constructor("!Chamfer", Chamfer_constructor)

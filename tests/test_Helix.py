@@ -20,6 +20,10 @@ def test_helix():
     yaml.dump(helix, ofile)
 
 
+def test_printhelix_oldformat():
+    helix = yaml.load(open("tests/Helix-v0.yaml", "r"), Loader=yaml.FullLoader)
+    print(helix)
+
 def test_loadhelix_oldformat():
     helix = yaml.load(open("tests/Helix-v0.yaml", "r"), Loader=yaml.FullLoader)
     assert helix.r[0] == 19.3
@@ -45,7 +49,7 @@ def test_chamfer():
     axi = ModelAxi()
     m3d = Model3D(cad="test")
     shape = Shape("", "")
-    chamfers = [Chamfer("test", "HP", "rint", 4, 9)]
+    chamfers = [Chamfer("HP", "rint", 4, 9)]
     helix = Helix("Helix", r, z, cutwidth, odd, dble, axi, m3d, shape, chamfers)
     ofile = open("Helix-w-chamfer.yaml", "w")
     yaml.dump(helix, ofile)
@@ -55,4 +59,4 @@ def test_loadchamfer():
     print(helix.chamfers)
     chamfers = helix.chamfers
     chamfer0 = chamfers[0]
-    assert chamfer0.name == "test"
+    assert chamfer0.side == "HP"

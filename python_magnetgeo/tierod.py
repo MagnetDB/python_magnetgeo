@@ -99,4 +99,4 @@ def Tierod_constructor(loader, node):
     return Tierod(r, n, dh, sh, shape)
 
 
-yaml.add_constructor("!<Tierod>", Tierod_constructor)
+yaml.add_constructor("!Tierod", Tierod_constructor)

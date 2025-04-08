@@ -39,6 +39,19 @@ class Helix(yaml.YAMLObject):
     """
 
     yaml_tag = "Helix"
+    
+    def __setstate__(self, state):
+        """
+        This method is called during deserialization (when loading from YAML or pickle)
+        We use it to ensure the optional attributes always exist
+        """
+        self.__dict__.update(state)
+        
+        # Ensure these attributes always exist
+        if not hasattr(self, 'chamfers'):
+            self.chamfers = []
+        if not hasattr(self, 'grooves'):
+            self.grooves = Groove()
 
     def __init__(
         self,
@@ -51,8 +64,8 @@ class Helix(yaml.YAMLObject):
         modelaxi: ModelAxi,
         model3d: Model3D,
         shape: Shape,
-        chamfers: list[Chamfer] | None = None,
-        grooves: Groove | None = None,
+        chamfers: list = None,
+        grooves: Groove = None,
     ) -> None:
         """
         initialize object
@@ -66,8 +79,8 @@ class Helix(yaml.YAMLObject):
         self.modelaxi = modelaxi
         self.model3d = model3d
         self.shape = shape
-        self.chamfers = chamfers
-        self.grooves = grooves
+        self.chamfers = chamfers if chamfers is not None else []
+        self.grooves = grooves if grooves is not None else Groove()        
 
     def get_type(self) -> str:
         if self.model3d.with_shapes and self.model3d.with_channels:
@@ -135,23 +148,17 @@ class Helix(yaml.YAMLObject):
         """
         representation of object
         """
-        return (
-            "%s(name=%r, odd=%r, dble=%r, r=%r, z=%r, cutwidth=%r, modelaxi=%r, model3d=%r, shape=%r, chamfers=%r, grooves=%r)"
-            % (
-                self.__class__.__name__,
-                self.name,
-                self.odd,
-                self.dble,
-                self.r,
-                self.z,
-                self.cutwidth,
-                self.modelaxi,
-                self.model3d,
-                self.shape,
-                self.chamfers,
-                self.grooves,
-            )
-        )
+        msg = f"{self.__class__.__name__}(name={self.name},odd={self.odd},dble={self.dble},r={self.r},z={self.z},cutwidth={self.cutwidth},modelaxi={self.modelaxi},model3d={self.model3d},shape={self.shape}"
+        if hasattr(self, 'chamfers'):
+            msg += f"chamfers={type(self.chamfers)}"
+        else:
+            msg += ",chamfers=None"
+        if hasattr(self, 'grooves'):
+            msg += f"grooves={type(self.grooves)}"
+        else:
+            msg += ",grooves=None"
+        msg += ")"
+        return msg
 
     def dump(self):
         """
@@ -170,12 +177,6 @@ class Helix(yaml.YAMLObject):
     @property
     def m3d(self):
         return self.model3d
-
-    def chamfers(self):
-        return self.chamfers
-
-    def grooves(self):
-        return self.grooves
 
     def load(self):
         """
@@ -197,12 +198,11 @@ class Helix(yaml.YAMLObject):
         self.modelaxi = data.modelaxi
         self.model3d = data.model3d
         self.shape = data.shape
-        self.chamfers = None
-        self.grooves = None
-        if hasattr(data, "chamfers"):
-            self.chamfers = data.chamfers
-        if hasattr(data, "grooves"):
-            self.grooves = data.grooves
+
+        # Always ensure these attributes exist for backward compatibility
+        # Even if they don't exist in the loaded data
+        self.chamfers = getattr(data, 'chamfers', [])
+        self.grooves = getattr(data, 'grooves', Groove())
 
     def to_json(self):
         """
@@ -325,18 +325,22 @@ def Helix_constructor(loader, node):
     modelaxi = values["modelaxi"]
     model3d = values["model3d"]
     shape = values["shape"]
-    chamfers = None
-    if "chamfers" in values:
-        chamfers = values["chamfers"]
-    grooves = None
-    if "grooves" in values:
-        grooves = values["grooves"]
 
-    print(f"Helix_constructor: modelaxi = {modelaxi}", flush=True)
+    # Make chamfers and grooves optional
+    chamfers = values.get("chamfers", [])
+    grooves = values.get("grooves", Groove())
 
-    return Helix(
+    print(f"Helix_constructor: modelaxi={modelaxi}, chamfers={chamfers}, grooves={grooves}", flush=True)
+
+    helix = Helix(
         name, r, z, cutwidth, odd, dble, modelaxi, model3d, shape, chamfers, grooves
     )
 
+    # Ensure these attributes always exist
+    if not hasattr(helix, 'chamfers'):
+        helix.chamfers = []
+    if not hasattr(helix, 'grooves'):
+        helix.grooves = Groove()
+    return helix
 
 yaml.add_constructor("!Helix", Helix_constructor)

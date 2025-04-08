@@ -14,7 +14,7 @@ eps: depth of groove
 class Groove(yaml.YAMLObject):
     yaml_tag = "Groove"
 
-    def __init__(self, gtype: str, n: int, eps: float) -> None:
+    def __init__(self, gtype: str=None, n: int=0, eps: float=0) -> None:
         self.gtype = gtype
         self.n = n
         self.eps: float = eps
@@ -88,4 +88,4 @@ def Groove_constructor(loader, node):
     return Groove(gtype, n, eps)
 
 
-yaml.add_constructor("!<Groove>", Groove_constructor)
+yaml.add_constructor("!Groove", Groove_constructor)
