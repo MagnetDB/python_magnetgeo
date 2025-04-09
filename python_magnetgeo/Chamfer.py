@@ -108,12 +108,11 @@ class Chamfer(yaml.YAMLObject):
 
     def getRadius(self):
         """
-        returns chamfer radius 
+        returns chamfer radius reduction 
         """
         radius = (
                 self.L
-                * math.sin(math.pi / 180.0 * self.alpha)
-                / math.cos(math.pi / 180.0 * self.alpha)
+                * math.tan(math.pi / 180.0 * self.alpha)
             )
         return radius
 
