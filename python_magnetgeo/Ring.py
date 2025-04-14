@@ -23,6 +23,17 @@ class Ring(yaml.YAMLObject):
 
     yaml_tag = "Ring"
 
+    def __setstate__(self, state):
+        """
+        This method is called during deserialization (when loading from YAML or pickle)
+        We use it to ensure the optional attributes always exist
+        """
+        self.__dict__.update(state)
+        
+        # Ensure these attributes always exist
+        if not hasattr(self, 'cad'):
+            self.cad = ''
+
     def __init__(
         self,
         name: str,
@@ -50,7 +61,7 @@ class Ring(yaml.YAMLObject):
         """
         representation of object
         """
-        return "%s(name=%r, r=%r, z=%r, n=%r, angle=%r, BPside=%r, fillets=%r, cad=%r)" % (
+        msg = "%s(name=%r, r=%r, z=%r, n=%r, angle=%r, BPside=%r, fillets=%r)" % (
             self.__class__.__name__,
             self.name,
             self.r,
@@ -58,9 +69,12 @@ class Ring(yaml.YAMLObject):
             self.n,
             self.angle,
             self.BPside,
-            self.fillets,
-            self.cad,
-        )
+            self.fillets)
+        if hasattr(self, 'cad'):
+            msg += ", cad=%r" % self.cad
+        else:
+            msg += ", cad=None"
+        return msg
 
     def get_lc(self):
         return (self.r[1] - self.r[0]) / 10.0
@@ -94,8 +108,7 @@ class Ring(yaml.YAMLObject):
         self.BPside = data.BPside
         self.fillets = data.fillets
         self.data = None
-        if hasattr(data, "cad"):
-            self.cad = data.cad
+        self.cad = getattr(data, 'cad', '')
 
     def to_json(self):
         """
@@ -142,10 +155,11 @@ def Ring_constructor(loader, node):
     angle = values["angle"]
     BPside = values["BPside"]
     fillets = values["fillets"]
-    cad = None
-    if "cad" in values:
-        cad = values["cad"]
-    return Ring(name, r, z, n, angle, BPside, fillets, cad)
-
+    cad = values.get("cad", '')
+    
+    ring = Ring(name, r, z, n, angle, BPside, fillets, cad)
+    if not hasattr(ring, 'cad'):
+        ring.cad = ''
+    return cad
 
 yaml.add_constructor("!Ring", Ring_constructor)
