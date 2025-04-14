@@ -150,11 +150,11 @@ class Helix(yaml.YAMLObject):
         """
         msg = f"{self.__class__.__name__}(name={self.name},odd={self.odd},dble={self.dble},r={self.r},z={self.z},cutwidth={self.cutwidth},modelaxi={self.modelaxi},model3d={self.model3d},shape={self.shape}"
         if hasattr(self, 'chamfers'):
-            msg += f"chamfers={type(self.chamfers)}"
+            msg += f"chamfers={self.chamfers}"
         else:
             msg += ",chamfers=None"
         if hasattr(self, 'grooves'):
-            msg += f"grooves={type(self.grooves)}"
+            msg += f",grooves={self.grooves}"
         else:
             msg += ",grooves=None"
         msg += ")"
