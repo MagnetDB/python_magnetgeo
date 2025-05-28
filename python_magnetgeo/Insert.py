@@ -273,16 +273,17 @@ class Insert(yaml.YAMLObject):
             rb[1] = max(rb[1], Helix.r[1])
             zb[1] = max(zb[1], Helix.z[1])
 
-        ring_dz_max = 0
-        for i, name in enumerate(self.Rings):
-            Ring = None
-            with open(name + ".yaml", "r") as f:
-                Ring = yaml.load(f, Loader=yaml.FullLoader)
+        if self.Rings:
+            ring_dz_max = 0
+            for i, name in enumerate(self.Rings):
+                Ring = None
+                with open(name + ".yaml", "r") as f:
+                    Ring = yaml.load(f, Loader=yaml.FullLoader)
 
-            ring_dz_max = abs(Ring.z[-1] - Ring.z[0])
+                ring_dz_max = abs(Ring.z[-1] - Ring.z[0])
 
-        zb[0] -= ring_dz_max
-        zb[1] += ring_dz_max
+            zb[0] -= ring_dz_max
+            zb[1] += ring_dz_max
 
         # TODO add Leads
 
