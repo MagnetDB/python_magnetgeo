@@ -68,9 +68,9 @@ class Chamfer(yaml.YAMLObject):
         msg += f"(side={self.side}, "
         msg += f", rside={self.rside}"
         if hasattr(self, "alpha"):
-            msg += f", alpha={self.alpha}}"
+            msg += f", alpha={self.alpha}"
         if hasattr(self, "dr"):
-            msg += f", dr={self.dr}}"
+            msg += f", dr={self.dr}"
         msg += f", L=self.{L})"
         return msg
 
