@@ -7,7 +7,11 @@ import math
 import datetime
 import json
 import yaml
+
+from . import Helix
+from . import Ring
 from . import InnerCurrentLead
+from . import OuterCurrentLead
 
 
 def filter(data: list[float], tol: float = 1.0e-6) -> list[float]:
@@ -41,24 +45,58 @@ class Insert(yaml.YAMLObject):
 
     def __init__(
         self,
-        name,
-        Helices=[],
-        Rings=[],
-        CurrentLeads=[],
-        HAngles=[],
-        RAngles=[],
+        name: str,
+        Helices: list[str]|list[Helix]=[],
+        Rings: list[str]|list[Ring]=[],
+        CurrentLeads: list=[],
+        HAngles: list=[],
+        RAngles: list=[],
         innerbore: float = 0,
         outerbore: float = 0,
     ):
         """constructor"""
         self.name = name
-        self.Helices = Helices
+
+        self.Helices = []
+        if isinstance(Helices[0], str):
+            for hname in Helices:
+                with open(f"{hname}.yaml", "r") as f:
+                    helix = yaml.load(f, Loader=yaml.FullLoader)
+                self.Helices.append(helix)
+        elif isinstance(Helices[0], Helix.Helix):       
+            for helix in Helices:
+                self.Helices.append(helix)
+        else:
+            raise RuntimeError(f"unexpected type of arguments for Helices: {type(Helices[0])}")
         self.HAngles = HAngles
         for Angle in self.HAngles:
             print("Angle: ", Angle)
-        self.Rings = Rings
+            
+        self.Rings = []
+        if isinstance(Rings[0], str):
+            for rname in Rings:
+                with open(f"{rname}.yaml", "r") as f:
+                    ring = yaml.load(f, Loader=yaml.FullLoader)
+                self.Rings.append(ring)
+        elif isinstance(Rings[0], Ring.Ring):       
+            for ring in Rings:
+                self.Rings.append(ring)
+        else:
+            raise RuntimeError(f"unexpected type of arguments for Helices: {type(Rings[0])}")
         self.RAngles = RAngles
-        self.CurrentLeads = CurrentLeads
+        
+        self.CurrentLeads = []
+        if isinstance(CurrentLeads[0], str):
+            for lname in CurrentLeads:
+                with open(f"{lname}.yaml", "r") as f:
+                    lead = yaml.load(f, Loader=yaml.FullLoader)
+                self.CurrentLeads.append(lead)
+        elif isinstance(CurrentLeads[0], InnerCurrentLead.InnerCurrentLead) or isinstance(CurrentLeads[0], OuterCurrentLead.OuterCurrentLead) :       
+            for lead in CurrentLeads:
+                self.CurrentLeads.append(lead)
+        else:
+            raise RuntimeError(f"unexpected type of arguments for Helices: {type(CurrentLeads[0])}")
+            
         self.innerbore = innerbore
         self.outerbore = outerbore
 
@@ -81,7 +119,8 @@ class Insert(yaml.YAMLObject):
             names = []
             inames = []
             if i == 0:
-                names.append(f"{prefix}R{i+1}_R0n")  # check Ring nummerotation
+                if self.Rings:
+                    names.append(f"{prefix}R{i+1}_rInt")  # check Ring numerotation
             if i >= 1:
                 names.append(f"{prefix}H{i}_rExt")
                 if not hideIsolant:
@@ -89,7 +128,8 @@ class Insert(yaml.YAMLObject):
                     kapton_names = [f"{prefix}H{i}_kaptonsIrExt"]  # Only for HR
                     names = names + isolant_names + kapton_names
             if i >= 2:
-                names.append(f"{prefix}R{i-1}_R1n")
+                if self.Rings:
+                    names.append(f"{prefix}R{i-1}_rExt")
             if i < NChannels:
                 names.append(f"{prefix}H{i+1}_rInt")
                 if not hideIsolant:
@@ -99,8 +139,9 @@ class Insert(yaml.YAMLObject):
 
             # Better? if i+1 < nchannels:
             if i != 0 and i + 1 < NChannels:
-                names.append(f"{prefix}R{i}_CoolingSlits")
-                names.append(f"{prefix}R{i+1}_R0n")
+                if self.Rings:
+                    names.append(f"{prefix}R{i}_CoolingSlits")
+                    names.append(f"{prefix}R{i+1}_rInt")
             Channels.append(names)
             #
             # For the moment keep iChannel_Submeshes into
@@ -133,30 +174,25 @@ class Insert(yaml.YAMLObject):
         NChannels = NHelices + 1  # To be updated if there is any htype==HR in Insert
         NIsolants = []  # To be computed depend on htype and dble
         for i, helix in enumerate(self.Helices):
-            hHelix = None
             Ninsulators = 0
-            with open(f"{helix}.yaml", "r") as f:
-                hHelix = yaml.load(f, Loader=yaml.FullLoader)
-
             if is2D:
-                h_solid_names = hHelix.get_names(f"{prefix}H{i+1}", is2D, verbose)
+                h_solid_names = helix.get_names(f"{prefix}H{i+1}", is2D, verbose)
                 solid_names += h_solid_names
             else:
                 solid_names.append(f"H{i+1}")
 
-        for i, ring in enumerate(self.Rings):
-            if verbose:
-                print(f"ring: {ring}")
-            solid_names.append(f"{prefix}R{i+1}")
-        # print(f'Insert_Gmsh: ring_ids={ring_ids}')
+        if self.Rings:
+            for i, ring in enumerate(self.Rings):
+                if verbose:
+                    print(f"ring: {ring}")
+                solid_names.append(f"{prefix}R{i+1}")
+            # print(f'Insert_Gmsh: ring_ids={ring_ids}')
 
         if not is2D:
             if self.CurrentLeads is not None:
                 for i, Lead in enumerate(self.CurrentLeads):
-                    with open(Lead + ".yaml", "r") as f:
-                        clLead = yaml.load(f, Loader=yaml.FullLoader)
                     prefix = "o"
-                    if isinstance(clLead, InnerCurrentLead.InnerCurrentLead):
+                    if isinstance(Lead, InnerCurrentLead.InnerCurrentLead):
                         prefix = "i"
                     solid_names.append(f"{prefix}L{i+1}")
 
@@ -259,11 +295,7 @@ class Insert(yaml.YAMLObject):
         rb = [0, 0]
         zb = [0, 0]
 
-        for i, name in enumerate(self.Helices):
-            Helix = None
-            with open(name + ".yaml", "r") as f:
-                Helix = yaml.load(f, Loader=yaml.FullLoader)
-
+        for i, Helix in enumerate(self.Helices):
             if i == 0:
                 rb = Helix.r
                 zb = Helix.z
@@ -275,11 +307,7 @@ class Insert(yaml.YAMLObject):
 
         if self.Rings:
             ring_dz_max = 0
-            for i, name in enumerate(self.Rings):
-                Ring = None
-                with open(name + ".yaml", "r") as f:
-                    Ring = yaml.load(f, Loader=yaml.FullLoader)
-
+            for i, Ring in enumerate(self.Rings):
                 ring_dz_max = abs(Ring.z[-1] - Ring.z[0])
 
             zb[0] -= ring_dz_max
@@ -369,7 +397,7 @@ class Insert(yaml.YAMLObject):
         lineloop = 1
         planesurf = 1
 
-        for i, name in enumerate(self.Helices):
+        for i, Helix in enumerate(self.Helices):
             H = []
             Rint = []
             Rext = []
@@ -377,9 +405,6 @@ class Insert(yaml.YAMLObject):
             HP = []
             dH = []
 
-            Helix = None
-            with open(name + ".yaml", "r") as f:
-                Helix = yaml.load(f, Loader=yaml.FullLoader)
             geofile.write(f"// H{i+1} : {Helix.name}\n")
             geofile.write(onelab_r0 % (i + 1, Helix.r[0], i + 1))
             geofile.write(onelab_r1 % (i + 1, Helix.r[1], i + 1))
@@ -507,16 +532,13 @@ class Insert(yaml.YAMLObject):
 
         H0 = 0
         H1 = 1
-        for i, name in enumerate(self.Rings):
+        for i, Ring in enumerate(self.Rings):
             R = []
             Rint = []
             Rext = []
             BP = []
             HP = []
 
-            Ring = None
-            with open(name + ".yaml", "r") as f:
-                Ring = yaml.load(f, Loader=yaml.FullLoader)
             geofile.write(
                 "// R%d [%d, H%d] : %s\n" % (i + 1, H0 + 1, H1 + 1, Ring.name)
             )
@@ -946,26 +968,23 @@ class Insert(yaml.YAMLObject):
         Zh = []
         for i, helix in enumerate(self.Helices):
             hhelix = None
-            print(f"{workingDir}/{helix}.yaml")
-            with open(f"{workingDir}/{helix}.yaml", "r") as f:
-                hhelix = yaml.load(f, Loader=yaml.FullLoader)
-            n_sections = len(hhelix.modelaxi.turns)
+            n_sections = len(helix.modelaxi.turns)
             Nsections.append(n_sections)
-            Nturns_h.append(hhelix.modelaxi.turns)
+            Nturns_h.append(helix.modelaxi.turns)
 
-            R1.append(hhelix.r[0])
-            R2.append(hhelix.r[1])
+            R1.append(helix.r[0])
+            R2.append(helix.r[1])
 
-            z = -hhelix.modelaxi.h
-            (turns, pitch) = hhelix.modelaxi.compact()
+            z = -helix.modelaxi.h
+            (turns, pitch) = helix.modelaxi.compact()
 
             tZh = []
-            tZh.append(hhelix.z[0])
+            tZh.append(helix.z[0])
             tZh.append(z)
             for n, p in zip(turns, pitch):
                 z += n * p
                 tZh.append(z)
-            tZh.append(hhelix.z[1])
+            tZh.append(helix.z[1])
             Zh.append(tZh)
             # print(f"Zh[{i}]: {Zh[-1]}")
 
@@ -980,11 +999,7 @@ class Insert(yaml.YAMLObject):
 
         Zr = []
         for i, ring in enumerate(self.Rings):
-            hring = None
-            with open(f"{workingDir}/{ring}.yaml", "r") as f:
-                hring = yaml.load(f, Loader=yaml.FullLoader)
-
-            dz = abs(hring.z[1] - hring.z[0])
+            dz = abs(ring.z[1] - ring.z[0])
             if i % 2 == 1:
                 # print(f"Ring[{i}]: minus dz_ring={dz} to Zh[i][0]")
                 Zr.append(Zh[i][0] - dz)
