@@ -6,6 +6,12 @@
 import json
 import yaml
 
+from .Bitter import Bitter
+from .utils import load
+
+dict_bitters = {
+    "Bitter": Bitter.from_dict,
+}
 
 class Bitters(yaml.YAMLObject):
     """
@@ -23,7 +29,14 @@ class Bitters(yaml.YAMLObject):
     ) -> None:
         """constructor"""
         self.name = name
-        self.magnets = magnets
+
+        self.magnets = []
+        # str ou Bitters
+        # list: str ou Bitter
+        # dict: str ou Bitter
+        if magnets:
+            self.magnets = load("magnets", magnets, [None, Bitter], dict_bitters)
+
         self.innerbore = innerbore
         self.outerbore = outerbore
 
@@ -46,33 +59,12 @@ class Bitters(yaml.YAMLObject):
         print(f"Bitters/get_channels:")
         Channels = {}
 
-        if isinstance(self.magnets, str):
-            YAMLFile = f"{self.magnets}.yaml"
-            with open(YAMLFile, "r") as f:
-                Object = yaml.load(f, Loader=yaml.FullLoader)
-
-            Channels[self.name] = Object.get_channels(self.name, hideIsolant, debug)
-        elif isinstance(self.magnets, list):
-            for magnet in self.magnets:
-                YAMLFile = f"{magnet}.yaml"
-                with open(YAMLFile, "r") as f:
-                    Object = yaml.load(f, Loader=yaml.FullLoader)
-
-                Channels[magnet] = Object.get_channels(magnet, hideIsolant, debug)
-
-        elif isinstance(self.magnets, dict):
-            for key in self.magnets:
-                magnet = self.magnets[key]
-                YAMLFile = f"{magnet}.yaml"
-                with open(YAMLFile, "r") as f:
-                    Object = yaml.load(f, Loader=yaml.FullLoader)
-
-                Channels[magnet] = Object.get_channels(key, hideIsolant, debug)
-
-        else:
-            raise RuntimeError(
-                f"Bitters: unsupported type of magnets ({type(self.magnets)})"
-            )
+        prefix = ""
+        if mname:
+            prefix = f'{mname}_'
+        for magnet in self.magnets:
+            oname = f"{prefix}{magnet.name}"
+            Channels[oname] = magnet.get_channels(oname, hideIsolant, debug)
 
         if debug:
             print("Channels:")
@@ -92,34 +84,14 @@ class Bitters(yaml.YAMLObject):
         """
         return names for Markers
         """
+        prefix = ""
+        if mname:
+            prefix = f'{mname}_'
+        
         solid_names = []
-        if isinstance(self.magnets, str):
-            YAMLFile = f"{self.magnets}.yaml"
-            with open(YAMLFile, "r") as f:
-                Object = yaml.load(f, Loader=yaml.FullLoader)
-
-            solid_names += Object.get_names(self.name, is2D, verbose)
-        elif isinstance(self.magnets, list):
-            for magnet in self.magnets:
-                YAMLFile = f"{magnet}.yaml"
-                with open(YAMLFile, "r") as f:
-                    Object = yaml.load(f, Loader=yaml.FullLoader)
-
-                solid_names += Object.get_names(
-                    magnet, is2D, verbose
-                )  # magnet or Object.name??
-        elif isinstance(self.magnets, dict):
-            for key in self.magnets:
-                magnet = self.magnets[key]
-                YAMLFile = f"{magnet}.yaml"
-                with open(YAMLFile, "r") as f:
-                    Object = yaml.load(f, Loader=yaml.FullLoader)
-
-                solid_names += Object.get_names(self.name, is2D, verbose)
-        else:
-            raise RuntimeError(
-                f"Bitters/get_names: unsupported type of magnets ({type(self.magnets)})"
-            )
+        for magnet in self.magnets:
+            oname = f"{prefix}{magnet.name}"
+            solid_names += magnet.get_names(oname, is2D, verbose)
 
         if verbose:
             print(f"Bitters/get_names: solid_names {len(solid_names)}")
@@ -132,21 +104,6 @@ class Bitters(yaml.YAMLObject):
                 yaml.dump(self, stream=ostream)
         except:
             raise Exception("Failed to Bitters dump")
-
-    def load(self):
-        """load from a yaml file"""
-        data = None
-        try:
-            with open(f"{self.name}.yaml", "r") as istream:
-                data = yaml.load(stream=istream, Loader=yaml.FullLoader)
-        except:
-            raise Exception(f"Failed to load Insert data {self.name}.yaml")
-
-        self.name = data.name
-        self.magnets = data.magnets
-
-        self.innerbore = data.innerbore
-        self.outerbore = data.outerbore
 
     def to_json(self):
         """convert from yaml to json"""
@@ -161,6 +118,50 @@ class Bitters(yaml.YAMLObject):
         with open(f"{self.name}.json", "w") as ostream:
             jsondata = self.to_json()
             ostream.write(str(jsondata))
+
+    @classmethod
+    def from_dict(cls, values: str, debug: bool = False):
+        """
+        create from dict
+        """
+        name = values["name"]
+        magnets = values["magnets"]
+        innerbore = values["innerbore"] if "innerbore" in values else 0
+        outerbore = values["outerbore"] if "outerbore" in values else 0
+
+        return cls(name, magnets, innerbore, outerbore)
+
+    @classmethod
+    def from_yaml(cls, filename: str, debug: bool = False):
+        """
+        create from yaml
+        """
+        import os
+        cwd = os.getcwd()
+
+        (basedir, basename) = os.path.split(filename)
+        print(f"basedir={basedir}, basename={basename}, cwd={cwd}")
+
+        if basedir and basedir != ".":
+            os.chdir(basedir)
+            print(f"-> cwd={cwd}")
+
+        try:
+            with open(basename, "r") as istream:
+                values, otype = yaml.load(stream=istream, Loader=yaml.FullLoader)
+        except Exception:
+            raise Exception(f"Failed to load Bitters data {filename}")
+
+        print(f'data: type={type(values)}')
+        name = values["name"]
+        magnets = values["magnets"]
+        innerbore = values["innerbore"] if "innerbore" in values else 0
+        outerbore = values["outerbore"] if "outerbore" in values else 0
+
+        object = cls(name, magnets, innerbore, outerbore)
+        if basedir and basedir != ".":
+            os.chdir(cwd)
+        return object
 
     @classmethod
     def from_json(cls, filename: str, debug: bool = False):
@@ -189,10 +190,7 @@ class Bitters(yaml.YAMLObject):
         rb = [0, 0]
         zb = [0, 0]
 
-        for i, mname in enumerate(self.magnets):
-            bitter = None
-            with open(f"{mname}.yaml", "r") as f:
-                bitter = yaml.load(f, Loader=yaml.FullLoader)
+        for i, bitter in enumerate(self.magnets):
 
             if i == 0:
                 rb = bitter.r
@@ -221,27 +219,11 @@ class Bitters(yaml.YAMLObject):
             collide = True
         return collide
 
-    def Create_AxiGeo(self, AirData):
-        """
-        create Axisymetrical Geo Model for gmsh
-
-        return
-        H_ids, BC_ids, Air_ids, BC_Air_ids
-        """
-        pass
-
 
 def Bitters_constructor(loader, node):
     values = loader.construct_mapping(node)
-    name = values["name"]
-    magnets = values["magnets"]
-    innerbore = 0
-    if "innerbore":
-        innerbore = values["innerbore"]
-    outerbore = 0
-    if "outerbore":
-        outerbore = values["outerbore"]
-    return Bitters(name, magnets, innerbore, outerbore)
+    return values, "Bitters"
 
 
-yaml.add_constructor("!Bitters", Bitters_constructor)
+
+yaml.add_constructor(Bitters.yaml_tag, Bitters_constructor)

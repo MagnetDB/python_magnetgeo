@@ -18,6 +18,21 @@ class OuterCurrentLead(yaml.YAMLObject):
     h :
     bar : [R, DX, DY, L]
     support : [DX0, DZ, Angle, Angle_Zero]
+
+    bar looks like that:
+    A rectangle (dx,dy) cut by a disk of R radius centered on Origin X     
+
+    -------------
+    | (   x   ) |
+    -------------
+
+    create a prism along Oz with legnth L from the result
+    bar translated to [r[1] - dx0 + dy/2, 0, 0]
+
+    support:
+    rectangle(dx, dx0)
+    translated to [r[1] - dx0 + dy/2, 0, 0]
+    rectangle cut by a disk of r[1] radius centered on Origin X
     """
 
     yaml_tag = "OuterCurrentLead"
@@ -61,23 +76,6 @@ class OuterCurrentLead(yaml.YAMLObject):
         except:
             raise Exception("Failed to dump OuterCurrentLead data")
 
-    def load(self):
-        """
-        load object from file
-        """
-        data = None
-        try:
-            with open(f"{self.name}.yaml", "r") as istream:
-                data = yaml.load(stream=istream, Loader=yaml.FullLoader)
-        except:
-            raise Exception(f"Failed to load OuterCurrentLead data {self.name}.yaml")
-
-        self.name = data.name
-        self.r = data.r
-        self.h = data.h
-        self.bar = data.bar
-        self.support = data.support
-
     def to_json(self):
         """
         convert from yaml to json
@@ -100,6 +98,52 @@ class OuterCurrentLead(yaml.YAMLObject):
             raise Exception(f"Failed to write to {self.name}.json")
 
     @classmethod
+    def from_dict(cls, values: dict, debug: bool = False):
+        """
+        create from dict
+        """
+        name = values["name"]
+        r = values["r"]
+        h = values["h"]
+        bar = values["bar"]
+        support = values["support"]
+        return cls(name, r, h, bar, support)
+
+    @classmethod
+    def from_yaml(cls, filename: str, debug: bool = False):
+        """
+        create from yaml
+        """
+        import os
+        cwd = os.getcwd()
+
+        (basedir, basename) = os.path.split(filename)
+        print(f"basedir={basedir}, basename={basename}, cwd={cwd}")
+
+        if basedir and basedir != ".":
+            os.chdir(basedir)
+            print(f"-> cwd={cwd}")
+
+        try:
+            with open(basename, "r") as istream:
+                values, otype = yaml.load(stream=istream, Loader=yaml.FullLoader)
+        except Exception:
+            raise Exception(f"Failed to load OuterCurrentLead data {filename}")
+
+        print(f'data: type={type(values)}')
+        name = values["name"]
+        r = values["r"]
+        h = values["h"]
+        bar = values["bar"]
+        support = values["support"]
+        object = cls(name, r, h, bar, support)
+        
+        if basedir and basedir != ".":
+            os.chdir(cwd)
+
+        return object
+
+    @classmethod
     def from_json(cls, filename: str, debug: bool = False):
         """
         convert from json to yaml
@@ -117,14 +161,9 @@ def OuterCurrentLead_constructor(loader, node):
     build an outer object
     """
     values = loader.construct_mapping(node)
-    name = values["name"]
-    r = values["r"]
-    h = values["h"]
-    bar = values["bar"]
-    support = values["support"]
-    return OuterCurrentLead(name, r, h, bar, support)
+    return values, "OuterCurrentLead"
 
 
-yaml.add_constructor("!OuterCurrentLead", OuterCurrentLead_constructor)
+yaml.add_constructor(OuterCurrentLead.yaml_tag, OuterCurrentLead_constructor)
 
 

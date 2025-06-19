@@ -16,7 +16,7 @@ class Ring(yaml.YAMLObject):
     r :
     z :
     angle :
-    BPside :
+    bpside :
     fillets :
     cad :
     """
@@ -41,19 +41,22 @@ class Ring(yaml.YAMLObject):
         z: list[float],
         n: int = 0,
         angle: float = 0,
-        BPside: bool = True,
+        bpside: bool = True,
         fillets: bool = False,
         cad: str|None = None
     ) -> None:
         """
         initialize object
         """
+        import os
+        print('InitRing: ', os.getcwd())
+
         self.name = name
         self.r = r
         self.z = z
         self.n = n
         self.angle = angle
-        self.BPside = BPside
+        self.bpside = bpside
         self.fillets = fillets
         self.cad = cad
 
@@ -61,14 +64,14 @@ class Ring(yaml.YAMLObject):
         """
         representation of object
         """
-        msg = "%s(name=%r, r=%r, z=%r, n=%r, angle=%r, BPside=%r, fillets=%r)" % (
+        msg = "%s(name=%r, r=%r, z=%r, n=%r, angle=%r, bpside=%r, fillets=%r)" % (
             self.__class__.__name__,
             self.name,
             self.r,
             self.z,
             self.n,
             self.angle,
-            self.BPside,
+            self.bpside,
             self.fillets)
         if hasattr(self, 'cad'):
             msg += ", cad=%r" % self.cad
@@ -89,27 +92,6 @@ class Ring(yaml.YAMLObject):
         except Exception as e:
             raise Exception("Failed to dump Ring data")
 
-    def load(self):
-        """
-        load object from file
-        """
-        data = None
-        try:
-            with open(f"{self.name}.yaml", "r") as istream:
-                data = yaml.load(stream=istream, Loader=yaml.FullLoader)
-        except Exception as e:
-            raise Exception(f"Failed to load Ring data {self.name}.yaml")
-
-        self.name = data.name
-        self.r = data.r
-        self.z = data.z
-        self.n = data.n
-        self.angle = data.angle
-        self.BPside = data.BPside
-        self.fillets = data.fillets
-        self.data = None
-        self.cad = getattr(data, 'cad', '')
-
     def to_json(self):
         """
         convert from yaml to json
@@ -127,6 +109,59 @@ class Ring(yaml.YAMLObject):
         with open(f"{self.name}.json", "w") as ostream:
             jsondata = self.to_json()
             ostream.write(str(jsondata))
+
+    @classmethod
+    def from_dict(cls, values: dict, debug: bool = False):
+        """
+        create from dict
+        """
+        name = values["name"]
+        r = values["r"]
+        z = values["z"]
+        n = values["n"]
+        angle = values["angle"]
+        bpside = values["bpside"]
+        fillets = values["fillets"]
+        cad = values.get("cad", '') if 'cad' in values else ''
+
+        return  cls(name, r, z, n, angle, bpside, fillets, cad)
+
+
+    @classmethod
+    def from_yaml(cls, filename: str, debug: bool = False):
+        """
+        create from yaml
+        """
+        import os
+        cwd = os.getcwd()
+
+        (basedir, basename) = os.path.split(filename)
+        print(f"basedir={basedir}, basename={basename}, cwd={cwd}")
+
+        if basedir and basedir != ".":
+            os.chdir(basedir)
+            print(f"-> cwd={cwd}")
+
+        try:
+            with open(basename, "r") as istream:
+                values, otype = yaml.load(stream=istream, Loader=yaml.FullLoader)
+        except Exception:
+            raise Exception(f"Failed to load Ring data {filename}")
+
+        print(f'data: type={type(values)}')
+        name = values["name"]
+        r = values["r"]
+        z = values["z"]
+        n = values["n"]
+        angle = values["angle"]
+        bpside = values["bpside"]
+        fillets = values["fillets"]
+        cad = values.get("cad", '') if 'cad' in values else ''
+        
+        ring = cls(name, r, z, n, angle, bpside, fillets, cad)
+        if basedir and basedir != ".":
+            os.chdir(cwd)
+        return ring
 
     @classmethod
     def from_json(cls, filename: str, debug: bool = False):
@@ -148,18 +183,6 @@ def Ring_constructor(loader, node):
     build an ring object
     """
     values = loader.construct_mapping(node)
-    name = values["name"]
-    r = values["r"]
-    z = values["z"]
-    n = values["n"]
-    angle = values["angle"]
-    BPside = values["BPside"]
-    fillets = values["fillets"]
-    cad = values.get("cad", '')
-    
-    ring = Ring(name, r, z, n, angle, BPside, fillets, cad)
-    if not hasattr(ring, 'cad'):
-        ring.cad = ''
-    return cad
+    return values, "Ring"
 
-yaml.add_constructor("!Ring", Ring_constructor)
+yaml.add_constructor(Ring.yaml_tag, Ring_constructor)

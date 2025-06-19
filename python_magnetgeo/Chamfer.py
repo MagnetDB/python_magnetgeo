@@ -25,7 +25,7 @@ class Chamfer(yaml.YAMLObject):
       rside: rint or rext in mm
       alpha: angle in degree
       dr: shift along r in mm
-      L: height in mm
+      l: height in mm
     """
 
     yaml_tag = "Chamfer"
@@ -49,7 +49,7 @@ class Chamfer(yaml.YAMLObject):
         rside: str,
         alpha: float = None,
         dr: float = None,
-        L: float = None,
+        l: float = None,
     ):
         """
         initialize object
@@ -58,7 +58,12 @@ class Chamfer(yaml.YAMLObject):
         self.rside = rside
         self.alpha = alpha
         self.dr = dr
-        self.L = L
+        self.l = l
+
+        # TODO: data validation 
+        # at least alpha or dr must be given
+        # if alpha et dr are given, check if they are consistant
+        # alpha must be in [0; pi/2[ - the actual upper limit depends on the helix thcikness 
 
     def __repr__(self):
         """
@@ -71,7 +76,7 @@ class Chamfer(yaml.YAMLObject):
             msg += f", alpha={self.alpha}"
         if hasattr(self, "dr"):
             msg += f", dr={self.dr}"
-        msg += f", L=self.{L})"
+        msg += f",l={self.l})"
         return msg
 
     def dump(self, name: str):
@@ -84,27 +89,6 @@ class Chamfer(yaml.YAMLObject):
         except Exception:
             raise Exception("Failed to Chamfer dump")
 
-    def load(self, name: str):
-        """
-        load object from file
-        """
-        data = None
-        try:
-            with open(f"{name}.yaml", "r") as istream:
-                data = yaml.load(stream=istream, Loader=yaml.FullLoader)
-        except Exception:
-            raise Exception(f"Failed to load Chamfer data {name}.yaml")
-
-        self.side = data.side
-        self.rside = data.rside
-
-        # Always ensure these attributes exist for backward compatibility
-        # Even if they don't exist in the loaded data
-        self.alpha = getattr(data, 'alpha', None)
-        self.dr = getattr(data, 'dr', None)
-
-        self.L = data.L
-
     def to_json(self):
         """
         convert from yaml to json
@@ -114,6 +98,40 @@ class Chamfer(yaml.YAMLObject):
         return json.dumps(
             self, default=deserialize.serialize_instance, sort_keys=True, indent=4
         )
+
+    @classmethod
+    def from_yaml(cls, filename: str, debug: bool = False):
+        """
+        create from yaml
+        """
+        import os
+        cwd = os.getcwd()
+
+        (basedir, basename) = os.path.split(filename)
+        print(f"basedir={basedir}, basename={basename}, cwd={cwd}")
+
+        if basedir and basedir != ".":
+            os.chdir(basedir)
+            print(f"-> cwd={cwd}")
+
+        try:
+            with open(basename, "r") as istream:
+                values, otype = yaml.load(stream=istream, Loader=yaml.FullLoader)
+        except Exception:
+            raise Exception(f"Failed to load Chamfer data {filename}")
+        
+        if basedir and basedir != ".":
+            os.chdir(cwd)
+
+        side = values["side"]
+        rside = values["rside"]
+
+        # Make chamfers and grooves optional
+        alpha = values.get("alpha", None)
+        dr = values.get("dr", None)
+
+        l = values["l"]
+        return cls(side, rside, alpha, l)
 
     @classmethod
     def from_json(cls, filename: str, debug: bool = False):
@@ -137,7 +155,7 @@ class Chamfer(yaml.YAMLObject):
             return self.dr
 
         radius = (
-                self.L
+                self.l
                 * math.tan(math.pi / 180.0 * self.alpha)
             )
         return radius
@@ -149,7 +167,7 @@ class Chamfer(yaml.YAMLObject):
         if self.alpha:
             return self.alpha
 
-        angle = math.atan2(dr, L)
+        angle = math.atan2(self.dr, self.l)
         return angle * 180 / math.pi
     
 
@@ -158,15 +176,7 @@ def Chamfer_constructor(loader, node):
     build an Shape object
     """
     values = loader.construct_mapping(node)
-    side = values["side"]
-    rside = values["rside"]
-
-    # Make chamfers and grooves optional
-    alpha = values.get("alpha", None)
-    dr = values.get("dr", None)
-
-    L = values["L"]
-    return Chamfer(side, rside, alpha, L)
+    return values, "Chamfer"
 
 
-yaml.add_constructor("!Chamfer", Chamfer_constructor)
+yaml.add_constructor(Chamfer.yaml_tag, Chamfer_constructor)

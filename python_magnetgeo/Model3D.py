@@ -70,6 +70,34 @@ class Model3D(yaml.YAMLObject):
             ostream.write(str(jsondata))
 
     @classmethod
+    def from_yaml(cls, filename: str, debug: bool = False):
+        """
+        create from yaml
+        """
+        import os
+        cwd = os.getcwd()
+
+        (basedir, basename) = os.path.split(filename)
+        print(f"basedir={basedir}, basename={basename}, cwd={cwd}")
+
+        if basedir and basedir != ".":
+            os.chdir(basedir)
+            print(f"-> cwd={cwd}")
+
+        try:
+            with open(basename, "r") as istream:
+                values, otype = yaml.load(stream=istream, Loader=yaml.FullLoader)
+        except Exception:
+            raise Exception(f"Failed to load Model3D data {filename}")
+        
+        if basedir and basedir != ".":
+            os.chdir(cwd)
+        cad = values["cad"]
+        with_shapes = values["with_shapes"]
+        with_channels = values["with_channels"]
+        return cls(cad, with_shapes, with_channels)
+
+    @classmethod
     def from_json(cls, filename: str, debug: bool = False):
         """
         convert from json to yaml
@@ -86,10 +114,7 @@ def Model3D_constructor(loader, node):
     build an Model3d object
     """
     values = loader.construct_mapping(node)
-    cad = values["cad"]
-    with_shapes = values["with_shapes"]
-    with_channels = values["with_channels"]
-    return Model3D(cad, with_shapes, with_channels)
+    return values, "Model3D"
 
 
-yaml.add_constructor("!Model3D", Model3D_constructor)
+yaml.add_constructor(Model3D.yaml_tag, Model3D_constructor)

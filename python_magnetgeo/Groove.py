@@ -37,21 +37,6 @@ class Groove(yaml.YAMLObject):
         except Exception:
             raise Exception("Failed to Tierod dump")
 
-    def load(self, name: str):
-        """
-        load object from file
-        """
-        data = None
-        try:
-            with open(f"{name}.yaml", "r") as istream:
-                data = yaml.load(stream=istream, Loader=yaml.FullLoader)
-        except Exception:
-            raise Exception(f"Failed to load Groove data {name}.yaml")
-
-        self.gtype = data.gtype
-        self.n = data.n
-        self.eps = data.eps
-
     def to_json(self):
         """
         convert from yaml to json
@@ -61,6 +46,35 @@ class Groove(yaml.YAMLObject):
         return json.dumps(
             self, default=deserialize.serialize_instance, sort_keys=True, indent=4
         )
+
+    @classmethod
+    def from_yaml(cls, filename: str, debug: bool = False):
+        """
+        create from yaml
+        """
+        import os
+        cwd = os.getcwd()
+
+        (basedir, basename) = os.path.split(filename)
+        print(f"basedir={basedir}, basename={basename}, cwd={cwd}")
+
+        if basedir and basedir != ".":
+            os.chdir(basedir)
+            print(f"-> cwd={cwd}")
+
+        try:
+            with open(basename, "r") as istream:
+                values, otype = yaml.load(stream=istream, Loader=yaml.FullLoader)
+        except Exception:
+            raise Exception(f"Failed to load Groove data {filename}")
+        
+        if basedir and basedir != ".":
+            os.chdir(cwd)
+
+        gtype = values["gtype"]
+        n = values["n"]
+        eps = values["eps"]
+        return cls(gtype, n, eps)
 
     @classmethod
     def from_json(cls, filename: str, debug: bool = False):
@@ -82,10 +96,6 @@ def Groove_constructor(loader, node):
     build an Groove object
     """
     values = loader.construct_mapping(node)
-    gtype = values["gtype"]
-    n = values["n"]
-    eps = values["eps"]
-    return Groove(gtype, n, eps)
+    return values, "Groove"
 
-
-yaml.add_constructor("!Groove", Groove_constructor)
+yaml.add_constructor(Groove.yaml_tag, Groove_constructor)

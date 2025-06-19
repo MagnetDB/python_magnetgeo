@@ -45,6 +45,9 @@ class Bitter(yaml.YAMLObject):
         """
         initialize object
         """
+        import os
+        print('InitBitter: ', os.getcwd())
+        
         self.name = name
         self.r = r
         self.z = z
@@ -52,7 +55,7 @@ class Bitter(yaml.YAMLObject):
         self.modelaxi = modelaxi
         self.innerbore = innerbore
         self.outerbore = outerbore
-        self.coolingslits = coolingslits
+        self.coolingslits = coolingslits if coolingslits else []
         self.tierod = tierod
 
     def equivalent_eps(self, i: int):
@@ -175,27 +178,6 @@ class Bitter(yaml.YAMLObject):
         except Exception:
             raise Exception("Failed to Bitter dump")
 
-    def load(self):
-        """
-        load object from file
-        """
-        data = None
-        try:
-            with open(f"{self.name}.yaml", "r") as istream:
-                data = yaml.load(stream=istream, Loader=yaml.FullLoader)
-        except Exception:
-            raise Exception(f"Failed to load Bitter data {self.name}.yaml")
-
-        self.name = data.name
-        self.r = data.r
-        self.z = data.z
-        self.odd = data.odd
-        self.modelaxi = data.modelaxi
-        self.coolingslits = data.coolingslits
-        self.tierod = data.tierod
-        self.innerbore = data.innerbore
-        self.outerbore = data.outerbore
-
     def to_json(self):
         """
         convert from yaml to json
@@ -215,18 +197,85 @@ class Bitter(yaml.YAMLObject):
             ostream.write(jsondata)
 
     @classmethod
+    def from_dict(cls, values: dict, debug: bool = False):
+        """
+        create from yaml
+        """
+        name = values["name"]
+        r = values["r"]
+        z = values["z"]
+        odd = values["odd"]
+        modelaxi = values["modelaxi"]
+        coolingslits = values["coolingslits"]
+        tierod = values["tierod"]
+        innerbore = values["innerbore"] if "innerbore" in values else 0
+        outerbore = values["outerbore"] if "outerbore" in values else 0
+
+        return cls(name, r, z, odd, modelaxi, coolingslits, tierod, innerbore, outerbore)
+
+    @classmethod
+    def from_yaml(cls, filename: str, debug: bool = False):
+        """
+        create from yaml
+        """
+        import os
+        cwd = os.getcwd()
+
+        (basedir, basename) = os.path.split(filename)
+        print(f"basedir={basedir}, basename={basename}, cwd={cwd}")
+
+        if basedir and basedir != ".":
+            os.chdir(basedir)
+            print(f"-> cwd={cwd}")
+
+        try:
+            with open(basename, "r") as istream:
+                values, otype = yaml.load(stream=istream, Loader=yaml.FullLoader)
+        except Exception:
+            raise Exception(f"Failed to load Bitter data {filename}")
+
+        print(f'data: type={type(values)}')
+
+        name = values["name"]
+        r = values["r"]
+        z = values["z"]
+        odd = values["odd"]
+        modelaxi = values["modelaxi"]
+        coolingslits = values["coolingslits"]
+        tierod = values["tierod"]
+        innerbore = values["innerbore"] if "innerbore" in values else 0
+        outerbore = values["outerbore"] if "outerbore" in values else 0
+
+        object = cls(name, r, z, odd, modelaxi, coolingslits, tierod, innerbore, outerbore)
+        if basedir and basedir != ".":
+            os.chdir(cwd)
+        return object
+
+    @classmethod
     def from_json(cls, filename: str, debug: bool = False):
         """
         convert from json to yaml
         """
         from . import deserialize
+        import os
+        cwd = os.getcwd()
+
+        (basedir, basename) = os.path.split(filename)
+        print(f"basedir={basedir}, basename={basename}, cwd={cwd}")
+
+        if basedir and basedir != ".":
+            os.chdir(basedir)
+            print(f"-> cwd={cwd}")
 
         if debug:
-            print(f"Bitter.from_json: filename={filename}")
+            print(f"Bitter.from_json: filename={basename}")
         with open(filename, "r") as istream:
-            return json.loads(
+            object = json.loads(
                 istream.read(), object_hook=deserialize.unserialize_object
             )
+        if basedir and basedir != ".":
+            os.chdir(cwd)
+        return object
 
     def get_Nturns(self) -> float:
         """
@@ -302,7 +351,7 @@ class Bitter(yaml.YAMLObject):
         """
         create cut files
         """
-        from .cut_utils import create_cut
+        from .hcuts import create_cut
 
         create_cut(self, format, self.name)
 
@@ -312,21 +361,8 @@ def Bitter_constructor(loader, node):
     build an bitter object
     """
     values = loader.construct_mapping(node)
-    name = values["name"]
-    r = values["r"]
-    z = values["z"]
-    odd = values["odd"]
-    modelaxi = values["modelaxi"]
-    coolingslits = values["coolingslits"]
-    tierod = values["tierod"]
-    innerbore = 0
-    if "innerbore":
-        innerbore = values["innerbore"]
-    outerbore = 0
-    if "outerbore":
-        outerbore = values["outerbore"]
-
-    return Bitter(name, r, z, odd, modelaxi, coolingslits, tierod, innerbore, outerbore)
+    return values, "Bitter"
 
 
-yaml.add_constructor("!Bitter", Bitter_constructor)
+
+yaml.add_constructor(Bitter.yaml_tag, Bitter_constructor)

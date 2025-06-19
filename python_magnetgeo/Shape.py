@@ -106,4 +106,4 @@ def Shape_constructor(loader, node):
     return Shape(name, profile, length, angle, onturns, position)
 
 
-yaml.add_constructor("!Shape", Shape_constructor)
+yaml.add_constructor(Shape.yaml_tag, Shape_constructor)

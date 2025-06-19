@@ -40,27 +40,6 @@ class Tierod(yaml.YAMLObject):
         except Exception:
             raise Exception("Failed to Tierod dump")
 
-    def load(self, name: str):
-        """
-        load object from file
-        """
-        data = None
-        try:
-            with open(f"{name}.yaml", "r") as istream:
-                data = yaml.load(stream=istream, Loader=yaml.FullLoader)
-        except Exception:
-            raise Exception(f"Failed to load TieRod data {name}.yaml")
-
-        self.r = data.r
-        self.n = data.n
-        self.dh = data.dh
-        self.sh = data.sh
-        if isinstance(data.shape, Shape2D):
-            self.shape = data.shape
-        else:
-            with open(f"{data.shape}.yaml", "r") as f:
-                self.shape = yaml.load(f, Loader=yaml.FullLoader)
-
     def to_json(self):
         """
         convert from yaml to json
@@ -70,6 +49,37 @@ class Tierod(yaml.YAMLObject):
         return json.dumps(
             self, default=deserialize.serialize_instance, sort_keys=True, indent=4
         )
+
+    @classmethod
+    def from_yaml(cls, filename: str, debug: bool = False):
+        """
+        create from yaml
+        """
+        import os
+        cwd = os.getcwd()
+
+        (basedir, basename) = os.path.split(filename)
+        print(f"basedir={basedir}, basename={basename}, cwd={cwd}")
+
+        if basedir and basedir != ".":
+            os.chdir(basedir)
+            print(f"-> cwd={cwd}")
+
+        try:
+            with open(basename, "r") as istream:
+                values, otype = yaml.load(stream=istream, Loader=yaml.FullLoader)
+        except Exception:
+            raise Exception(f"Failed to load Tierod data {filename}")
+        if basedir and basedir != ".":
+            os.chdir(cwd)
+
+        r = values["r"]
+        n = values["n"]
+        dh = values["dh"]
+        sh = values["sh"]
+        shape = values["shape"]
+        return cls(r, n, dh, sh, shape)
+
 
     @classmethod
     def from_json(cls, filename: str, debug: bool = False):
@@ -91,12 +101,6 @@ def Tierod_constructor(loader, node):
     build an Tierod object
     """
     values = loader.construct_mapping(node)
-    r = values["r"]
-    n = values["n"]
-    dh = values["dh"]
-    sh = values["sh"]
-    shape = values["shape"]
-    return Tierod(r, n, dh, sh, shape)
+    return values, "Tierod"
 
-
-yaml.add_constructor("!Tierod", Tierod_constructor)
+yaml.add_constructor(Tierod.yaml_tag, Tierod_constructor)

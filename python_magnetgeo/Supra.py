@@ -131,30 +131,6 @@ class Supra(yaml.YAMLObject):
         except:
             raise Exception("Failed to Supra dump")
 
-    def load(self):
-        """
-        load object from file
-        """
-        data = None
-        try:
-            with open(f"{self.name}.yaml", "r") as istream:
-                data = yaml.load(stream=istream, Loader=yaml.FullLoader)
-        except:
-            raise Exception(f"Failed to load Supra data {self.name}.yaml")
-
-        self.name = data.name
-        self.r = data.r
-        self.z = data.z
-        self.n = data.n
-        self.struct = data.struct
-        self.detail = data.detail
-
-        # TODO: if struct load r,z and n from struct data
-        # or at least check that values are valid
-        if self.struct:
-            magnet = self.get_magnet_struct()
-            self.check_dimensions(magnet)
-
     def to_json(self):
         """
         convert from yaml to json
@@ -164,6 +140,71 @@ class Supra(yaml.YAMLObject):
         return json.dumps(
             self, default=deserialize.serialize_instance, sort_keys=True, indent=4
         )
+
+    @classmethod
+    def from_dict(cls, values: dict, debug: bool = False):
+        """
+        create from dict
+        """
+        name = values["name"]
+        r = values["r"]
+        z = values["z"]
+        n = values["n"]
+        struct = values["struct"]
+
+        object = cls(name, r, z, n, struct)
+
+        """
+        # TODO: if struct load r,z and n from struct data
+        # or at least check that values are valid
+        if self.struct:
+            magnet = self.get_magnet_struct()
+            self.check_dimensions(magnet)
+        """
+        return object
+
+    @classmethod
+    def from_yaml(cls, filename: str, debug: bool = False):
+        """
+        create from yaml
+        """
+        import os
+        cwd = os.getcwd()
+
+        (basedir, basename) = os.path.split(filename)
+        print(f"basedir={basedir}, basename={basename}, cwd={cwd}")
+
+        if basedir and basedir != ".":
+            os.chdir(basedir)
+            print(f"-> cwd={cwd}")
+
+        try:
+            with open(basename, "r") as istream:
+                values, otype = yaml.load(stream=istream, Loader=yaml.FullLoader)
+        except Exception:
+            raise Exception(f"Failed to load Supra data {filename}")
+
+        print(f'data: type={type(values)}')
+
+        name = values["name"]
+        r = values["r"]
+        z = values["z"]
+        n = values["n"]
+        struct = values["struct"]
+
+        object = cls(name, r, z, n, struct)
+
+        """
+        # TODO: if struct load r,z and n from struct data
+        # or at least check that values are valid
+        if self.struct:
+            magnet = self.get_magnet_struct()
+            self.check_dimensions(magnet)
+        """
+
+        if basedir and basedir != ".":
+            os.chdir(cwd)
+        return object
 
     @classmethod
     def from_json(cls, filename: str, debug: bool = False):
@@ -243,13 +284,7 @@ def Supra_constructor(loader, node):
     build an supra object
     """
     values = loader.construct_mapping(node)
-    name = values["name"]
-    r = values["r"]
-    z = values["z"]
-    n = values["n"]
-    struct = values["struct"]
-
-    return Supra(name, r, z, n, struct)
+    return values, "Supra"
 
 
-yaml.add_constructor("!Supra", Supra_constructor)
+yaml.add_constructor(Supra.yaml_tag, Supra_constructor)

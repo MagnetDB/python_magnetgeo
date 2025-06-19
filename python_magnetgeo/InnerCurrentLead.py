@@ -63,24 +63,6 @@ class InnerCurrentLead(yaml.YAMLObject):
         except:
             raise Exception("Failed to dump InnerCurrentLead data")
 
-    def load(self):
-        """
-        load object from file
-        """
-        data = None
-        try:
-            with open(f"{self.name}.yaml", "r") as istream:
-                data = yaml.load(istream, Loader=yaml.FullLoader)
-        except:
-            raise Exception(f"Failed to load InnerCurrentLead data {self.name}.yaml")
-
-        self.name = data.name
-        self.r = data.r
-        self.h = data.h
-        self.holes = data.holes
-        self.support = data.support
-        self.fillet = data.fillet
-
     def to_json(self):
         """
         convert from yaml to json
@@ -103,6 +85,54 @@ class InnerCurrentLead(yaml.YAMLObject):
             raise Exception(f"Failed to write to {self.name}.json")
 
     @classmethod
+    def from_dict(cls, values: dict, debug: bool = False):
+        """
+        create from dict
+        """
+        name = values["name"]
+        r = values["r"]
+        h = values["h"]
+        holes = values["holes"]
+        support = values["support"]
+        fillet = values["fillet"]
+        return cls(name, r, h, holes, support, fillet)        
+
+    @classmethod
+    def from_yaml(cls, filename: str, debug: bool = False):
+        """
+        create from yaml
+        """
+        import os
+        cwd = os.getcwd()
+
+        (basedir, basename) = os.path.split(filename)
+        print(f"basedir={basedir}, basename={basename}, cwd={cwd}")
+
+        if basedir and basedir != ".":
+            os.chdir(basedir)
+            print(f"-> cwd={cwd}")
+
+        try:
+            with open(basename, "r") as istream:
+                values, otype = yaml.load(stream=istream, Loader=yaml.FullLoader)
+        except Exception:
+            raise Exception(f"Failed to load InnerCurrentLead data {filename}")
+
+        print(f'data: type={type(values)}')
+        name = values["name"]
+        r = values["r"]
+        h = values["h"]
+        holes = values["holes"]
+        support = values["support"]
+        fillet = values["fillet"]
+        object = cls(name, r, h, holes, support, fillet)        
+        
+        if basedir and basedir != ".":
+            os.chdir(cwd)
+
+        return object
+
+    @classmethod
     def from_json(cls, filename: str, debug: bool = False):
         """
         convert from json to yaml
@@ -120,16 +150,11 @@ def InnerCurrentLead_constructor(loader, node):
     build an inner object
     """
     values = loader.construct_mapping(node)
-    name = values["name"]
-    r = values["r"]
-    h = values["h"]
-    holes = values["holes"]
-    support = values["support"]
-    fillet = values["fillet"]
-    return InnerCurrentLead(name, r, h, holes, support, fillet)
+    return values, InnerCurrentLead
 
 
-yaml.add_constructor("!InnerCurrentLead", InnerCurrentLead_constructor)
+
+yaml.add_constructor(InnerCurrentLead.yaml_tag, InnerCurrentLead_constructor)
 
 #
 # To operate from command line

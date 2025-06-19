@@ -12,6 +12,22 @@ import os
 import json
 import yaml
 
+from .utils import load
+
+from .Bitters import Bitters
+from .Supras import Supras
+from .Insert import Insert
+from .Screen import Screen
+
+dict_magnets = {
+    "Bitters": Bitters.from_dict,
+    "Supras": Supras.from_dict,
+    "Insert": Insert.from_dict,
+}
+
+dict_screens = {
+    "Screen": Screen.from_dict,
+}
 
 class MSite(yaml.YAMLObject):
     """
@@ -35,8 +51,21 @@ class MSite(yaml.YAMLObject):
         initialize onject
         """
         self.name = name
-        self.magnets = magnets
-        self.screens = screens
+
+        self.magnets = []
+        # str ou MSite
+        # list: str ou Insert, Bitters, Supras
+        # dict: str ou Insert, Bitters, Supras
+        if magnets:
+            self.magnets = load("magnets", magnets, [None, Insert, Bitters, Supras], dict_magnets)
+        
+        self.screens = []
+        # str ou Screens
+        # list: str ou Screen
+        # dict: str ou Screen
+        if screens:
+            self.screens = load("sreens", screens, [None, Screen], dict_screens)
+
         self.z_offset = z_offset
         self.r_offset = r_offset
         self.paralax = paralax
@@ -55,53 +84,13 @@ class MSite(yaml.YAMLObject):
         """
         print(f"MSite/get_channels:")
 
+        prefix = ""
+        if mname:
+            prefix = f"{mname}_"
         Channels = {}
-        if isinstance(self.magnets, str):
-            YAMLFile = f"{self.magnets}.yaml"
-            with open(YAMLFile, "r") as f:
-                Object = yaml.load(f, Loader=yaml.FullLoader)
-
-            Channels[self.magnets] = Object.get_channels(self.name, hideIsolant, debug)
-        elif isinstance(self.magnets, dict):
-            for key in self.magnets:
-                magnet = self.magnets[key]
-                if isinstance(magnet, str):
-                    YAMLFile = f"{magnet}.yaml"
-                    with open(YAMLFile, "r") as f:
-                        Object = yaml.load(f, Loader=yaml.FullLoader)
-                        print(f"{magnet}: {Object}")
-
-                    Channels[key] = Object.get_channels(key, hideIsolant, debug)
-
-                elif isinstance(magnet, list):
-                    for part in magnet:
-                        if isinstance(part, str):
-                            YAMLFile = f"{part}.yaml"
-                            with open(YAMLFile, "r") as f:
-                                Object = yaml.load(f, Loader=yaml.FullLoader)
-                                print(f"{part}: {Object}")
-                        else:
-                            raise RuntimeError(
-                                f"MSite(magnets[{key}][{part}]): unsupported type of magnets ({type(part)})"
-                            )
-
-                        _list = Object.get_channels(key, hideIsolant, debug)
-                        print(
-                            f"MSite/get_channels: key={key} part={part} _list={_list}"
-                        )
-                        if key in Channels:
-                            Channels[key].append(_list)
-                        else:
-                            Channels[key] = [_list]
-
-                else:
-                    raise RuntimeError(
-                        f"MSite(magnets[{key}]): unsupported type of magnets ({type(magnet)})"
-                    )
-        else:
-            raise RuntimeError(
-                f"MSite: unsupported type of magnets ({type(self.magnets)})"
-            )
+        for magnet in self.magnets:
+            oname = magnet.name
+            Channels[f"{prefix}{oname}"] = magnet.get_channels(oname, hideIsolant, debug)
 
         return Channels
 
@@ -117,51 +106,14 @@ class MSite(yaml.YAMLObject):
         """
         return names for Markers
         """
+        prefix = ""
+        if mname:
+            prefix = f"{mname}_"
+        
         solid_names = []
-
-        if isinstance(self.magnets, str):
-            YAMLFile = f"{self.magnets}.yaml"
-            with open(YAMLFile, "r") as f:
-                Object = yaml.load(f, Loader=yaml.FullLoader)
-
-            solid_names += Object.get_names(self.name, is2D, verbose)
-        elif isinstance(self.magnets, dict):
-            for key in self.magnets:
-                magnet = self.magnets[key]
-                if isinstance(magnet, str):
-                    mObject = None
-                    YAMLFile = f"{magnet}.yaml"
-                    with open(YAMLFile, "r") as f:
-                        mObject = yaml.load(f, Loader=yaml.FullLoader)
-                        # print(f"{magnet}: {mObject}")
-
-                    solid_names += mObject.get_names(key, is2D, verbose)
-
-                elif isinstance(magnet, list):
-                    for part in magnet:
-                        if isinstance(part, str):
-                            mObject = None
-                            YAMLFile = f"{part}.yaml"
-                            with open(YAMLFile, "r") as f:
-                                mObject = yaml.load(f, Loader=yaml.FullLoader)
-                                # print(f"{part}: {mObject}")
-
-                            solid_names += mObject.get_names(
-                                f"{key}_{mObject.name}", is2D, verbose
-                            )
-                        else:
-                            raise RuntimeError(
-                                f"MSite(magnets[{key}][{part}]): unsupported type of magnets ({type(part)})"
-                            )
-
-                else:
-                    raise RuntimeError(
-                        f"MSite/get_names (magnets[{key}]): unsupported type of magnets ({type(magnet)})"
-                    )
-        else:
-            raise RuntimeError(
-                f"MSite/get_names: unsupported type of magnets ({type(self.magnets)})"
-            )
+        for magnet in self.magnets:
+            oname = f"{prefix}{magnet.name}"
+            solid_names += magnet.get_names(oname, is2D, verbose)
 
         # TODO add Screens
 
@@ -178,24 +130,6 @@ class MSite(yaml.YAMLObject):
                 yaml.dump(self, stream=ostream)
         except:
             raise Exception("Failed to dump MSite data")
-
-    def load(self):
-        """
-        load object from file
-        """
-        data = None
-        try:
-            with open(f"{self.name}.yaml", "r") as istream:
-                data = yaml.load(stream=istream, Loader=yaml.FullLoader)
-        except:
-            raise Exception("Failed to load MSite data %s.yaml" % self.name)
-
-        self.name = data.name
-        self.magnets = data.magnets
-        self.screens = data.screens
-
-        # TODO: check that magnets are not interpenetring
-        # define a boundingBox method for each type: Bitter, Supra, Insert
 
     def to_json(self):
         """
@@ -214,6 +148,42 @@ class MSite(yaml.YAMLObject):
         with open(f"{self.name}.json", "w") as ostream:
             jsondata = self.to_json()
             ostream.write(str(jsondata))
+
+    @classmethod
+    def from_yaml(cls, filename: str, debug: bool = False):
+        """
+        create from yaml
+        """
+        import os
+        cwd = os.getcwd()
+
+        (basedir, basename) = os.path.split(filename)
+        print(f"basedir={basedir}, basename={basename}, cwd={cwd}")
+
+        if basedir and basedir != ".":
+            os.chdir(basedir)
+            print(f"-> cwd={cwd}")
+
+        try:
+            with open(basename, "r") as istream:
+                values = yaml.load(stream=istream, Loader=yaml.FullLoader)
+        except Exception:
+            raise Exception(f"Failed to load MSite data {filename}")
+
+        print(f'data: type={type(values)}')
+
+        name = values["name"]
+        magnets = values["magnets"]
+        screens = values["screens"]
+        z_offset = values["z_offset"]
+        r_offset = values["r_offset"]
+        paralax = values["paralax"]
+        object = cls(name, magnets, screens, z_offset, r_offset, paralax)
+    
+        if basedir and basedir != ".":
+            os.chdir(cwd)
+        
+        return object
 
     @classmethod
     def from_json(cls, filename: str, debug: bool = False):
@@ -247,47 +217,11 @@ class MSite(yaml.YAMLObject):
                 rmax = max(rmax, max(r))
             return (rmin, rmax, zmin, zmax)
 
-        if isinstance(self.magnets, str):
-            YAMLFile = os.path.join(f"{self.magnets}.yaml")
-            with open(YAMLFile, "r") as istream:
-                Object = yaml.load(istream, Loader=yaml.FullLoader)
-                (r, z) = Object.boundingBox()
-                (rmin, rmax, zmin, zmax) = cboundingBox(rmin, rmax, zmin, zmax, r, z)
-
-        elif isinstance(self.magnets, list):
-            for mname in self.magnets:
-                YAMLFile = os.path.join(f"{mname}.yaml")
-                with open(YAMLFile, "r") as istream:
-                    Object = yaml.load(istream, Loader=yaml.FullLoader)
-                    (r, z) = Object.boundingBox()
-                    (rmin, rmax, zmin, zmax) = cboundingBox(
-                        rmin, rmax, zmin, zmax, r, z
-                    )
-        elif isinstance(self.magnets, dict):
-            for key in self.magnets:
-                if isinstance(self.magnets[key], str):
-                    YAMLFile = os.path.join(f"{self.magnets[key]}.yaml")
-                    with open(YAMLFile, "r") as istream:
-                        Object = yaml.load(istream, Loader=yaml.FullLoader)
-                        (r, z) = Object.boundingBox()
-                        (rmin, rmax, zmin, zmax) = cboundingBox(
-                            rmin, rmax, zmin, zmax, r, z
-                        )
-                elif isinstance(self.magnets[key], list):
-                    for mname in self.magnets[key]:
-                        YAMLFile = os.path.join(f"{mname}.yaml")
-                        with open(YAMLFile, "r") as istream:
-                            Object = yaml.load(istream, Loader=yaml.FullLoader)
-                            (r, z) = Object.boundingBox()
-                            (rmin, rmax, zmin, zmax) = cboundingBox(
-                                rmin, rmax, zmin, zmax, r, z
-                            )
-                else:
-                    raise Exception(
-                        f"magnets: unsupported type {type(self.magnets[key])}"
-                    )
-        else:
-            raise Exception(f"magnets: unsupported type {type(self.magnets)}")
+        for magnet in self.magnets:
+            (r, z) = magnet.boundingBox()
+            (rmin, rmax, zmin, zmax) = cboundingBox(
+                rmin, rmax, zmin, zmax, r, z
+            )
 
         return ([rmin, rmax], [zmin, zmax])
 
@@ -298,13 +232,9 @@ def MSite_constructor(loader, node):
     """
     print(f"MSite_constructor")
     values = loader.construct_mapping(node)
-    name = values["name"]
-    magnets = values["magnets"]
-    screens = values["screens"]
-    z_offset = values["z_offset"]
-    r_offset = values["r_offset"]
-    paralax = values["paralax"]
-    return MSite(name, magnets, screens, z_offset, r_offset, paralax)
+    return values
 
 
-yaml.add_constructor("!MSite", MSite_constructor)
+
+
+yaml.add_constructor(MSite.yaml_tag, MSite_constructor)

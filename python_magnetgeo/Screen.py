@@ -81,21 +81,6 @@ class Screen(yaml.YAMLObject):
         except:
             raise Exception("Failed to Screen dump")
 
-    def load(self):
-        """
-        load object from file
-        """
-        data = None
-        try:
-            with open(f"{self.name}.yaml", "r") as istream:
-                data = yaml.load(stream=istream, Loader=yaml.FullLoader)
-        except:
-            raise Exception(f"Failed to load Screen data {self.name}.yaml")
-
-        self.name = data.name
-        self.r = data.r
-        self.z = data.z
-
     def to_json(self):
         """
         convert from yaml to json
@@ -114,6 +99,49 @@ class Screen(yaml.YAMLObject):
         jsondata = self.to_json()
         ostream.write(str(jsondata))
         ostream.close()
+
+    @classmethod
+    def from_dict(cls, values: dict, debug: bool = False):
+        """
+        create from dict
+        """
+        name = values["name"]
+        r = values["r"]
+        z = values["z"]
+        return cls(name, r, z)        
+
+    @classmethod
+    def from_yaml(cls, filename: str, debug: bool = False):
+        """
+        create from yaml
+        """
+        import os
+        cwd = os.getcwd()
+
+        (basedir, basename) = os.path.split(filename)
+        print(f"basedir={basedir}, basename={basename}, cwd={cwd}")
+
+        if basedir and basedir != ".":
+            os.chdir(basedir)
+            print(f"-> cwd={cwd}")
+
+        try:
+            with open(basename, "r") as istream:
+                values, otype = yaml.load(stream=istream, Loader=yaml.FullLoader)
+        except Exception:
+            raise Exception(f"Failed to load Screen data {filename}")
+
+        print(f'data: type={type(values)}')
+
+        name = values["name"]
+        r = values["r"]
+        z = values["z"]
+        object = cls(name, r, z)        
+        
+        if basedir and basedir != ".":
+            os.chdir(cwd)
+
+        return object
 
     @classmethod
     def from_json(cls, filename: str, debug: bool = False):
@@ -155,10 +183,8 @@ def Screen_constructor(loader, node):
     build an screen object
     """
     values = loader.construct_mapping(node)
-    name = values["name"]
-    r = values["r"]
-    z = values["z"]
-    return Screen(name, r, z)
+    return values, "Screen"
 
 
-yaml.add_constructor("!Screen", Screen_constructor)
+
+yaml.add_constructor(Screen.yaml_tag, Screen_constructor)

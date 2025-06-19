@@ -6,6 +6,12 @@
 import json
 import yaml
 
+from .Supra import Supra
+from .utils import load
+
+dict_supras = {
+    "Supra": Supra.from_dict,
+}
 
 class Supras(yaml.YAMLObject):
     """
@@ -24,6 +30,13 @@ class Supras(yaml.YAMLObject):
         """constructor"""
         self.name = name
         self.magnets = magnets
+        self.magnets = []
+        # str ou Supras
+        # list: str ou Supra
+        # dict: str ou Supra
+        if magnets:
+            self.magnets = load("magnets", magnets, [None, Supra], dict_supras)
+
         self.innerbore = innerbore
         self.outerbore = outerbore
 
@@ -54,32 +67,13 @@ class Supras(yaml.YAMLObject):
         """
         return names for Markers
         """
+        prefix = ""
+        if mname:
+            prefix = f'{mname}_'
         solid_names = []
-        if isinstance(self.magnets, str):
-            YAMLFile = f"{self.magnets}.yaml"
-            with open(YAMLFile, "r") as f:
-                Object = yaml.load(f, Loader=yaml.FullLoader)
-
-            solid_names += Object.get_names(self.name, is2D, verbose)
-        elif isinstance(self.magnets, list):
-            for magnet in self.magnets:
-                YAMLFile = f"{magnet}.yaml"
-                with open(YAMLFile, "r") as f:
-                    Object = yaml.load(f, Loader=yaml.FullLoader)
-
-                solid_names += Object.get_names(magnet, is2D, verbose)
-        elif isinstance(self.magnets, dict):
-            for key in self.magnets:
-                magnet = self.magnets[key]
-                YAMLFile = f"{magnet}.yaml"
-                with open(YAMLFile, "r") as f:
-                    Object = yaml.load(f, Loader=yaml.FullLoader)
-
-                solid_names += Object.get_names(self.name, is2D, verbose)
-        else:
-            raise RuntimeError(
-                f"Supras/get_names: unsupported type of magnets ({type(self.magnets)})"
-            )
+        for magnet in self.magnets:
+            oname = f"{prefix}{magnet.name}"
+            solid_names += magnet.get_names(oname, is2D, verbose)
 
         if verbose:
             print(f"Supras_Gmsh: solid_names {len(solid_names)}")
@@ -92,21 +86,6 @@ class Supras(yaml.YAMLObject):
                 yaml.dump(self, stream=ostream)
         except:
             raise Exception("Failed to Supras dump")
-
-    def load(self):
-        """load from a yaml file"""
-        data = None
-        try:
-            with open(f"{self.name}.yaml", "r") as istream:
-                data = yaml.load(stream=istream, Loader=yaml.FullLoader)
-        except:
-            raise Exception(f"Failed to load Insert data {self.name}.yaml")
-
-        self.name = data.name
-        self.magnets = data.magnets
-
-        self.innerbore = data.innerbore
-        self.outerbore = data.outerbore
 
     def to_json(self):
         """convert from yaml to json"""
@@ -122,6 +101,52 @@ class Supras(yaml.YAMLObject):
             jsondata = self.to_json()
             ostream.write(str(jsondata))
 
+    @classmethod
+    def from_dict(cls, values: dict, debug: bool = False):
+        """
+        create from dict
+        """
+        name = values["name"]
+        magnets = values["magnets"]        
+        
+        innerbore = values["innerbore"] if "innerbore" in values else 0
+        outerbore = values["outerbore"] if "outerbore" in values else 0
+        return cls(name, magnets, innerbore, outerbore)        
+
+    @classmethod
+    def from_yaml(cls, filename: str, debug: bool = False):
+        """
+        create from yaml
+        """
+        import os
+        cwd = os.getcwd()
+
+        (basedir, basename) = os.path.split(filename)
+        print(f"basedir={basedir}, basename={basename}, cwd={cwd}")
+
+        if basedir and basedir != ".":
+            os.chdir(basedir)
+            print(f"-> cwd={cwd}")
+
+        try:
+            with open(basename, "r") as istream:
+                values, otype = yaml.load(stream=istream, Loader=yaml.FullLoader)
+        except Exception:
+            raise Exception(f"Failed to load Supras data {filename}")
+
+        print(f'data: type={type(values)}')
+
+        name = values["name"]
+        magnets = values["magnets"]        
+        
+        innerbore = values["innerbore"] if "innerbore" in values else 0
+        outerbore = values["outerbore"] if "outerbore" in values else 0
+        object = cls(name, magnets, innerbore, outerbore)        
+        
+        if basedir and basedir != ".":
+            os.chdir(cwd)
+
+        return object
 
     @classmethod
     def from_json(cls, filename: str, debug: bool = False):
@@ -150,11 +175,7 @@ class Supras(yaml.YAMLObject):
         rb = [0, 0]
         zb = [0, 0]
 
-        for i, mname in enumerate(self.magnets):
-            Supra = None
-            with open(f"{mname}.yaml", "r") as f:
-                Supra = yaml.load(f, Loader=yaml.FullLoader)
-
+        for i, Supra in enumerate(self.magnets):
             if i == 0:
                 rb = Supra.r
                 zb = Supra.z
@@ -183,27 +204,10 @@ class Supras(yaml.YAMLObject):
             collide = True
         return collide
 
-    def Create_AxiGeo(self, AirData):
-        """
-        create Axisymetrical Geo Model for gmsh
-
-        return
-        H_ids, BC_ids, Air_ids, BC_Air_ids
-        """
-        pass
-
 
 def Supras_constructor(loader, node):
     values = loader.construct_mapping(node)
-    name = values["name"]
-    magnets = values["magnets"]
-    innerbore = 0
-    if "innerbore":
-        innerbore = values["innerbore"]
-    outerbore = 0
-    if "outerbore":
-        outerbore = values["outerbore"]
-    return Supras(name, magnets, innerbore, outerbore)
+    return values, "Supras"
 
 
-yaml.add_constructor("!Supras", Supras_constructor)
+yaml.add_constructor(Supras.yaml_tag, Supras_constructor)

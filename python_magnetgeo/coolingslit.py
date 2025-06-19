@@ -53,24 +53,6 @@ class CoolingSlit(yaml.YAMLObject):
         except:
             raise Exception("Failed to CoolingSlit dump")
 
-    def load(self, name: str):
-        """
-        load object from file
-        """
-        data = None
-        try:
-            with open(f"{name}.yaml", "r") as istream:
-                data = yaml.load(stream=istream, Loader=yaml.FullLoader)
-        except:
-            raise Exception(f"Failed to load Bitter data {name}.yaml")
-
-        self.r = data.r
-        self.angle = data.angle
-        self.n = data.n
-        self.dh = data.dh
-        self.sh = data.sh
-        self.shape = data.shape
-
     def to_json(self):
         """
         convert from yaml to json
@@ -81,6 +63,40 @@ class CoolingSlit(yaml.YAMLObject):
             self, default=deserialize.serialize_instance, sort_keys=True, indent=4
         )
 
+    @classmethod
+    def from_yaml(cls, filename: str, debug: bool = False):
+        """
+        create from yaml
+        """
+        import os
+        cwd = os.getcwd()
+
+        (basedir, basename) = os.path.split(filename)
+        print(f"basedir={basedir}, basename={basename}, cwd={cwd}")
+
+        if basedir and basedir != ".":
+            os.chdir(basedir)
+            print(f"-> cwd={cwd}")
+
+        try:
+            with open(basename, "r") as istream:
+                values, otype = yaml.load(stream=istream, Loader=yaml.FullLoader)
+        except Exception:
+            raise Exception(f"Failed to load CoolingSlit data {filename}")
+        
+        if basedir and basedir != ".":
+            os.chdir(cwd)
+            
+        r = values["r"]
+        angle = values["angle"]
+        n = values["n"]
+        dh = values["dh"]
+        sh = values["sh"]
+        print(f"constructor: {type(values['shape'])}")
+        shape = values["shape"]
+
+        return cls(r, angle, n, dh, sh, shape)
+        
     @classmethod
     def from_json(cls, filename: str, debug: bool = False):
         """
@@ -100,15 +116,6 @@ def CoolingSlit_constructor(loader, node):
     """
     print("CoolingSlit_constructor")
     values = loader.construct_mapping(node)
-    r = values["r"]
-    angle = values["angle"]
-    n = values["n"]
-    dh = values["dh"]
-    sh = values["sh"]
-    print(f"constructor: {type(values['shape'])}")
-    shape = values["shape"]
+    return values, "CoolingSlit"
 
-    return CoolingSlit(r, angle, n, dh, sh, shape)
-
-
-yaml.add_constructor("!Slit", CoolingSlit_constructor)
+yaml.add_constructor(CoolingSlit.yaml_tag, CoolingSlit_constructor)

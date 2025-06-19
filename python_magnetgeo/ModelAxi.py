@@ -70,6 +70,37 @@ class ModelAxi(yaml.YAMLObject):
             ostream.write(str(jsondata))
 
     @classmethod
+    def from_yaml(cls, filename: str, debug: bool = False):
+        """
+        create from yaml
+        """
+        import os
+        cwd = os.getcwd()
+
+        (basedir, basename) = os.path.split(filename)
+        print(f"basedir={basedir}, basename={basename}, cwd={cwd}")
+
+        if basedir and basedir != ".":
+            os.chdir(basedir)
+            print(f"-> cwd={cwd}")
+
+        try:
+            with open(basename, "r") as istream:
+                values, otype = yaml.load(stream=istream, Loader=yaml.FullLoader)
+        except Exception:
+            raise Exception(f"Failed to load ModelAxi data {filename}")
+
+        if basedir and basedir != ".":
+            os.chdir(cwd)
+
+        name = values["name"]
+        h = values["h"]
+        turns = values["turns"]
+        pitch = values["pitch"]
+        return cls(name, h, turns, pitch)
+
+
+    @classmethod
     def from_json(cls, filename: str, debug: bool = False):
         """
         convert from json to yaml
@@ -89,64 +120,40 @@ class ModelAxi(yaml.YAMLObject):
         return sum(self.turns)
 
     def compact(self, tol: float = 1.0e-6):
-        def indices(lst: list, item: float):
-            return [i for i, x in enumerate(lst) if abs(1 - item / x) <= tol]
-
-        List = self.pitch
-        duplicates = dict((x, indices(List, x)) for x in set(List) if List.count(x) > 1)
-        # print(f"duplicates: {duplicates}")
-
-        sum_index = {}
-        for key in duplicates:
-            index_fst = duplicates[key][0]
-            sum_index[index_fst] = [index_fst]
-            search_index = sum_index[index_fst]
-            search_elem = search_index[-1]
-            for index in duplicates[key]:
-                # print(f"index={index}, search_elem={search_elem}")
-                if index - search_elem == 1:
-                    search_index.append(index)
-                    search_elem = index
-                else:
-                    sum_index[index] = [index]
-                    search_index = sum_index[index]
-                    search_elem = search_index[-1]
-
-        # print(f"sum_index: {sum_index}")
-
-        remove_ids = []
-        for i in sum_index:
-            for item in sum_index[i]:
-                if item != i:
-                    remove_ids.append(item)
-
-        new_pitch = [p for i, p in enumerate(self.pitch) if not i in remove_ids]
-        # print(f"pitch={self.pitch}")
-        # print(f"new_pitch={new_pitch}")
-
-        new_turns = (
-            self.turns
-        )  # use deepcopy: import copy and copy.deepcopy(self.axi.turns)
-        for i in sum_index:
-            for item in sum_index[i]:
-                new_turns[i] += self.turns[item]
-        new_turns = [p for i, p in enumerate(self.turns) if not i in remove_ids]
-        # print(f"turns={self.turns}")
-        # print(f"new_turns={new_turns}")
-
+        if not self.pitch:
+            return self.turns.copy(), self.pitch.copy()
+        
+        def are_similar(a: float, b: float) -> bool:
+            return abs(1 - a / b) <= tol if b != 0 else abs(a) <= tol
+        
+        new_turns = []
+        new_pitch = []
+        
+        i = 0
+        while i < len(self.pitch):
+            current_pitch = self.pitch[i]
+            current_turn = self.turns[i]
+            
+            # Look ahead for consecutive similar pitches
+            j = i + 1
+            while j < len(self.pitch) and are_similar(self.pitch[j], current_pitch):
+                current_turn += self.turns[j]  # Sum the turns
+                j += 1
+            
+            new_pitch.append(current_pitch)
+            new_turns.append(current_turn)
+            
+            i = j  # Move to next non-duplicate group
+        
         return new_turns, new_pitch
-
+        
 
 def ModelAxi_constructor(loader, node):
     """
     build an ModelAxi object
     """
     values = loader.construct_mapping(node)
-    name = values["name"]
-    h = values["h"]
-    turns = values["turns"]
-    pitch = values["pitch"]
-    return ModelAxi(name, h, turns, pitch)
+    return values, "ModelAxi"
 
 
-yaml.add_constructor("!ModelAxi", ModelAxi_constructor)
+yaml.add_constructor(ModelAxi.yaml_tag, ModelAxi_constructor)

@@ -61,7 +61,7 @@ def serialize_instance(obj):
     return d
 
 
-def unserialize_object(d, debug: bool = False):
+def unserialize_object(d, debug: bool = True):
     """
     unserialize_instance of an obj
     """

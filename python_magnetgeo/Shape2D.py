@@ -44,20 +44,6 @@ class Shape2D(yaml.YAMLObject):
         except:
             raise Exception("Failed to Shape2D dump")
 
-    def load(self, name: str):
-        """
-        load object from file
-        """
-        data = None
-        try:
-            with open(f"{name}.yaml", "r") as istream:
-                data = yaml.load(stream=istream, Loader=yaml.FullLoader)
-        except:
-            raise Exception(f"Failed to load Shape2D data {name}.yaml")
-
-        self.name = name
-        self.pts = data.pts
-
     def to_json(self):
         """
         convert from yaml to json
@@ -67,6 +53,34 @@ class Shape2D(yaml.YAMLObject):
         return json.dumps(
             self, default=deserialize.serialize_instance, sort_keys=True, indent=4
         )
+
+    @classmethod
+    def from_yaml(cls, filename: str, debug: bool = False):
+        """
+        create from yaml
+        """
+        import os
+        cwd = os.getcwd()
+
+        (basedir, basename) = os.path.split(filename)
+        print(f"basedir={basedir}, basename={basename}, cwd={cwd}")
+
+        if basedir and basedir != ".":
+            os.chdir(basedir)
+            print(f"-> cwd={cwd}")
+
+        try:
+            with open(basename, "r") as istream:
+                values, otype = yaml.load(stream=istream, Loader=yaml.FullLoader)
+        except Exception:
+            raise Exception(f"Failed to load Shape2D data {filename}")
+
+        if basedir and basedir != ".":
+            os.chdir(cwd)
+        
+        name = values["name"]
+        pts = values["pts"]
+        return cls(name, pts)
 
     @classmethod
     def from_json(cls, filename: str, debug: bool = False):
@@ -87,12 +101,11 @@ def Shape_constructor(loader, node):
     build an Shape object
     """
     values = loader.construct_mapping(node)
-    name = values["name"]
-    pts = values["pts"]
-    return Shape2D(name, pts)
+    return values, "Shape2D"
+    
 
 
-yaml.add_constructor("!Shape2D", Shape_constructor)
+yaml.add_constructor(Shape2D.yaml_tag, Shape_constructor)
 
 
 def create_circle(r: float, n: int = 20) -> Shape2D:
@@ -161,7 +174,7 @@ def create_angularslit(
 
     pts = []
     theta = angle * pi / float(n)
-    theta_ = pi / float(fillet)
+    theta_ = None
     r = x
     r_ = dx / 2.0
 
@@ -171,6 +184,7 @@ def create_angularslit(
         pts.append([x, y])
 
     if fillet > 0:
+        theta_ = pi / float(fillet)
         xc = (r + dx) * cos(-angle / 2.0) / 2
         yc = (r + dx) * sin(-angle / 2.0) / 2
         r_ = dx / 2.0
