@@ -57,11 +57,9 @@ class InnerCurrentLead(yaml.YAMLObject):
     def dump(self):
         """
         dump object to file
-        """
-        try:
-            yaml.dump(self, open(f"{self.name}.yaml", "w"))
-        except:
-            raise Exception("Failed to dump InnerCurrentLead data")
+        """        
+        from .utils import writeYaml
+        writeYaml("InnerCurrentLead", self, InnerCurrentLead)
 
     def to_json(self):
         """

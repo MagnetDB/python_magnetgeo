@@ -225,11 +225,8 @@ class Insert(yaml.YAMLObject):
 
     def dump(self):
         """dump to a yaml file name.yaml"""
-        try:
-            with open(f"{self.name}.yaml", "w") as ostream:
-                yaml.dump(self, stream=ostream)
-        except Exception:
-            print("Failed to Insert dump")
+        from .utils import writeYaml
+        writeYaml("Insert", self, Insert)
 
     def to_json(self):
         """convert from yaml to json"""

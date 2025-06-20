@@ -8,8 +8,9 @@ class Tierod(yaml.YAMLObject):
     yaml_tag = "Tierod"
 
     def __init__(
-        self, r: float, n: int, dh: float, sh: float, shape: Shape2D | str
+        self, name: str, r: float, n: int, dh: float, sh: float, shape: Shape2D | str
     ) -> None:
+        self.name = name
         self.r = r
         self.n = n
         self.dh: float = dh
@@ -18,8 +19,9 @@ class Tierod(yaml.YAMLObject):
         
 
     def __repr__(self):
-        return "%s(r=%r, n=%r, dh=%r, sh=%r, shape=%r)" % (
+        return "%s(name=%s, r=%r, n=%r, dh=%r, sh=%r, shape=%r)" % (
             self.__class__.__name__,
+            self.name,
             self.r,
             self.n,
             self.dh,
@@ -31,15 +33,12 @@ class Tierod(yaml.YAMLObject):
         if isinstance(self.shape, str):
             self.shape = loadObject("shape", self.shape, Shape2D, Shape2D.from_yaml)
 
-    def dump(self, name: str):
+    def dump(self):
         """
         dump object to file
         """
-        try:
-            with open(f"{name}.yaml", "w") as ostream:
-                yaml.dump(self, stream=ostream)
-        except Exception:
-            raise Exception("Failed to Tierod dump")
+        from .utils import writeYaml
+        writeYaml("Tierod", self, Tierod)
 
     def to_json(self):
         """
@@ -75,11 +74,12 @@ def Tierod_constructor(loader, node):
     build an Tierod object
     """
     values = loader.construct_mapping(node)
+    name = values.get("name", "")
     r = values["r"]
     n = values["n"]
     dh = values["dh"]
     sh = values["sh"]
     shape = values["shape"]
-    return Tierod(r, n, dh, sh, shape)
+    return Tierod(name, r, n, dh, sh, shape)
 
 yaml.add_constructor(Tierod.yaml_tag, Tierod_constructor)

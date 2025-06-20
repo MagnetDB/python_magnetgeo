@@ -14,25 +14,27 @@ eps: depth of groove
 class Groove(yaml.YAMLObject):
     yaml_tag = "Groove"
 
-    def __init__(self, gtype: str=None, n: int=0, eps: float=0) -> None:
+    def __init__(self, name: str='', gtype: str=None, n: int=0, eps: float=0) -> None:
+        self.name = name
         self.gtype = gtype
         self.n = n
         self.eps: float = eps
 
     def __repr__(self):
-        return "%s(gtype=%s, n=%d, eps=%g)" % (
+        return "%s(name=%s, gtype=%s, n=%d, eps=%g)" % (
             self.__class__.__name__,
+            self.name,
             self.gtype,
             self.n,
             self.eps,
         )
 
-    def dump(self, name: str):
+    def dump(self):
         """
         dump object to file
         """
         try:
-            with open(f"{name}.yaml", "w") as ostream:
+            with open(f"{self.name}.yaml", "w") as ostream:
                 yaml.dump(self, stream=ostream)
         except Exception:
             raise Exception("Failed to Tierod dump")
@@ -69,9 +71,10 @@ def Groove_constructor(loader, node):
     build an Groove object
     """
     values = loader.construct_mapping(node)
+    name = values.get("name", '')
     gtype = values["gtype"]
     n = values["n"]
     eps = values["eps"]
-    return Groove(gtype, n, eps)
+    return Groove(name, gtype, n, eps)
 
 yaml.add_constructor(Groove.yaml_tag, Groove_constructor)

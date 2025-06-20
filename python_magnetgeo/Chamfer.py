@@ -15,12 +15,13 @@ import yaml
 import json
 import math
 
-
+    
 class Chamfer(yaml.YAMLObject):
     """
     name :
 
     params :
+      name:
       side: BP or HP
       rside: rint or rext in mm
       alpha: angle in degree
@@ -45,6 +46,7 @@ class Chamfer(yaml.YAMLObject):
 
     def __init__(
         self,
+        name: str,
         side: str,
         rside: str,
         alpha: float = None,
@@ -54,6 +56,7 @@ class Chamfer(yaml.YAMLObject):
         """
         initialize object
         """
+        self.name = name
         self.side = side
         self.rside = rside
         self.alpha = alpha
@@ -70,6 +73,7 @@ class Chamfer(yaml.YAMLObject):
         representation of object
         """
         msg = self.__class__.__name__
+        msg += f"(name={self.name}, "
         msg += f"(side={self.side}, "
         msg += f", rside={self.rside}"
         if hasattr(self, "alpha"):
@@ -79,12 +83,12 @@ class Chamfer(yaml.YAMLObject):
         msg += f",l={self.l})"
         return msg
 
-    def dump(self, name: str):
+    def dump(self):
         """
         dump object to file
         """
         try:
-            with open(f"{name}.yaml", "w") as ostream:
+            with open(f"{self.name}.yaml", "w") as ostream:
                 yaml.dump(self, stream=ostream)
         except Exception:
             raise Exception("Failed to Chamfer dump")
@@ -117,18 +121,21 @@ class Chamfer(yaml.YAMLObject):
         from .utils import loadJson
         return loadJson("Chamfer", filename, debug)
 
-    def getRadius(self):
+    def getDr(self):
         """
         returns chamfer radius reduction 
         """
         if self.dr:
             return self.dr
 
-        radius = (
+        if self.alpha is None:
+            raise ValueError("Chamfer must have either dr or alpha")
+        
+        dr = (
                 self.l
                 * math.tan(math.pi / 180.0 * self.alpha)
             )
-        return radius
+        return dr
 
     def getAngle(self):
         """
@@ -136,6 +143,9 @@ class Chamfer(yaml.YAMLObject):
         """
         if self.alpha:
             return self.alpha
+
+        if self.dr is None:
+            raise ValueError("Chamfer must have either dr or alpha")
 
         angle = math.atan2(self.dr, self.l)
         return angle * 180 / math.pi
@@ -146,6 +156,7 @@ def Chamfer_constructor(loader, node):
     build an Shape object
     """
     values = loader.construct_mapping(node)
+    name = values.get("name", "")
     side = values["side"]
     rside = values["rside"]
 
@@ -154,7 +165,7 @@ def Chamfer_constructor(loader, node):
     dr = values.get("dr", None)
 
     l = values["l"]
-    return Chamfer(side, rside, alpha, dr, l)
+    return Chamfer(name, side, rside, alpha, dr, l)
 
 
 

@@ -69,6 +69,14 @@ class Shape(yaml.YAMLObject):
             )
         )
 
+    def dump(self):
+        """
+        dump object to file
+        """
+        from .utils import writeYaml
+        writeYaml("Shape", self, Shape)
+
+
     def to_json(self):
         """
         convert from yaml to json

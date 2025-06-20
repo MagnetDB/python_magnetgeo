@@ -1,6 +1,29 @@
 import os
 import yaml
 
+def writeYaml(comment, object, debug: bool = True):        
+    oname = comment
+    if hasattr(object, "name"):
+        oname = object.name
+
+    try:
+        with open(f"{oname}.yaml", "w") as ostream:
+            yaml.dump(object, stream=ostream)
+    except Exception as e:
+        raise Exception(f"Failed to {comment} dump - {oname}.yaml - {e}")
+
+def writeJson(comment, object, debug: bool = True):        
+    oname = comment
+    if hasattr(object, "name"):
+        oname = object.name
+
+    try:
+        with open(f"{oname}.json", "w") as ostream:
+            jsondata = object.to_json()
+            ostream.write(str(jsondata))
+    except Exception as e:
+        raise Exception(f"Failed to {comment} dump - {oname}.json - {e}")
+ 
 
 def loadYaml(comment, filename, supported_type=None, debug: bool = True):
     cwd = os.getcwd()

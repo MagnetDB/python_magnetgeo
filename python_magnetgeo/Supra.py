@@ -125,11 +125,8 @@ class Supra(yaml.YAMLObject):
         """
         dump object to file
         """
-        try:
-            with open(f"{self.name}.yaml", "w") as ostream:
-                yaml.dump(self, stream=ostream)
-        except:
-            raise Exception("Failed to Supra dump")
+        from .utils import writeYaml
+        writeYaml("Supra", self, Supra)
 
     def to_json(self):
         """

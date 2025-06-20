@@ -23,8 +23,9 @@ class CoolingSlit(yaml.YAMLObject):
     yaml_tag = "Slit"
 
     def __init__(
-        self, r: float, angle: float, n: int, dh: float, sh: float, shape: Shape2D
+        self, name: str, r: float, angle: float, n: int, dh: float, sh: float, shape: Shape2D
     ) -> None:
+        self.name: str = name
         self.r: float = r
         self.angle: float = angle
         self.n: int = n
@@ -33,8 +34,9 @@ class CoolingSlit(yaml.YAMLObject):
         self.shape: Shape2D = shape
 
     def __repr__(self):
-        return "%s(r=%r, angle=%r, n=%r, dh=%r, sh=%r, shape=%r)" % (
+        return "%s(name=%s, r=%r, angle=%r, n=%r, dh=%r, sh=%r, shape=%r)" % (
             self.__class__.__name__,
+            self.name,
             self.r,
             self.angle,
             self.n,
@@ -43,15 +45,12 @@ class CoolingSlit(yaml.YAMLObject):
             self.shape,
         )
 
-    def dump(self, name: str):
+    def dump(self):
         """
         dump object to file
         """
-        try:
-            with open(f"{name}.yaml", "w") as ostream:
-                yaml.dump(self, stream=ostream)
-        except:
-            raise Exception("Failed to CoolingSlit dump")
+        from .utils import writeYaml
+        writeYaml("CoolingSlit", self, CoolingSlit)
 
     def to_json(self):
         """
@@ -86,6 +85,7 @@ def CoolingSlit_constructor(loader, node):
     build an coolingslit object
     """
     values = loader.construct_mapping(node)
+    name = values.get("name", '')
     r = values["r"]
     angle = values["angle"]
     n = values["n"]
@@ -93,6 +93,6 @@ def CoolingSlit_constructor(loader, node):
     sh = values["sh"]
     shape = values["shape"]
 
-    return CoolingSlit(r, angle, n, dh, sh, shape)
+    return CoolingSlit(name, r, angle, n, dh, sh, shape)
 
 yaml.add_constructor(CoolingSlit.yaml_tag, CoolingSlit_constructor)

@@ -126,11 +126,8 @@ class MSite(yaml.YAMLObject):
         """
         dump object to file
         """
-        try:
-            with open(f"{self.name}.yaml", "w") as ostream:
-                yaml.dump(self, stream=ostream)
-        except:
-            raise Exception("Failed to dump MSite data")
+        from .utils import writeYaml
+        writeYaml("MSite", self, MSite)
 
     def to_json(self):
         """

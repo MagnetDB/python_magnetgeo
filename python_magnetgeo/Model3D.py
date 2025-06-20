@@ -51,6 +51,13 @@ class Model3D(yaml.YAMLObject):
             self.with_channels,
         )
 
+    def dump(self):
+        """
+        dump object to file
+        """
+        from .utils import writeYaml
+        writeYaml("Model3D", self, Model3D)
+
     def to_json(self):
         """
         convert from yaml to json

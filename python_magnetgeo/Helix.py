@@ -184,11 +184,8 @@ class Helix(yaml.YAMLObject):
         """
         dump object to file
         """
-        try:
-            with open(f"{self.name}.yaml", "w") as ostream:
-                yaml.dump(self, stream=ostream)
-        except Exception as e:
-            raise Exception(f"Failed to Helix dump ({e})")
+        from .utils import writeYaml
+        writeYaml("Helix", self, Helix)
 
     @property
     def axi(self):

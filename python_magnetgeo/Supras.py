@@ -83,11 +83,8 @@ class Supras(yaml.YAMLObject):
 
     def dump(self):
         """dump to a yaml file name.yaml"""
-        try:
-            with open(f"{self.name}.yaml", "w") as ostream:
-                yaml.dump(self, stream=ostream)
-        except:
-            raise Exception("Failed to Supras dump")
+        from .utils import writeYaml
+        writeYaml("Supras", self, Supras)
 
     def to_json(self):
         """convert from yaml to json"""

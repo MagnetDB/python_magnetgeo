@@ -34,15 +34,12 @@ class Shape2D(yaml.YAMLObject):
         """
         return "%s(name=%r, pts=%r)" % (self.__class__.__name__, self.name, self.pts)
 
-    def dump(self, name: str):
+    def dump(self):
         """
         dump object to file
         """
-        try:
-            with open(f"{name}.yaml", "w") as ostream:
-                yaml.dump(self, stream=ostream)
-        except:
-            raise Exception("Failed to Shape2D dump")
+        from .utils import writeYaml
+        writeYaml("Shap2D", self, Shape2D)
 
     def to_json(self):
         """

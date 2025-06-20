@@ -74,12 +74,8 @@ class Screen(yaml.YAMLObject):
         """
         dump object to file
         """
-        try:
-            ostream = open(self.name + ".yaml", "w")
-            yaml.dump(self, stream=ostream)
-            ostream.close()
-        except:
-            raise Exception("Failed to Screen dump")
+        from .utils import writeYaml
+        writeYaml("Screen", self, Screen)
 
     def to_json(self):
         """

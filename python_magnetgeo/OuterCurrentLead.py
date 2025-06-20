@@ -70,11 +70,9 @@ class OuterCurrentLead(yaml.YAMLObject):
     def dump(self):
         """
         dump object to file
-        """
-        try:
-            yaml.dump(self, open(f"{self.name}.yaml", "w"))
-        except:
-            raise Exception("Failed to dump OuterCurrentLead data")
+        """        
+        from .utils import writeYaml
+        writeYaml("OuterCurrentLead", self, OuterCurrentLead)
 
     def to_json(self):
         """

@@ -51,6 +51,14 @@ class ModelAxi(yaml.YAMLObject):
             self.pitch,
         )
 
+
+    def dump(self):
+        """
+        dump object to file
+        """
+        from .utils import writeYaml
+        writeYaml("ModelAxi", self, ModelAxi)
+        
     def to_json(self):
         """
         convert from yaml to json
