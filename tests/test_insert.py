@@ -22,7 +22,7 @@ from python_magnetgeo.ModelAxi import ModelAxi
 from python_magnetgeo.Model3D import Model3D
 from python_magnetgeo.Shape import Shape
 from python_magnetgeo.Groove import Groove
-from test_utils_common import (
+from .test_utils_common import (
     BaseSerializationTestMixin, 
     BaseYAMLConstructorTestMixin,
     BaseYAMLTagTestMixin,
@@ -466,4 +466,3 @@ class TestInsertFromDict:
         assert insert.rings == []
         assert insert.currentleads == []
         assert insert.hangles == [0.0, 120.0, 240.0]
-        assert insert.

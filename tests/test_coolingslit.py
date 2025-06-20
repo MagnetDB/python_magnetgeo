@@ -54,6 +54,7 @@ class TestCoolingSlitInitialization:
     def test_coolingslit_with_zero_values(self, sample_shape2d):
         """Test CoolingSlit with zero values"""
         slit = CoolingSlit(
+            name="test", 
             r=0.0,
             angle=0.0,
             n=0,
@@ -71,6 +72,7 @@ class TestCoolingSlitInitialization:
     def test_coolingslit_with_negative_values(self, sample_shape2d):
         """Test CoolingSlit with negative values"""
         slit = CoolingSlit(
+            name="test", 
             r=-10.0,
             angle=-30.0,
             n=-5,
@@ -88,6 +90,7 @@ class TestCoolingSlitInitialization:
     def test_coolingslit_with_large_values(self, sample_shape2d):
         """Test CoolingSlit with large values"""
         slit = CoolingSlit(
+            name="test", 
             r=1000.0,
             angle=720.0,  # Multiple rotations
             n=999,
@@ -105,6 +108,7 @@ class TestCoolingSlitInitialization:
     def test_coolingslit_with_float_integer_mix(self, sample_shape2d):
         """Test CoolingSlit with mixed float and integer types"""
         slit = CoolingSlit(
+            name="test", 
             r=15,      # int
             angle=30.5,  # float
             n=6,       # int
@@ -127,7 +131,7 @@ class TestCoolingSlitMethods:
     def sample_coolingslit(self):
         """Create a sample CoolingSlit for testing"""
         shape = Shape2D(name="test_slit", pts=[[0, 0], [2, 0], [2, 1], [0, 1]])
-        return CoolingSlit(r=20.0, angle=60.0, n=12, dh=4.0, sh=16.0, shape=shape)
+        return CoolingSlit(name="test", r=20.0, angle=60.0, n=12, dh=4.0, sh=16.0, shape=shape)
 
     def test_repr(self, sample_coolingslit):
         """Test __repr__ method"""
@@ -144,7 +148,7 @@ class TestCoolingSlitMethods:
     def test_repr_with_complex_shape(self):
         """Test __repr__ with complex shape"""
         complex_shape = Shape2D(name="complex", pts=[[i, i**2] for i in range(10)])
-        slit = CoolingSlit(r=35.0, angle=90.0, n=16, dh=5.5, sh=22.0, shape=complex_shape)
+        slit = CoolingSlit(name="test", r=35.0, angle=90.0, n=16, dh=5.5, sh=22.0, shape=complex_shape)
         
         repr_str = repr(slit)
         assert "CoolingSlit(" in repr_str
@@ -155,6 +159,7 @@ class TestCoolingSlitMethods:
         """Test __repr__ with high precision values"""
         shape = Shape2D(name="precision", pts=[[0, 0], [1, 1]])
         slit = CoolingSlit(
+            name="test", 
             r=12.123456789,
             angle=45.987654321,
             n=7,
@@ -174,12 +179,13 @@ class TestCoolingSlitSerialization(BaseSerializationTestMixin):
     def get_sample_instance(self):
         """Return a sample CoolingSlit instance"""
         shape = Shape2D(name="test_shape", pts=[[0, 0], [1, 0], [1, 1], [0, 1]])
-        return CoolingSlit(r=15.0, angle=30.0, n=6, dh=2.5, sh=10.0, shape=shape)
+        return CoolingSlit(name="test", r=15.0, angle=30.0, n=6, dh=2.5, sh=10.0, shape=shape)
     
     def get_sample_yaml_content(self):
         """Return sample YAML content"""
         return '''
 !<CoolingSlit>
+name: test 
 r: 18.0
 angle: 45.0
 n: 8
@@ -193,6 +199,7 @@ shape: !<Shape2D>
     def get_expected_json_fields(self):
         """Return expected JSON fields"""
         return {
+            "name": "test", 
             "r": 15.0,
             "angle": 30.0,
             "n": 6,
@@ -234,6 +241,7 @@ class TestCoolingSlitYAMLConstructor(BaseYAMLConstructorTestMixin):
         """Return sample constructor data"""
         shape = Shape2D(name="constructor_shape", pts=[[0, 0], [2, 0], [2, 1.5], [0, 1.5]])
         return {
+            "name": "test", 
             "r": 22.0,
             "angle": 75.0,
             "n": 10,
@@ -266,6 +274,7 @@ class TestCoolingSlitFileOperations:
         """Test successful from_yaml loading"""
         yaml_content = '''
 !>CoolingSlit>
+name: test 
 r: 25.0
 angle: 120.0
 n: 15
@@ -318,7 +327,7 @@ shape: !<Shape2D>
     def test_from_json_success(self, mock_file, mock_unserialize):
         """Test successful from_json loading"""
         shape = Shape2D(name="json_shape", pts=[[0, 0], [1, 1]])
-        mock_slit = CoolingSlit(r=10.0, angle=45.0, n=4, dh=2.0, sh=8.0, shape=shape)
+        mock_slit = CoolingSlit(name="test", r=10.0, angle=45.0, n=4, dh=2.0, sh=8.0, shape=shape)
         mock_unserialize.return_value = mock_slit
         
         result = CoolingSlit.from_json("test.json")
@@ -334,7 +343,7 @@ class TestCoolingSlitValidation:
     def test_geometric_parameter_consistency(self):
         """Test geometric parameter consistency"""
         shape = Shape2D(name="geo_test", pts=[[0, 0], [2, 0], [2, 1], [0, 1]])
-        slit = CoolingSlit(r=30.0, angle=90.0, n=12, dh=4.0, sh=16.0, shape=shape)
+        slit = CoolingSlit(name="test", r=30.0, angle=90.0, n=12, dh=4.0, sh=16.0, shape=shape)
         
         # Basic geometric consistency checks
         assert slit.r > 0  # Radius should be positive
@@ -351,7 +360,7 @@ class TestCoolingSlitValidation:
         angles_to_test = [0.0, 30.0, 45.0, 90.0, 180.0, 270.0, 360.0]
         
         for angle in angles_to_test:
-            slit = CoolingSlit(r=20.0, angle=angle, n=8, dh=3.0, sh=12.0, shape=shape)
+            slit = CoolingSlit(name="test", r=20.0, angle=angle, n=8, dh=3.0, sh=12.0, shape=shape)
             assert slit.angle == angle
 
     def test_hydraulic_parameters_validation(self):
@@ -367,7 +376,7 @@ class TestCoolingSlitValidation:
         ]
         
         for dh, sh in test_cases:
-            slit = CoolingSlit(r=25.0, angle=60.0, n=6, dh=dh, sh=sh, shape=shape)
+            slit = CoolingSlit(name="test", r=25.0, angle=60.0, n=6, dh=dh, sh=sh, shape=shape)
             assert slit.dh == dh
             assert slit.sh == sh
             
@@ -380,7 +389,7 @@ class TestCoolingSlitValidation:
         
         # Test that n (number of slits) is handled correctly
         for n in [1, 2, 5, 10, 20, 50]:
-            slit = CoolingSlit(r=20.0, angle=45.0, n=n, dh=3.0, sh=12.0, shape=shape)
+            slit = CoolingSlit(name="test", r=20.0, angle=45.0, n=n, dh=3.0, sh=12.0, shape=shape)
             assert slit.n == n
             assert isinstance(slit.n, int)
 
@@ -394,7 +403,7 @@ class TestCoolingSlitValidation:
         ]
         
         for shape in shapes:
-            slit = CoolingSlit(r=15.0, angle=30.0, n=4, dh=2.0, sh=8.0, shape=shape)
+            slit = CoolingSlit(name="test", r=15.0, angle=30.0, n=4, dh=2.0, sh=8.0, shape=shape)
             assert slit.shape == shape
             assert isinstance(slit.shape, Shape2D)
 
@@ -410,6 +419,7 @@ class TestCoolingSlitIntegration:
         for i in range(5):
             shape = Shape2D(name=f"slit_shape_{i}", pts=[[0, 0], [i+1, 0], [i+1, 1], [0, 1]])
             slit = CoolingSlit(
+                name="test", 
                 r=20.0 + i * 5.0,
                 angle=30.0 + i * 15.0,
                 n=4 + i * 2,
@@ -428,7 +438,7 @@ class TestCoolingSlitIntegration:
     def test_coolingslit_serialization_roundtrip(self):
         """Test complete serialization roundtrip"""
         original_shape = Shape2D(name="roundtrip", pts=[[0, 0], [3, 0], [3, 2], [0, 2]])
-        original_slit = CoolingSlit(r=40.0, angle=135.0, n=18, dh=6.0, sh=24.0, shape=original_shape)
+        original_slit = CoolingSlit(name="test", r=40.0, angle=135.0, n=18, dh=6.0, sh=24.0, shape=original_shape)
         
         # Test JSON serialization
         json_str = original_slit.to_json()
@@ -449,7 +459,7 @@ class TestCoolingSlitIntegration:
         
         # Create collection of slits
         slits = [
-            CoolingSlit(r=i * 10.0, angle=i * 30.0, n=i + 2, dh=i * 1.0, sh=i * 4.0, shape=shape)
+            CoolingSlit(name="test", r=i * 10.0, angle=i * 30.0, n=i + 2, dh=i * 1.0, sh=i * 4.0, shape=shape)
             for i in range(1, 11)
         ]
         
@@ -478,7 +488,7 @@ class TestCoolingSlitPerformance:
             pts=[[i, (i % 100) / 10.0] for i in range(5000)]
         )
         
-        slit = CoolingSlit(r=100.0, angle=180.0, n=50, dh=10.0, sh=200.0, shape=large_shape)
+        slit = CoolingSlit(name="test", r=100.0, angle=180.0, n=50, dh=10.0, sh=200.0, shape=large_shape)
         
         # Test that operations still work efficiently
         repr_str = repr(slit)
@@ -495,6 +505,7 @@ class TestCoolingSlitPerformance:
         slits = []
         for i in range(200):
             slit = CoolingSlit(
+                name="test", 
                 r=float(i + 10),
                 angle=float((i * 3) % 360),
                 n=i % 20 + 1,
@@ -515,7 +526,7 @@ class TestCoolingSlitErrorHandling:
         """Test handling of invalid shape parameter"""
         # Test with None shape (should raise error depending on implementation)
         try:
-            slit = CoolingSlit(r=20.0, angle=45.0, n=6, dh=3.0, sh=12.0, shape=None)
+            slit = CoolingSlit(name="test", r=20.0, angle=45.0, n=6, dh=3.0, sh=12.0, shape=None)
             # If no error is raised, the implementation allows None
             assert slit.shape is None
         except (TypeError, AttributeError):
@@ -528,6 +539,7 @@ class TestCoolingSlitErrorHandling:
         
         # Test with very large values
         large_slit = CoolingSlit(
+            name="test", 
             r=1e10,
             angle=1e6,  # Many rotations
             n=1000000,
@@ -541,6 +553,7 @@ class TestCoolingSlitErrorHandling:
         
         # Test with very small values
         small_slit = CoolingSlit(
+            name="test", 
             r=1e-10,
             angle=1e-6,
             n=1,

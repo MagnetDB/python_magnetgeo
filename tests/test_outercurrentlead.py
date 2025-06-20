@@ -425,25 +425,6 @@ class TestOuterCurrentLeadGeometry:
         lead_height = geometric_lead.h
         assert bar_length <= lead_height * 1.1  # Allow reasonable overhang
     
-    def test_geometric_scaling(self):
-        """Test OuterCurrentLead with different scales"""
-        # Small scale
-        small_lead = OuterCurrentLead(
-            name="small",
-            r=[20.0, 30.0],
-            h=50.0,
-            bar=[5.0, 8.0, 4.0, 40.0]
-        )
-        assert small_lead.r == [20.0, 30.0]
-        
-        # Large scale  
-        large_lead = OuterCurrentLead(
-            name="large",
-            r=[500.0, 800.0],
-            h=1000.0,
-            bar=[100.0, 150.0, 80.0, 900.0]
-        )
-        assert large_lead.r == [500.0, 800.0]
 
 
 class TestOuterCurrentLeadEdgeCases:

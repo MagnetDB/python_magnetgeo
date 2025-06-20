@@ -80,7 +80,7 @@ class TestGrooveSerialization:
     @pytest.fixture
     def sample_groove(self):
         """Create a sample Groove for testing"""
-        return Groove(gtype="rint", n=4, eps=1.2)
+        return Groove(name="test_groove", gtype="rint", n=4, eps=1.2)
 
     def test_to_json(self, sample_groove):
         """Test to_json method"""
@@ -110,6 +110,7 @@ class TestGrooveSerialization:
         """Test from_yaml class method"""
         yaml_content = """
 !<Groove>
+name: test 
 gtype: rext
 n: 6
 eps: 2.5
@@ -139,7 +140,7 @@ eps: 2.5
     @patch("builtins.open", new_callable=mock_open, read_data='{"test": "data"}')
     def test_from_json(self, mock_file, mock_unserialize):
         """Test from_json class method"""
-        mock_groove = Groove(gtype="rint", n=3, eps=1.0)
+        mock_groove = Groove(name="test", gtype="rint", n=3, eps=1.0)
         mock_unserialize.return_value = mock_groove
         
         result = Groove.from_json("test.json")
@@ -160,6 +161,7 @@ class TestGrooveYAMLConstructor:
         
         # Mock data that would be returned by construct_mapping
         mock_data = {
+            "name": "test", 
             "gtype": "rint",
             "n": 5,
             "eps": 1.5
@@ -184,7 +186,7 @@ class TestGrooveEdgeCases:
     
     def test_groove_with_zero_values(self):
         """Test groove with zero values"""
-        groove = Groove(gtype="rint", n=0, eps=0.0)
+        groove = Groove(name="test", gtype="rint", n=0, eps=0.0)
         
         assert groove.gtype == "rint"
         assert groove.n == 0
@@ -193,7 +195,7 @@ class TestGrooveEdgeCases:
     def test_groove_with_negative_values(self):
         """Test groove with negative values"""
         # The class doesn't validate input, so this should work
-        groove = Groove(gtype="rext", n=-1, eps=-0.5)
+        groove = Groove(name="test", gtype="rext", n=-1, eps=-0.5)
         
         assert groove.gtype == "rext"
         assert groove.n == -1
@@ -201,7 +203,7 @@ class TestGrooveEdgeCases:
 
     def test_groove_with_large_values(self):
         """Test groove with large values"""
-        groove = Groove(gtype="rint", n=1000000, eps=999.999)
+        groove = Groove(name="test", gtype="rint", n=1000000, eps=999.999)
         
         assert groove.gtype == "rint"
         assert groove.n == 1000000
@@ -210,7 +212,7 @@ class TestGrooveEdgeCases:
     def test_groove_with_invalid_gtype(self):
         """Test groove with invalid gtype"""
         # The class doesn't validate gtype, so this should work
-        groove = Groove(gtype="invalid_type", n=5, eps=1.0)
+        groove = Groove(name="test", gtype="invalid_type", n=5, eps=1.0)
         
         assert groove.gtype == "invalid_type"
         assert groove.n == 5
@@ -222,7 +224,7 @@ class TestGrooveIntegration:
     
     def test_yaml_roundtrip(self):
         """Test complete YAML serialization/deserialization roundtrip"""
-        original_groove = Groove(gtype="rext", n=8, eps=3.14)
+        original_groove = Groove(name="test", gtype="rext", n=8, eps=3.14)
         
         # Serialize to YAML string
         yaml_str = yaml.dump(original_groove)
@@ -236,7 +238,7 @@ class TestGrooveIntegration:
 
     def test_json_roundtrip(self):
         """Test complete JSON serialization/deserialization roundtrip"""
-        original_groove = Groove(gtype="rint", n=12, eps=2.71)
+        original_groove = Groove(name="test", gtype="rint", n=12, eps=2.71)
         
         # Serialize to JSON
         json_str = original_groove.to_json()
@@ -253,10 +255,10 @@ class TestGrooveIntegration:
     def test_multiple_grooves_interaction(self):
         """Test creating and managing multiple grooves"""
         grooves = [
-            Groove(gtype="rint", n=3, eps=0.5),
-            Groove(gtype="rext", n=5, eps=1.0),
-            Groove(gtype="rint", n=7, eps=1.5),
-            Groove(gtype="rext", n=9, eps=2.0)
+            Groove(name="test", gtype="rint", n=3, eps=0.5),
+            Groove(name="test", gtype="rext", n=5, eps=1.0),
+            Groove(name="test", gtype="rint", n=7, eps=1.5),
+            Groove(name="test", gtype="rext", n=9, eps=2.0)
         ]
         
         # Test that each groove maintains its own state

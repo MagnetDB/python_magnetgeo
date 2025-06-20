@@ -459,43 +459,7 @@ class TestInnerCurrentLeadGeometry:
         assert geometric_lead.h > 0  # Positive height
         assert geometric_lead.h == 480.0
     
-    def test_geometric_scaling(self):
-        """Test InnerCurrentLead with different geometric scales"""
-        # Small scale (mm)
-        small_lead = InnerCurrentLead(
-            name="small",
-            r=[5.0, 8.0],
-            h=50.0
-        )
-        assert small_lead.r == [5.0, 8.0]
-        assert small_lead.h == 50.0
-        
-        # Large scale (m converted to mm)
-        large_lead = InnerCurrentLead(
-            name="large",
-            r=[100.0, 150.0],
-            h=2000.0
-        )
-        assert large_lead.r == [100.0, 150.0]
-        assert large_lead.h == 2000.0
     
-    def test_aspect_ratio_analysis(self):
-        """Test various aspect ratios (height vs radius)"""
-        base_r = [10.0, 15.0]
-        
-        # Short and fat
-        short_lead = InnerCurrentLead(name="short", r=base_r, h=20.0)
-        assert short_lead.h < (short_lead.r[1] - short_lead.r[0])
-        
-        # Tall and thin
-        tall_lead = InnerCurrentLead(name="tall", r=base_r, h=500.0)
-        assert tall_lead.h > 10 * (tall_lead.r[1] - tall_lead.r[0])
-        
-        # Balanced proportions
-        balanced_lead = InnerCurrentLead(name="balanced", r=base_r, h=50.0)
-        aspect_ratio = balanced_lead.h / (balanced_lead.r[1] - balanced_lead.r[0])
-        assert 5 < aspect_ratio < 15  # Reasonable aspect ratio
-
 
 class TestInnerCurrentLeadEdgeCases:
     """

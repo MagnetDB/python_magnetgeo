@@ -180,11 +180,8 @@ class Bitter(yaml.YAMLObject):
         """
         dump object to file
         """
-        try:
-            with open(f"{self.name}.yaml", "w") as ostream:
-                yaml.dump(self, stream=ostream)
-        except Exception:
-            raise Exception("Failed to Bitter dump")
+        from .utils import writeYaml
+        writeYaml("Bitter", self, Bitter)
 
     def to_json(self):
         """

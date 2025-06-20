@@ -28,7 +28,7 @@ class TestChamferInitialization:
     
     def test_chamfer_basic_initialization(self):
         """Test Chamfer initialization with required parameters"""
-        chamfer = Chamfer(side="HP", rside="rint", l=5.0)
+        chamfer = Chamfer(name="test", side="HP", rside="rint", l=5.0)
         
         assert chamfer.side == "HP"
         assert chamfer.rside == "rint"
@@ -38,7 +38,7 @@ class TestChamferInitialization:
 
     def test_chamfer_with_alpha(self):
         """Test Chamfer initialization with alpha parameter"""
-        chamfer = Chamfer(side="BP", rside="rext", alpha=45.0, l=10.0)
+        chamfer = Chamfer(name="test", side="BP", rside="rext", alpha=45.0, l=10.0)
         
         assert chamfer.side == "BP"
         assert chamfer.rside == "rext"
@@ -48,7 +48,7 @@ class TestChamferInitialization:
 
     def test_chamfer_with_dr(self):
         """Test Chamfer initialization with dr parameter"""
-        chamfer = Chamfer(side="HP", rside="rint", dr=2.5, l=8.0)
+        chamfer = Chamfer(name="test", side="HP", rside="rint", dr=2.5, l=8.0)
         
         assert chamfer.side == "HP"
         assert chamfer.rside == "rint"
@@ -58,7 +58,7 @@ class TestChamferInitialization:
 
     def test_chamfer_with_all_parameters(self):
         """Test Chamfer initialization with all parameters"""
-        chamfer = Chamfer(side="BP", rside="rext", alpha=30.0, dr=1.5, l=6.0)
+        chamfer = Chamfer(name="test", side="BP", rside="rext", alpha=30.0, dr=1.5, l=6.0)
         
         assert chamfer.side == "BP"
         assert chamfer.rside == "rext"
@@ -70,6 +70,7 @@ class TestChamferInitialization:
         """Test __setstate__ method for deserialization"""
         # Simulate loading from pickle/YAML without optional attributes
         state = {
+            'name': 'test',
             'side': 'HP',
             'rside': 'rint',
             'l': 5.0
@@ -91,7 +92,7 @@ class TestChamferInitialization:
     ])
     def test_chamfer_valid_side_combinations(self, side, rside):
         """Test all valid side and rside combinations"""
-        chamfer = Chamfer(side=side, rside=rside, l=3.0)
+        chamfer = Chamfer(name="test", side=side, rside=rside, l=3.0)
         assert chamfer.side == side
         assert chamfer.rside == rside
 
@@ -102,33 +103,33 @@ class TestChamferMethods:
     @pytest.fixture
     def alpha_chamfer(self):
         """Create a chamfer with alpha parameter"""
-        return Chamfer(side="HP", rside="rint", alpha=45.0, l=10.0)
+        return Chamfer(name="test", side="HP", rside="rint", alpha=45.0, l=10.0)
     
     @pytest.fixture
     def dr_chamfer(self):
         """Create a chamfer with dr parameter"""
-        return Chamfer(side="BP", rside="rext", dr=5.0, l=10.0)
+        return Chamfer(name="test", side="BP", rside="rext", dr=5.0, l=10.0)
     
     @pytest.fixture
     def dual_chamfer(self):
         """Create a chamfer with both alpha and dr parameters"""
-        return Chamfer(side="HP", rside="rint", alpha=60.0, dr=3.0, l=8.0)
+        return Chamfer(name="test", side="HP", rside="rint", alpha=60.0, dr=3.0, l=8.0)
 
-    def test_get_radius_from_dr(self, dr_chamfer):
-        """Test getRadius method when dr is provided"""
-        radius = dr_chamfer.getRadius()
-        assert radius == 5.0
+    def test_get_dr_from_dr(self, dr_chamfer):
+        """Test getDr method when dr is provided"""
+        dr = dr_chamfer.getDr()
+        assert dr == 5.0
 
-    def test_get_radius_from_alpha(self, alpha_chamfer):
-        """Test getRadius method when alpha is provided"""
-        radius = alpha_chamfer.getRadius()
+    def test_get_dr_from_alpha(self, alpha_chamfer):
+        """Test getDr method when alpha is provided"""
+        dr = alpha_chamfer.getDr()
         expected = 10.0 * math.tan(math.pi / 180.0 * 45.0)
-        assert abs(radius - expected) < 1e-10
+        assert abs(dr - expected) < 1e-10
 
-    def test_get_radius_prioritizes_dr(self, dual_chamfer):
-        """Test that getRadius prioritizes dr over alpha when both are present"""
-        radius = dual_chamfer.getRadius()
-        assert radius == 3.0  # Should return dr value, not calculated from alpha
+    def test_get_dr_prioritizes_dr(self, dual_chamfer):
+        """Test that getDr prioritizes dr over alpha when both are present"""
+        dr = dual_chamfer.getDr()
+        assert dr == 3.0  # Should return dr value, not calculated from alpha
 
     @pytest.mark.parametrize("angle,expected_ratio", [
         (0.0, 0.0),
@@ -136,12 +137,12 @@ class TestChamferMethods:
         (45.0, 1.0),
         (60.0, math.sqrt(3))
     ])
-    def test_get_radius_angle_calculations(self, angle, expected_ratio):
-        """Test getRadius with various angles"""
-        chamfer = Chamfer(side="HP", rside="rint", alpha=angle, l=10.0)
-        radius = chamfer.getRadius()
+    def test_get_dr_angle_calculations(self, angle, expected_ratio):
+        """Test getDr with various angles"""
+        chamfer = Chamfer(name="test", side="HP", rside="rint", alpha=angle, l=10.0)
+        dr = chamfer.getDr()
         expected = 10.0 * expected_ratio
-        assert abs(radius - expected) < 1e-10
+        assert abs(dr - expected) < 1e-10
 
     def test_get_angle_from_alpha(self, alpha_chamfer):
         """Test getAngle method when alpha is provided"""
@@ -166,20 +167,20 @@ class TestChamferMethods:
     ])
     def test_get_angle_dr_calculations(self, dr, l, expected_degrees):
         """Test getAngle with various dr and l combinations"""
-        chamfer = Chamfer(side="HP", rside="rint", dr=dr, l=l)
+        chamfer = Chamfer(name="test", side="HP", rside="rint", dr=dr, l=l)
         angle = chamfer.getAngle()
         assert abs(angle - expected_degrees) < 1e-10
 
     def test_mathematical_consistency(self):
-        """Test mathematical consistency between getRadius and getAngle"""
+        """Test mathematical consistency between getDr and getAngle"""
         # Create chamfer with known angle
-        chamfer_angle = Chamfer(side="HP", rside="rint", alpha=45.0, l=10.0)
+        chamfer_angle = Chamfer(name="test", side="HP", rside="rint", alpha=45.0, l=10.0)
         
-        # Get radius from angle
-        radius_from_angle = chamfer_angle.getRadius()
+        # Get dr from angle
+        dr_from_angle = chamfer_angle.getDr()
         
         # Create equivalent chamfer with dr
-        chamfer_dr = Chamfer(side="HP", rside="rint", dr=radius_from_angle, l=10.0)
+        chamfer_dr = Chamfer(name="test", side="HP", rside="rint", dr=dr_from_angle, l=10.0)
         
         # Get angle from dr
         angle_from_dr = chamfer_dr.getAngle()
@@ -190,15 +191,16 @@ class TestChamferMethods:
     def test_repr_comprehensive(self):
         """Test __repr__ method with various parameter combinations"""
         test_cases = [
-            Chamfer(side="HP", rside="rint", l=5.0),
-            Chamfer(side="BP", rside="rext", alpha=30.0, l=8.0),
-            Chamfer(side="HP", rside="rint", dr=2.0, l=6.0),
-            Chamfer(side="BP", rside="rext", alpha=45.0, dr=3.0, l=10.0)
+            Chamfer(name="test", side="HP", rside="rint", l=5.0),
+            Chamfer(name="test", side="BP", rside="rext", alpha=30.0, l=8.0),
+            Chamfer(name="test", side="HP", rside="rint", dr=2.0, l=6.0),
+            Chamfer(name="test", side="BP", rside="rext", alpha=45.0, dr=3.0, l=10.0)
         ]
         
         for chamfer in test_cases:
             repr_str = repr(chamfer)
             assert "Chamfer(" in repr_str
+            assert f"name={chamfer.name}" in repr_str
             assert f"side={chamfer.side}" in repr_str
             assert f"rside={chamfer.rside}" in repr_str
             assert f"l={chamfer.l}" in repr_str
@@ -209,12 +211,13 @@ class TestChamferSerialization(BaseSerializationTestMixin):
     
     def get_sample_instance(self):
         """Return a sample Chamfer instance"""
-        return Chamfer(side="HP", rside="rint", alpha=45.0, dr=2.0, l=8.0)
+        return Chamfer(name="test", side="HP", rside="rint", alpha=45.0, dr=2.0, l=8.0)
     
     def get_sample_yaml_content(self):
         """Return sample YAML content"""
         return '''
 !<Chamfer>
+name: test
 side: BP
 rside: rext
 alpha: 30.0
@@ -224,6 +227,7 @@ l: 12.0
     def get_expected_json_fields(self):
         """Return expected JSON fields"""
         return {
+            "name": "test",
             "side": "HP",
             "rside": "rint",
             "alpha": 45.0,
@@ -266,6 +270,7 @@ class TestChamferYAMLConstructor(BaseYAMLConstructorTestMixin):
     def get_sample_constructor_data(self):
         """Return sample constructor data"""
         return {
+            "name": "test", 
             "side": "BP",
             "rside": "rext",
             "alpha": 60.0,
@@ -297,6 +302,7 @@ class TestChamferFileOperations:
         """Test from_yaml with missing optional alpha and dr fields"""
         yaml_content = '''
 !<Chamfer>
+name: test
 side: HP
 rside: rint
 l: 7.0
@@ -323,6 +329,7 @@ l: 7.0
         """Test from_yaml with only alpha field"""
         yaml_content = '''
 !<Chamfer>
+name: test
 side: BP
 rside: rext
 alpha: 37.5
@@ -350,6 +357,7 @@ l: 9.0
         """Test from_yaml with only dr field"""
         yaml_content = '''
 !<Chamfer>
+name: test
 side: HP
 rside: rext
 dr: 4.2
@@ -376,9 +384,9 @@ l: 11.0
     def test_serialization_roundtrip_consistency(self):
         """Test complete serialization roundtrip consistency"""
         original_chamfers = [
-            Chamfer(side="HP", rside="rint", alpha=30.0, l=5.0),
-            Chamfer(side="BP", rside="rext", dr=3.5, l=7.0),
-            Chamfer(side="HP", rside="rext", alpha=60.0, dr=4.0, l=8.0)
+            Chamfer(name="test", side="HP", rside="rint", alpha=30.0, l=5.0),
+            Chamfer(name="test", side="BP", rside="rext", dr=3.5, l=7.0),
+            Chamfer(name="test", side="HP", rside="rext", alpha=60.0, dr=4.0, l=8.0)
         ]
         
         for original in original_chamfers:
@@ -403,13 +411,13 @@ class TestChamferValidation:
     @pytest.mark.parametrize("side", ["HP", "BP"])
     def test_valid_side_values(self, side):
         """Test valid side values"""
-        chamfer = Chamfer(side=side, rside="rint", l=5.0)
+        chamfer = Chamfer(name="test", side=side, rside="rint", l=5.0)
         assert chamfer.side == side
 
     @pytest.mark.parametrize("rside", ["rint", "rext"])
     def test_valid_rside_values(self, rside):
         """Test valid rside values"""
-        chamfer = Chamfer(side="HP", rside=rside, l=5.0)
+        chamfer = Chamfer(name="test", side="HP", rside=rside, l=5.0)
         assert chamfer.rside == rside
 
     def test_parameter_type_validation(self):
@@ -422,7 +430,7 @@ class TestChamferValidation:
         ]
         
         for alpha, dr, l in test_cases:
-            chamfer = Chamfer(side="HP", rside="rint", alpha=alpha, dr=dr, l=l)
+            chamfer = Chamfer(name="test", side="HP", rside="rint", alpha=alpha, dr=dr, l=l)
             assert chamfer.alpha == alpha
             assert chamfer.dr == dr
             assert chamfer.l == l
@@ -434,18 +442,18 @@ class TestChamferValidation:
         alpha = 45.0
         expected_dr = l * math.tan(math.radians(alpha))
         
-        chamfer = Chamfer(side="HP", rside="rint", alpha=alpha, dr=expected_dr, l=l)
+        chamfer = Chamfer(name="test", side="HP", rside="rint", alpha=alpha, dr=expected_dr, l=l)
         
-        # Both getRadius and getAngle should give consistent results
-        radius_from_alpha = l * math.tan(math.radians(alpha))
-        radius_from_dr = expected_dr
+        # Both getDr and getAngle should give consistent results
+        dr_from_alpha = l * math.tan(math.radians(alpha))
+        dr_from_dr = expected_dr
         
-        assert abs(radius_from_alpha - radius_from_dr) < 1e-10
+        assert abs(dr_from_alpha - dr_from_dr) < 1e-10
 
     @pytest.mark.parametrize("angle", [0.0, 15.0, 30.0, 45.0, 60.0, 75.0, 89.0])
     def test_angle_range_validation(self, angle):
         """Test chamfer with various valid angles"""
-        chamfer = Chamfer(side="HP", rside="rint", alpha=angle, l=10.0)
+        chamfer = Chamfer(name="test", side="HP", rside="rint", alpha=angle, l=10.0)
         
         # Validate angle is stored correctly
         assert chamfer.alpha == angle
@@ -453,15 +461,15 @@ class TestChamferValidation:
         # Validate getAngle returns the stored value
         #assert chamfer.getAngle() == angle
         
-        # Validate getRadius calculation is reasonable for the angle
-        radius = chamfer.getRadius()
-        assert radius >= 0.0  # Should be non-negative
+        # Validate getDr calculation is reasonable for the angle
+        dr = chamfer.getDr()
+        assert dr >= 0.0  # Should be non-negative
         
         """
         if angle == 0.0:
-            assert radius == 0.0
+            assert dr == 0.0
         elif angle == 45.0:
-            assert abs(radius - 10.0) < 1e-10  # tan(45°) = 1
+            assert abs(dr - 10.0) < 1e-10  # tan(45°) = 1
         """
 
 class TestChamferEdgeCases:
@@ -469,62 +477,62 @@ class TestChamferEdgeCases:
     
     def test_zero_length_chamfer(self):
         """Test chamfer with zero length"""
-        chamfer = Chamfer(side="HP", rside="rint", alpha=45.0, l=0.0)
+        chamfer = Chamfer(name="test", side="HP", rside="rint", alpha=45.0, l=0.0)
         
-        # getRadius should return 0 when l=0
-        assert chamfer.getRadius() == 0.0
+        # getDr should return 0 when l=0
+        assert chamfer.getDr() == 0.0
 
     def test_zero_angle_chamfer(self):
         """Test chamfer with zero angle"""
-        chamfer = Chamfer(side="HP", rside="rint", alpha=0.0, l=10.0)
+        chamfer = Chamfer(name="test", side="HP", rside="rint", alpha=0.0, l=10.0)
         
-        # getRadius should return 0 when alpha=0
-        assert chamfer.getRadius() == 0.0
+        # getDr should return 0 when alpha=0
+        assert chamfer.getDr() == 0.0
 
     def test_zero_dr_chamfer(self):
         """Test chamfer with zero dr"""
-        chamfer = Chamfer(side="HP", rside="rint", dr=0.0, l=10.0)
+        chamfer = Chamfer(name="test", side="HP", rside="rint", dr=0.0, l=10.0)
         
         # getAngle should return 0 when dr=0
         assert chamfer.getAngle() == 0.0
 
     def test_large_angle_chamfer(self):
         """Test chamfer with large angle (approaching 90 degrees)"""
-        chamfer = Chamfer(side="HP", rside="rint", alpha=89.0, l=1.0)
+        chamfer = Chamfer(name="test", side="HP", rside="rint", alpha=89.0, l=1.0)
         
-        # Should still work, but radius will be very large
-        radius = chamfer.getRadius()
-        assert radius > 50  # tan(89°) ≈ 57.3
+        # Should still work, but dr will be very large
+        dr = chamfer.getDr()
+        assert dr > 50  # tan(89°) ≈ 57.3
 
     def test_very_small_values(self):
         """Test chamfer with very small values"""
-        chamfer = Chamfer(side="HP", rside="rint", alpha=1e-6, l=1e-3)
+        chamfer = Chamfer(name="test", side="HP", rside="rint", alpha=1e-6, l=1e-3)
         
-        radius = chamfer.getRadius()
+        dr = chamfer.getDr()
         # For very small angles, tan(α) ≈ α (in radians)
         expected = 1e-3 * math.tan(math.radians(1e-6))
-        assert abs(radius - expected) < 1e-15
+        assert abs(dr - expected) < 1e-15
 
     def test_very_large_values(self):
         """Test chamfer with very large values"""
-        chamfer = Chamfer(side="HP", rside="rint", alpha=45.0, l=1e6)
+        chamfer = Chamfer(name="test", side="HP", rside="rint", alpha=45.0, l=1e6)
         
-        radius = chamfer.getRadius()
+        dr = chamfer.getDr()
         expected = 1e6 * math.tan(math.radians(45.0))  # Should be 1e6
-        assert abs(radius - expected) < 1e-6
+        assert abs(dr - expected) < 1e-6
 
     def test_negative_values_handling(self):
         """Test how chamfer handles negative values"""
         # The class doesn't validate, so this should work
-        chamfer = Chamfer(side="HP", rside="rint", alpha=-30.0, l=-5.0)
+        chamfer = Chamfer(name="test", side="HP", rside="rint", alpha=-30.0, l=-5.0)
         
         assert chamfer.alpha == -30.0
         assert chamfer.l == -5.0
         
         # Mathematical functions should still work
-        radius = chamfer.getRadius()
+        dr = chamfer.getDr()
         angle = chamfer.getAngle()
-        assert isinstance(radius, float)
+        assert isinstance(dr, float)
         assert isinstance(angle, float)
 
 
@@ -535,10 +543,10 @@ class TestChamferIntegration:
         """Test chamfer as it would be used in a helix"""
         # Create multiple chamfers as might be found on a helix
         chamfers = [
-            Chamfer(side="HP", rside="rint", alpha=45.0, l=2.0),
-            Chamfer(side="HP", rside="rext", alpha=30.0, l=3.0),
-            Chamfer(side="BP", rside="rint", dr=1.5, l=2.5),
-            Chamfer(side="BP", rside="rext", dr=2.0, l=4.0)
+            Chamfer(name="test", side="HP", rside="rint", alpha=45.0, l=2.0),
+            Chamfer(name="test", side="HP", rside="rext", alpha=30.0, l=3.0),
+            Chamfer(name="test", side="BP", rside="rint", dr=1.5, l=2.5),
+            Chamfer(name="test", side="BP", rside="rext", dr=2.0, l=4.0)
         ]
         
         # Test that each maintains its identity
@@ -550,16 +558,16 @@ class TestChamferIntegration:
         
         # Test calculations work for all
         for chamfer in chamfers:
-            radius = chamfer.getRadius()
+            dr = chamfer.getDr()
             angle = chamfer.getAngle()
-            assert isinstance(radius, float)
+            assert isinstance(dr, float)
             assert isinstance(angle, float)
-            assert radius >= 0.0  # All should be non-negative
+            assert dr >= 0.0  # All should be non-negative
 
     def test_chamfer_collection_operations(self):
         """Test operations on collections of chamfers"""
         chamfers = [
-            Chamfer(side="HP", rside="rint", alpha=i*15.0, l=5.0)
+            Chamfer(name="test", side="HP", rside="rint", alpha=i*15.0, l=5.0)
             for i in range(1, 7)  # 15°, 30°, 45°, 60°, 75°, 90°
         ]
         
@@ -568,10 +576,10 @@ class TestChamferIntegration:
         assert sorted_chamfers[0].alpha == 15.0
         assert sorted_chamfers[-1].alpha == 90.0
         
-        # Test filtering by calculated radius
-        radii = [c.getRadius() for c in chamfers]
-        large_radius_chamfers = [c for c in chamfers if c.getRadius() > 5.0]
-        assert len(large_radius_chamfers) >= 1  # Should have some with large radii
+        # Test filtering by calculated dr
+        radii = [c.getDr() for c in chamfers]
+        large_dr_chamfers = [c for c in chamfers if c.getDr() > 5.0]
+        assert len(large_dr_chamfers) >= 1  # Should have some with large radii
         
         # Test aggregation operations
         total_l = sum(c.l for c in chamfers)
@@ -587,16 +595,16 @@ class TestChamferIntegration:
         ]
         
         for alpha1, alpha2 in complementary_pairs:
-            chamfer1 = Chamfer(side="HP", rside="rint", alpha=alpha1, l=10.0)
-            chamfer2 = Chamfer(side="BP", rside="rext", alpha=alpha2, l=10.0)
+            chamfer1 = Chamfer(name="test", side="HP", rside="rint", alpha=alpha1, l=10.0)
+            chamfer2 = Chamfer(name="test", side="BP", rside="rext", alpha=alpha2, l=10.0)
             
             # The product of their tangents should equal 1 (for complementary angles)
-            radius1 = chamfer1.getRadius()
-            radius2 = chamfer2.getRadius()
+            dr1 = chamfer1.getDr()
+            dr2 = chamfer2.getDr()
             
-            # radius = l * tan(alpha), so radius/l = tan(alpha)
-            tan1 = radius1 / 10.0
-            tan2 = radius2 / 10.0
+            # dr = l * tan(alpha), so dr/l = tan(alpha)
+            tan1 = dr1 / 10.0
+            tan2 = dr2 / 10.0
             
             if alpha1 + alpha2 == 90.0:
                 assert abs(tan1 * tan2 - 1.0) < 1e-10
@@ -610,6 +618,7 @@ class TestChamferPerformance:
         chamfers = []
         for i in range(1000):
             chamfer = Chamfer(
+                name="test", 
                 side="HP" if i % 2 == 0 else "BP",
                 rside="rint" if i % 3 == 0 else "rext",
                 alpha=float(i % 90),
@@ -622,7 +631,7 @@ class TestChamferPerformance:
         assert all(isinstance(c, Chamfer) for c in chamfers)
         
         # Test that operations still work efficiently
-        radii = [c.getRadius() for c in chamfers[:100]]  # Sample first 100
+        radii = [c.getDr() for c in chamfers[:100]]  # Sample first 100
         angles = [c.getAngle() for c in chamfers[:100]]
         
         assert len(radii) == 100
@@ -632,13 +641,13 @@ class TestChamferPerformance:
 
     def test_chamfer_calculation_performance(self):
         """Test performance of chamfer calculations"""
-        chamfer = Chamfer(side="HP", rside="rint", alpha=45.0, dr=5.0, l=10.0)
+        chamfer = Chamfer(name="test", side="HP", rside="rint", alpha=45.0, dr=5.0, l=10.0)
         
         # Perform many calculations
         radii = []
         angles = []
         for _ in range(10000):
-            radii.append(chamfer.getRadius())
+            radii.append(chamfer.getDr())
             angles.append(chamfer.getAngle())
         
         assert len(radii) == 10000
@@ -656,7 +665,7 @@ class TestChamferErrorHandling:
         """Test handling of invalid parameter types"""
         # These might raise TypeErrors depending on implementation
         try:
-            chamfer = Chamfer(side=None, rside=None, l=None)
+            chamfer = Chamfer(name="test", side=None, rside=None, l=None)
             # If no error, implementation allows None values
         except TypeError:
             # Expected if implementation validates types
@@ -666,7 +675,7 @@ class TestChamferErrorHandling:
         """Test validation of string parameters"""
         # Test with invalid side values (implementation might not validate)
         try:
-            chamfer = Chamfer(side="INVALID", rside="rint", l=5.0)
+            chamfer = Chamfer(name="test", side="INVALID", rside="rint", l=5.0)
             assert chamfer.side == "INVALID"  # Stored as-is if no validation
         except ValueError:
             # Expected if implementation validates side values
@@ -674,7 +683,7 @@ class TestChamferErrorHandling:
         
         # Test with invalid rside values
         try:
-            chamfer = Chamfer(side="HP", rside="INVALID", l=5.0)
+            chamfer = Chamfer(name="test", side="HP", rside="INVALID", l=5.0)
             assert chamfer.rside == "INVALID"  # Stored as-is if no validation
         except ValueError:
             # Expected if implementation validates rside values
@@ -683,7 +692,7 @@ class TestChamferErrorHandling:
     def test_mathematical_error_conditions(self):
         """Test mathematical error conditions"""
         # Test potential division by zero in getAngle when l=0
-        chamfer = Chamfer(side="HP", rside="rint", dr=5.0, l=0.0)
+        chamfer = Chamfer(name="test", side="HP", rside="rint", dr=5.0, l=0.0)
         
         try:
             angle = chamfer.getAngle()
@@ -696,11 +705,11 @@ class TestChamferErrorHandling:
         """Test extreme mathematical values"""
         # Test with very large angle (close to 90 degrees)
         try:
-            chamfer = Chamfer(side="HP", rside="rint", alpha=89.9999, l=1.0)
-            radius = chamfer.getRadius()
+            chamfer = Chamfer(name="test", side="HP", rside="rint", alpha=89.9999, l=1.0)
+            dr = chamfer.getDr()
             # Should be very large but finite
-            assert radius > 1000
-            assert math.isfinite(radius)
+            assert dr > 1000
+            assert math.isfinite(dr)
         except OverflowError:
             # Might occur for very large tan values
             pass
