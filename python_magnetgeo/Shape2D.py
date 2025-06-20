@@ -59,40 +59,17 @@ class Shape2D(yaml.YAMLObject):
         """
         create from yaml
         """
-        import os
-        cwd = os.getcwd()
-
-        (basedir, basename) = os.path.split(filename)
-        print(f"basedir={basedir}, basename={basename}, cwd={cwd}")
-
-        if basedir and basedir != ".":
-            os.chdir(basedir)
-            print(f"-> cwd={cwd}")
-
-        try:
-            with open(basename, "r") as istream:
-                values, otype = yaml.load(stream=istream, Loader=yaml.FullLoader)
-        except Exception:
-            raise Exception(f"Failed to load Shape2D data {filename}")
-
-        if basedir and basedir != ".":
-            os.chdir(cwd)
+        from .utils import loadYaml
+        return loadYaml("Shape2D", filename, Shape2D, debug)
         
-        name = values["name"]
-        pts = values["pts"]
-        return cls(name, pts)
 
     @classmethod
     def from_json(cls, filename: str, debug: bool = False):
         """
         convert from json to yaml
         """
-        from . import deserialize
-
-        if debug:
-            print(f'Shape2D.from_json: filename={filename}')
-        with open(filename, "r") as istream:
-            return json.loads(istream.read(), object_hook=deserialize.unserialize_object)
+        from .utils import loadJson
+        return loadJson("Shape2D", filename, debug)
     
 
 
@@ -101,7 +78,9 @@ def Shape_constructor(loader, node):
     build an Shape object
     """
     values = loader.construct_mapping(node)
-    return values, "Shape2D"
+    name = values["name"]
+    pts = values["pts"]
+    return Shape2D(name, pts)
     
 
 

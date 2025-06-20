@@ -80,16 +80,20 @@ class Shape(yaml.YAMLObject):
         )
 
     @classmethod
+    def from_yaml(cls, filename: str, debug: bool = False):
+        """
+        create from yaml
+        """
+        from .utils import loadYaml
+        return loadYaml("Shape", filename, Shape, debug)
+
+    @classmethod
     def from_json(cls, filename: str, debug: bool = False):
         """
         convert from json to yaml
         """
-        from . import deserialize
-
-        if debug:
-            print(f'Shape.from_json: filename={filename}')
-        with open(filename, "r") as istream:
-            return json.loads(istream.read(), object_hook=deserialize.unserialize_object)
+        from .utils import loadJson
+        return loadJson("Shape", filename, debug)
 
 
 def Shape_constructor(loader, node):

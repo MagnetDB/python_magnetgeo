@@ -2,7 +2,81 @@ import os
 import yaml
 
 
-def load(comment: str, objects, supported_types: list, dict_objects: dict):
+def loadYaml(comment, filename, supported_type=None, debug: bool = True):
+    cwd = os.getcwd()
+
+    (basedir, basename) = os.path.split(filename)
+    if debug:
+        print(f"basedir={basedir}, basename={basename}, cwd={cwd}")
+
+    if basedir and basedir != ".":
+        os.chdir(basedir)
+        print(f"cwd={cwd} -> {basedir}")
+
+    try:
+        with open(basename, "r") as istream:
+            object = yaml.load(stream=istream, Loader=yaml.FullLoader)
+    except Exception as e:
+        raise Exception(f"Failed to load {comment} data {filename}: {e}")
+    finally:
+        if basedir and basedir != ".":
+            os.chdir(cwd)
+
+    if debug:
+        print(f"loadYaml: {comment} from {filename} done - {type(object)}")
+    if supported_type:
+        if not isinstance(object, supported_type):
+            raise Exception(f"{comment}: unsupported type {type(object)}")    
+    return object
+
+def loadJson(comment, filename, debug: bool = False):
+    from . import deserialize
+    import json
+    cwd = os.getcwd()
+
+    (basedir, basename) = os.path.split(filename)
+    print(f"basedir={basedir}, basename={basename}, cwd={cwd}")
+
+    if basedir and basedir != ".":
+        os.chdir(basedir)
+        print(f"-> cwd={cwd}")
+
+    if debug:
+        print(f"loadJson: filename={basename}")
+    with open(filename, "r") as istream:
+        object = json.loads(
+            istream.read(), object_hook=deserialize.unserialize_object
+        )
+    if basedir and basedir != ".":
+        os.chdir(cwd)
+
+def check_objects(objects, supported_type):
+    """
+    check if objects are of supported type
+    """
+    for item in objects:
+        if isinstance(item, supported_type):
+            return True
+    return False
+    
+def check_type(object, lTypes):
+    for item in lTypes:
+        if isinstance(object, item):
+            return True
+    return False
+    
+def loadObject(comment: str, data, supported_type, constructor):
+    if isinstance(data, str):
+        YAMLFile = os.path.join(f"{data}.yaml")
+        with open(YAMLFile, "r") as istream:
+            Object  = yaml.load(istream, Loader=yaml.FullLoader)
+        return Object
+    elif isinstance(data, supported_type):
+        return data
+    else:
+        raise Exception(f"{comment}: unsupported type {type(data)}")
+
+def loadList(comment: str, objects: list, supported_types: list, dict_objects: dict):
     """
     load objets from yaml files into a list
 
@@ -12,18 +86,11 @@ def load(comment: str, objects, supported_types: list, dict_objects: dict):
     return targets
     """
     
-    def check_type(object, lTypes):
-        for item in lTypes:
-            if isinstance(object, item):
-                return True
-        return False
-    
     targets = []
     if isinstance(objects, str):
         YAMLFile = os.path.join(f"{objects}.yaml")
         with open(YAMLFile, "r") as istream:
-            data, otype  = yaml.load(istream, Loader=yaml.FullLoader)
-            Object = dict_objects[otype](data)
+            Object = yaml.load(istream, Loader=yaml.FullLoader)
         targets = Object
 
     elif isinstance(objects, list):
@@ -31,9 +98,13 @@ def load(comment: str, objects, supported_types: list, dict_objects: dict):
             if isinstance(mname, str):
                 YAMLFile = os.path.join(f"{mname}.yaml")
                 with open(YAMLFile, "r") as istream:
-                    data, otype = yaml.load(istream, Loader=yaml.FullLoader)
-                    Object = dict_objects[otype](data)
-                    targets.append(Object)
+                    Object = yaml.load(istream, Loader=yaml.FullLoader)
+                    if check_type(Object, supported_types[1:]):
+                        targets.append(Object)
+                        print(f"{comment}: {mname}.yaml - loaded {type(Object)}: {Object}")
+                    else:
+                        raise Exception(f"{comment}: {mname}.yaml - unsupported type {type(Object)}")
+                    
             elif check_type(mname, supported_types[1:]):
                 targets.append(mname)
                 
@@ -44,8 +115,7 @@ def load(comment: str, objects, supported_types: list, dict_objects: dict):
             elif isinstance(value, str):
                 YAMLFile = os.path.join(f"{value}.yaml")
                 with open(YAMLFile, "r") as istream:
-                    data, otype = yaml.load(istream, Loader=yaml.FullLoader)
-                    Object = dict_objects[otype](data)
+                    Object = yaml.load(istream, Loader=yaml.FullLoader)
                     targets.append(Object)
 
             elif isinstance(value, list):
@@ -55,8 +125,7 @@ def load(comment: str, objects, supported_types: list, dict_objects: dict):
                     elif isinstance(mname, str):
                         YAMLFile = os.path.join(f"{mname}.yaml")
                         with open(YAMLFile, "r") as istream:
-                            data, otype = yaml.load(istream, Loader=yaml.FullLoader)
-                            Object = dict_objects[otype](data)
+                            Object = yaml.load(istream, Loader=yaml.FullLoader)
                             targets.append(Object)
             else:
                 raise Exception(

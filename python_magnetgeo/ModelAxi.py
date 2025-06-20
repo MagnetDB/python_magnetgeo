@@ -74,30 +74,8 @@ class ModelAxi(yaml.YAMLObject):
         """
         create from yaml
         """
-        import os
-        cwd = os.getcwd()
-
-        (basedir, basename) = os.path.split(filename)
-        print(f"basedir={basedir}, basename={basename}, cwd={cwd}")
-
-        if basedir and basedir != ".":
-            os.chdir(basedir)
-            print(f"-> cwd={cwd}")
-
-        try:
-            with open(basename, "r") as istream:
-                values, otype = yaml.load(stream=istream, Loader=yaml.FullLoader)
-        except Exception:
-            raise Exception(f"Failed to load ModelAxi data {filename}")
-
-        if basedir and basedir != ".":
-            os.chdir(cwd)
-
-        name = values["name"]
-        h = values["h"]
-        turns = values["turns"]
-        pitch = values["pitch"]
-        return cls(name, h, turns, pitch)
+        from .utils import loadYaml
+        return loadYaml("ModelAxi", filename, ModelAxi, debug)
 
 
     @classmethod
@@ -105,12 +83,8 @@ class ModelAxi(yaml.YAMLObject):
         """
         convert from json to yaml
         """
-        from . import deserialize
-
-        if debug:
-            print(f'ModelAxi.from_json: filename={filename}')
-        with open(filename, "r") as istream:
-            return json.loads(istream.read(), object_hook=deserialize.unserialize_object)
+        from .utils import loadJson
+        return loadJson("ModelAxi", filename, debug)
     
 
     def get_Nturns(self) -> float:
@@ -153,7 +127,12 @@ def ModelAxi_constructor(loader, node):
     build an ModelAxi object
     """
     values = loader.construct_mapping(node)
-    return values, "ModelAxi"
+    
+    name = values["name"]
+    h = values["h"]
+    turns = values["turns"]
+    pitch = values["pitch"]
+    return ModelAxi(name, h, turns, pitch)
 
 
 yaml.add_constructor(ModelAxi.yaml_tag, ModelAxi_constructor)

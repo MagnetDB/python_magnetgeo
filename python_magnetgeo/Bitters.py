@@ -7,11 +7,8 @@ import json
 import yaml
 
 from .Bitter import Bitter
-from .utils import load
+from .utils import loadList
 
-dict_bitters = {
-    "Bitter": Bitter.from_dict,
-}
 
 class Bitters(yaml.YAMLObject):
     """
@@ -28,15 +25,9 @@ class Bitters(yaml.YAMLObject):
         self, name: str, magnets: list, innerbore: float, outerbore: float
     ) -> None:
         """constructor"""
+
         self.name = name
-
-        self.magnets = []
-        # str ou Bitters
-        # list: str ou Bitter
-        # dict: str ou Bitter
-        if magnets:
-            self.magnets = load("magnets", magnets, [None, Bitter], dict_bitters)
-
+        self.magnets = magnets 
         self.innerbore = innerbore
         self.outerbore = outerbore
 
@@ -49,6 +40,15 @@ class Bitters(yaml.YAMLObject):
             self.innerbore,
             self.outerbore,
         )
+
+    def update(self):
+        """
+        update magnets if there were loaded as str
+        """
+        from .utils import check_objects        
+        if check_objects(self.magnets, str):
+            self.magnets = loadList("magnets", self.magnets, [None, Bitter], {"Bitter": Bitter.from_dict})
+            print("update magnets:", self.magnets)
 
     def get_channels(
         self, mname: str, hideIsolant: bool = True, debug: bool = False
@@ -136,44 +136,16 @@ class Bitters(yaml.YAMLObject):
         """
         create from yaml
         """
-        import os
-        cwd = os.getcwd()
-
-        (basedir, basename) = os.path.split(filename)
-        print(f"basedir={basedir}, basename={basename}, cwd={cwd}")
-
-        if basedir and basedir != ".":
-            os.chdir(basedir)
-            print(f"-> cwd={cwd}")
-
-        try:
-            with open(basename, "r") as istream:
-                values, otype = yaml.load(stream=istream, Loader=yaml.FullLoader)
-        except Exception:
-            raise Exception(f"Failed to load Bitters data {filename}")
-
-        print(f'data: type={type(values)}')
-        name = values["name"]
-        magnets = values["magnets"]
-        innerbore = values["innerbore"] if "innerbore" in values else 0
-        outerbore = values["outerbore"] if "outerbore" in values else 0
-
-        object = cls(name, magnets, innerbore, outerbore)
-        if basedir and basedir != ".":
-            os.chdir(cwd)
-        return object
+        from .utils import loadYaml
+        return loadYaml("Bitters", filename, Bitters, debug)
 
     @classmethod
     def from_json(cls, filename: str, debug: bool = False):
         """
         convert from json to yaml
         """
-        from . import deserialize
-
-        if debug:
-            print(f'Bitters.from_json: filename={filename}')
-        with open(filename, "r") as istream:
-            return json.loads(istream.read(), object_hook=deserialize.unserialize_object)
+        from .utils import loadJson
+        return loadJson("Bitters", filename, debug)
 
     ###################################################################
     #
@@ -221,9 +193,21 @@ class Bitters(yaml.YAMLObject):
 
 
 def Bitters_constructor(loader, node):
+    #print("Bitters_constructor: called")
+    #print(node)
     values = loader.construct_mapping(node)
-    return values, "Bitters"
+    #print(values)
+    #for key, value in values.items():
+    #    print(f"  {key}: {value} (type: {type(value)})")
 
+    name = values["name"]
+    magnets = values["magnets"]    
+    #print("magnets:", values["magnets"], {len(values["magnets"])})
+
+    innerbore = values["innerbore"]
+    outerbore = values["outerbore"]
+
+    return Bitters(name, magnets, innerbore, outerbore)   
 
 
 yaml.add_constructor(Bitters.yaml_tag, Bitters_constructor)

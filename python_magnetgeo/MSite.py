@@ -12,7 +12,7 @@ import os
 import json
 import yaml
 
-from .utils import load
+from .utils import loadList
 
 from .Bitters import Bitters
 from .Supras import Supras
@@ -52,19 +52,8 @@ class MSite(yaml.YAMLObject):
         """
         self.name = name
 
-        self.magnets = []
-        # str ou MSite
-        # list: str ou Insert, Bitters, Supras
-        # dict: str ou Insert, Bitters, Supras
-        if magnets:
-            self.magnets = load("magnets", magnets, [None, Insert, Bitters, Supras], dict_magnets)
-        
-        self.screens = []
-        # str ou Screens
-        # list: str ou Screen
-        # dict: str ou Screen
-        if screens:
-            self.screens = load("sreens", screens, [None, Screen], dict_screens)
+        self.magnets = magnets
+        self.screens = screens
 
         self.z_offset = z_offset
         self.r_offset = r_offset
@@ -75,6 +64,18 @@ class MSite(yaml.YAMLObject):
         representation of object
         """
         return f"name: {self.name}, magnets:{self.magnets}, screens: {self.screens}, z_offset={self.z_offset}, r_offset={self.r_offset}, paralax_offset={self.paralax}"
+
+    def update(self):
+        """
+        update magnets if there were loaded as str
+        """
+        from .utils import check_objects        
+        if check_objects(self.magnets, str):
+            self.magnets = loadList("magnets", self.magnets, [None, Insert, Bitters, Supras], dict_magnets)
+            print("update magnets:", self.magnets)
+        if check_objects(self.screens, str):
+            self.screens = loadList("sreens", self.screens, [None, Screen], dict_screens)
+
 
     def get_channels(
         self, mname: str, hideIsolant: bool = True, debug: bool = False
@@ -150,52 +151,33 @@ class MSite(yaml.YAMLObject):
             ostream.write(str(jsondata))
 
     @classmethod
-    def from_yaml(cls, filename: str, debug: bool = False):
+    def from_dict(cls, values: dict, debug: bool = False):
         """
-        create from yaml
+        create from dict
         """
-        import os
-        cwd = os.getcwd()
-
-        (basedir, basename) = os.path.split(filename)
-        print(f"basedir={basedir}, basename={basename}, cwd={cwd}")
-
-        if basedir and basedir != ".":
-            os.chdir(basedir)
-            print(f"-> cwd={cwd}")
-
-        try:
-            with open(basename, "r") as istream:
-                values = yaml.load(stream=istream, Loader=yaml.FullLoader)
-        except Exception:
-            raise Exception(f"Failed to load MSite data {filename}")
-
-        print(f'data: type={type(values)}')
-
         name = values["name"]
         magnets = values["magnets"]
         screens = values["screens"]
         z_offset = values["z_offset"]
         r_offset = values["r_offset"]
         paralax = values["paralax"]
-        object = cls(name, magnets, screens, z_offset, r_offset, paralax)
-    
-        if basedir and basedir != ".":
-            os.chdir(cwd)
-        
-        return object
+        return cls(name, magnets, screens, z_offset, r_offset, paralax)
+
+    @classmethod
+    def from_yaml(cls, filename: str, debug: bool = False):
+        """
+        create from yaml
+        """
+        from .utils import loadYaml
+        return loadYaml("MSite", filename, MSite, debug)
 
     @classmethod
     def from_json(cls, filename: str, debug: bool = False):
         """
         convert from json to yaml
         """
-        from . import deserialize
-
-        if debug:
-            print(f'MSite.from_json: filename={filename}')
-        with open(filename, "r") as istream:
-            return json.loads(istream.read(), object_hook=deserialize.unserialize_object)
+        from .utils import loadJson
+        return loadJson("MSite", filename, debug)
 
     def boundingBox(self) -> tuple:
         """"""
@@ -232,7 +214,13 @@ def MSite_constructor(loader, node):
     """
     print(f"MSite_constructor")
     values = loader.construct_mapping(node)
-    return values
+    name = values["name"]
+    magnets = values["magnets"]
+    screens = values["screens"]
+    z_offset = values["z_offset"]
+    r_offset = values["r_offset"]
+    paralax = values["paralax"]
+    return MSite(name, magnets, screens, z_offset, r_offset, paralax)
 
 
 

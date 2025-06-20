@@ -7,7 +7,7 @@ import json
 import yaml
 
 from .Supra import Supra
-from .utils import load
+from .utils import loadList
 
 dict_supras = {
     "Supra": Supra.from_dict,
@@ -30,13 +30,6 @@ class Supras(yaml.YAMLObject):
         """constructor"""
         self.name = name
         self.magnets = magnets
-        self.magnets = []
-        # str ou Supras
-        # list: str ou Supra
-        # dict: str ou Supra
-        if magnets:
-            self.magnets = load("magnets", magnets, [None, Supra], dict_supras)
-
         self.innerbore = innerbore
         self.outerbore = outerbore
 
@@ -49,6 +42,15 @@ class Supras(yaml.YAMLObject):
             self.innerbore,
             self.outerbore,
         )
+
+    def update(self):
+        """
+        update magnets if there were loaded as str
+        """
+        from .utils import check_objects        
+        if check_objects(self.magnets, str):
+            self.magnets = loadList("magnets", self.magnets, [None, Supra], {"Supra": Supra.from_dict})
+            print("update magnets:", self.magnets)
 
     def get_channels(
         self, mname: str, hideIsolant: bool = True, debug: bool = False
@@ -118,47 +120,16 @@ class Supras(yaml.YAMLObject):
         """
         create from yaml
         """
-        import os
-        cwd = os.getcwd()
-
-        (basedir, basename) = os.path.split(filename)
-        print(f"basedir={basedir}, basename={basename}, cwd={cwd}")
-
-        if basedir and basedir != ".":
-            os.chdir(basedir)
-            print(f"-> cwd={cwd}")
-
-        try:
-            with open(basename, "r") as istream:
-                values, otype = yaml.load(stream=istream, Loader=yaml.FullLoader)
-        except Exception:
-            raise Exception(f"Failed to load Supras data {filename}")
-
-        print(f'data: type={type(values)}')
-
-        name = values["name"]
-        magnets = values["magnets"]        
-        
-        innerbore = values["innerbore"] if "innerbore" in values else 0
-        outerbore = values["outerbore"] if "outerbore" in values else 0
-        object = cls(name, magnets, innerbore, outerbore)        
-        
-        if basedir and basedir != ".":
-            os.chdir(cwd)
-
-        return object
+        from .utils import loadYaml
+        return loadYaml("Supras", filename, Supras, debug)
 
     @classmethod
     def from_json(cls, filename: str, debug: bool = False):
         """
         convert from json to yaml
         """
-        from . import deserialize
-
-        if debug:
-            print(f'Supras.from_json: filename={filename}')
-        with open(filename, "r") as istream:
-            return json.loads(istream.read(), object_hook=deserialize.unserialize_object)
+        from .utils import loadJson
+        return loadJson("Supras", filename, debug)
 
     ###################################################################
     #
@@ -207,7 +178,12 @@ class Supras(yaml.YAMLObject):
 
 def Supras_constructor(loader, node):
     values = loader.construct_mapping(node)
-    return values, "Supras"
+    name = values["name"]
+    magnets = values["magnets"]        
+    
+    innerbore = values["innerbore"] if "innerbore" in values else 0
+    outerbore = values["outerbore"] if "outerbore" in values else 0
+    return Supras(name, magnets, innerbore, outerbore)        
 
 
 yaml.add_constructor(Supras.yaml_tag, Supras_constructor)

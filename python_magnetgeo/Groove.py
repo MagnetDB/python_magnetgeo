@@ -52,43 +52,16 @@ class Groove(yaml.YAMLObject):
         """
         create from yaml
         """
-        import os
-        cwd = os.getcwd()
-
-        (basedir, basename) = os.path.split(filename)
-        print(f"basedir={basedir}, basename={basename}, cwd={cwd}")
-
-        if basedir and basedir != ".":
-            os.chdir(basedir)
-            print(f"-> cwd={cwd}")
-
-        try:
-            with open(basename, "r") as istream:
-                values, otype = yaml.load(stream=istream, Loader=yaml.FullLoader)
-        except Exception:
-            raise Exception(f"Failed to load Groove data {filename}")
+        from .utils import loadYaml
+        return loadYaml("Groove", filename, Groove, debug)
         
-        if basedir and basedir != ".":
-            os.chdir(cwd)
-
-        gtype = values["gtype"]
-        n = values["n"]
-        eps = values["eps"]
-        return cls(gtype, n, eps)
-
     @classmethod
     def from_json(cls, filename: str, debug: bool = False):
         """
         convert from json to yaml
         """
-        from . import deserialize
-
-        if debug:
-            print(f"Groove.from_json: filename={filename}")
-        with open(filename, "r") as istream:
-            return json.loads(
-                istream.read(), object_hook=deserialize.unserialize_object
-            )
+        from .utils import loadJson
+        return loadJson("Groove", filename, debug)
 
 
 def Groove_constructor(loader, node):
@@ -96,6 +69,9 @@ def Groove_constructor(loader, node):
     build an Groove object
     """
     values = loader.construct_mapping(node)
-    return values, "Groove"
+    gtype = values["gtype"]
+    n = values["n"]
+    eps = values["eps"]
+    return Groove(gtype, n, eps)
 
 yaml.add_constructor(Groove.yaml_tag, Groove_constructor)

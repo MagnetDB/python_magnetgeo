@@ -22,6 +22,7 @@ from .Shape import Shape
 from .ModelAxi import ModelAxi
 from .Model3D import Model3D
 
+from .utils import loadObject, loadList
 
 class Helix(yaml.YAMLObject):
     """
@@ -70,8 +71,6 @@ class Helix(yaml.YAMLObject):
         """
         initialize object
         """
-        import os
-        print('InitHelix: ', os.getcwd())
         
         self.name = name
         self.dble = dble
@@ -81,9 +80,27 @@ class Helix(yaml.YAMLObject):
         self.cutwidth = cutwidth
         self.modelaxi = modelaxi
         self.model3d = model3d
+
         self.shape = shape
         self.chamfers = chamfers if chamfers is not None else []
-        self.grooves = grooves if grooves is not None else Groove()        
+        self.grooves = grooves if grooves is not None else Groove()
+
+    def update(self):
+        """
+        update magnets if there were loaded as str
+        """
+        from .utils import check_objects        
+        if isinstance(self.modelaxi, str):
+            self.modelaxi = loadObject("modelaxi", self.modelaxi, ModelAxi, ModelAxi.from_yaml)
+        if isinstance(self.model3d, str):
+            self.model3d = loadObject("model3d", self.model3d, Model3D, Model3D.from_yaml)
+        if isinstance(self.shape, str):
+            self.shape = loadObject("shape", self.shape, Shape, Shape.from_yaml)
+        if check_objects(self.chamfers, str):
+            self.chamfers = loadList("chamfers", self.chamfers, [None, Chamfer], {"Chamfer}": Chamfer.from_yaml})
+        if isinstance(self.grooves, str):
+            self.grooves = loadObject("groove", self.grooves, Groove, Groove.from_yaml)        
+
 
     def get_type(self) -> str:
         if self.model3d.with_shapes and self.model3d.with_channels:
@@ -207,8 +224,8 @@ class Helix(yaml.YAMLObject):
         shape = values["shape"]
 
         # Make chamfers and grooves optional
-        chamfers = values["chamfers"] if "chamfers" in values else None
-        grooves = values["grooves"] if "grooves" in values else None
+        chamfers = values["chamfers"] if "chamfers" in values else []
+        grooves = values["grooves"] if "grooves" in values else Groove()
 
         helix = cls(
             name, r, z, cutwidth, odd, dble, modelaxi, model3d, shape, chamfers, grooves
@@ -220,48 +237,8 @@ class Helix(yaml.YAMLObject):
         """
         create from yaml
         """
-        import os
-        cwd = os.getcwd()
-
-        (basedir, basename) = os.path.split(filename)
-        print(f"basedir={basedir}, basename={basename}, cwd={cwd}")
-
-        if basedir and basedir != ".":
-            os.chdir(basedir)
-            print(f"-> cwd={cwd}")
-
-        try:
-            with open(basename, "r") as istream:
-                values, otype = yaml.load(stream=istream, Loader=yaml.FullLoader)
-        except Exception:
-            raise Exception(f"Failed to load Helix data {filename}")
-
-        print(f'data: type={type(values)}')
-        name = values["name"]
-        r = values["r"]
-        z = values["z"]
-        odd = values["odd"]
-        dble = values["dble"]
-        cutwidth = values["cutwidth"]
-        modelaxi = values["modelaxi"]
-        model3d = values["model3d"]
-        shape = values["shape"]
-
-        # Make chamfers and grooves optional
-        chamfers = values.get("chamfers", [])
-        grooves = values.get("grooves", Groove())
-
-        print(f"Helix_constructor: modelaxi={modelaxi}, chamfers={chamfers}, grooves={grooves}", flush=True)
-
-        helix = cls(
-            name, r, z, cutwidth, odd, dble, modelaxi, model3d, shape, chamfers, grooves
-        )
-
-        # Ensure these attributes always exist
-        if not hasattr(helix, 'chamfers'):
-            helix.chamfers = []
-        if not hasattr(helix, 'grooves'):
-            helix.grooves = Groove()
+        from .utils import loadYaml
+        return loadYaml("Helix", filename, Helix, debug)
 
         if basedir and basedir != ".":
             os.chdir(cwd)
@@ -273,14 +250,8 @@ class Helix(yaml.YAMLObject):
         """
         convert from json to yaml
         """
-        from . import deserialize
-
-        if debug:
-            print(f"Helix.from_json: filename={filename}")
-        with open(filename, "r") as istream:
-            return json.loads(
-                istream.read(), object_hook=deserialize.unserialize_object
-            )
+        from .utils import loadJson
+        return loadJson("Helix", filename, debug)
 
     def write_to_json(self):
         """
@@ -369,9 +340,26 @@ def Helix_constructor(loader, node):
     """
     build an helix object
     """
-    print("Helix_constructor")
+    
     values = loader.construct_mapping(node)
-    return values, "Helix"
+    name = values["name"]
+    r = values["r"]
+    z = values["z"]
+    odd = values["odd"]
+    dble = values["dble"]
+    cutwidth = values["cutwidth"]
+    modelaxi = values["modelaxi"]
+    model3d = values["model3d"]
+    shape = values["shape"]
+
+    # Make chamfers and grooves optional
+    chamfers = values.get("chamfers", [])
+    grooves = values.get("grooves", Groove())
+
+    return Helix(
+        name, r, z, cutwidth, odd, dble, modelaxi, model3d, shape, chamfers, grooves
+    )
+
     
 
 yaml.add_constructor(Helix.yaml_tag, Helix_constructor)

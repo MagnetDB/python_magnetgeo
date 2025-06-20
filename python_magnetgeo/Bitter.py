@@ -15,7 +15,7 @@ import yaml
 from .ModelAxi import ModelAxi
 from .coolingslit import CoolingSlit
 from .tierod import Tierod
-
+from .utils import loadObject, loadList
 
 class Bitter(yaml.YAMLObject):
     """
@@ -45,18 +45,26 @@ class Bitter(yaml.YAMLObject):
         """
         initialize object
         """
-        import os
-        print('InitBitter: ', os.getcwd())
         
         self.name = name
         self.r = r
         self.z = z
         self.odd = odd
         self.modelaxi = modelaxi
+        
         self.innerbore = innerbore
         self.outerbore = outerbore
-        self.coolingslits = coolingslits if coolingslits else []
+        self.coolingslits = coolingslits
         self.tierod = tierod
+
+    def update(self):
+        from .utils import check_objects
+        if isinstance(self.modelaxi, str):
+            self.modelaxi = loadObject("modelaxi", self.modelaxi, ModelAxi, ModelAxi.from_yaml)
+        if check_objects(self.coolingslits, str):
+            self.coolingslits = loadList("coolingslit", self.coolingslits, [None, CoolingSlit], {"CoolingSlit": CoolingSlit.from_yaml})
+        if isinstance(self.tierod, str):
+            self.tierod = loadObject("tierod", self.tierod, Tierod, Tierod.from_yaml)
 
     def equivalent_eps(self, i: int):
         """
@@ -218,64 +226,16 @@ class Bitter(yaml.YAMLObject):
         """
         create from yaml
         """
-        import os
-        cwd = os.getcwd()
-
-        (basedir, basename) = os.path.split(filename)
-        print(f"basedir={basedir}, basename={basename}, cwd={cwd}")
-
-        if basedir and basedir != ".":
-            os.chdir(basedir)
-            print(f"-> cwd={cwd}")
-
-        try:
-            with open(basename, "r") as istream:
-                values, otype = yaml.load(stream=istream, Loader=yaml.FullLoader)
-        except Exception:
-            raise Exception(f"Failed to load Bitter data {filename}")
-
-        print(f'data: type={type(values)}')
-
-        name = values["name"]
-        r = values["r"]
-        z = values["z"]
-        odd = values["odd"]
-        modelaxi = values["modelaxi"]
-        coolingslits = values["coolingslits"]
-        tierod = values["tierod"]
-        innerbore = values["innerbore"] if "innerbore" in values else 0
-        outerbore = values["outerbore"] if "outerbore" in values else 0
-
-        object = cls(name, r, z, odd, modelaxi, coolingslits, tierod, innerbore, outerbore)
-        if basedir and basedir != ".":
-            os.chdir(cwd)
-        return object
+        from .utils import loadYaml
+        return loadYaml("Bitter", filename, Bitter, debug)
 
     @classmethod
     def from_json(cls, filename: str, debug: bool = False):
         """
         convert from json to yaml
         """
-        from . import deserialize
-        import os
-        cwd = os.getcwd()
-
-        (basedir, basename) = os.path.split(filename)
-        print(f"basedir={basedir}, basename={basename}, cwd={cwd}")
-
-        if basedir and basedir != ".":
-            os.chdir(basedir)
-            print(f"-> cwd={cwd}")
-
-        if debug:
-            print(f"Bitter.from_json: filename={basename}")
-        with open(filename, "r") as istream:
-            object = json.loads(
-                istream.read(), object_hook=deserialize.unserialize_object
-            )
-        if basedir and basedir != ".":
-            os.chdir(cwd)
-        return object
+        from .utils import loadJson
+        return loadJson("Bitter", filename, debug)
 
     def get_Nturns(self) -> float:
         """
@@ -360,8 +320,24 @@ def Bitter_constructor(loader, node):
     """
     build an bitter object
     """
+    #print("Bitter_constructor: called")
+    #print(node)
     values = loader.construct_mapping(node)
-    return values, "Bitter"
+    #print(values)
+    #for key, value in values.items():
+    #    print(f"  {key}: {value} (type: {type(value)})")
+    
+    name = values["name"]
+    r = values["r"]
+    z = values["z"]
+    odd = values["odd"]
+    modelaxi = values["modelaxi"]
+    coolingslits = values["coolingslits"]
+    tierod = values["tierod"]
+    innerbore = values["innerbore"] if "innerbore" in values else 0
+    outerbore = values["outerbore"] if "outerbore" in values else 0
+
+    return Bitter(name, r, z, odd, modelaxi, coolingslits, tierod, innerbore, outerbore)
 
 
 

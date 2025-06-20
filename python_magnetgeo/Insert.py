@@ -12,15 +12,7 @@ from .Helix import Helix
 from .Ring import Ring
 from .InnerCurrentLead import InnerCurrentLead
 from .OuterCurrentLead import OuterCurrentLead
-from .utils import load
-
-dict_helices = {
-    "Helix": Helix.from_dict,
-}
-
-dict_rings = {
-    "Ring": Ring.from_dict,
-    }
+from .utils import loadList
 
 dict_leads = {
     "InnerCurrentLead": InnerCurrentLead.from_dict,
@@ -59,33 +51,27 @@ class Insert(yaml.YAMLObject):
     def __init__(
         self,
         name: str,
-        helices: list=None,
-        rings: list=None,
-        currentleads: list=None,
-        hangles: list=None,
-        rangles: list=None,
+        helices: list[Helix],
+        rings: list[Ring],
+        currentleads: list,
+        hangles: list[float],
+        rangles: list[float],
         innerbore: float = 0,
         outerbore: float = 0,
     ):
-        """constructor"""
-        import os
-        print('InitInsert: ', os.getcwd())
-        
+        """
+        constructor
+        """
         self.name = name
 
-        self.helices = []
-        if helices:
-            print(f'Insert.__init__.py: helices[0]={helices[0]}, type=(type(helices[0]))')
-            self.helices = load("helices", helices, [None, Helix], dict_helices)
+        self.helices = helices
 
-        self.rings = []
-        if rings:
-            self.rings = load("rings", rings, [None, Ring], dict_rings)
+        self.rings = rings
             
         
         self.currentleads = []
         if currentleads:
-            self.currentLeads = load("currentleads", currentleads, [None, InnerCurrentLead, OuterCurrentLead], dict_leads)
+            self.currentLeads = loadList("currentleads", currentleads, [None, InnerCurrentLead, OuterCurrentLead], dict_leads)
 
         self.hangles = hangles if hangles is not None else []
         print("hangles: ", self.hangles) if rangles is not None else []
@@ -96,15 +82,20 @@ class Insert(yaml.YAMLObject):
         self.innerbore = innerbore
         self.outerbore = outerbore
 
-    """
-    @property
-    def helices(self):
-        if self._helices:
-            if isinstance(self.helices[0], str):
-                print(f"self.helices shall be converted to Helix")
-
-        return self.helices
-    """
+    def update(self):
+        """
+        update magnets if there were loaded as str
+        """
+        from .utils import check_objects        
+        if check_objects(self.helices, str):
+            self.helices = loadList("helices", self.helices, [None, Helix], {"Helix": Helix.from_dict})
+            print("update helices:", self.helices)
+        if check_objects(self.rings, str):
+            self.rings = loadList("rings", self.rings, [None, Ring], {"Ring": Ring.from_dict})
+            print("update rings:", self.rings)
+        if check_objects(self.currentLeads, str):
+            self.currentLeads = loadList("currentleads", self.currentleads, [None, InnerCurrentLead, OuterCurrentLead], dict_leads)
+            print("update currentleads:", self.currentLeads)
 
     def get_channels(
         self, mname: str, hideIsolant: bool = True, debug: bool = False
@@ -279,63 +270,16 @@ class Insert(yaml.YAMLObject):
         """
         create from yaml
         """
-        import os
-        cwd = os.getcwd()
-
-        (basedir, basename) = os.path.split(filename)
-        print(f"basedir={basedir}, basename={basename}, cwd={cwd}")
-
-        if basedir and basedir != ".":
-            os.chdir(basedir)
-            print(f"-> cwd={cwd}")
-
-        try:
-            with open(basename, "r") as istream:
-                data, otype = yaml.load(stream=istream, Loader=yaml.FullLoader)
-        except Exception:
-            raise Exception(f"Failed to load Insert data {filename}")
-
-        print(f'data: type={type(data)}')
-
-        print("from_yaml:", data)
-        name = data["name"]
-
-        helices = data["helices"]
-        rings = data["rings"]
-        currentleads = data["currentleads"]
-        innerbore = data["innerbore"]
-        outerbore = data["outerbore"]
-        hangles = data["hangles"]
-        rangles = data["rangles"]
-    
-        object = cls(
-            name, helices, rings, currentleads, hangles, rangles, innerbore, outerbore
-        )
-    
-        if basedir and basedir != ".":
-            os.chdir(cwd)
-        
-        return object
+        from .utils import loadYaml
+        return loadYaml("Insert", filename, Insert, debug)
     
     @classmethod
     def from_json(cls, filename: str, debug: bool = False):
         """
         convert from json to yaml
         """
-        import os
-        (basedir, basename) = os.path.split(filename)
-        print(f"basedir={basedir}, basename={basename}")
-        
-        from . import deserialize
-
-        if debug:
-            print(f"Insert.from_json: filename={filename}")
-        with open(basename, "r") as istream:
-            data = json.loads(
-                istream.read(), object_hook=deserialize.unserialize_object
-            )
-            print(f'data: type={type(data)}')
-            print(f'data: {data}')
+        from .utils import loadJson
+        return loadJson("Insert", filename, debug)
 
     ###################################################################
     #
@@ -512,7 +456,19 @@ class Insert(yaml.YAMLObject):
 def Insert_constructor(loader, node):
     print("Insert_constructor")
     data = loader.construct_mapping(node)
-    return data, "Insert"
+
+    name = data["name"]
+    helices = data["helices"]
+    rings = data["rings"]
+    currentleads = data["currentleads"]
+    innerbore = data["innerbore"]
+    outerbore = data["outerbore"]
+    hangles = data["hangles"]
+    rangles = data["rangles"]
+
+    return Insert(
+        name, helices, rings, currentleads, hangles, rangles, innerbore, outerbore
+    )
 
 
 yaml.add_constructor(Insert.yaml_tag, Insert_constructor)

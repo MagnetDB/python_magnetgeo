@@ -115,45 +115,16 @@ class Screen(yaml.YAMLObject):
         """
         create from yaml
         """
-        import os
-        cwd = os.getcwd()
-
-        (basedir, basename) = os.path.split(filename)
-        print(f"basedir={basedir}, basename={basename}, cwd={cwd}")
-
-        if basedir and basedir != ".":
-            os.chdir(basedir)
-            print(f"-> cwd={cwd}")
-
-        try:
-            with open(basename, "r") as istream:
-                values, otype = yaml.load(stream=istream, Loader=yaml.FullLoader)
-        except Exception:
-            raise Exception(f"Failed to load Screen data {filename}")
-
-        print(f'data: type={type(values)}')
-
-        name = values["name"]
-        r = values["r"]
-        z = values["z"]
-        object = cls(name, r, z)        
-        
-        if basedir and basedir != ".":
-            os.chdir(cwd)
-
-        return object
+        from .utils import loadYaml
+        return loadYaml("Screen", filename, Screen , debug)
 
     @classmethod
     def from_json(cls, filename: str, debug: bool = False):
         """
         convert from json to yaml
         """
-        from . import deserialize
-
-        if debug:
-            print(f'Screen.from_json: filename={filename}')
-        with open(filename, "r") as istream:
-            return json.loads(istream.read(), object_hook=deserialize.unserialize_object)
+        from .utils import loadJson
+        return loadJson("Screen", filename, debug)
 
     def boundingBox(self) -> tuple:
         """
@@ -183,7 +154,10 @@ def Screen_constructor(loader, node):
     build an screen object
     """
     values = loader.construct_mapping(node)
-    return values, "Screen"
+    name = values["name"]
+    r = values["r"]
+    z = values["z"]
+    return Screen(name, r, z)        
 
 
 

@@ -102,47 +102,16 @@ class InnerCurrentLead(yaml.YAMLObject):
         """
         create from yaml
         """
-        import os
-        cwd = os.getcwd()
-
-        (basedir, basename) = os.path.split(filename)
-        print(f"basedir={basedir}, basename={basename}, cwd={cwd}")
-
-        if basedir and basedir != ".":
-            os.chdir(basedir)
-            print(f"-> cwd={cwd}")
-
-        try:
-            with open(basename, "r") as istream:
-                values, otype = yaml.load(stream=istream, Loader=yaml.FullLoader)
-        except Exception:
-            raise Exception(f"Failed to load InnerCurrentLead data {filename}")
-
-        print(f'data: type={type(values)}')
-        name = values["name"]
-        r = values["r"]
-        h = values["h"]
-        holes = values["holes"]
-        support = values["support"]
-        fillet = values["fillet"]
-        object = cls(name, r, h, holes, support, fillet)        
-        
-        if basedir and basedir != ".":
-            os.chdir(cwd)
-
-        return object
+        from .utils import loadYaml
+        return loadYaml("InnerCurrentLead", filename, InnerCurrentLead, debug)
 
     @classmethod
     def from_json(cls, filename: str, debug: bool = False):
         """
         convert from json to yaml
         """
-        from . import deserialize
-
-        if debug:
-            print(f'InnerCurrentLead.from_json: filename={filename}')
-        with open(filename, "r") as istream:
-            return json.loads(istream.read(), object_hook=deserialize.unserialize_object)
+        from .utils import loadJson
+        return loadJson("InnerCurrentLead", filename, debug)
 
 
 def InnerCurrentLead_constructor(loader, node):
@@ -150,7 +119,13 @@ def InnerCurrentLead_constructor(loader, node):
     build an inner object
     """
     values = loader.construct_mapping(node)
-    return values, InnerCurrentLead
+    name = values["name"]
+    r = values["r"]
+    h = values["h"]
+    holes = values["holes"]
+    support = values["support"]
+    fillet = values["fillet"]
+    return InnerCurrentLead(name, r, h, holes, support, fillet)        
 
 
 

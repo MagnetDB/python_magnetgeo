@@ -114,54 +114,29 @@ class OuterCurrentLead(yaml.YAMLObject):
         """
         create from yaml
         """
-        import os
-        cwd = os.getcwd()
-
-        (basedir, basename) = os.path.split(filename)
-        print(f"basedir={basedir}, basename={basename}, cwd={cwd}")
-
-        if basedir and basedir != ".":
-            os.chdir(basedir)
-            print(f"-> cwd={cwd}")
-
-        try:
-            with open(basename, "r") as istream:
-                values, otype = yaml.load(stream=istream, Loader=yaml.FullLoader)
-        except Exception:
-            raise Exception(f"Failed to load OuterCurrentLead data {filename}")
-
-        print(f'data: type={type(values)}')
-        name = values["name"]
-        r = values["r"]
-        h = values["h"]
-        bar = values["bar"]
-        support = values["support"]
-        object = cls(name, r, h, bar, support)
-        
-        if basedir and basedir != ".":
-            os.chdir(cwd)
-
-        return object
+        from .utils import loadYaml
+        return loadYaml("OuterCurrentLead", filename, OuterCurrentLead, debug)
 
     @classmethod
     def from_json(cls, filename: str, debug: bool = False):
         """
         convert from json to yaml
         """
-        from . import deserialize
+        from .utils import loadJson
+        return loadJson("OuterCurrentLead", filename, debug)
 
-        if debug:
-            print(f'OuterCurrentLead.from_json: filename={filename}')
-        with open(filename, "r") as istream:
-            return json.loads(istream.read(), object_hook=deserialize.unserialize_object)
-    
 
 def OuterCurrentLead_constructor(loader, node):
     """
     build an outer object
     """
     values = loader.construct_mapping(node)
-    return values, "OuterCurrentLead"
+    name = values["name"]
+    r = values["r"]
+    h = values["h"]
+    bar = values["bar"]
+    support = values["support"]
+    return OuterCurrentLead(name, r, h, bar, support)
 
 
 yaml.add_constructor(OuterCurrentLead.yaml_tag, OuterCurrentLead_constructor)

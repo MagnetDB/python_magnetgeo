@@ -104,48 +104,18 @@ class Chamfer(yaml.YAMLObject):
         """
         create from yaml
         """
-        import os
-        cwd = os.getcwd()
+        from .utils import loadYaml
+        return loadYaml("Chamfer", filename, Chamfer, debug)
 
-        (basedir, basename) = os.path.split(filename)
-        print(f"basedir={basedir}, basename={basename}, cwd={cwd}")
-
-        if basedir and basedir != ".":
-            os.chdir(basedir)
-            print(f"-> cwd={cwd}")
-
-        try:
-            with open(basename, "r") as istream:
-                values, otype = yaml.load(stream=istream, Loader=yaml.FullLoader)
-        except Exception:
-            raise Exception(f"Failed to load Chamfer data {filename}")
         
-        if basedir and basedir != ".":
-            os.chdir(cwd)
-
-        side = values["side"]
-        rside = values["rside"]
-
-        # Make chamfers and grooves optional
-        alpha = values.get("alpha", None)
-        dr = values.get("dr", None)
-
-        l = values["l"]
-        return cls(side, rside, alpha, l)
 
     @classmethod
     def from_json(cls, filename: str, debug: bool = False):
         """
         convert from json to yaml
         """
-        from . import deserialize
-
-        if debug:
-            print(f"Chamfer.from_json: filename={filename}")
-        with open(filename, "r") as istream:
-            return json.loads(
-                istream.read(), object_hook=deserialize.unserialize_object
-            )
+        from .utils import loadJson
+        return loadJson("Chamfer", filename, debug)
 
     def getRadius(self):
         """
@@ -176,7 +146,16 @@ def Chamfer_constructor(loader, node):
     build an Shape object
     """
     values = loader.construct_mapping(node)
-    return values, "Chamfer"
+    side = values["side"]
+    rside = values["rside"]
+
+    # Make chamfers and grooves optional
+    alpha = values.get("alpha", None)
+    dr = values.get("dr", None)
+
+    l = values["l"]
+    return Chamfer(side, rside, alpha, dr, l)
+
 
 
 yaml.add_constructor(Chamfer.yaml_tag, Chamfer_constructor)

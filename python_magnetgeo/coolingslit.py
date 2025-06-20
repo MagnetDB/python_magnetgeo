@@ -68,54 +68,31 @@ class CoolingSlit(yaml.YAMLObject):
         """
         create from yaml
         """
-        import os
-        cwd = os.getcwd()
-
-        (basedir, basename) = os.path.split(filename)
-        print(f"basedir={basedir}, basename={basename}, cwd={cwd}")
-
-        if basedir and basedir != ".":
-            os.chdir(basedir)
-            print(f"-> cwd={cwd}")
-
-        try:
-            with open(basename, "r") as istream:
-                values, otype = yaml.load(stream=istream, Loader=yaml.FullLoader)
-        except Exception:
-            raise Exception(f"Failed to load CoolingSlit data {filename}")
-        
-        if basedir and basedir != ".":
-            os.chdir(cwd)
+        from .utils import loadYaml
+        return loadYaml("CoolingSlit", filename, CoolingSlit, debug)
             
-        r = values["r"]
-        angle = values["angle"]
-        n = values["n"]
-        dh = values["dh"]
-        sh = values["sh"]
-        print(f"constructor: {type(values['shape'])}")
-        shape = values["shape"]
-
-        return cls(r, angle, n, dh, sh, shape)
         
     @classmethod
     def from_json(cls, filename: str, debug: bool = False):
         """
         convert from json to yaml
         """
-        from . import deserialize
-
-        if debug:
-            print(f'Coolingslit.from_json: filename={filename}')
-        with open(filename, "r") as istream:
-            return json.loads(istream.read(), object_hook=deserialize.unserialize_object)
+        from .utils import loadJson
+        return loadJson("CoolingSlit", filename, debug)
 
 
 def CoolingSlit_constructor(loader, node):
     """
     build an coolingslit object
     """
-    print("CoolingSlit_constructor")
     values = loader.construct_mapping(node)
-    return values, "CoolingSlit"
+    r = values["r"]
+    angle = values["angle"]
+    n = values["n"]
+    dh = values["dh"]
+    sh = values["sh"]
+    shape = values["shape"]
+
+    return CoolingSlit(r, angle, n, dh, sh, shape)
 
 yaml.add_constructor(CoolingSlit.yaml_tag, CoolingSlit_constructor)

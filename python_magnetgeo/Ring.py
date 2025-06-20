@@ -43,14 +43,12 @@ class Ring(yaml.YAMLObject):
         angle: float = 0,
         bpside: bool = True,
         fillets: bool = False,
-        cad: str|None = None
+        cad: str = None
     ) -> None:
         """
         initialize object
         """
-        import os
-        print('InitRing: ', os.getcwd())
-
+        
         self.name = name
         self.r = r
         self.z = z
@@ -122,7 +120,7 @@ class Ring(yaml.YAMLObject):
         angle = values["angle"]
         bpside = values["bpside"]
         fillets = values["fillets"]
-        cad = values.get("cad", '') if 'cad' in values else ''
+        cad = values.get("cad", '')
 
         return  cls(name, r, z, n, angle, bpside, fillets, cad)
 
@@ -132,50 +130,16 @@ class Ring(yaml.YAMLObject):
         """
         create from yaml
         """
-        import os
-        cwd = os.getcwd()
-
-        (basedir, basename) = os.path.split(filename)
-        print(f"basedir={basedir}, basename={basename}, cwd={cwd}")
-
-        if basedir and basedir != ".":
-            os.chdir(basedir)
-            print(f"-> cwd={cwd}")
-
-        try:
-            with open(basename, "r") as istream:
-                values, otype = yaml.load(stream=istream, Loader=yaml.FullLoader)
-        except Exception:
-            raise Exception(f"Failed to load Ring data {filename}")
-
-        print(f'data: type={type(values)}')
-        name = values["name"]
-        r = values["r"]
-        z = values["z"]
-        n = values["n"]
-        angle = values["angle"]
-        bpside = values["bpside"]
-        fillets = values["fillets"]
-        cad = values.get("cad", '') if 'cad' in values else ''
-        
-        ring = cls(name, r, z, n, angle, bpside, fillets, cad)
-        if basedir and basedir != ".":
-            os.chdir(cwd)
-        return ring
+        from .utils import loadYaml
+        return loadYaml("Ring", filename, Ring, debug)
 
     @classmethod
     def from_json(cls, filename: str, debug: bool = False):
         """
         convert from json to yaml
         """
-        from . import deserialize
-
-        if debug:
-            print(f"Ring.from_json: filename={filename}")
-        with open(filename, "r") as istream:
-            return json.loads(
-                istream.read(), object_hook=deserialize.unserialize_object
-            )
+        from .utils import loadJson
+        return loadJson("Ring", filename)
 
 
 def Ring_constructor(loader, node):
@@ -183,6 +147,15 @@ def Ring_constructor(loader, node):
     build an ring object
     """
     values = loader.construct_mapping(node)
-    return values, "Ring"
+    name = values["name"]
+    r = values["r"]
+    z = values["z"]
+    n = values["n"]
+    angle = values["angle"]
+    bpside = values["bpside"]
+    fillets = values["fillets"]
+    cad = values.get("cad", '') if 'cad' in values else ''
+
+    return  Ring(name, r, z, n, angle, bpside, fillets, cad)
 
 yaml.add_constructor(Ring.yaml_tag, Ring_constructor)

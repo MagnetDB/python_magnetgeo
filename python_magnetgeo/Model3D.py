@@ -74,47 +74,26 @@ class Model3D(yaml.YAMLObject):
         """
         create from yaml
         """
-        import os
-        cwd = os.getcwd()
-
-        (basedir, basename) = os.path.split(filename)
-        print(f"basedir={basedir}, basename={basename}, cwd={cwd}")
-
-        if basedir and basedir != ".":
-            os.chdir(basedir)
-            print(f"-> cwd={cwd}")
-
-        try:
-            with open(basename, "r") as istream:
-                values, otype = yaml.load(stream=istream, Loader=yaml.FullLoader)
-        except Exception:
-            raise Exception(f"Failed to load Model3D data {filename}")
-        
-        if basedir and basedir != ".":
-            os.chdir(cwd)
-        cad = values["cad"]
-        with_shapes = values["with_shapes"]
-        with_channels = values["with_channels"]
-        return cls(cad, with_shapes, with_channels)
+        from .utils import loadYaml
+        return loadYaml("Model3D", filename, Model3D, debug)
 
     @classmethod
     def from_json(cls, filename: str, debug: bool = False):
         """
         convert from json to yaml
         """
-        from . import deserialize
-
-        if debug:
-            print(f'Model3D.from_json: filename={filename}')
-        with open(filename, "r") as istream:
-            return json.loads(istream.read(), object_hook=deserialize.unserialize_object)
+        from .utils import loadJson
+        return loadJson("Model3D", filename)
 
 def Model3D_constructor(loader, node):
     """
     build an Model3d object
     """
     values = loader.construct_mapping(node)
-    return values, "Model3D"
+    cad = values["cad"]
+    with_shapes = values["with_shapes"]
+    with_channels = values["with_channels"]
+    return Model3D(cad, with_shapes, with_channels)
 
 
 yaml.add_constructor(Model3D.yaml_tag, Model3D_constructor)

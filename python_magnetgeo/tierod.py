@@ -2,7 +2,7 @@ import yaml
 import json
 
 from .Shape2D import Shape2D
-
+from .utils import loadObject
 
 class Tierod(yaml.YAMLObject):
     yaml_tag = "Tierod"
@@ -14,11 +14,8 @@ class Tierod(yaml.YAMLObject):
         self.n = n
         self.dh: float = dh
         self.sh: float = sh
-        if isinstance(shape, Shape2D):
-            self.shape = shape
-        else:
-            with open(f"{shape}.yaml", "r") as f:
-                self.shape = yaml.load(f, Loader=yaml.FullLoader)
+        self.shape = shape
+        
 
     def __repr__(self):
         return "%s(r=%r, n=%r, dh=%r, sh=%r, shape=%r)" % (
@@ -29,6 +26,10 @@ class Tierod(yaml.YAMLObject):
             self.sh,
             self.shape,
         )
+    def update(self):
+        from .utils import check_objects
+        if isinstance(self.shape, str):
+            self.shape = loadObject("shape", self.shape, Shape2D, Shape2D.from_yaml)
 
     def dump(self, name: str):
         """
@@ -55,30 +56,9 @@ class Tierod(yaml.YAMLObject):
         """
         create from yaml
         """
-        import os
-        cwd = os.getcwd()
+        from .utils import loadYaml
+        return loadYaml("Tierod", filename, Tierod, debug)
 
-        (basedir, basename) = os.path.split(filename)
-        print(f"basedir={basedir}, basename={basename}, cwd={cwd}")
-
-        if basedir and basedir != ".":
-            os.chdir(basedir)
-            print(f"-> cwd={cwd}")
-
-        try:
-            with open(basename, "r") as istream:
-                values, otype = yaml.load(stream=istream, Loader=yaml.FullLoader)
-        except Exception:
-            raise Exception(f"Failed to load Tierod data {filename}")
-        if basedir and basedir != ".":
-            os.chdir(cwd)
-
-        r = values["r"]
-        n = values["n"]
-        dh = values["dh"]
-        sh = values["sh"]
-        shape = values["shape"]
-        return cls(r, n, dh, sh, shape)
 
 
     @classmethod
@@ -86,14 +66,8 @@ class Tierod(yaml.YAMLObject):
         """
         convert from json to yaml
         """
-        from . import deserialize
-
-        if debug:
-            print(f"Tierod.from_json: filename={filename}")
-        with open(filename, "r") as istream:
-            return json.loads(
-                istream.read(), object_hook=deserialize.unserialize_object
-            )
+        from .utils import loadJson
+        return loadJson("Tierod", filename, debug)
 
 
 def Tierod_constructor(loader, node):
@@ -101,6 +75,11 @@ def Tierod_constructor(loader, node):
     build an Tierod object
     """
     values = loader.construct_mapping(node)
-    return values, "Tierod"
+    r = values["r"]
+    n = values["n"]
+    dh = values["dh"]
+    sh = values["sh"]
+    shape = values["shape"]
+    return Tierod(r, n, dh, sh, shape)
 
 yaml.add_constructor(Tierod.yaml_tag, Tierod_constructor)
