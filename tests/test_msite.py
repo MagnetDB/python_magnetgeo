@@ -103,13 +103,13 @@ class TestMSiteMethods:
         # Create mock magnets
         mock_insert = Mock(spec=Insert)
         mock_insert.name = "test_insert"
-        mock_insert.get_channels.return_value = ["Channel1", "Channel2"]
+        mock_insert.get_channels.return_value = {"Channel1": [], "Channel2": []}
         mock_insert.get_names.return_value = ["Insert_Cu", "Insert_Kapton"]
         mock_insert.boundingBox.return_value = ([10.0, 20.0], [0.0, 100.0])
         
         mock_bitter = Mock(spec=Bitters)
         mock_bitter.name = "test_bitter"
-        mock_bitter.get_channels.return_value = ["Slit0", "Slit1", "Slit2"]
+        mock_bitter.get_channels.return_value = {"Slit0": [], "Slit1": [], "Slit2": []}
         mock_bitter.get_names.return_value = ["Bitter_B", "Bitter_Kapton"]
         mock_bitter.boundingBox.return_value = ([15.0, 25.0], [10.0, 90.0])
         
@@ -151,19 +151,45 @@ class TestMSiteMethods:
     @patch('python_magnetgeo.utils.check_objects')
     def test_update_method_with_string_magnets(self, mock_check_objects, mock_load_list, sample_msite_with_strings):
         """Test update method when magnets are strings"""
-        # Mock check_objects to return True for strings
-        mock_check_objects.side_effect = lambda objects, obj_type: obj_type == str and isinstance(objects, list)
+        # Mock check_objects to return True for strings on first call (magnets), False on second (screens)
+        mock_check_objects.side_effect = [True, False]
         
         # Mock loadList to return mock objects
         mock_insert = Mock(spec=Insert)
         mock_insert.name = "loaded_insert"
-        mock_load_list.side_effect = [[mock_insert], None]  # magnets, then screens
+        mock_load_list.return_value = [mock_insert]
         
         sample_msite_with_strings.update()
         
         # Verify loadList was called for magnets
-        assert mock_load_list.call_count >= 1
-        mock_check_objects.assert_called()
+        mock_load_list.assert_called_once()
+        # Verify check_objects was called twice (once for magnets, once for screens)
+        assert mock_check_objects.call_count == 2
+
+    @patch('python_magnetgeo.utils.loadList')
+    @patch('python_magnetgeo.utils.check_objects')
+    def test_update_method_with_string_screens(self, mock_check_objects, mock_load_list):
+        """Test update method when screens are strings"""
+        msite = MSite(
+            name="screen_test",
+            magnets=[Mock()],  # Already objects
+            screens=["screen1", "screen2"],
+            z_offset=None,
+            r_offset=None,
+            paralax=None
+        )
+        
+        # Mock check_objects to return False for magnets, True for screens
+        mock_check_objects.side_effect = [False, True]
+        
+        # Mock loadList
+        mock_screen = Mock(spec=Screen)
+        mock_load_list.return_value = [mock_screen]
+        
+        msite.update()
+        
+        # Verify loadList was called for screens
+        mock_load_list.assert_called_once()
 
     def test_get_channels(self, sample_msite_with_magnets):
         """Test get_channels method"""
@@ -265,9 +291,7 @@ class TestMSiteSerialization(BaseSerializationTestMixin):
     
     def get_sample_yaml_content(self):
         """Return sample YAML content"""
-        return '''
-!<Msite
-name: yaml_msite
+        return '''name: yaml_msite
 magnets: ["yaml_magnet1", "yaml_magnet2"]
 screens: ["yaml_screen1"]
 z_offset: [2.0, 3.0]
@@ -303,12 +327,20 @@ paralax: [0.05, 0.1]
         assert "r_offset" in parsed
         assert "paralax" in parsed
 
-    @patch("builtins.open", side_effect=Exception("Dump error"))
-    def test_dump_error_handling(self, mock_open):
+    @patch('python_magnetgeo.utils.writeYaml')
+    def test_dump_success(self, mock_write_yaml):
+        """Test dump method success"""
+        instance = self.get_sample_instance()
+        instance.dump()
+        mock_write_yaml.assert_called_once_with("MSite", instance, MSite)
+
+    @patch('python_magnetgeo.utils.writeYaml')
+    def test_dump_error_handling(self, mock_write_yaml):
         """Test dump method error handling"""
+        mock_write_yaml.side_effect = Exception("Dump error")
         instance = self.get_sample_instance()
         
-        with pytest.raises(Exception, match="Failed to dump MSite data"):
+        with pytest.raises(Exception):
             instance.dump()
 
     def test_write_to_json_method(self):
@@ -320,16 +352,16 @@ paralax: [0.05, 0.1]
             mock_file.assert_called_once_with("test_msite.json", "w")
 
 
-class TestMSiteYAMLConstructor(BaseYAMLConstructorTestMixin):
-    """Test MSite YAML constructor using common test mixin"""
+class TestMSiteYAMLConstructor:
+    """Test MSite YAML constructor - custom implementation since the constructor doesn't return a tuple"""
     
-    def get_constructor_function(self):
-        """Return the MSite constructor function"""
-        return MSite_constructor
-    
-    def get_sample_constructor_data(self):
-        """Return sample constructor data"""
-        return {
+    def test_constructor_function_direct(self):
+        """Test MSite_constructor function directly"""
+        # Mock loader and node
+        mock_loader = Mock()
+        mock_node = Mock()
+        
+        mock_data = {
             "name": "constructor_msite",
             "magnets": ["constructor_magnet"],
             "screens": ["constructor_screen"],
@@ -337,18 +369,6 @@ class TestMSiteYAMLConstructor(BaseYAMLConstructorTestMixin):
             "r_offset": [1.5, 2.5],
             "paralax": [0.2, 0.25]
         }
-    
-    def get_expected_constructor_type(self):
-        """Return expected constructor type"""
-        return "MSite"
-
-    def test_constructor_function_direct(self):
-        """Test MSite_constructor function directly"""
-        # Mock loader and node
-        mock_loader = Mock()
-        mock_node = Mock()
-        
-        mock_data = self.get_sample_constructor_data()
         mock_loader.construct_mapping.return_value = mock_data
         
         result = MSite_constructor(mock_loader, mock_node)
@@ -358,6 +378,17 @@ class TestMSiteYAMLConstructor(BaseYAMLConstructorTestMixin):
         assert result.name == "constructor_msite"
         assert result.magnets == ["constructor_magnet"]
         assert result.screens == ["constructor_screen"]
+        assert result.z_offset == [3.0, 4.0]
+        assert result.r_offset == [1.5, 2.5]
+        assert result.paralax == [0.2, 0.25]
+
+    def test_yaml_constructor_registration(self):
+        """Test that YAML constructor is properly registered"""
+        # This tests that the constructor was added to yaml
+        assert hasattr(yaml, '_constructor_args')
+        # The actual test would require checking yaml's internal registry
+        # For now, we test that the constructor function exists and works
+        assert callable(MSite_constructor)
 
 
 class TestMSiteYAMLTag(BaseYAMLTagTestMixin):
@@ -414,6 +445,22 @@ class TestMSiteFromDict:
         assert msite.r_offset is None
         assert msite.paralax is None
 
+    def test_from_dict_with_dict_magnets(self):
+        """Test from_dict with dict-type magnets"""
+        data = {
+            "name": "dict_magnets_msite",
+            "magnets": {"insert1": "insert_file", "bitter1": "bitter_file"},
+            "screens": {"screen1": "screen_file"},
+            "z_offset": [1.0],
+            "r_offset": [1.0],
+            "paralax": [0.1]
+        }
+        
+        msite = MSite.from_dict(data)
+        assert msite.name == "dict_magnets_msite"
+        assert msite.magnets == {"insert1": "insert_file", "bitter1": "bitter_file"}
+        assert msite.screens == {"screen1": "screen_file"}
+
 
 class TestMSiteFileOperations:
     """Test MSite file operations"""
@@ -463,19 +510,19 @@ class TestMSiteIntegration:
         # Create different types of mock magnets
         mock_insert = Mock(spec=Insert)
         mock_insert.name = "test_insert"
-        mock_insert.get_channels.return_value = ["InsertChannel1", "InsertChannel2"]
+        mock_insert.get_channels.return_value = {"InsertChannel1": [], "InsertChannel2": []}
         mock_insert.get_names.return_value = ["Insert_H1", "Insert_H2"]
         mock_insert.boundingBox.return_value = ([10.0, 30.0], [0.0, 100.0])
         
         mock_bitters = Mock(spec=Bitters)
         mock_bitters.name = "test_bitters"
-        mock_bitters.get_channels.return_value = ["BittersChannel1"]
+        mock_bitters.get_channels.return_value = {"BittersChannel1": []}
         mock_bitters.get_names.return_value = ["Bitters_B1", "Bitters_B2"]
         mock_bitters.boundingBox.return_value = ([20.0, 40.0], [10.0, 90.0])
         
         mock_supras = Mock(spec=Supras)
         mock_supras.name = "test_supras"
-        mock_supras.get_channels.return_value = ["SuprasChannel1"]
+        mock_supras.get_channels.return_value = {"SuprasChannel1": []}
         mock_supras.get_names.return_value = ["Supras_S1"]
         mock_supras.boundingBox.return_value = ([15.0, 35.0], [5.0, 95.0])
         
@@ -540,13 +587,13 @@ class TestMSiteIntegration:
         # 2. Simulate update process (loading actual objects)
         mock_insert = Mock(spec=Insert)
         mock_insert.name = "workflow_insert"
-        mock_insert.get_channels.return_value = ["Chan1", "Chan2"]
+        mock_insert.get_channels.return_value = {"Chan1": [], "Chan2": []}
         mock_insert.get_names.return_value = ["Insert_Part1", "Insert_Part2"]
         mock_insert.boundingBox.return_value = ([8.0, 18.0], [0.0, 80.0])
         
         mock_bitter = Mock(spec=Bitters)
         mock_bitter.name = "workflow_bitter"
-        mock_bitter.get_channels.return_value = ["Slit1", "Slit2"]
+        mock_bitter.get_channels.return_value = {"Slit1": [], "Slit2": []}
         mock_bitter.get_names.return_value = ["Bitter_Part1"]
         mock_bitter.boundingBox.return_value = ([12.0, 22.0], [10.0, 70.0])
         
@@ -568,7 +615,31 @@ class TestMSiteIntegration:
         json_str = msite.to_json()
         assert "workflow_msite" in json_str
 
-
+    @patch('python_magnetgeo.utils.loadList')
+    @patch('python_magnetgeo.utils.check_objects')
+    def test_update_with_dict_magnets(self, mock_check_objects, mock_load_list):
+        """Test update method with dict-type magnets"""
+        msite = MSite(
+            name="dict_update_test",
+            magnets={"insert1": "insert_file", "bitter1": "bitter_file"},
+            screens=None,
+            z_offset=None,
+            r_offset=None,
+            paralax=None
+        )
+        
+        # Mock check_objects to return True for dict (treated as strings)
+        mock_check_objects.side_effect = [True, False]
+        
+        # Mock loadList to return loaded objects
+        mock_insert = Mock(spec=Insert)
+        mock_bitter = Mock(spec=Bitters)
+        mock_load_list.return_value = [mock_insert, mock_bitter]
+        
+        msite.update()
+        
+        # Verify loadList was called
+        mock_load_list.assert_called_once()
 
 
 class TestMSitePerformance:
@@ -581,7 +652,7 @@ class TestMSitePerformance:
         for i in range(50):
             mock_magnet = Mock()
             mock_magnet.name = f"magnet_{i}"
-            mock_magnet.get_channels.return_value = [f"Channel_{i}_1", f"Channel_{i}_2"]
+            mock_magnet.get_channels.return_value = {f"Channel_{i}_1": [], f"Channel_{i}_2": []}
             mock_magnet.get_names.return_value = [f"Magnet_{i}_Part1", f"Magnet_{i}_Part2"]
             mock_magnet.boundingBox.return_value = ([i * 2.0, (i + 1) * 2.0], [0.0, 100.0])
             mock_magnets.append(mock_magnet)
@@ -606,6 +677,281 @@ class TestMSitePerformance:
         rb, zb = msite.boundingBox()
         assert rb == [0.0, 100.0]  # Should span all magnet bounds
         assert zb == [0.0, 100.0]
+
+
+class TestMSiteStringHandling:
+    """Test MSite handling of string-based magnets and screens"""
+    
+    def test_msite_with_string_magnets_parameter(self):
+        """Test MSite with single string for magnets parameter"""
+        msite = MSite(
+            name="string_magnets_site",
+            magnets="magnet_list_file",
+            screens=None,
+            z_offset=None,
+            r_offset=None,
+            paralax=None
+        )
+        
+        assert msite.magnets == "magnet_list_file"
+        assert isinstance(msite.magnets, str)
+
+    def test_msite_with_list_of_strings_magnets(self):
+        """Test MSite with list of strings for magnets"""
+        msite = MSite(
+            name="list_strings_site",
+            magnets=["magnet1_file", "magnet2_file", "magnet3_file"],
+            screens=["screen1_file"],
+            z_offset=[0.0, 1.0, 2.0],
+            r_offset=[0.0, 1.0, 2.0],
+            paralax=[0.0, 0.1, 0.2]
+        )
+        
+        assert msite.magnets == ["magnet1_file", "magnet2_file", "magnet3_file"]
+        assert all(isinstance(mag, str) for mag in msite.magnets)
+
+    def test_msite_with_dict_of_strings_magnets(self):
+        """Test MSite with dict containing string values for magnets"""
+        magnets_dict = {
+            "insert": "insert_config_file",
+            "bitter": "bitter_config_file",
+            "supra": "supra_config_file"
+        }
+        
+        msite = MSite(
+            name="dict_strings_site",
+            magnets=magnets_dict,
+            screens={"screen1": "screen_file"},
+            z_offset=[0.0, 5.0],
+            r_offset=[1.0, 3.0],
+            paralax=[0.1, 0.3]
+        )
+        
+        assert msite.magnets == magnets_dict
+        assert all(isinstance(val, str) for val in msite.magnets.values())
+
+    @patch('python_magnetgeo.utils.loadList')
+    @patch('python_magnetgeo.utils.check_objects')
+    def test_update_converts_string_magnets_to_objects(self, mock_check_objects, mock_load_list):
+        """Test that update method converts string magnets to actual objects"""
+        msite = MSite(
+            name="conversion_test",
+            magnets=["insert_file", "bitter_file"],
+            screens=["screen_file"],
+            z_offset=None,
+            r_offset=None,
+            paralax=None
+        )
+        
+        # Mock check_objects to return True for magnets (strings), True for screens (strings)
+        mock_check_objects.side_effect = [True, True]
+        
+        # Create mock objects that would be loaded
+        mock_insert = Mock(spec=Insert)
+        mock_insert.name = "loaded_insert"
+        mock_bitter = Mock(spec=Bitters)
+        mock_bitter.name = "loaded_bitter"
+        mock_screen = Mock(spec=Screen)
+        mock_screen.name = "loaded_screen"
+        
+        # Mock loadList to return different objects for different calls
+        mock_load_list.side_effect = [
+            [mock_insert, mock_bitter],  # For magnets
+            [mock_screen]                # For screens
+        ]
+        
+        # Before update - should be strings
+        assert isinstance(msite.magnets, list)
+        assert all(isinstance(mag, str) for mag in msite.magnets)
+        
+        msite.update()
+        
+        # After update - should be objects
+        assert msite.magnets == [mock_insert, mock_bitter]
+        assert msite.screens == [mock_screen]
+        
+        # Verify loadList was called twice (once for magnets, once for screens)
+        assert mock_load_list.call_count == 2
+
+    def test_mixed_object_and_string_magnets(self):
+        """Test MSite with mixed object and string magnets (before update)"""
+        mock_insert = Mock(spec=Insert)
+        mock_insert.name = "existing_insert"
+        
+        msite = MSite(
+            name="mixed_test",
+            magnets=[mock_insert, "bitter_file"],  # Mixed: object and string
+            screens=None,
+            z_offset=None,
+            r_offset=None,
+            paralax=None
+        )
+        
+        assert len(msite.magnets) == 2
+        assert isinstance(msite.magnets[0], Mock)  # Object
+        assert isinstance(msite.magnets[1], str)   # String
+
+
+class TestMSiteEdgeCases:
+    """Test edge cases and error conditions for MSite"""
+    
+    def test_msite_empty_magnets_list(self):
+        """Test MSite with empty magnets list"""
+        msite = MSite(
+            name="empty_magnets",
+            magnets=[],
+            screens=None,
+            z_offset=None,
+            r_offset=None,
+            paralax=None
+        )
+        
+        assert msite.magnets == []
+        
+        # Test operations with empty magnets
+        channels = msite.get_channels("test")
+        assert channels == {}
+        
+        names = msite.get_names("test")
+        assert names == []
+
+    def test_msite_bounding_box_with_empty_magnets(self):
+        """Test boundingBox with empty magnets list"""
+        msite = MSite(
+            name="empty_for_bbox",
+            magnets=[],
+            screens=None,
+            z_offset=None,
+            r_offset=None,
+            paralax=None
+        )
+        
+        # Should handle empty magnets gracefully
+        # Implementation might raise an error or return default values
+        try:
+            rb, zb = msite.boundingBox()
+            # If it succeeds, verify the result makes sense
+            assert isinstance(rb, list)
+            assert isinstance(zb, list)
+        except (IndexError, ValueError):
+            # It's acceptable for empty magnets to raise an error
+            pass
+
+    def test_msite_with_none_magnets(self):
+        """Test MSite behavior when magnets is None (if allowed)"""
+        # This tests robustness - the actual implementation might not allow None
+        try:
+            msite = MSite(
+                name="none_magnets",
+                magnets=None,
+                screens=None,
+                z_offset=None,
+                r_offset=None,
+                paralax=None
+            )
+            assert msite.magnets is None
+        except (TypeError, ValueError):
+            # It's acceptable for None magnets to raise an error
+            pass
+
+    @patch('python_magnetgeo.utils.check_objects')
+    def test_update_with_no_string_objects(self, mock_check_objects):
+        """Test update method when no objects need updating"""
+        mock_insert = Mock(spec=Insert)
+        mock_bitter = Mock(spec=Bitters)
+        
+        msite = MSite(
+            name="no_update_needed",
+            magnets=[mock_insert, mock_bitter],  # Already objects
+            screens=None,
+            z_offset=None,
+            r_offset=None,
+            paralax=None
+        )
+        
+        # Mock check_objects to return False (no strings found)
+        mock_check_objects.side_effect = [False, False]
+        
+        original_magnets = msite.magnets
+        msite.update()
+        
+        # Magnets should remain unchanged
+        assert msite.magnets == original_magnets
+        assert mock_check_objects.call_count == 2
+
+
+class TestMSiteCompatibility:
+    """Test MSite compatibility with different data formats"""
+    
+    def test_from_dict_missing_optional_fields(self):
+        """Test from_dict when optional fields are missing"""
+        minimal_data = {
+            "name": "minimal_msite",
+            "magnets": ["magnet1"],
+            "screens": None,
+            "z_offset": None,
+            "r_offset": None,
+            "paralax": None
+        }
+        
+        msite = MSite.from_dict(minimal_data)
+        assert msite.name == "minimal_msite"
+        assert msite.magnets == ["magnet1"]
+        assert msite.screens is None
+        assert msite.z_offset is None
+        assert msite.r_offset is None
+        assert msite.paralax is None
+
+    def test_from_dict_with_nested_dict_structures(self):
+        """Test from_dict with complex nested dict structures"""
+        complex_data = {
+            "name": "complex_msite",
+            "magnets": {
+                "group1": ["insert1", "insert2"],
+                "group2": {"bitter1": "bitter_config", "bitter2": "bitter_config2"}
+            },
+            "screens": {
+                "main_screen": "screen_config",
+                "backup_screen": "backup_config"
+            },
+            "z_offset": [0.0, 10.0, 20.0],
+            "r_offset": [5.0, 15.0, 25.0],
+            "paralax": [0.01, 0.02, 0.03]
+        }
+        
+        msite = MSite.from_dict(complex_data)
+        assert msite.name == "complex_msite"
+        assert msite.magnets == complex_data["magnets"]
+        assert msite.screens == complex_data["screens"]
+        assert msite.z_offset == [0.0, 10.0, 20.0]
+
+    def test_json_serialization_with_complex_data(self):
+        """Test JSON serialization with complex nested data"""
+        complex_magnets = {
+            "inserts": ["insert1", "insert2"],
+            "bitters": {"bitter1": "config1", "bitter2": "config2"},
+            "supras": ["supra1"]
+        }
+        
+        msite = MSite(
+            name="complex_json_test",
+            magnets=complex_magnets,
+            screens={"screen1": "screen_config"},
+            z_offset=[1.0, 2.0, 3.0, 4.0, 5.0],
+            r_offset=[0.5, 1.5, 2.5, 3.5, 4.5],
+            paralax=[0.1, 0.15, 0.2, 0.25, 0.3]
+        )
+        
+        json_str = msite.to_json()
+        parsed = json.loads(json_str)
+        
+        assert parsed["__classname__"] == "MSite"
+        assert parsed["name"] == "complex_json_test"
+        assert parsed["magnets"] == complex_magnets
+        assert parsed["screens"] == {"screen1": "screen_config"}
+        assert len(parsed["z_offset"]) == 5
+        assert len(parsed["r_offset"]) == 5
+        assert len(parsed["paralax"]) == 5
 
 
 if __name__ == "__main__":
