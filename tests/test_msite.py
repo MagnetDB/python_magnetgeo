@@ -291,7 +291,8 @@ class TestMSiteSerialization(BaseSerializationTestMixin):
     
     def get_sample_yaml_content(self):
         """Return sample YAML content"""
-        return '''name: yaml_msite
+        return '''!<MSite>
+name: yaml_msite
 magnets: ["yaml_magnet1", "yaml_magnet2"]
 screens: ["yaml_screen1"]
 z_offset: [2.0, 3.0]
