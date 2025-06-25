@@ -226,14 +226,18 @@ class Supra(yaml.YAMLObject):
         Check if intersection with rectangle defined by r,z is empty or not
         return False if empty, True otherwise
         """
+
+        (r_i, z_i) = self.boundingBox()
+
         # Check if rectangles overlap in r-dimension
-        r_overlap = self.r[0] < r[1] and r[0] < self.r[1]
-        
-        # Check if rectangles overlap in z-dimension  
-        z_overlap = self.z[0] < z[1] and z[0] < self.z[1]
-        
+        r_overlap = r_i[0] < r[1] and r[0] < r_i[1]
+
+        # Check if rectangles overlap in z-dimension
+        z_overlap = z_i[0] < z[1] and z[0] < z_i[1]
+
         # Rectangles intersect if they overlap in both dimensions
         return r_overlap and z_overlap
+
 
     # def getFillingFactor(self) -> float:
     #     # self.detail = "None"  # ['None', 'dblpancake', 'pancake', 'tape']
