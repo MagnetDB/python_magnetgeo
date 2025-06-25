@@ -1,14 +1,12 @@
 import yaml
 import json
 
-from .Shape2D import Shape2D
-from .utils import loadObject
 
 class Tierod(yaml.YAMLObject):
     yaml_tag = "Tierod"
 
     def __init__(
-        self, name: str, r: float, n: int, dh: float, sh: float, shape: Shape2D | str
+        self, name: str, r: float, n: int, dh: float, sh: float, shape
     ) -> None:
         self.name = name
         self.r = r
@@ -28,8 +26,10 @@ class Tierod(yaml.YAMLObject):
             self.sh,
             self.shape,
         )
+    
     def update(self):
-        from .utils import check_objects
+        from .utils import check_objects, loadObject
+        from .Shape2D import Shape2D
         if isinstance(self.shape, str):
             self.shape = loadObject("shape", self.shape, Shape2D, Shape2D.from_yaml)
 
@@ -56,9 +56,9 @@ class Tierod(yaml.YAMLObject):
         create from yaml
         """
         from .utils import loadYaml
-        return loadYaml("Tierod", filename, Tierod, debug)
-
-
+        object = loadYaml("Tierod", filename, Tierod, debug)
+        object.update()
+        return object
 
     @classmethod
     def from_json(cls, filename: str, debug: bool = False):
@@ -66,7 +66,9 @@ class Tierod(yaml.YAMLObject):
         convert from json to yaml
         """
         from .utils import loadJson
-        return loadJson("Tierod", filename, debug)
+        object = loadJson("Tierod", filename, debug)
+        object.update()
+        return object
 
 
 def Tierod_constructor(loader, node):

@@ -7,7 +7,6 @@ Provides definiton for CoolingSlits:
 
 import yaml
 import json
-from .Shape2D import Shape2D
 
 
 class CoolingSlit(yaml.YAMLObject):
@@ -20,10 +19,10 @@ class CoolingSlit(yaml.YAMLObject):
     shape:
     """
 
-    yaml_tag = "Slit"
+    yaml_tag = "CoolingSlit"
 
     def __init__(
-        self, name: str, r: float, angle: float, n: int, dh: float, sh: float, shape: Shape2D
+        self, name: str, r: float, angle: float, n: int, dh: float, sh: float, shape
     ) -> None:
         self.name: str = name
         self.r: float = r
@@ -31,7 +30,7 @@ class CoolingSlit(yaml.YAMLObject):
         self.n: int = n
         self.dh: float = dh
         self.sh: float = sh
-        self.shape: Shape2D = shape
+        self.shape = shape
 
     def __repr__(self):
         return "%s(name=%s, r=%r, angle=%r, n=%r, dh=%r, sh=%r, shape=%r)" % (
@@ -44,6 +43,12 @@ class CoolingSlit(yaml.YAMLObject):
             self.sh,
             self.shape,
         )
+
+    def update(self):
+        from .utils import check_objects, loadObject
+        from .Shape2D import Shape2D
+        if isinstance(self.shape, str):
+            self.shape = loadObject("shape", self.shape, Shape2D, Shape2D.from_yaml)
 
     def dump(self):
         """

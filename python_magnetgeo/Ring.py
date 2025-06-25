@@ -136,7 +136,7 @@ class Ring(yaml.YAMLObject):
         convert from json to yaml
         """
         from .utils import loadJson
-        return loadJson("Ring", filename)
+        return loadJson("Ring", filename, debug)
 
 
 def Ring_constructor(loader, node):
@@ -151,7 +151,7 @@ def Ring_constructor(loader, node):
     angle = values["angle"]
     bpside = values["bpside"]
     fillets = values["fillets"]
-    cad = values.get("cad", '') if 'cad' in values else ''
+    cad = values.get("cad", '') 
 
     return  Ring(name, r, z, n, angle, bpside, fillets, cad)
 

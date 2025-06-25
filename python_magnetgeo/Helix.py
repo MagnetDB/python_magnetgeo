@@ -16,13 +16,14 @@ import math
 import json
 import yaml
 
+from python_magnetgeo.hcuts import create_cut
+
 from .Groove import Groove
 from .Chamfer import Chamfer
 from .Shape import Shape
 from .ModelAxi import ModelAxi
 from .Model3D import Model3D
 
-from .utils import loadObject, loadList
 
 class Helix(yaml.YAMLObject):
     """
@@ -90,6 +91,7 @@ class Helix(yaml.YAMLObject):
         update magnets if there were loaded as str
         """
         from .utils import check_objects        
+        from .utils import loadObject, loadList
         if isinstance(self.modelaxi, str):
             self.modelaxi = loadObject("modelaxi", self.modelaxi, ModelAxi, ModelAxi.from_yaml)
         if isinstance(self.model3d, str):
@@ -237,11 +239,6 @@ class Helix(yaml.YAMLObject):
         from .utils import loadYaml
         return loadYaml("Helix", filename, Helix, debug)
 
-        if basedir and basedir != ".":
-            os.chdir(cwd)
-        
-        return helix
-
     @classmethod
     def from_json(cls, filename: str, debug: bool = False):
         """
@@ -276,8 +273,8 @@ class Helix(yaml.YAMLObject):
         """
         from .hcuts import create_cut
 
+        create_cut(self, format, self.name)
         if self.model3d.with_shapes:
-            create_cut(self, "LNCMI", self.name)
             angles = " ".join(f"{t:4.2f}" for t in self.shape.angle if t != 0)
             cmd = f'add_shape --angle="{angles}" --shape_angular_length={self.shape.length} --shape={self.shape.name} --format={format} --position="{self.shape.position}"'
             print(f"create_cut: with_shapes not implemented - shall run {cmd}")
@@ -285,8 +282,6 @@ class Helix(yaml.YAMLObject):
             import subprocess
 
             subprocess.run(cmd, shell=True, check=True)
-        else:
-            create_cut(self, format, self.name)
 
     def boundingBox(self) -> tuple:
         """

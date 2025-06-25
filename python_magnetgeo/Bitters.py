@@ -7,7 +7,6 @@ import json
 import yaml
 
 from .Bitter import Bitter
-from .utils import loadList
 
 
 class Bitters(yaml.YAMLObject):
@@ -45,7 +44,7 @@ class Bitters(yaml.YAMLObject):
         """
         update magnets if there were loaded as str
         """
-        from .utils import check_objects        
+        from .utils import check_objects,loadList
         if check_objects(self.magnets, str):
             self.magnets = loadList("magnets", self.magnets, [None, Bitter], {"Bitter": Bitter.from_dict})
             print("update magnets:", self.magnets)
@@ -180,13 +179,14 @@ class Bitters(yaml.YAMLObject):
 
         (r_i, z_i) = self.boundingBox()
 
-        # TODO take into account Mandrin and Isolation even if detail="None"
-        collide = False
-        isR = abs(r_i[0] - r[0]) < abs(r_i[1] - r_i[0] + r[0] + r[1]) / 2.0
-        isZ = abs(z_i[0] - z[0]) < abs(z_i[1] - z_i[0] + z[0] + z[1]) / 2.0
-        if isR and isZ:
-            collide = True
-        return collide
+        # Check if rectangles overlap in r-dimension
+        r_overlap = r_i[0] < r[1] and r[0] < r_i[1]
+
+        # Check if rectangles overlap in z-dimension
+        z_overlap = z_i[0] < z[1] and z[0] < z_i[1]
+
+        # Rectangles intersect if they overlap in both dimensions
+        return r_overlap and z_overlap
 
 
 def Bitters_constructor(loader, node):

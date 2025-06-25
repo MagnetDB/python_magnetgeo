@@ -23,6 +23,7 @@ from . import ModelAxi
 
 class Model3D(yaml.YAMLObject):
     """
+    name:
     cad :
     with_shapes :
     with_channels :
@@ -31,11 +32,12 @@ class Model3D(yaml.YAMLObject):
     yaml_tag = "Model3D"
 
     def __init__(
-        self, cad: str, with_shapes: bool = False, with_channels: bool = False
+            self, name: str, cad: str, with_shapes: bool = False, with_channels: bool = False
     ) -> None:
         """
         initialize object
         """
+        self.name = name
         self.cad = cad
         self.with_shapes = with_shapes
         self.with_channels = with_channels
@@ -44,8 +46,9 @@ class Model3D(yaml.YAMLObject):
         """
         representation of object
         """
-        return "%s(cad=%r, with_shapes=%r, with_channels=%r)" % (
+        return "%s(name=%r, cad=%r, with_shapes=%r, with_channels=%r)" % (
             self.__class__.__name__,
+            self.name,
             self.cad,
             self.with_shapes,
             self.with_channels,
@@ -97,10 +100,11 @@ def Model3D_constructor(loader, node):
     build an Model3d object
     """
     values = loader.construct_mapping(node)
+    name = values.get("name", '')
     cad = values["cad"]
     with_shapes = values["with_shapes"]
     with_channels = values["with_channels"]
-    return Model3D(cad, with_shapes, with_channels)
+    return Model3D(name, cad, with_shapes, with_channels)
 
 
 yaml.add_constructor(Model3D.yaml_tag, Model3D_constructor)

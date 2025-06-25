@@ -87,11 +87,8 @@ class Chamfer(yaml.YAMLObject):
         """
         dump object to file
         """
-        try:
-            with open(f"{self.name}.yaml", "w") as ostream:
-                yaml.dump(self, stream=ostream)
-        except Exception:
-            raise Exception("Failed to Chamfer dump")
+        from .utils import writeYaml
+        writeYaml("Insert", self, Chamfer)
 
     def to_json(self):
         """
@@ -125,11 +122,11 @@ class Chamfer(yaml.YAMLObject):
         """
         returns chamfer radius reduction 
         """
-        if self.dr:
+        if self.dr is None:
+            if self.alpha is None:
+                raise ValueError("Chamfer must have alpha when dr is not defined")
+        else:
             return self.dr
-
-        if self.alpha is None:
-            raise ValueError("Chamfer must have either dr or alpha")
         
         dr = (
                 self.l
@@ -141,11 +138,11 @@ class Chamfer(yaml.YAMLObject):
         """
         returns chamfer angle 
         """
-        if self.alpha:
+        if self.alpha is None:
+            if self.dr is None:
+                raise ValueError("Chamfer must have dr when alpha is not defined")
+        else:
             return self.alpha
-
-        if self.dr is None:
-            raise ValueError("Chamfer must have either dr or alpha")
 
         angle = math.atan2(self.dr, self.l)
         return angle * 180 / math.pi

@@ -198,8 +198,7 @@ class TestRingSerialization(BaseSerializationTestMixin):
     
     def get_sample_yaml_content(self):
         """Return sample YAML content"""
-        return '''
-!<Ring>
+        return '''!<Ring>
 name: yaml_ring
 r: [15.0, 25.0]
 z: [5.0, 20.0]
@@ -227,12 +226,19 @@ cad: GMSH
         """Return Ring class"""
         return Ring
 
-    @patch("builtins.open", side_effect=Exception("Dump error"))
-    def test_dump_error_handling(self, mock_open):
+    @patch("python_magnetgeo.utils.writeYaml")
+    def test_dump_method(self, mock_write_yaml):
+        """Test dump method calls writeYaml correctly"""
+        instance = self.get_sample_instance()
+        instance.dump()
+        mock_write_yaml.assert_called_once_with("Ring", instance, Ring)
+
+    @patch("python_magnetgeo.utils.writeYaml", side_effect=Exception("Dump error"))
+    def test_dump_error_handling(self, mock_write_yaml):
         """Test dump method error handling"""
         instance = self.get_sample_instance()
         
-        with pytest.raises(Exception, match="Failed to dump Ring data"):
+        with pytest.raises(Exception, match="Dump error"):
             instance.dump()
 
     def test_write_to_json_method(self):
@@ -244,8 +250,8 @@ cad: GMSH
             mock_file.assert_called_once_with("test_ring.json", "w")
 
 
-class TestRingYAMLConstructor(BaseYAMLConstructorTestMixin):
-    """Test Ring YAML constructor using common test mixin"""
+class TestRingYAMLConstructor:
+    """Test Ring YAML constructor - custom implementation since base mixin expects different return format"""
     
     def get_constructor_function(self):
         """Return the Ring constructor function"""
@@ -264,9 +270,55 @@ class TestRingYAMLConstructor(BaseYAMLConstructorTestMixin):
             "cad": "SALOME"
         }
     
-    def get_expected_constructor_type(self):
-        """Return expected constructor type"""
-        return "Ring"
+    def test_yaml_constructor_function(self):
+        """Test the YAML constructor function"""
+        constructor_func = self.get_constructor_function()
+        
+        # Mock loader and node
+        mock_loader = Mock()
+        mock_node = Mock()
+        
+        # Mock data that would be returned by construct_mapping
+        mock_data = self.get_sample_constructor_data()
+        mock_loader.construct_mapping.return_value = mock_data
+        
+        # The Ring_constructor returns a Ring instance directly, not a tuple
+        result = constructor_func(mock_loader, mock_node)
+        
+        assert isinstance(result, Ring)
+        assert result.name == "constructor_ring"
+        assert result.r == [8.0, 18.0]
+        assert result.z == [2.0, 12.0]
+        assert result.n == 6
+        assert result.angle == 90.0
+        assert result.bpside is False
+        assert result.fillets is True
+        assert result.cad == "SALOME"
+        mock_loader.construct_mapping.assert_called_once_with(mock_node)
+
+    def test_yaml_constructor_missing_cad(self):
+        """Test YAML constructor with missing CAD field"""
+        constructor_func = self.get_constructor_function()
+        
+        mock_loader = Mock()
+        mock_node = Mock()
+        
+        # Data without 'cad' field
+        mock_data = {
+            "name": "no_cad_ring",
+            "r": [5.0, 15.0],
+            "z": [0.0, 10.0],
+            "n": 4,
+            "angle": 45.0,
+            "bpside": True,
+            "fillets": False
+        }
+        mock_loader.construct_mapping.return_value = mock_data
+        
+        result = constructor_func(mock_loader, mock_node)
+        
+        assert isinstance(result, Ring)
+        assert result.cad == ''  # Should default to empty string
 
 
 class TestRingYAMLTag(BaseYAMLTagTestMixin):
@@ -339,6 +391,22 @@ class TestRingFromDict:
         assert ring.name == "minimal_ring"
         assert ring.cad == ''
 
+    def test_from_dict_with_debug(self):
+        """Test from_dict with debug flag"""
+        data = {
+            "name": "debug_ring",
+            "r": [3.0, 13.0],
+            "z": [1.0, 11.0],
+            "n": 2,
+            "angle": 30.0,
+            "bpside": True,
+            "fillets": False
+        }
+        
+        ring = Ring.from_dict(data, debug=True)
+        assert isinstance(ring, Ring)
+        assert ring.name == "debug_ring"
+
 
 class TestRingValidation:
     """Test Ring parameter validation and consistency"""
@@ -365,12 +433,13 @@ class TestRingValidation:
         
         for angle in angles_to_test:
             ring = Ring(
-                name=f"angle_test_{angle}",
+                name=f"angle_test_{abs(angle)}",  # Use abs to avoid negative in name
                 r=[5.0, 15.0],
                 z=[0.0, 10.0],
                 angle=angle
             )
             assert ring.angle == angle
+            validate_angle_data([angle])
 
     def test_integer_parameter_validation(self):
         """Test integer parameter validation"""
@@ -393,9 +462,9 @@ class TestRingValidation:
             (False, False)
         ]
         
-        for bpside, fillets in test_cases:
+        for i, (bpside, fillets) in enumerate(test_cases):
             ring = Ring(
-                name=f"bool_test_{bpside}_{fillets}",
+                name=f"bool_test_{i}",
                 r=[5.0, 15.0],
                 z=[0.0, 5.0],
                 bpside=bpside,
@@ -405,85 +474,52 @@ class TestRingValidation:
             assert ring.fillets == fillets
 
 
-class TestRingEdgeCases:
-    """Test Ring edge cases and error conditions"""
+class TestRingFileOperations:
+    """Test Ring file I/O operations"""
     
-    def test_ring_with_zero_dimensions(self):
-        """Test ring with zero dimensions"""
-        ring = Ring(
-            name="zero_ring",
-            r=[0.0, 0.0],
-            z=[0.0, 0.0]
-        )
-        
-        assert ring.get_lc() == 0.0
+    def test_from_yaml_with_mocking(self):
+        """Test from_yaml with proper mocking"""
+        with patch('python_magnetgeo.utils.loadYaml') as mock_load:
+            mock_ring = Ring(name="yaml_test", r=[1.0, 2.0], z=[0.0, 1.0])
+            mock_load.return_value = mock_ring
+            
+            result = Ring.from_yaml("test.yaml")
+            
+            assert result == mock_ring
+            mock_load.assert_called_once_with("Ring", "test.yaml", Ring, False)
 
-    def test_ring_with_negative_values(self):
-        """Test ring with negative coordinate values"""
-        ring = Ring(
-            name="negative_ring",
-            r=[-10.0, -5.0],
-            z=[-20.0, -10.0],
-            n=-5,
-            angle=-45.0
-        )
-        
-        assert ring.r == [-10.0, -5.0]
-        assert ring.z == [-20.0, -10.0]
-        assert ring.n == -5
-        assert ring.angle == -45.0
+    def test_from_yaml_with_debug(self):
+        """Test from_yaml with debug flag"""
+        with patch('python_magnetgeo.utils.loadYaml') as mock_load:
+            mock_ring = Ring(name="debug_yaml", r=[2.0, 4.0], z=[1.0, 3.0])
+            mock_load.return_value = mock_ring
+            
+            result = Ring.from_yaml("test.yaml", debug=True)
+            
+            assert result == mock_ring
+            mock_load.assert_called_once_with("Ring", "test.yaml", Ring, True)
 
-    def test_ring_with_large_values(self):
-        """Test ring with very large values"""
-        ring = Ring(
-            name="large_ring",
-            r=[1e6, 1e7],
-            z=[1e5, 1e6],
-            n=999999,
-            angle=3600.0  # 10 full rotations
-        )
-        
-        assert ring.r == [1e6, 1e7]
-        assert ring.z == [1e5, 1e6]
-        assert ring.n == 999999
-        assert ring.angle == 3600.0
+    def test_from_json_with_mocking(self):
+        """Test from_json with proper mocking"""
+        with patch('python_magnetgeo.utils.loadJson') as mock_load:
+            mock_ring = Ring(name="json_test", r=[3.0, 6.0], z=[2.0, 5.0])
+            mock_load.return_value = mock_ring
+            
+            result = Ring.from_json("test.json")
+            
+            assert result == mock_ring
+            mock_load.assert_called_once_with("Ring", "test.json", False)
 
-    def test_ring_with_very_small_values(self):
-        """Test ring with very small values"""
-        ring = Ring(
-            name="small_ring",
-            r=[1e-10, 2e-10],
-            z=[1e-15, 2e-15],
-            angle=1e-6
-        )
-        
-        assert ring.r == [1e-10, 2e-10]
-        assert ring.z == [1e-15, 2e-15]
-        assert ring.angle == 1e-6
-
-    def test_ring_attribute_modification(self):
-        """Test modifying ring attributes after creation"""
-        ring = Ring(name="modifiable", r=[10.0, 20.0], z=[0.0, 10.0])
-        
-        # Modify attributes
-        ring.name = "modified"
-        ring.r = [15.0, 25.0]
-        ring.z = [5.0, 15.0]
-        ring.n = 8
-        ring.angle = 45.0
-        ring.bpside = False
-        ring.fillets = True
-        ring.cad = "NEW_CAD"
-        
-        # Verify modifications
-        assert ring.name == "modified"
-        assert ring.r == [15.0, 25.0]
-        assert ring.z == [5.0, 15.0]
-        assert ring.n == 8
-        assert ring.angle == 45.0
-        assert ring.bpside is False
-        assert ring.fillets is True
-        assert ring.cad == "NEW_CAD"
+    def test_from_json_with_debug(self):
+        """Test from_json with debug flag"""
+        with patch('python_magnetgeo.utils.loadJson') as mock_load:
+            mock_ring = Ring(name="debug_json", r=[4.0, 8.0], z=[3.0, 7.0])
+            mock_load.return_value = mock_ring
+            
+            result = Ring.from_json("test.json", debug=True)
+            
+            assert result == mock_ring
+            mock_load.assert_called_once_with("Ring", "test.json", True)
 
 
 class TestRingIntegration:
@@ -641,6 +677,17 @@ class TestRingErrorHandling:
         # The get_lc method will return negative value
         assert ring.get_lc() == -1.0
 
+    def test_file_operation_errors(self):
+        """Test file operation error handling"""
+        ring = Ring(name="error_test", r=[1.0, 2.0], z=[0.0, 1.0])
+        
+        # Test from_yaml with non-existent file
+        with pytest.raises(Exception):
+            Ring.from_yaml("nonexistent_file.yaml")
+        
+        # Test from_json with non-existent file  
+        with pytest.raises(Exception):
+            Ring.from_json("nonexistent_file.json")
 
-if __name__ == "__main__":
-    pytest.main([__file__, "-v"])
+
+

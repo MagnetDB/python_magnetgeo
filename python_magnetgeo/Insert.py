@@ -12,7 +12,6 @@ from .Helix import Helix
 from .Ring import Ring
 from .InnerCurrentLead import InnerCurrentLead
 from .OuterCurrentLead import OuterCurrentLead
-from .utils import loadList
 
 dict_leads = {
     "InnerCurrentLead": InnerCurrentLead.from_dict,
@@ -69,15 +68,10 @@ class Insert(yaml.YAMLObject):
         self.rings = rings
             
         
-        self.currentleads = []
-        if currentleads:
-            self.currentLeads = loadList("currentleads", currentleads, [None, InnerCurrentLead, OuterCurrentLead], dict_leads)
+        self.currentleads = currentleads
 
-        self.hangles = hangles if hangles is not None else []
-        print("hangles: ", self.hangles) if rangles is not None else []
-            
-        self.rangles = rangles if rangles is not None else []
-        print("rangles: ", self.rangles) if rangles is not None else []
+        self.hangles = hangles
+        self.rangles = rangles
 
         self.innerbore = innerbore
         self.outerbore = outerbore
@@ -87,15 +81,16 @@ class Insert(yaml.YAMLObject):
         update magnets if there were loaded as str
         """
         from .utils import check_objects        
+        from .utils import loadList
         if check_objects(self.helices, str):
             self.helices = loadList("helices", self.helices, [None, Helix], {"Helix": Helix.from_dict})
             print("update helices:", self.helices)
         if check_objects(self.rings, str):
             self.rings = loadList("rings", self.rings, [None, Ring], {"Ring": Ring.from_dict})
             print("update rings:", self.rings)
-        if check_objects(self.currentLeads, str):
-            self.currentLeads = loadList("currentleads", self.currentleads, [None, InnerCurrentLead, OuterCurrentLead], dict_leads)
-            print("update currentleads:", self.currentLeads)
+        if check_objects(self.currentleads, str):
+            self.currentleads = loadList("currentleads", self.currentleads, [None, InnerCurrentLead, OuterCurrentLead], dict_leads)
+            print("update currentleads:", self.currentleads)
 
     def get_channels(
         self, mname: str, hideIsolant: bool = True, debug: bool = False
@@ -324,13 +319,14 @@ class Insert(yaml.YAMLObject):
 
         (r_i, z_i) = self.boundingBox()
 
-        # TODO take into account Mandrin and Isolation even if detail="None"
-        collide = False
-        isR = abs(r_i[0] - r[0]) < abs(r_i[1] - r_i[0] + r[0] + r[1]) / 2.0
-        isZ = abs(z_i[0] - z[0]) < abs(z_i[1] - z_i[0] + z[0] + z[1]) / 2.0
-        if isR and isZ:
-            collide = True
-        return collide
+        # Check if rectangles overlap in r-dimension
+        r_overlap = r_i[0] < r[1] and r[0] < r_i[1]
+
+        # Check if rectangles overlap in z-dimension
+        z_overlap = z_i[0] < z[1] and z[0] < z_i[1]
+
+        # Rectangles intersect if they overlap in both dimensions
+        return r_overlap and z_overlap
 
     def get_params(self, workingDir: str = ".") -> tuple:
         """

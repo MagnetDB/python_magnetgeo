@@ -27,11 +27,11 @@ class OuterCurrentLead(yaml.YAMLObject):
     -------------
 
     create a prism along Oz with legnth L from the result
-    bar translated to [r[1] - dx0 + dy/2, 0, 0]
+    bar translated to [r[1] - DX0 + DY/2, 0, 0]
 
     support:
-    rectangle(dx, dx0)
-    translated to [r[1] - dx0 + dy/2, 0, 0]
+    rectangle(DX, DX0)
+    translated to [r[1] - DX0 + DY/2, 0, 0]
     rectangle cut by a disk of r[1] radius centered on Origin X
     """
 

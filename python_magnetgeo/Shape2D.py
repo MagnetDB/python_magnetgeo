@@ -39,7 +39,7 @@ class Shape2D(yaml.YAMLObject):
         dump object to file
         """
         from .utils import writeYaml
-        writeYaml("Shap2D", self, Shape2D)
+        writeYaml("Shape2D", self, Shape2D)
 
     def to_json(self):
         """
@@ -50,6 +50,17 @@ class Shape2D(yaml.YAMLObject):
         return json.dumps(
             self, default=deserialize.serialize_instance, sort_keys=True, indent=4
         )
+
+    @classmethod
+    def from_dict(cls, values: dict, debug: bool = False):
+        """
+        create from dict
+        """
+        name = values["name"]
+        pts = values["pts"]
+
+        object = cls(name, pts)
+        return object
 
     @classmethod
     def from_yaml(cls, filename: str, debug: bool = False):

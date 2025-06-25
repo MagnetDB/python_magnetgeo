@@ -58,20 +58,31 @@ def loadJson(comment, filename, debug: bool = False):
     cwd = os.getcwd()
 
     (basedir, basename) = os.path.split(filename)
-    print(f"basedir={basedir}, basename={basename}, cwd={cwd}")
+    if debug:
+        print(f"basedir={basedir}, basename={basename}, cwd={cwd}")
 
     if basedir and basedir != ".":
         os.chdir(basedir)
-        print(f"-> cwd={cwd}")
+        if debug:
+            print(f"cwd={cwd} -> {basedir}")
 
+    try:
+        if debug:
+            print(f"loadJson: filename={basename}")
+        with open(basename, "r") as istream:
+            object = json.loads(
+                istream.read(), object_hook=deserialize.unserialize_object
+            )
+    except Exception as e:
+        raise Exception(f"Failed to load {comment} data {filename}: {e}")
+    finally:
+        if basedir and basedir != ".":
+            os.chdir(cwd)
+    
     if debug:
-        print(f"loadJson: filename={basename}")
-    with open(filename, "r") as istream:
-        object = json.loads(
-            istream.read(), object_hook=deserialize.unserialize_object
-        )
-    if basedir and basedir != ".":
-        os.chdir(cwd)
+        print(f"loadJson: {comment} from {filename} done - {type(object)}")
+    
+    return object
 
 def check_objects(objects, supported_type):
     """

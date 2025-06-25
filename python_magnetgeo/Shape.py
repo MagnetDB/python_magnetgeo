@@ -88,6 +88,19 @@ class Shape(yaml.YAMLObject):
         )
 
     @classmethod
+    def from_dict(cls, values: dict, debug: bool = False):
+        """
+        create from dict
+        """
+        name = values["name"]
+        profile = values["profile"]
+        length = values["length"]
+        angle = values["angle"]
+        onturns = values["onturns"]
+        position = values["position"]
+        return cls(name, profile, length, angle, onturns, position)
+
+    @classmethod
     def from_yaml(cls, filename: str, debug: bool = False):
         """
         create from yaml
@@ -109,6 +122,13 @@ def Shape_constructor(loader, node):
     build an Shape object
     """
     values = loader.construct_mapping(node)
+    name = values["name"]
+    profile = values["profile"]
+    length = values["length"]
+    angle = values["angle"]
+    onturns = values["onturns"]
+    position = values["position"]
+    return Shape(name, profile, length, angle, onturns, position)
     name = values["name"]
     profile = values["profile"]
     length = values["length"]

@@ -12,7 +12,6 @@ import os
 import json
 import yaml
 
-from .utils import loadList
 
 from .Bitters import Bitters
 from .Supras import Supras
@@ -70,6 +69,7 @@ class MSite(yaml.YAMLObject):
         update magnets if there were loaded as str
         """
         from .utils import check_objects        
+        from .utils import loadList
         if check_objects(self.magnets, str):
             self.magnets = loadList("magnets", self.magnets, [None, Insert, Bitters, Supras], dict_magnets)
             print("update magnets:", self.magnets)

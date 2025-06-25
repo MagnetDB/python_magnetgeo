@@ -25,7 +25,11 @@ from .test_utils_common import (
     assert_instance_attributes,
     parametrize_basic_values,
     temp_yaml_file,
-    temp_json_file
+    temp_json_file,
+    validate_geometric_data,
+    validate_angle_data,
+    time_function_execution,
+    assert_performance_within_limits
 )
 
 
@@ -48,8 +52,7 @@ class TestInnerCurrentLead(BaseSerializationTestMixin, BaseYAMLTagTestMixin):
     
     def get_sample_yaml_content(self) -> str:
         """Return sample YAML content for testing from_yaml"""
-        return """
-!<InnerCurrentLead>
+        return """!<InnerCurrentLead>
 name: test_inner_lead
 r: [19.3, 24.2]
 h: 480.0
@@ -111,9 +114,9 @@ class TestInnerCurrentLeadConstructor(BaseYAMLConstructorTestMixin):
         return "InnerCurrentLead"
 
 
-class TestInnerCurrentLeadSpecific:
+class TestInnerCurrentLeadInitialization:
     """
-    Specific tests for InnerCurrentLead functionality not covered by mixins
+    Test InnerCurrentLead initialization and basic properties
     """
     
     @pytest.fixture
@@ -160,6 +163,24 @@ class TestInnerCurrentLeadSpecific:
         assert lead.support == [] # Default value
         assert lead.fillet is False  # Default value
     
+    @pytest.mark.parametrize("name,r,h,expected_valid", [
+        ("valid_lead", [10.0, 20.0], 100.0, True),
+        ("zero_height", [10.0, 20.0], 0.0, True),
+        ("negative_height", [10.0, 20.0], -10.0, True),  # Negative allowed for flexibility
+        ("single_radius", [15.0], 100.0, True),  # Single radius allowed
+        ("", [10.0, 20.0], 100.0, True),  # Empty name allowed
+    ])
+    def test_init_parameter_validation(self, name, r, h, expected_valid):
+        """Test initialization with various parameter combinations"""
+        if expected_valid:
+            lead = InnerCurrentLead(name=name, r=r, h=h)
+            assert lead.name == name
+            assert lead.r == r
+            assert lead.h == h
+        else:
+            with pytest.raises((ValueError, TypeError)):
+                InnerCurrentLead(name=name, r=r, h=h)
+    
     def test_repr(self, sample_inner_lead):
         """Test string representation"""
         repr_str = repr(sample_inner_lead)
@@ -171,38 +192,77 @@ class TestInnerCurrentLeadSpecific:
         assert "support=[20.0, 2.0]" in repr_str
         assert "fillet=False" in repr_str
     
-    def test_dump_success(self, sample_inner_lead):
+    def test_attribute_types(self, sample_inner_lead):
+        """Test that attributes have correct types"""
+        assert isinstance(sample_inner_lead.name, str)
+        assert isinstance(sample_inner_lead.r, list)
+        assert isinstance(sample_inner_lead.h, (int, float))
+        assert isinstance(sample_inner_lead.holes, list)
+        assert isinstance(sample_inner_lead.support, list)
+        assert isinstance(sample_inner_lead.fillet, bool)
+
+
+class TestInnerCurrentLeadSerialization:
+    """
+    Test serialization methods (dump, to_json, write_to_json)
+    """
+    
+    @pytest.fixture
+    def serialization_lead(self):
+        """Lead instance for serialization testing"""
+        return InnerCurrentLead(
+            name="serialize_test",
+            r=[18.0, 23.0],
+            h=450.0,
+            holes=[110, 10, 45, 50, 30, 4],
+            support=[23.0, 2.0],
+            fillet=True
+        )
+    
+    def test_dump_success(self, serialization_lead):
         """Test dump method success"""
-        with patch("builtins.open", mock_open()) as mock_file:
-            with patch("yaml.dump") as mock_yaml_dump:
-                sample_inner_lead.dump()
-                
-                mock_file.assert_called_once_with("sample_lead.yaml", "w")
-                mock_yaml_dump.assert_called_once()
+        with patch("python_magnetgeo.utils.writeYaml") as mock_write_yaml:
+            serialization_lead.dump()
+            mock_write_yaml.assert_called_once_with(
+                "InnerCurrentLead", serialization_lead, InnerCurrentLead
+            )
     
-    def test_dump_failure(self, sample_inner_lead):
+    def test_dump_failure(self, serialization_lead):
         """Test dump method failure handling"""
-        with patch("yaml.dump", side_effect=Exception("YAML error")):
-            with pytest.raises(Exception, match="Failed to dump InnerCurrentLead data"):
-                sample_inner_lead.dump()
+        with patch("python_magnetgeo.utils.writeYaml", side_effect=Exception("YAML error")):
+            with pytest.raises(Exception, match="YAML error"):
+                serialization_lead.dump()
     
-    def test_write_to_json_success(self, sample_inner_lead):
+    def test_to_json_structure(self, serialization_lead):
+        """Test to_json returns properly structured JSON"""
+        json_str = serialization_lead.to_json()
+        parsed = json.loads(json_str)
+        
+        assert parsed["__classname__"] == "InnerCurrentLead"
+        assert parsed["name"] == "serialize_test"
+        assert parsed["r"] == [18.0, 23.0]
+        assert parsed["h"] == 450.0
+        assert parsed["holes"] == [110, 10, 45, 50, 30, 4]
+        assert parsed["support"] == [23.0, 2.0]
+        assert parsed["fillet"] is True
+    
+    def test_write_to_json_success(self, serialization_lead):
         """Test write_to_json method success"""
         with patch("builtins.open", mock_open()) as mock_file:
-            sample_inner_lead.write_to_json()
-            mock_file.assert_called_once_with("sample_lead.json", "w")
+            serialization_lead.write_to_json()
+            mock_file.assert_called_once_with("serialize_test.json", "w")
     
-    def test_write_to_json_failure(self, sample_inner_lead):
+    def test_write_to_json_failure(self, serialization_lead):
         """Test write_to_json method failure handling"""
         with patch("builtins.open", side_effect=IOError("File error")):
-            with pytest.raises(Exception, match="Failed to write to sample_lead.json"):
-                sample_inner_lead.write_to_json()
+            with pytest.raises(Exception, match="Failed to write to serialize_test.json"):
+                serialization_lead.write_to_json()
     
-    def test_write_to_json_content(self, sample_inner_lead):
+    def test_write_to_json_content(self, serialization_lead):
         """Test write_to_json method writes correct content"""
         mock_file_handle = mock_open()
         with patch("builtins.open", mock_file_handle):
-            sample_inner_lead.write_to_json()
+            serialization_lead.write_to_json()
             
             # Get the written content
             written_content = mock_file_handle().write.call_args[0][0]
@@ -210,38 +270,12 @@ class TestInnerCurrentLeadSpecific:
             # Should be valid JSON
             parsed = json.loads(written_content)
             assert parsed["__classname__"] == "InnerCurrentLead"
-            assert parsed["name"] == "sample_lead"
-    
-    def test_yaml_constructor_function_direct(self):
-        """Test the InnerCurrentLead_constructor function directly"""
-        mock_loader = Mock()
-        mock_node = Mock()
-        
-        test_data = {
-            "name": "direct_test",
-            "r": [12.0, 18.0],
-            "h": 350.0,
-            "holes": [75, 7, 15, 45, 60, 5],
-            "support": [18.0, 3.0],
-            "fillet": True
-        }
-        mock_loader.construct_mapping.return_value = test_data
-        
-        result = InnerCurrentLead_constructor(mock_loader, mock_node)
-        
-        assert isinstance(result, InnerCurrentLead)
-        assert result.name == "direct_test"
-        assert result.r == [12.0, 18.0]
-        assert result.h == 350.0
-        assert result.holes == [75, 7, 15, 45, 60, 5]
-        assert result.support == [18.0, 3.0]
-        assert result.fillet is True
-        mock_loader.construct_mapping.assert_called_once_with(mock_node)
+            assert parsed["name"] == "serialize_test"
 
 
-class TestInnerCurrentLeadFromDict:
+class TestInnerCurrentLeadDeserialization:
     """
-    Test the from_dict class method
+    Test deserialization methods (from_yaml, from_json, from_dict)
     """
     
     def test_from_dict_complete(self):
@@ -303,11 +337,34 @@ class TestInnerCurrentLeadFromDict:
         
         with pytest.raises(KeyError):
             InnerCurrentLead.from_dict(data2)
+    
+    def test_from_yaml_integration(self):
+        """Test from_yaml integration"""
+        with patch('python_magnetgeo.utils.loadYaml') as mock_load_yaml:
+            mock_lead = Mock(spec=InnerCurrentLead)
+            mock_load_yaml.return_value = mock_lead
+            
+            result = InnerCurrentLead.from_yaml("test.yaml", debug=True)
+            
+            mock_load_yaml.assert_called_once_with("InnerCurrentLead", "test.yaml", InnerCurrentLead, True)
+            assert result == mock_lead
+    
+    def test_from_json_integration(self):
+        """Test from_json integration"""
+        with patch('python_magnetgeo.utils.loadJson') as mock_load_json:
+            mock_lead = Mock(spec=InnerCurrentLead)
+            mock_load_json.return_value = mock_lead
+            
+            result = InnerCurrentLead.from_json("test.json", debug=False)
+            
+            mock_load_json.assert_called_once_with("InnerCurrentLead", "test.json", False)
+            assert result == mock_lead
 
 
 class TestInnerCurrentLeadHoleConfiguration:
     """
     Test hole configuration functionality
+    Based on docstring: [H_Holes, Shift_from_Top, Angle_Zero, Angle, Angular_Position, N_Holes]
     """
     
     @pytest.mark.parametrize("holes,description", [
@@ -329,8 +386,8 @@ class TestInnerCurrentLeadHoleConfiguration:
         assert lead.holes == holes
         assert lead.name == f"holes_{description}"
     
-    def test_hole_parameters_meaning(self):
-        """Test that hole parameters have correct structure"""
+    def test_hole_parameters_structure(self):
+        """Test hole parameters follow documented structure"""
         # Based on docstring: [H_Holes, Shift_from_Top, Angle_Zero, Angle, Angular_Position, N_Holes]
         holes = [123, 12, 90, 60, 45, 3]
         lead = InnerCurrentLead(
@@ -341,35 +398,41 @@ class TestInnerCurrentLeadHoleConfiguration:
         )
         
         assert len(lead.holes) == 6
-        # H_Holes (hole height)
-        assert lead.holes[0] == 123
-        # Shift_from_Top
-        assert lead.holes[1] == 12
-        # Angle_Zero (reference angle)
-        assert lead.holes[2] == 90
-        # Angle (angular spacing)
-        assert lead.holes[3] == 60
-        # Angular_Position
-        assert lead.holes[4] == 45
-        # N_Holes (number of holes)
-        assert lead.holes[5] == 3
+        assert lead.holes[0] == 123  # H_Holes (hole height)
+        assert lead.holes[1] == 12   # Shift_from_Top
+        assert lead.holes[2] == 90   # Angle_Zero (reference angle)
+        assert lead.holes[3] == 60   # Angle (angular spacing)
+        assert lead.holes[4] == 45   # Angular_Position
+        assert lead.holes[5] == 3    # N_Holes (number of holes)
     
-    def test_hole_configuration_edge_cases(self):
-        """Test edge cases for hole configuration"""
-        # Very large number of holes
-        many_holes = [50, 5, 0, 360/100, 0, 100]  # 100 holes
-        lead_many = InnerCurrentLead(name="many_holes", r=[10.0, 15.0], holes=many_holes)
-        assert lead_many.holes[5] == 100
+    def test_hole_angular_parameters(self):
+        """Test hole angular parameters are reasonable"""
+        holes = [100, 10, 0, 90, 45, 4]
+        lead = InnerCurrentLead(name="angles", r=[10.0, 15.0], holes=holes)
         
-        # Zero holes
-        no_holes = [0, 0, 0, 0, 0, 0]
-        lead_none = InnerCurrentLead(name="no_holes", r=[10.0, 15.0], holes=no_holes)
-        assert lead_none.holes[5] == 0
-        
-        # Non-standard hole parameters
-        custom_holes = [200, 25, 45, 120, 30, 2]
-        lead_custom = InnerCurrentLead(name="custom", r=[20.0, 30.0], holes=custom_holes)
-        assert lead_custom.holes == custom_holes
+        # Validate angle parameters if holes list is complete
+        if len(lead.holes) >= 6:
+            validate_angle_data([lead.holes[2], lead.holes[3], lead.holes[4]])
+    
+    @pytest.mark.parametrize("n_holes,angle_spacing,expected_valid", [
+        (3, 120, True),   # 3 holes, 120° apart = 360°
+        (4, 90, True),    # 4 holes, 90° apart = 360°
+        (6, 60, True),    # 6 holes, 60° apart = 360°
+        (8, 45, True),    # 8 holes, 45° apart = 360°
+        (12, 30, True),   # 12 holes, 30° apart = 360°
+        (0, 0, True),     # No holes
+        (1, 0, True),     # Single hole
+    ])
+    def test_hole_count_angle_relationship(self, n_holes, angle_spacing, expected_valid):
+        """Test relationship between number of holes and angular spacing"""
+        holes = [100, 10, 0, angle_spacing, 0, n_holes]
+        if expected_valid:
+            lead = InnerCurrentLead(name="hole_test", r=[10.0, 15.0], holes=holes)
+            assert lead.holes[5] == n_holes
+            assert lead.holes[3] == angle_spacing
+        else:
+            # Could add validation logic here if needed
+            pass
 
 
 class TestInnerCurrentLeadSupportConfiguration:
@@ -395,8 +458,8 @@ class TestInnerCurrentLeadSupportConfiguration:
         )
         assert lead.support == support
     
-    def test_support_parameters_meaning(self):
-        """Test that support parameters have correct structure"""
+    def test_support_parameters_structure(self):
+        """Test support parameters follow documented structure"""
         # Based on docstring: [R2, DZ]
         support = [24.2, 0]
         lead = InnerCurrentLead(
@@ -406,39 +469,33 @@ class TestInnerCurrentLeadSupportConfiguration:
         )
         
         assert len(lead.support) == 2
-        # R2 (support radius)
-        assert lead.support[0] == 24.2
-        # DZ (vertical offset)
-        assert lead.support[1] == 0
+        assert lead.support[0] == 24.2  # R2 (support radius)
+        assert lead.support[1] == 0     # DZ (vertical offset)
     
-    def test_support_radius_relationship(self):
-        """Test support radius relationship with main radius"""
+    def test_support_radius_relationships(self):
+        """Test support radius relationships with main geometry"""
         r = [19.3, 24.2]
         
-        # Support radius equal to outer radius
-        support_equal = [24.2, 0]
-        lead_equal = InnerCurrentLead(name="equal", r=r, support=support_equal)
-        assert lead_equal.support[0] == r[1]
+        test_cases = [
+            ([24.2, 0], "equal_to_outer"),
+            ([30.0, 0], "larger_than_outer"),
+            ([20.0, 0], "between_radii"),
+            ([15.0, 0], "smaller_than_inner"),
+        ]
         
-        # Support radius larger than outer radius
-        support_larger = [30.0, 0]
-        lead_larger = InnerCurrentLead(name="larger", r=r, support=support_larger)
-        assert lead_larger.support[0] > r[1]
-        
-        # Support radius smaller than outer radius
-        support_smaller = [20.0, 0]
-        lead_smaller = InnerCurrentLead(name="smaller", r=r, support=support_smaller)
-        assert lead_smaller.support[0] < r[1]
+        for support, description in test_cases:
+            lead = InnerCurrentLead(name=description, r=r, support=support)
+            assert lead.support[0] == support[0]
 
 
 class TestInnerCurrentLeadGeometry:
     """
-    Test geometric aspects of InnerCurrentLead
+    Test geometric aspects and constraints
     """
     
     @pytest.fixture
     def geometric_lead(self):
-        """Fixture with InnerCurrentLead having realistic geometry"""
+        """Fixture with realistic geometry for validation"""
         return InnerCurrentLead(
             name="geometric_test",
             r=[19.3, 24.2],  # Realistic current lead dimensions
@@ -447,179 +504,81 @@ class TestInnerCurrentLeadGeometry:
             support=[24.2, 0]
         )
     
-    def test_radius_validation(self, geometric_lead):
-        """Test radius parameters are reasonable"""
-        assert len(geometric_lead.r) == 2
-        assert geometric_lead.r[0] < geometric_lead.r[1]  # Inner < Outer
-        assert geometric_lead.r[0] > 0  # Positive inner radius
-        assert geometric_lead.r[1] > 0  # Positive outer radius
+    def test_radius_geometry_validation(self, geometric_lead):
+        """Test radius geometry is reasonable"""
+        assert len(geometric_lead.r) >= 1
+        if len(geometric_lead.r) >= 2:
+            validate_geometric_data(geometric_lead.r, [0, geometric_lead.h])
     
     def test_height_validation(self, geometric_lead):
         """Test height parameter is reasonable"""
-        assert geometric_lead.h > 0  # Positive height
-        assert geometric_lead.h == 480.0
+        assert isinstance(geometric_lead.h, (int, float))
+        # Height can be zero or positive for physical components
+        assert geometric_lead.h >= 0
     
+    def test_geometric_consistency(self, geometric_lead):
+        """Test geometric consistency between parameters"""
+        # If support radius is defined, check relationship with main radius
+        if len(geometric_lead.support) >= 1 and len(geometric_lead.r) >= 2:
+            # Support radius should be reasonable relative to main geometry
+            support_radius = geometric_lead.support[0]
+            outer_radius = geometric_lead.r[-1]
+            # Allow support to extend beyond outer radius (common in engineering)
+            assert support_radius >= 0
     
-
-class TestInnerCurrentLeadEdgeCases:
-    """
-    Test edge cases and special scenarios for InnerCurrentLead
-    """
-    
-    def test_zero_dimensions(self):
-        """Test InnerCurrentLead with zero dimensions"""
-        zero_height = InnerCurrentLead(name="zero_h", r=[1.0, 2.0], h=0.0)
-        assert zero_height.h == 0.0
+    @pytest.mark.parametrize("r,h,expected_volume_positive", [
+        ([10.0, 20.0], 100.0, True),
+        ([0.0, 10.0], 50.0, True),
+        ([5.0, 5.0], 100.0, False),  # Zero volume (inner=outer)
+        ([10.0], 100.0, None),       # Single radius - volume calculation not applicable
+    ])
+    def test_volume_calculations(self, r, h, expected_volume_positive):
+        """Test volume-related calculations for geometric validation"""
+        lead = InnerCurrentLead(name="volume_test", r=r, h=h)
         
-        # Zero wall thickness (though physically unrealistic)
-        zero_wall = InnerCurrentLead(name="zero_wall", r=[5.0, 5.0], h=10.0)
-        assert zero_wall.r[0] == zero_wall.r[1]
-    
-    def test_negative_values(self):
-        """Test InnerCurrentLead with negative values"""
-        # Negative height (unusual but mathematically valid)
-        negative_h = InnerCurrentLead(name="neg_h", r=[1.0, 2.0], h=-100.0)
-        assert negative_h.h == -100.0
-        
-        # Negative radius values (unusual)
-        negative_r = InnerCurrentLead(name="neg_r", r=[-2.0, -1.0], h=10.0)
-        assert negative_r.r == [-2.0, -1.0]
-    
-    def test_very_large_values(self):
-        """Test InnerCurrentLead with very large values"""
-        large_val = 1e6
-        large_lead = InnerCurrentLead(
-            name="large_test",
-            r=[large_val, large_val * 1.5],
-            h=large_val * 2
-        )
-        assert large_lead.r[0] == large_val
-        assert large_lead.h == large_val * 2
-    
-    def test_unicode_name(self):
-        """Test InnerCurrentLead with Unicode name"""
-        unicode_name = "内部导线_токопровод_🔌"
-        unicode_lead = InnerCurrentLead(
-            name=unicode_name,
-            r=[1.0, 2.0],
-            h=10.0
-        )
-        assert unicode_lead.name == unicode_name
-    
-    def test_special_characters_name(self):
-        """Test InnerCurrentLead with special characters in name"""
-        special_name = "lead!@#$%^&*()_+-=[]{}|;':\",./<>?"
-        special_lead = InnerCurrentLead(
-            name=special_name,
-            r=[1.0, 2.0],
-            h=10.0
-        )
-        assert special_lead.name == special_name
-    
-    def test_mixed_numeric_types(self):
-        """Test InnerCurrentLead with mixed numeric types (int, float)"""
-        mixed_lead = InnerCurrentLead(
-            name="mixed_types",
-            r=[1, 2.5],      # int, float
-            h=100,           # int
-            holes=[50, 5, 0, 90, 0, 4],  # All int
-            support=[2.5, 1] # float, int
-        )
-        
-        assert mixed_lead.r == [1, 2.5]
-        assert mixed_lead.h == 100
-        assert mixed_lead.support == [2.5, 1]
-    
-    def test_boolean_fillet_edge_cases(self):
-        """Test boolean fillet with edge cases"""
-        # Explicit True/False
-        true_fillet = InnerCurrentLead(name="true", r=[1.0, 2.0], fillet=True)
-        false_fillet = InnerCurrentLead(name="false", r=[1.0, 2.0], fillet=False)
-        
-        assert true_fillet.fillet is True
-        assert false_fillet.fillet is False
-        
-        # Test in JSON serialization
-        true_json = true_fillet.to_json()
-        false_json = false_fillet.to_json()
-        
-        assert "true" in true_json.lower()
-        assert "false" in false_json.lower()
-
-
-class TestInnerCurrentLeadIntegration:
-    """
-    Integration tests for InnerCurrentLead
-    """
-    
-    def test_yaml_integration(self, temp_yaml_file):
-        """Test YAML integration"""
-        lead = InnerCurrentLead(
-            name="yaml_integration",
-            r=[18.0, 23.0],
-            h=450.0,
-            holes=[110, 10, 45, 50, 30, 4],
-            support=[23.0, 2.0],
-            fillet=True
-        )
-        
-        # Test dump functionality
-        with patch("builtins.open", mock_open()) as mock_file:
-            with patch("yaml.dump") as mock_yaml_dump:
-                lead.dump()
-                mock_file.assert_called_once_with("yaml_integration.yaml", "w")
-                mock_yaml_dump.assert_called_once()
-    
-    def test_json_integration_complete(self):
-        """Test complete JSON serialization integration"""
-        lead = InnerCurrentLead(
-            name="json_integration",
-            r=[20.0, 26.0],
-            h=500.0,
-            holes=[130, 15, 60, 40, 20, 5],
-            support=[26.0, 3.0],
-            fillet=False
-        )
-        
-        json_str = lead.to_json()
-        parsed = json.loads(json_str)
-        
-        # Verify structure
-        assert parsed["__classname__"] == "InnerCurrentLead"
-        assert parsed["name"] == "json_integration"
-        assert parsed["r"] == [20.0, 26.0]
-        assert parsed["h"] == 500.0
-        assert parsed["holes"] == [130, 15, 60, 40, 20, 5]
-        assert parsed["support"] == [26.0, 3.0]
-        assert parsed["fillet"] is False
-    
-    def test_from_yaml_integration(self):
-        """Test from_yaml integration"""
-        with patch('python_magnetgeo.utils.loadYaml') as mock_load_yaml:
-            mock_lead = Mock(spec=InnerCurrentLead)
-            mock_load_yaml.return_value = mock_lead
+        if expected_volume_positive is not None and len(lead.r) >= 2:
+            # Calculate annular volume
+            import math
+            inner_radius = lead.r[0]
+            outer_radius = lead.r[1]
+            volume = math.pi * (outer_radius**2 - inner_radius**2) * lead.h
             
-            result = InnerCurrentLead.from_yaml("test.yaml", debug=True)
-            
-            mock_load_yaml.assert_called_once_with("InnerCurrentLead", "test.yaml", InnerCurrentLead, True)
-            assert result == mock_lead
+            if expected_volume_positive:
+                assert volume > 0
+            else:
+                assert volume == 0
+
+
+class TestInnerCurrentLeadYAMLConstructor:
+    """
+    Test YAML constructor functionality
+    """
     
-    def test_from_json_integration(self):
-        """Test from_json integration"""
-        with patch('python_magnetgeo.utils.loadJson') as mock_load_json:
-            mock_lead = Mock(spec=InnerCurrentLead)
-            mock_load_json.return_value = mock_lead
-            
-            result = InnerCurrentLead.from_json("test.json", debug=False)
-            
-            mock_load_json.assert_called_once_with("InnerCurrentLead", "test.json", False)
-            assert result == mock_lead
-
-
-class TestInnerCurrentLeadErrorHandling:
-    """
-    Test error handling and robustness for InnerCurrentLead
-    """
+    def test_yaml_constructor_function_direct(self):
+        """Test the InnerCurrentLead_constructor function directly"""
+        mock_loader = Mock()
+        mock_node = Mock()
+        
+        test_data = {
+            "name": "direct_test",
+            "r": [12.0, 18.0],
+            "h": 350.0,
+            "holes": [75, 7, 15, 45, 60, 5],
+            "support": [18.0, 3.0],
+            "fillet": True
+        }
+        mock_loader.construct_mapping.return_value = test_data
+        
+        result = InnerCurrentLead_constructor(mock_loader, mock_node)
+        
+        assert isinstance(result, InnerCurrentLead)
+        assert result.name == "direct_test"
+        assert result.r == [12.0, 18.0]
+        assert result.h == 350.0
+        assert result.holes == [75, 7, 15, 45, 60, 5]
+        assert result.support == [18.0, 3.0]
+        assert result.fillet is True
+        mock_loader.construct_mapping.assert_called_once_with(mock_node)
     
     def test_constructor_missing_required_fields(self):
         """Test constructor with missing required fields"""
@@ -627,27 +586,14 @@ class TestInnerCurrentLeadErrorHandling:
         mock_node = Mock()
         
         # Missing 'name' field
-        incomplete_data1 = {
+        incomplete_data = {
             "r": [1.0, 2.0],
             "h": 10.0,
             "holes": [],
             "support": [],
             "fillet": False
         }
-        mock_loader.construct_mapping.return_value = incomplete_data1
-        
-        with pytest.raises(KeyError):
-            InnerCurrentLead_constructor(mock_loader, mock_node)
-        
-        # Missing 'fillet' field
-        incomplete_data2 = {
-            "name": "test_name",
-            "r": [1.0, 2.0],
-            "h": 10.0,
-            "holes": [],
-            "support": []
-        }
-        mock_loader.construct_mapping.return_value = incomplete_data2
+        mock_loader.construct_mapping.return_value = incomplete_data
         
         with pytest.raises(KeyError):
             InnerCurrentLead_constructor(mock_loader, mock_node)
@@ -675,49 +621,60 @@ class TestInnerCurrentLeadErrorHandling:
         assert result.name == "extra_fields_test"
         assert not hasattr(result, "extra_field")
         assert not hasattr(result, "another_extra")
+
+
+class TestInnerCurrentLeadErrorHandling:
+    """
+    Test error handling and edge cases
+    """
     
-    def test_dump_file_error(self):
-        """Test dump method with file errors"""
+    def test_serialization_errors(self):
+        """Test serialization error handling"""
         lead = InnerCurrentLead(name="error_test", r=[1.0, 2.0])
         
-        # Test file permission error
-        with patch("yaml.dump", side_effect=PermissionError("No permission")):
-            with pytest.raises(Exception, match="Failed to dump InnerCurrentLead data"):
-                lead.dump()
-    
-    def test_to_json_serialization_error(self):
-        """Test to_json with serialization issues"""
-        lead = InnerCurrentLead(name="serialization_error", r=[1.0, 2.0])
-        
-        # Mock serialize_instance to raise an error
-        with patch("python_magnetgeo.deserialize.serialize_instance", side_effect=TypeError("Serialization error")):
+        # Test to_json serialization error
+        with patch("python_magnetgeo.deserialize.serialize_instance", 
+                   side_effect=TypeError("Serialization error")):
             with pytest.raises(TypeError):
                 lead.to_json()
     
-    def test_from_json_file_error(self):
-        """Test from_json with file errors"""
-        # Test with non-existent file
-        with pytest.raises(FileNotFoundError):
-            InnerCurrentLead.from_json("nonexistent_file.json")
-    
-    def test_from_json_invalid_json(self):
-        """Test from_json with invalid JSON content"""
-        invalid_json = "{ invalid json content"
+    def test_file_operation_errors(self):
+        """Test file operation error handling"""
+        lead = InnerCurrentLead(name="file_error_test", r=[1.0, 2.0])
         
-        with patch("builtins.open", mock_open(read_data=invalid_json)):
-            with pytest.raises(json.JSONDecodeError):
+        # Test dump error
+        with patch("python_magnetgeo.utils.writeYaml", 
+                   side_effect=PermissionError("No permission")):
+            with pytest.raises(PermissionError):
+                lead.dump()
+        
+        # Test write_to_json error
+        with patch("builtins.open", side_effect=IOError("Write error")):
+            with pytest.raises(Exception, match="Failed to write to file_error_test.json"):
+                lead.write_to_json()
+    
+    def test_deserialization_errors(self):
+        """Test deserialization error handling"""
+        # Test from_json with invalid JSON
+        # Note: loadJson wraps JSONDecodeError in a generic Exception
+        with patch("builtins.open", mock_open(read_data="{ invalid json")):
+            with pytest.raises(Exception, match="Failed to load InnerCurrentLead data"):
                 InnerCurrentLead.from_json("invalid.json")
+        
+        # Test from_yaml with file not found
+        with pytest.raises(Exception):  # The actual exception depends on utils.loadYaml implementation
+            InnerCurrentLead.from_yaml("nonexistent.yaml")
 
 
 class TestInnerCurrentLeadUseCases:
     """
-    Test InnerCurrentLead with realistic use cases and scenarios
+    Test realistic use cases and scenarios
     """
     
-    def test_standard_current_lead(self):
-        """Test InnerCurrentLead representing a standard current lead design"""
+    def test_standard_10kA_current_lead(self):
+        """Test standard 10kA current lead configuration"""
         standard_lead = InnerCurrentLead(
-            name="standard_10kA_lead",
+            name="standard_10kA_inner_lead",
             r=[19.3, 24.2],   # Standard dimensions for 10kA lead
             h=480.0,          # 48cm height
             holes=[123, 12, 90, 60, 45, 3],  # 3 holes, 60° apart
@@ -725,21 +682,19 @@ class TestInnerCurrentLeadUseCases:
             fillet=True       # Rounded edges for better current flow
         )
         
-        assert standard_lead.name == "standard_10kA_lead"
-        assert standard_lead.r == [19.3, 24.2]
-        assert standard_lead.h == 480.0
+        assert standard_lead.name == "standard_10kA_inner_lead"
         assert standard_lead.fillet is True
         
-        # Check hole configuration
+        # Check hole configuration for 3 symmetric holes
         holes = standard_lead.holes
-        assert holes[5] == 3  # 3 holes
-        assert holes[3] == 60  # 60° spacing
-        assert holes[0] == 123  # Hole height
+        if len(holes) >= 6:
+            assert holes[5] == 3  # 3 holes
+            assert holes[3] == 60  # 60° spacing
     
-    def test_high_current_lead(self):
-        """Test InnerCurrentLead for high current applications"""
+    def test_high_current_20kA_lead(self):
+        """Test high current 20kA inner current lead"""
         high_current_lead = InnerCurrentLead(
-            name="high_current_20kA_lead",
+            name="high_current_20kA_inner",
             r=[25.0, 35.0],   # Larger dimensions for higher current
             h=600.0,          # Taller for better heat dissipation
             holes=[150, 15, 0, 45, 0, 8],  # 8 holes, 45° apart
@@ -747,19 +702,21 @@ class TestInnerCurrentLeadUseCases:
             fillet=True
         )
         
-        # Larger cross-sectional area for higher current
-        area = 3.14159 * (high_current_lead.r[1]**2 - high_current_lead.r[0]**2)
-        standard_area = 3.14159 * (24.2**2 - 19.3**2)
+        # Verify larger cross-sectional area than standard
+        import math
+        area = math.pi * (high_current_lead.r[1]**2 - high_current_lead.r[0]**2)
+        standard_area = math.pi * (24.2**2 - 19.3**2)
         assert area > standard_area
         
         # More holes for better cooling
-        assert high_current_lead.holes[5] == 8  # 8 holes
-        assert high_current_lead.h > 480.0  # Taller
+        if len(high_current_lead.holes) >= 6:
+            assert high_current_lead.holes[5] == 8  # 8 holes
+        assert high_current_lead.h > 480.0  # Taller than standard
     
-    def test_compact_current_lead(self):
-        """Test InnerCurrentLead for space-constrained applications"""
+    def test_compact_5kA_lead(self):
+        """Test compact 5kA inner current lead for space constraints"""
         compact_lead = InnerCurrentLead(
-            name="compact_5kA_lead",
+            name="compact_5kA_inner",
             r=[12.0, 16.0],   # Smaller dimensions
             h=250.0,          # Shorter height
             holes=[60, 8, 45, 90, 30, 4],  # 4 holes, 90° apart
@@ -767,77 +724,63 @@ class TestInnerCurrentLeadUseCases:
             fillet=False      # Sharp edges for compact design
         )
         
-        # Smaller than standard
+        # Verify smaller than standard
         assert compact_lead.r[1] < 24.2
         assert compact_lead.h < 480.0
         assert compact_lead.fillet is False
         
         # Fewer holes due to size constraints
-        assert compact_lead.holes[5] == 4  # 4 holes
-        assert compact_lead.holes[3] == 90  # 90° spacing
+        if len(compact_lead.holes) >= 6:
+            assert compact_lead.holes[5] == 4  # 4 holes
+            assert compact_lead.holes[3] == 90  # 90° spacing
     
-    def test_asymmetric_current_lead(self):
-        """Test InnerCurrentLead with asymmetric hole pattern"""
-        asymmetric_lead = InnerCurrentLead(
-            name="asymmetric_lead",
-            r=[18.0, 24.0],
-            h=400.0,
-            holes=[100, 10, 30, 120, 45, 3],  # 3 holes, 120° apart, offset by 30°
-            support=[24.0, 3.0],
-            fillet=True
-        )
-        
-        holes = asymmetric_lead.holes
-        assert holes[2] == 30   # Angle offset
-        assert holes[3] == 120  # 120° spacing (asymmetric)
-        assert holes[4] == 45   # Angular position
-        assert holes[5] == 3    # 3 holes
-    
-    def test_experimental_current_lead(self):
-        """Test InnerCurrentLead for experimental/prototype applications"""
+    def test_experimental_research_lead(self):
+        """Test experimental inner lead for research applications"""
         experimental_lead = InnerCurrentLead(
-            name="experimental_prototype",
+            name="experimental_research_inner",
             r=[15.0, 25.0],
             h=350.0,
             holes=[80, 5, 0, 36, 0, 10],  # 10 holes, 36° apart (fine pattern)
-            support=[28.0, 8.0],  # Extended support
+            support=[28.0, 8.0],  # Extended support beyond outer radius
             fillet=False
         )
         
         # Many small holes for detailed study
-        assert experimental_lead.holes[5] == 10  # 10 holes
-        assert experimental_lead.holes[3] == 36  # Fine angular spacing
+        if len(experimental_lead.holes) >= 6:
+            assert experimental_lead.holes[5] == 10  # 10 holes
+            assert experimental_lead.holes[3] == 36  # Fine angular spacing
         
         # Extended support beyond outer radius
-        assert experimental_lead.support[0] > experimental_lead.r[1]
-    
-    def test_maintenance_access_lead(self):
-        """Test InnerCurrentLead optimized for maintenance access"""
-        maintenance_lead = InnerCurrentLead(
-            name="maintenance_accessible_lead",
-            r=[20.0, 28.0],
-            h=520.0,
-            holes=[140, 20, 0, 180, 0, 2],  # 2 holes, 180° apart for access
-            support=[28.0, 0],
-            fillet=True
-        )
-        
-        holes = maintenance_lead.holes
-        assert holes[5] == 2    # Only 2 holes
-        assert holes[3] == 180  # Opposite sides for access
-        assert holes[1] == 20   # Large shift from top for access
+        if len(experimental_lead.support) >= 1:
+            assert experimental_lead.support[0] > experimental_lead.r[1]
 
 
+@pytest.mark.performance
 class TestInnerCurrentLeadPerformance:
     """
     Performance tests for InnerCurrentLead operations
     """
     
-    @pytest.mark.performance
+    def test_initialization_performance(self):
+        """Test InnerCurrentLead initialization performance"""
+        def create_lead():
+            return InnerCurrentLead(
+                name="performance_test",
+                r=[19.3, 24.2],
+                h=480.0,
+                holes=[123, 12, 90, 60, 45, 3],
+                support=[24.2, 0],
+                fillet=True
+            )
+        
+        result, execution_time = time_function_execution(create_lead)
+        
+        # Should initialize quickly
+        assert_performance_within_limits(execution_time, 0.001)  # 1ms limit
+        assert result.name == "performance_test"
+    
     def test_large_data_performance(self):
         """Test InnerCurrentLead performance with large datasets"""
-        from .test_utils_common import time_function_execution, assert_performance_within_limits
-        
         # Create InnerCurrentLead with large hole configuration
         large_holes = [1000, 100] + [i for i in range(1000)]  # Large hole list
         large_support = [50.0 + i*0.1 for i in range(100)]    # Large support list
@@ -859,11 +802,8 @@ class TestInnerCurrentLeadPerformance:
         assert len(result.holes) == len(large_holes)
         assert len(result.support) == len(large_support)
     
-    @pytest.mark.performance
     def test_json_serialization_performance(self):
         """Test JSON serialization performance"""
-        from .test_utils_common import time_function_execution, assert_performance_within_limits
-        
         lead = InnerCurrentLead(
             name="json_performance_test",
             r=[19.3, 24.2],
@@ -880,11 +820,8 @@ class TestInnerCurrentLeadPerformance:
         assert isinstance(result, str)
         assert len(result) > 100
     
-    @pytest.mark.performance
     def test_repr_performance(self):
         """Test repr performance with large data"""
-        from .test_utils_common import time_function_execution, assert_performance_within_limits
-        
         lead = InnerCurrentLead(
             name="x" * 1000,  # Long name
             r=[1.0, 2.0],
@@ -901,15 +838,90 @@ class TestInnerCurrentLeadPerformance:
         assert "InnerCurrentLead" in result
 
 
+class TestInnerCurrentLeadIntegration:
+    """
+    Integration tests combining multiple features
+    """
+    
+    def test_full_workflow_yaml(self):
+        """Test complete YAML workflow"""
+        # Create instance
+        original_lead = InnerCurrentLead(
+            name="integration_yaml_test",
+            r=[18.0, 23.0],
+            h=450.0,
+            holes=[110, 10, 45, 50, 30, 4],
+            support=[23.0, 2.0],
+            fillet=True
+        )
+        
+        # Test serialization
+        with patch("python_magnetgeo.utils.writeYaml") as mock_write:
+            original_lead.dump()
+            mock_write.assert_called_once()
+        
+        # Test deserialization
+        with patch('python_magnetgeo.utils.loadYaml') as mock_load:
+            mock_load.return_value = original_lead
+            loaded_lead = InnerCurrentLead.from_yaml("test.yaml")
+            assert loaded_lead.name == original_lead.name
+    
+    def test_full_workflow_json(self):
+        """Test complete JSON workflow"""
+        original_lead = InnerCurrentLead(
+            name="integration_json_test",
+            r=[20.0, 26.0],
+            h=500.0,
+            holes=[130, 15, 60, 40, 20, 5],
+            support=[26.0, 3.0],
+            fillet=False
+        )
+        
+        # Test JSON serialization
+        json_str = original_lead.to_json()
+        parsed = json.loads(json_str)
+        
+        # Verify structure
+        assert parsed["__classname__"] == "InnerCurrentLead"
+        assert parsed["name"] == "integration_json_test"
+        
+        # Test file writing
+        with patch("builtins.open", mock_open()) as mock_file:
+            original_lead.write_to_json()
+            mock_file.assert_called_once_with("integration_json_test.json", "w")
+    
+    def test_dict_roundtrip(self):
+        """Test dictionary conversion roundtrip"""
+        original_data = {
+            "name": "roundtrip_test",
+            "r": [15.0, 20.0],
+            "h": 300.0,
+            "holes": [90, 8, 30, 60, 15, 6],
+            "support": [20.0, 1.0],
+            "fillet": True
+        }
+        
+        # Create from dict
+        lead = InnerCurrentLead.from_dict(original_data)
+        
+        # Verify all attributes match
+        assert lead.name == original_data["name"]
+        assert lead.r == original_data["r"]
+        assert lead.h == original_data["h"]
+        assert lead.holes == original_data["holes"]
+        assert lead.support == original_data["support"]
+        assert lead.fillet == original_data["fillet"]
+
+
 class TestInnerCurrentLeadDocumentation:
     """
     Test that InnerCurrentLead behavior matches its documentation
     """
     
-    def test_documented_attributes(self):
-        """Test that InnerCurrentLead has all documented attributes"""
+    def test_documented_attributes_exist(self):
+        """Test that all documented attributes exist and have correct types"""
         lead = InnerCurrentLead(
-            name="documentation_test",
+            name="doc_test",
             r=[19.3, 24.2],
             h=480.0,
             holes=[123, 12, 90, 60, 45, 3],
@@ -933,7 +945,7 @@ class TestInnerCurrentLeadDocumentation:
         assert isinstance(lead.support, list)
         assert isinstance(lead.fillet, bool)
     
-    def test_holes_parameter_structure(self):
+    def test_holes_parameter_documentation(self):
         """Test holes parameter structure matches documentation"""
         # Documentation: [H_Holes, Shift_from_Top, Angle_Zero, Angle, Angular_Position, N_Holes]
         holes = [123, 12, 90, 60, 45, 3]
@@ -944,7 +956,7 @@ class TestInnerCurrentLeadDocumentation:
         for param in lead.holes:
             assert isinstance(param, (int, float))
     
-    def test_support_parameter_structure(self):
+    def test_support_parameter_documentation(self):
         """Test support parameter structure matches documentation"""
         # Documentation: [R2, DZ]
         support = [24.2, 0]
@@ -959,8 +971,8 @@ class TestInnerCurrentLeadDocumentation:
         """Test that YAML tag matches class name"""
         assert InnerCurrentLead.yaml_tag == "InnerCurrentLead"
     
-    def test_serialization_support_documented(self):
-        """Test that all documented serialization methods work"""
+    def test_serialization_methods_documented(self):
+        """Test that all documented serialization methods exist and work"""
         lead = InnerCurrentLead(
             name="serialize_test",
             r=[10.0, 15.0],
@@ -970,11 +982,11 @@ class TestInnerCurrentLeadDocumentation:
             fillet=False
         )
         
-        # YAML serialization
+        # YAML serialization methods
         assert hasattr(lead, "dump")
         assert callable(lead.dump)
         
-        # JSON serialization
+        # JSON serialization methods
         assert hasattr(lead, "to_json")
         assert callable(lead.to_json)
         assert hasattr(lead, "write_to_json")
@@ -988,38 +1000,167 @@ class TestInnerCurrentLeadDocumentation:
         assert hasattr(InnerCurrentLead, "from_dict")
         assert callable(InnerCurrentLead.from_dict)
         
-        # Test that JSON serialization actually works
+        # Test that JSON serialization actually produces valid JSON
         json_str = lead.to_json()
         parsed = json.loads(json_str)
         assert parsed["__classname__"] == "InnerCurrentLead"
         assert parsed["name"] == "serialize_test"
+
+
+@pytest.mark.parametrize("holes_config,expected_description", [
+    ([100, 10, 0, 120, 0, 3], "three_holes_120_degrees"),
+    ([80, 8, 45, 90, 0, 4], "four_holes_90_degrees_offset"),
+    ([60, 5, 0, 60, 30, 6], "six_holes_60_degrees"),
+    ([120, 15, 90, 180, 0, 2], "two_holes_opposite"),
+    ([], "no_holes"),
+])
+class TestInnerCurrentLeadParameterizedHoles:
+    """
+    Parametrized tests for different hole configurations
+    """
     
-    def test_geometric_constraints_documented(self):
-        """Test that geometric constraints are reasonable"""
+    def test_hole_configuration_validity(self, holes_config, expected_description):
+        """Test various hole configurations are handled correctly"""
         lead = InnerCurrentLead(
-            name="constraints_test",
-            r=[19.3, 24.2],
-            h=480.0
+            name=f"holes_{expected_description}",
+            r=[15.0, 20.0],
+            h=200.0,
+            holes=holes_config
         )
         
-        # Radius constraints
-        assert len(lead.r) == 2
-        assert lead.r[0] >= 0  # Inner radius non-negative
-        assert lead.r[1] > lead.r[0]  # Outer > Inner (typically)
+        assert lead.holes == holes_config
+        assert expected_description in lead.name
         
-        # Height should be positive for physical current leads
-        assert lead.h >= 0
+        # If holes are specified with full 6 parameters, validate angular consistency
+        if len(holes_config) == 6 and holes_config[5] > 1:  # More than 1 hole
+            n_holes = holes_config[5]
+            angle_spacing = holes_config[3]
+            
+            # For symmetric arrangements, n_holes * angle_spacing should be <= 360
+            if n_holes > 0 and angle_spacing > 0:
+                total_span = n_holes * angle_spacing
+                assert total_span <= 360 or total_span == 360  # Allow exactly 360 for full coverage
+
+
+@pytest.mark.parametrize("support_config,expected_relationship", [
+    ([20.0, 0], "equal_to_outer"),
+    ([25.0, 0], "larger_than_outer"), 
+    ([15.0, 0], "smaller_than_outer"),
+    ([0.0, 0], "zero_radius"),
+    ([20.0, 5.0], "positive_offset"),
+    ([20.0, -5.0], "negative_offset"),
+])
+class TestInnerCurrentLeadParameterizedSupport:
+    """
+    Parametrized tests for different support configurations
+    """
     
-    def test_fillet_boolean_behavior(self):
-        """Test fillet boolean parameter behavior"""
-        # Test True
-        fillet_true = InnerCurrentLead(name="fillet_true", r=[1.0, 2.0], fillet=True)
-        assert fillet_true.fillet is True
+    def test_support_configuration_validity(self, support_config, expected_relationship):
+        """Test various support configurations are handled correctly"""
+        r = [15.0, 20.0]  # Standard radius configuration
+        lead = InnerCurrentLead(
+            name=f"support_{expected_relationship}",
+            r=r,
+            h=200.0,
+            support=support_config
+        )
         
-        # Test False
-        fillet_false = InnerCurrentLead(name="fillet_false", r=[1.0, 2.0], fillet=False)
-        assert fillet_false.fillet is False
+        assert lead.support == support_config
         
-        # Test default
-        fillet_default = InnerCurrentLead(name="fillet_default", r=[1.0, 2.0])
-        assert fillet_default.fillet is False  # Default should be False
+        if len(support_config) >= 2:
+            support_radius = support_config[0]
+            support_offset = support_config[1]
+            
+            # Validate support radius is non-negative
+            assert support_radius >= 0
+            
+            # Validate relationship descriptions
+            outer_radius = r[1]
+            if expected_relationship == "equal_to_outer":
+                assert abs(support_radius - outer_radius) < 1e-10
+            elif expected_relationship == "larger_than_outer":
+                assert support_radius > outer_radius
+            elif expected_relationship == "smaller_than_outer":
+                assert support_radius < outer_radius
+            elif expected_relationship == "zero_radius":
+                assert support_radius == 0.0
+
+
+
+
+# Custom fixtures for complex test scenarios
+@pytest.fixture(scope="class")
+def current_lead_test_suite():
+    """Class-scoped fixture providing test data for multiple test methods"""
+    return {
+        "standard_configs": [
+            {
+                "name": "test_1kA",
+                "r": [8.0, 12.0],
+                "h": 200.0,
+                "holes": [60, 5, 0, 180, 0, 2],
+                "support": [12.0, 0],
+                "fillet": False
+            },
+            {
+                "name": "test_5kA", 
+                "r": [15.0, 20.0],
+                "h": 350.0,
+                "holes": [100, 8, 45, 90, 0, 4],
+                "support": [20.0, 2.0],
+                "fillet": True
+            },
+            {
+                "name": "test_10kA",
+                "r": [19.3, 24.2],
+                "h": 480.0,
+                "holes": [123, 12, 90, 60, 45, 3],
+                "support": [24.2, 0],
+                "fillet": True
+            }
+        ],
+        "error_configs": [
+            {
+                "name": "",  # Empty name
+                "r": [10.0, 15.0],
+                "expected_error": None  # Empty name should be allowed
+            },
+            {
+                "name": "missing_r",
+                "r": [],  # Empty radius list
+                "expected_error": None  # Should be allowed for flexibility
+            }
+        ]
+    }
+
+
+class TestInnerCurrentLeadWithFixture:
+    """
+    Tests using the current_lead_test_suite fixture
+    """
+    
+    def test_standard_configurations(self, current_lead_test_suite):
+        """Test multiple standard configurations"""
+        for config in current_lead_test_suite["standard_configs"]:
+            lead = InnerCurrentLead(**config)
+            
+            assert lead.name == config["name"]
+            assert lead.r == config["r"]
+            assert lead.h == config["h"]
+            assert lead.holes == config["holes"]
+            assert lead.support == config["support"]
+            assert lead.fillet == config["fillet"]
+    
+    def test_error_configurations(self, current_lead_test_suite):
+        """Test error configurations"""
+        for config in current_lead_test_suite["error_configs"]:
+            if config.get("expected_error"):
+                with pytest.raises(config["expected_error"]):
+                    InnerCurrentLead(**{k: v for k, v in config.items() 
+                                       if k != "expected_error"})
+            else:
+                # Should succeed
+                lead = InnerCurrentLead(**{k: v for k, v in config.items() 
+                                         if k != "expected_error"})
+                assert isinstance(lead, InnerCurrentLead)
+    

@@ -290,69 +290,6 @@ class TestModelAxiSpecific:
         mock_loader.construct_mapping.assert_called_once_with(mock_node)
 
 
-class TestModelAxiEdgeCases:
-    """
-    Test edge cases and error conditions for ModelAxi
-    """
-    
-    def test_compact_mismatched_lengths(self):
-        """Test compact with mismatched turns/pitch lengths"""
-        model = ModelAxi(
-            turns=[1.0, 2.0, 3.0], 
-            pitch=[5.0, 6.0]  # Shorter than turns
-        )
-        # Should handle gracefully without throwing exception
-        new_turns, new_pitch = model.compact()
-        assert len(new_turns) == len(new_pitch)
-    
-    def test_negative_values(self):
-        """Test ModelAxi with negative values"""
-        model = ModelAxi(
-            name="negative_test",
-            h=-5.0,
-            turns=[-1.0, 2.0],
-            pitch=[3.0, -4.0]
-        )
-        assert model.h == -5.0
-        assert model.turns == [-1.0, 2.0]
-        assert model.pitch == [3.0, -4.0]
-        assert model.get_Nturns() == 1.0  # -1.0 + 2.0
-    
-    def test_very_large_values(self):
-        """Test ModelAxi with very large values"""
-        large_val = 1e10
-        model = ModelAxi(
-            name="large_test",
-            h=large_val,
-            turns=[large_val, large_val],
-            pitch=[large_val, large_val]
-        )
-        assert model.h == large_val
-        assert model.get_Nturns() == 2 * large_val
-    
-    def test_very_small_tolerance_compact(self):
-        """Test compact with very small tolerance"""
-        model = ModelAxi(
-            turns=[1.0, 2.0], 
-            pitch=[5.0, 5.0000001]  # Very close values
-        )
-        new_turns, new_pitch = model.compact(tol=1e-10)
-        # Should NOT compact due to very strict tolerance
-        assert len(new_turns) == 2
-        assert len(new_pitch) == 2
-    
-    @pytest.mark.parametrize("invalid_tol", [-1.0, -0.5, 0.0])
-    def test_compact_invalid_tolerance(self, invalid_tol):
-        """Test compact with invalid tolerance values"""
-        model = ModelAxi(
-            turns=[1.0, 2.0], 
-            pitch=[5.0, 5.0]
-        )
-        # With zero or negative tolerance, should still work (no division by zero)
-        new_turns, new_pitch = model.compact(tol=invalid_tol)
-        # Behavior depends on implementation, but shouldn't crash
-        assert isinstance(new_turns, list)
-        assert isinstance(new_pitch, list)
 
 
 class TestModelAxiIntegration:

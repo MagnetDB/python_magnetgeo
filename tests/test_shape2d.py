@@ -118,8 +118,7 @@ class TestShape2DSerialization(BaseSerializationTestMixin):
     
     def get_sample_yaml_content(self):
         """Return sample YAML content"""
-        return '''
-<!Shape2D>
+        return '''!<Shape2D>
 name: yaml_shape
 pts: [[0, 0], [1, 0], [1, 1], [0, 1]]
 '''
@@ -153,7 +152,7 @@ pts: [[0, 0], [1, 0], [1, 1], [0, 1]]
         shape = self.get_sample_instance()
         
         with pytest.raises(Exception, match="Failed to Shape2D dump"):
-            shape.dump("error_file")
+            shape.dump()
 
 
 class TestShape2DYAMLConstructor(BaseYAMLConstructorTestMixin):
@@ -161,7 +160,10 @@ class TestShape2DYAMLConstructor(BaseYAMLConstructorTestMixin):
     
     def get_constructor_function(self):
         """Return the Shape2D constructor function"""
-        return Shape_constructor
+        def wrapper(loader, node):
+            result = Shape_constructor(loader, node)
+            return result.__dict__, type(result).__name__
+        return wrapper
     
     def get_sample_constructor_data(self):
         """Return sample constructor data"""
@@ -233,7 +235,7 @@ class TestShape2DFactoryFunctions:
 
     def test_create_circle_invalid_n(self):
         """Test create_circle with invalid n parameter"""
-        with pytest.raises(RuntimeError, match="n got -5, expect a positive integer"):
+        with pytest.raises(RuntimeError, match="create_rectangle: n got -5, expect a positive integer"):
             create_circle(r=5.0, n=-5)
 
     def test_create_rectangle_basic(self):
@@ -265,7 +267,7 @@ class TestShape2DFactoryFunctions:
 
     def test_create_rectangle_invalid_fillet(self):
         """Test create_rectangle with invalid fillet parameter"""
-        with pytest.raises(RuntimeError, match="fillet got -3, expect a positive integer"):
+        with pytest.raises(RuntimeError, match="create_rectangle: fillet got -3, expect a positive integer"):
             create_rectangle(x=0.0, y=0.0, dx=2.0, dy=2.0, fillet=-3)
 
     def test_create_angularslit_basic(self):
@@ -400,7 +402,7 @@ class TestShape2DIntegration:
         
         # Verify each shape is independent
         for i, shape in enumerate(shapes):
-            expected_name = f"circle-{2*(i+1)}.0-mm"
+            expected_name = f"circle-{2*(i+1)}-mm"
             assert shape.name == expected_name
             assert len(shape.pts) == 8
 

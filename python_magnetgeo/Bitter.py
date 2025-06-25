@@ -12,10 +12,6 @@ Provides definition for Bitter:
 import json
 import yaml
 
-from .ModelAxi import ModelAxi
-from .coolingslit import CoolingSlit
-from .tierod import Tierod
-from .utils import loadObject, loadList
 
 class Bitter(yaml.YAMLObject):
     """
@@ -36,9 +32,9 @@ class Bitter(yaml.YAMLObject):
         r: list[float],
         z: list[float],
         odd: bool,
-        modelaxi: ModelAxi,
-        coolingslits: list[CoolingSlit],
-        tierod: Tierod,
+        modelaxi,
+        coolingslits: list,
+        tierod,
         innerbore: float,
         outerbore: float,
     ) -> None:
@@ -58,7 +54,10 @@ class Bitter(yaml.YAMLObject):
         self.tierod = tierod
 
     def update(self):
-        from .utils import check_objects
+        from .ModelAxi import ModelAxi
+        from .coolingslit import CoolingSlit
+        from .tierod import Tierod
+        from .utils import loadObject, loadList, check_objects
         if isinstance(self.modelaxi, str):
             self.modelaxi = loadObject("modelaxi", self.modelaxi, ModelAxi, ModelAxi.from_yaml)
         if check_objects(self.coolingslits, str):
@@ -250,17 +249,17 @@ class Bitter(yaml.YAMLObject):
     def intersect(self, r: list[float], z: list[float]) -> bool:
         """
         Check if intersection with rectangle defined by r,z is empty or not
-
         return False if empty, True otherwise
         """
+        # Check if rectangles overlap in r-dimension
+        r_overlap = self.r[0] < r[1] and r[0] < self.r[1]
+        
+        # Check if rectangles overlap in z-dimension  
+        z_overlap = self.z[0] < z[1] and z[0] < self.z[1]
+        
+        # Rectangles intersect if they overlap in both dimensions
+        return r_overlap and z_overlap
 
-        # TODO take into account Mandrin and Isolation even if detail="None"
-        collide = False
-        isR = abs(self.r[0] - r[0]) < abs(self.r[1] - self.r[0] + r[0] + r[1]) / 2.0
-        isZ = abs(self.z[0] - z[0]) < abs(self.z[1] - self.z[0] + z[0] + z[1]) / 2.0
-        if isR and isZ:
-            collide = True
-        return collide
 
     def get_params(self, workingDir: str = ".") -> tuple:
         from math import pi
@@ -331,8 +330,8 @@ def Bitter_constructor(loader, node):
     modelaxi = values["modelaxi"]
     coolingslits = values["coolingslits"]
     tierod = values["tierod"]
-    innerbore = values["innerbore"] if "innerbore" in values else 0
-    outerbore = values["outerbore"] if "outerbore" in values else 0
+    innerbore = values.get("innerbore", 0)
+    outerbore = values.get("outerbore", 0)
 
     return Bitter(name, r, z, odd, modelaxi, coolingslits, tierod, innerbore, outerbore)
 
