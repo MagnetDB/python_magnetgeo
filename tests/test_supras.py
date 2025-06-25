@@ -471,6 +471,16 @@ class TestSuprasGeometry:
             outerbore=35.0
         )
     
+    @pytest.fixture
+    def empty_supras(self):
+        """Fixture providing an empty Supras instance"""
+        return Supras(
+            name="empty_system",
+            magnets=[],
+            innerbore=0.0,
+            outerbore=10.0
+        )
+    
     def test_boundingBox_with_magnets(self, geometric_supras):
         """Test boundingBox method with multiple magnets"""
         rb, zb = geometric_supras.boundingBox()
