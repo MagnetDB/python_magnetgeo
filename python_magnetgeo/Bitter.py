@@ -212,8 +212,8 @@ class Bitter(yaml.YAMLObject):
         modelaxi = values["modelaxi"]
         coolingslits = values["coolingslits"]
         tierod = values["tierod"]
-        innerbore = values["innerbore"] if "innerbore" in values else 0
-        outerbore = values["outerbore"] if "outerbore" in values else 0
+        innerbore = values.get("innerbore", 0)
+        outerbore = values.get("outerbore", 0)
 
         return cls(name, r, z, odd, modelaxi, coolingslits, tierod, innerbore, outerbore)
 
@@ -223,7 +223,10 @@ class Bitter(yaml.YAMLObject):
         create from yaml
         """
         from .utils import loadYaml
-        return loadYaml("Bitter", filename, Bitter, debug)
+        # return loadYaml("Bitter", filename, Bitter, debug)
+        object = loadYaml("Bitter", filename, Bitter, debug)
+        object.update()
+        return object   
 
     @classmethod
     def from_json(cls, filename: str, debug: bool = False):
@@ -319,21 +322,7 @@ def Bitter_constructor(loader, node):
     #print("Bitter_constructor: called")
     #print(node)
     values = loader.construct_mapping(node)
-    #print(values)
-    #for key, value in values.items():
-    #    print(f"  {key}: {value} (type: {type(value)})")
-    
-    name = values["name"]
-    r = values["r"]
-    z = values["z"]
-    odd = values["odd"]
-    modelaxi = values["modelaxi"]
-    coolingslits = values["coolingslits"]
-    tierod = values["tierod"]
-    innerbore = values.get("innerbore", 0)
-    outerbore = values.get("outerbore", 0)
-
-    return Bitter(name, r, z, odd, modelaxi, coolingslits, tierod, innerbore, outerbore)
+    return Bitter.from_dict(values)
 
 
 

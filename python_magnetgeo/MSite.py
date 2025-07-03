@@ -13,20 +13,6 @@ import json
 import yaml
 
 
-from .Bitters import Bitters
-from .Supras import Supras
-from .Insert import Insert
-from .Screen import Screen
-
-dict_magnets = {
-    "Bitters": Bitters.from_dict,
-    "Supras": Supras.from_dict,
-    "Insert": Insert.from_dict,
-}
-
-dict_screens = {
-    "Screen": Screen.from_dict,
-}
 
 class MSite(yaml.YAMLObject):
     """
@@ -68,8 +54,22 @@ class MSite(yaml.YAMLObject):
         """
         update magnets if there were loaded as str
         """
-        from .utils import check_objects        
-        from .utils import loadList
+        from .Bitters import Bitters
+        from .Supras import Supras
+        from .Insert import Insert
+        from .Screen import Screen
+
+        dict_magnets = {
+            "Bitters": Bitters.from_dict,
+            "Supras": Supras.from_dict,
+            "Insert": Insert.from_dict,
+        }
+
+        dict_screens = {
+            "Screen": Screen.from_dict,
+        }
+
+        from .utils import check_objects, loadList
         if check_objects(self.magnets, str):
             self.magnets = loadList("magnets", self.magnets, [None, Insert, Bitters, Supras], dict_magnets)
             print("update magnets:", self.magnets)
@@ -167,6 +167,9 @@ class MSite(yaml.YAMLObject):
         """
         from .utils import loadYaml
         return loadYaml("MSite", filename, MSite, debug)
+        object = loadYaml("MSite", filename, MSite, debug)
+        object.update()
+        return object
 
     @classmethod
     def from_json(cls, filename: str, debug: bool = False):
@@ -211,13 +214,7 @@ def MSite_constructor(loader, node):
     """
     print(f"MSite_constructor")
     values = loader.construct_mapping(node)
-    name = values["name"]
-    magnets = values["magnets"]
-    screens = values["screens"]
-    z_offset = values["z_offset"]
-    r_offset = values["r_offset"]
-    paralax = values["paralax"]
-    return MSite(name, magnets, screens, z_offset, r_offset, paralax)
+    return MSite.from_dict(values)
 
 
 

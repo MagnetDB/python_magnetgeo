@@ -254,13 +254,7 @@ def Supra_constructor(loader, node):
     build an supra object
     """
     values = loader.construct_mapping(node)
-    name = values["name"]
-    r = values["r"]
-    z = values["z"]
-    n = values["n"]
-    struct = values["struct"]
-
-    return Supra(name, r, z, n, struct)
+    return Supra.from_dict(values)
 
 
 yaml.add_constructor(Supra.yaml_tag, Supra_constructor)

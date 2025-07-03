@@ -223,13 +223,12 @@ class Helix(yaml.YAMLObject):
         shape = values["shape"]
 
         # Make chamfers and grooves optional
-        chamfers = values["chamfers"] if "chamfers" in values else []
-        grooves = values["grooves"] if "grooves" in values else Groove()
+        chamfers = values.get("chamfers", [])
+        grooves = values.get("grooves", Groove())
 
-        helix = cls(
+        return cls(
             name, r, z, cutwidth, odd, dble, modelaxi, model3d, shape, chamfers, grooves
         )
-        return helix
 
     @classmethod
     def from_yaml(cls, filename: str, debug: bool = False):
@@ -237,7 +236,10 @@ class Helix(yaml.YAMLObject):
         create from yaml
         """
         from .utils import loadYaml
-        return loadYaml("Helix", filename, Helix, debug)
+        # return loadYaml("Helix", filename, Helix, debug)
+        object = loadYaml("Helix", filename, Helix, debug)
+        object.update()
+        return object
 
     @classmethod
     def from_json(cls, filename: str, debug: bool = False):
@@ -245,7 +247,9 @@ class Helix(yaml.YAMLObject):
         convert from json to yaml
         """
         from .utils import loadJson
-        return loadJson("Helix", filename, debug)
+        object = loadJson("Helix", filename, debug)
+        object.update()
+        return object
 
     def write_to_json(self):
         """
@@ -334,24 +338,6 @@ def Helix_constructor(loader, node):
     """
     
     values = loader.construct_mapping(node)
-    name = values["name"]
-    r = values["r"]
-    z = values["z"]
-    odd = values["odd"]
-    dble = values["dble"]
-    cutwidth = values["cutwidth"]
-    modelaxi = values["modelaxi"]
-    model3d = values["model3d"]
-    shape = values["shape"]
-
-    # Make chamfers and grooves optional
-    chamfers = values.get("chamfers", [])
-    grooves = values.get("grooves", Groove())
-
-    return Helix(
-        name, r, z, cutwidth, odd, dble, modelaxi, model3d, shape, chamfers, grooves
-    )
-
-    
+    return Helix.from_dict(values)
 
 yaml.add_constructor(Helix.yaml_tag, Helix_constructor)

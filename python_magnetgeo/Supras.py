@@ -174,12 +174,7 @@ class Supras(yaml.YAMLObject):
 
 def Supras_constructor(loader, node):
     values = loader.construct_mapping(node)
-    name = values["name"]
-    magnets = values["magnets"]        
-    
-    innerbore = values["innerbore"] if "innerbore" in values else 0
-    outerbore = values["outerbore"] if "outerbore" in values else 0
-    return Supras(name, magnets, innerbore, outerbore)        
+    return Supras.from_dict(values)
 
 
 yaml.add_constructor(Supras.yaml_tag, Supras_constructor)

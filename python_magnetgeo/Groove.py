@@ -50,6 +50,17 @@ class Groove(yaml.YAMLObject):
         )
 
     @classmethod
+    def from_dict(cls, values: dict, debug: bool = False):
+        """
+        create from dict
+        """
+        name = values.get("name", '')
+        gtype = values["gtype"]
+        n = values["n"]
+        eps = values["eps"]
+        return Groove(name, gtype, n, eps)
+    
+    @classmethod
     def from_yaml(cls, filename: str, debug: bool = False):
         """
         create from yaml
@@ -71,10 +82,6 @@ def Groove_constructor(loader, node):
     build an Groove object
     """
     values = loader.construct_mapping(node)
-    name = values.get("name", '')
-    gtype = values["gtype"]
-    n = values["n"]
-    eps = values["eps"]
-    return Groove(name, gtype, n, eps)
+    return Groove.from_dict(values)
 
 yaml.add_constructor(Groove.yaml_tag, Groove_constructor)

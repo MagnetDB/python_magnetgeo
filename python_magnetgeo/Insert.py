@@ -264,6 +264,9 @@ class Insert(yaml.YAMLObject):
         """
         from .utils import loadYaml
         return loadYaml("Insert", filename, Insert, debug)
+        object = loadYaml("Insert", filename, Insert, debug)
+        object.update()
+        return object
     
     @classmethod
     def from_json(cls, filename: str, debug: bool = False):
@@ -449,19 +452,7 @@ class Insert(yaml.YAMLObject):
 def Insert_constructor(loader, node):
     print("Insert_constructor")
     data = loader.construct_mapping(node)
-
-    name = data["name"]
-    helices = data["helices"]
-    rings = data["rings"]
-    currentleads = data["currentleads"]
-    innerbore = data["innerbore"]
-    outerbore = data["outerbore"]
-    hangles = data["hangles"]
-    rangles = data["rangles"]
-
-    return Insert(
-        name, helices, rings, currentleads, hangles, rangles, innerbore, outerbore
-    )
+    return Insert.from_dict(data)
 
 
 yaml.add_constructor(Insert.yaml_tag, Insert_constructor)

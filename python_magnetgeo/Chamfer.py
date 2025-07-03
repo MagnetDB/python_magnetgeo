@@ -101,6 +101,23 @@ class Chamfer(yaml.YAMLObject):
         )
 
     @classmethod
+    def from_dict(cls, values: dict, debug: bool = False):
+        """
+        create from dict
+        """
+        name = values["name"]
+        side = values["side"]
+        rside = values["rside"]
+
+        # Make chamfers and grooves optional
+        alpha = values.get("alpha", None)
+        dr = values.get("dr", None)
+
+        l = values["l"]
+
+        return cls(name, side, rside, alpha, dr, l)
+    
+    @classmethod
     def from_yaml(cls, filename: str, debug: bool = False):
         """
         create from yaml
@@ -153,16 +170,7 @@ def Chamfer_constructor(loader, node):
     build an Shape object
     """
     values = loader.construct_mapping(node)
-    name = values.get("name", "")
-    side = values["side"]
-    rside = values["rside"]
-
-    # Make chamfers and grooves optional
-    alpha = values.get("alpha", None)
-    dr = values.get("dr", None)
-
-    l = values["l"]
-    return Chamfer(name, side, rside, alpha, dr, l)
+    return Chamfer.from_dict(values)
 
 
 

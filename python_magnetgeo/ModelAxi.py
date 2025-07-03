@@ -78,6 +78,18 @@ class ModelAxi(yaml.YAMLObject):
             ostream.write(str(jsondata))
 
     @classmethod
+    def from_dict(cls, values: dict, debug: bool = False):
+        """
+        create from dict
+        """
+        name = values["name"]
+        h = values["h"]
+        turns = values["turns"]
+        pitch = values["pitch"]
+
+        return cls(name, h, turns, pitch)
+    
+    @classmethod
     def from_yaml(cls, filename: str, debug: bool = False):
         """
         create from yaml
@@ -135,12 +147,7 @@ def ModelAxi_constructor(loader, node):
     build an ModelAxi object
     """
     values = loader.construct_mapping(node)
-    
-    name = values["name"]
-    h = values["h"]
-    turns = values["turns"]
-    pitch = values["pitch"]
-    return ModelAxi(name, h, turns, pitch)
+    return ModelAxi.from_dict(values)
 
 
 yaml.add_constructor(ModelAxi.yaml_tag, ModelAxi_constructor)

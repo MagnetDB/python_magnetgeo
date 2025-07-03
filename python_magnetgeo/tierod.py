@@ -51,6 +51,21 @@ class Tierod(yaml.YAMLObject):
         )
 
     @classmethod
+    def from_dict(cls, values: dict, debug: bool = False):
+        """
+        create from dict
+        """
+        name = values.get("name", "")
+        r = values["r"]
+        n = values["n"]
+        dh = values["dh"]
+        sh = values["sh"]
+        shape = values["shape"]
+
+        object = cls(name, r, n, dh, sh, shape)
+        return object
+    
+    @classmethod
     def from_yaml(cls, filename: str, debug: bool = False):
         """
         create from yaml
@@ -76,12 +91,6 @@ def Tierod_constructor(loader, node):
     build an Tierod object
     """
     values = loader.construct_mapping(node)
-    name = values.get("name", "")
-    r = values["r"]
-    n = values["n"]
-    dh = values["dh"]
-    sh = values["sh"]
-    shape = values["shape"]
-    return Tierod(name, r, n, dh, sh, shape)
+    return Tierod.from_dict(values)
 
 yaml.add_constructor(Tierod.yaml_tag, Tierod_constructor)

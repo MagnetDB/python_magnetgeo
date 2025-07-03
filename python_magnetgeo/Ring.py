@@ -119,9 +119,8 @@ class Ring(yaml.YAMLObject):
         fillets = values["fillets"]
         cad = values.get("cad", '')
 
-        return  cls(name, r, z, n, angle, bpside, fillets, cad)
-
-
+        return cls(name, r, z, n, angle, bpside, fillets, cad)
+    
     @classmethod
     def from_yaml(cls, filename: str, debug: bool = False):
         """
@@ -144,15 +143,6 @@ def Ring_constructor(loader, node):
     build an ring object
     """
     values = loader.construct_mapping(node)
-    name = values["name"]
-    r = values["r"]
-    z = values["z"]
-    n = values["n"]
-    angle = values["angle"]
-    bpside = values["bpside"]
-    fillets = values["fillets"]
-    cad = values.get("cad", '') 
-
-    return  Ring(name, r, z, n, angle, bpside, fillets, cad)
+    return  Ring.from_dict(values)
 
 yaml.add_constructor(Ring.yaml_tag, Ring_constructor)

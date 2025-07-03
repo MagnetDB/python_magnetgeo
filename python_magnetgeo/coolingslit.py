@@ -68,13 +68,30 @@ class CoolingSlit(yaml.YAMLObject):
         )
 
     @classmethod
+    def from_dict(cls, values: dict, debug: bool = False):
+        """
+        create from dict
+        """
+        name = values["name"]
+        r = values["r"]
+        angle = values["angle"]
+        n = values["n"]
+        dh = values["dh"]
+        sh = values["sh"]
+        shape = values["shape"]
+
+        return cls(name, r, angle, n, dh, sh, shape)
+
+    @classmethod
     def from_yaml(cls, filename: str, debug: bool = False):
         """
         create from yaml
         """
         from .utils import loadYaml
-        return loadYaml("CoolingSlit", filename, CoolingSlit, debug)
-            
+        # return loadYaml("CoolingSlit", filename, CoolingSlit, debug)
+        object = loadYaml("CoolingSlit", filename, CoolingSlit, debug)
+        object.update()
+        return object
         
     @classmethod
     def from_json(cls, filename: str, debug: bool = False):

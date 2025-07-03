@@ -149,10 +149,7 @@ def Screen_constructor(loader, node):
     build an screen object
     """
     values = loader.construct_mapping(node)
-    name = values["name"]
-    r = values["r"]
-    z = values["z"]
-    return Screen(name, r, z)        
+    return Screen.from_dict(values)
 
 
 

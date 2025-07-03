@@ -6,8 +6,6 @@
 import json
 import yaml
 
-from .Bitter import Bitter
-
 
 class Bitters(yaml.YAMLObject):
     """
@@ -44,6 +42,7 @@ class Bitters(yaml.YAMLObject):
         """
         update magnets if there were loaded as str
         """
+        from .Bitter import Bitter
         from .utils import check_objects,loadList
         if check_objects(self.magnets, str):
             self.magnets = loadList("magnets", self.magnets, [None, Bitter], {"Bitter": Bitter.from_dict})
@@ -122,8 +121,8 @@ class Bitters(yaml.YAMLObject):
         """
         name = values["name"]
         magnets = values["magnets"]
-        innerbore = values["innerbore"] if "innerbore" in values else 0
-        outerbore = values["outerbore"] if "outerbore" in values else 0
+        innerbore = values.get("innerbore", 0)
+        outerbore = values.get("outerbore", 0)
 
         return cls(name, magnets, innerbore, outerbore)
 
@@ -193,18 +192,7 @@ def Bitters_constructor(loader, node):
     #print("Bitters_constructor: called")
     #print(node)
     values = loader.construct_mapping(node)
-    #print(values)
-    #for key, value in values.items():
-    #    print(f"  {key}: {value} (type: {type(value)})")
-
-    name = values["name"]
-    magnets = values["magnets"]    
-    #print("magnets:", values["magnets"], {len(values["magnets"])})
-
-    innerbore = values["innerbore"]
-    outerbore = values["outerbore"]
-
-    return Bitters(name, magnets, innerbore, outerbore)   
+    return Bitters.from_dict(values)
 
 
 yaml.add_constructor(Bitters.yaml_tag, Bitters_constructor)

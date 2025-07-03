@@ -80,6 +80,18 @@ class Model3D(yaml.YAMLObject):
             ostream.write(str(jsondata))
 
     @classmethod
+    def from_dict(cls, values: dict, debug: bool = False):
+        """
+        create from dict
+        """
+        name = values["name"]
+        cad = values["cad"]
+        with_shapes = values.get("with_shapes", False)
+        with_channels = values.get("with_channels", False)
+
+        return cls(name, cad, with_shapes, with_channels)
+    
+    @classmethod
     def from_yaml(cls, filename: str, debug: bool = False):
         """
         create from yaml
@@ -100,11 +112,7 @@ def Model3D_constructor(loader, node):
     build an Model3d object
     """
     values = loader.construct_mapping(node)
-    name = values.get("name", '')
-    cad = values["cad"]
-    with_shapes = values["with_shapes"]
-    with_channels = values["with_channels"]
-    return Model3D(name, cad, with_shapes, with_channels)
+    return Model3D.from_dict(values)
 
 
 yaml.add_constructor(Model3D.yaml_tag, Model3D_constructor)
