@@ -5,6 +5,7 @@
 Provides tools to un/serialize data from json
 """
 
+from .Probe import Probe
 from .Shape import Shape
 from .ModelAxi import ModelAxi
 from .Model3D import Model3D
@@ -30,6 +31,7 @@ from .coolingslit import CoolingSlit
 # Dictionary mapping names to known classes
 
 classes = {
+    "Probe": Probe,
     "Shape": Shape,
     "ModelAxi": ModelAxi,
     "Model3D": Model3D,
