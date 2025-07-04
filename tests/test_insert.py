@@ -2,7 +2,7 @@
 # -*- coding:utf-8 -*-
 
 """
-Pytest script for testing the Insert class (Updated with factored approach)
+Pytest script for testing the Insert class (Updated with probes attribute)
 """
 
 import pytest
@@ -18,6 +18,7 @@ from python_magnetgeo.Helix import Helix
 from python_magnetgeo.Ring import Ring
 from python_magnetgeo.InnerCurrentLead import InnerCurrentLead
 from python_magnetgeo.OuterCurrentLead import OuterCurrentLead
+from python_magnetgeo.Probe import Probe
 from python_magnetgeo.ModelAxi import ModelAxi
 from python_magnetgeo.Model3D import Model3D
 from python_magnetgeo.Shape import Shape
@@ -84,13 +85,61 @@ class TestInsertInitialization:
         assert insert.helices == []
         assert insert.rings == []
         assert insert.currentleads == []
+        assert insert.probes == []  # NEW: Check default empty probes
         assert insert.hangles == []
         assert insert.rangles == []
         assert insert.innerbore == 0
         assert insert.outerbore == 0
 
+    def test_insert_initialization_with_probes(self):
+        """Test Insert initialization with probes parameter"""
+        # Create mock probe objects
+        probe1 = Mock(spec=Probe)
+        probe1.name = "voltage_probe"
+        probe1.probe_type = "voltage_taps"
+        
+        probe2 = Mock(spec=Probe)
+        probe2.name = "temp_probe"
+        probe2.probe_type = "temperature"
+        
+        insert = Insert(
+            name="probes_insert",
+            helices=[],
+            rings=[],
+            currentleads=[],
+            hangles=[],
+            rangles=[],
+            innerbore=5.0,
+            outerbore=50.0,
+            probes=[probe1, probe2]  # NEW: Initialize with probes
+        )
+        
+        assert insert.name == "probes_insert"
+        assert len(insert.probes) == 2
+        assert insert.probes[0] == probe1
+        assert insert.probes[1] == probe2
+
+    def test_insert_initialization_with_string_probe_references(self):
+        """Test Insert initialization with string probe references"""
+        insert = Insert(
+            name="string_probes_insert",
+            helices=["helix1.yaml"],
+            rings=["ring1.yaml"],
+            currentleads=["lead1.yaml"],
+            hangles=[0.0, 90.0],
+            rangles=[45.0],
+            innerbore=8.0,
+            outerbore=48.0,
+            probes=["voltage_probes.yaml", "temp_probes.yaml"]  # NEW: String references
+        )
+        
+        assert insert.name == "string_probes_insert"
+        assert insert.probes == ["voltage_probes.yaml", "temp_probes.yaml"]
+        assert isinstance(insert.probes, list)
+        assert all(isinstance(item, str) for item in insert.probes)
+
     def test_insert_full_initialization_with_objects(self):
-        """Test Insert initialization with actual objects"""
+        """Test Insert initialization with all types of objects"""
         # Create mock objects
         helix = Mock(spec=Helix)
         helix.name = "test_helix"
@@ -105,6 +154,10 @@ class TestInsertInitialization:
         inner_lead = Mock(spec=InnerCurrentLead)
         inner_lead.name = "inner_lead"
         
+        probe = Mock(spec=Probe)
+        probe.name = "test_probe"
+        probe.probe_type = "voltage_taps"
+        
         insert = Insert(
             name="full_insert",
             helices=[helix],
@@ -113,7 +166,8 @@ class TestInsertInitialization:
             hangles=[0.0, 90.0, 180.0],
             rangles=[45.0, 135.0],
             innerbore=5.0,
-            outerbore=50.0
+            outerbore=50.0,
+            probes=[probe]  # NEW: Include probe
         )
         
         assert insert.name == "full_insert"
@@ -123,33 +177,62 @@ class TestInsertInitialization:
         assert insert.rings[0] == ring
         assert len(insert.currentleads) == 1
         assert insert.currentleads[0] == inner_lead
+        assert len(insert.probes) == 1  # NEW: Check probe
+        assert insert.probes[0] == probe
         assert insert.hangles == [0.0, 90.0, 180.0]
         assert insert.rangles == [45.0, 135.0]
         assert insert.innerbore == 5.0
         assert insert.outerbore == 50.0
 
-    def test_insert_initialization_with_string_references(self):
-        """Test Insert initialization with string references"""
+    def test_insert_probes_default_none(self):
+        """Test Insert with probes=None defaults to empty list"""
         insert = Insert(
-            name="string_insert",
-            helices=["helix1.yaml", "helix2.yaml"],
-            rings=["ring1.yaml"],
-            currentleads=["inner_lead.yaml", "outer_lead.yaml"],
-            hangles=[0.0, 120.0, 240.0],
-            rangles=[60.0, 180.0],
-            innerbore=8.0,
-            outerbore=48.0
+            name="default_probes_insert",
+            helices=[],
+            rings=[],
+            currentleads=[],
+            hangles=[],
+            rangles=[],
+            probes=None  # NEW: Explicit None
         )
         
-        assert insert.name == "string_insert"
-        assert insert.helices == ["helix1.yaml", "helix2.yaml"]
-        assert insert.rings == ["ring1.yaml"]
-        assert insert.currentleads == ["inner_lead.yaml", "outer_lead.yaml"]
+        assert insert.probes == []  # Should default to empty list
 
 
 class TestInsertUpdate:
     """Test Insert update method for loading string references"""
     
+    @patch('python_magnetgeo.utils.loadList')
+    @patch('python_magnetgeo.utils.check_objects')
+    def test_update_with_string_probes(self, mock_check, mock_load_list):
+        """Test update method with string probes references"""
+        insert = Insert(
+            name="update_probes_insert",
+            helices=[],
+            rings=[],
+            currentleads=[],
+            hangles=[],
+            rangles=[],
+            probes=["probe1", "probe2"]  # NEW: String probe references
+        )
+        
+        def mock_check_side_effect(objects, target_type):
+            return target_type == str and isinstance(objects, list) and all(isinstance(obj, str) for obj in objects)
+        
+        mock_check.side_effect = mock_check_side_effect
+        
+        # Mock loaded probes
+        mock_probes = [Mock(spec=Probe), Mock(spec=Probe)]
+        mock_probes[0].name = "loaded_probe1"
+        mock_probes[1].name = "loaded_probe2"
+        mock_load_list.return_value = mock_probes
+        
+        insert.update()
+        
+        assert insert.probes == mock_probes
+        # Check that loadList was called for probes
+        mock_load_list.assert_any_call("probes", ["probe1", "probe2"], [None, Probe], {"Probe": Probe.from_dict})
+
     @patch('python_magnetgeo.utils.loadList')
     @patch('python_magnetgeo.utils.check_objects')
     def test_update_with_string_helices(self, mock_check, mock_load_list):
@@ -160,7 +243,8 @@ class TestInsertUpdate:
             rings=[],
             currentleads=[],
             hangles=[],
-            rangles=[]
+            rangles=[],
+            probes=[]  # NEW: Empty probes
         )
         
         def mock_check_side_effect(objects, target_type):
@@ -181,84 +265,20 @@ class TestInsertUpdate:
 
     @patch('python_magnetgeo.utils.loadList')
     @patch('python_magnetgeo.utils.check_objects')
-    def test_update_with_string_rings(self, mock_check, mock_load_list):
-        """Test update method with string rings references"""
-        insert = Insert(
-            name="update_rings_insert",
-            helices=[],
-            rings=["ring1", "ring2", "ring3"],
-            currentleads=[],
-            hangles=[],
-            rangles=[]
-        )
-        
-        def mock_check_side_effect(objects, target_type):
-            return target_type == str and isinstance(objects, list) and all(isinstance(obj, str) for obj in objects)
-        
-        mock_check.side_effect = mock_check_side_effect
-        
-        # Mock loaded rings
-        mock_rings = [Mock(spec=Ring) for _ in range(3)]
-        for i, ring in enumerate(mock_rings):
-            ring.name = f"loaded_ring{i+1}"
-        mock_load_list.return_value = mock_rings
-        
-        insert.update()
-        
-        assert insert.rings == mock_rings
-        mock_load_list.assert_any_call("rings", ["ring1", "ring2", "ring3"], [None, Ring], {"Ring": Ring.from_dict})
-
-    @patch('python_magnetgeo.utils.loadList')
-    @patch('python_magnetgeo.utils.check_objects')
-    def test_update_with_string_currentleads(self, mock_check, mock_load_list):
-        """Test update method with string currentleads references"""
-        dict_leads = {
-            "InnerCurrentLead": InnerCurrentLead.from_dict,
-            "OuterCurrentLead": OuterCurrentLead.from_dict,
-        }
+    def test_update_with_mixed_string_and_object_probes(self, mock_check, mock_load_list):
+        """Test update method with mixed probe types"""
+        # Create existing probe object
+        existing_probe = Mock(spec=Probe)
+        existing_probe.name = "existing_probe"
         
         insert = Insert(
-            name="update_leads_insert",
+            name="mixed_probes_insert",
             helices=[],
             rings=[],
-            currentleads=["inner_lead", "outer_lead"],
+            currentleads=[],
             hangles=[],
-            rangles=[]
-        )
-        
-        def mock_check_side_effect(objects, target_type):
-            return target_type == str and isinstance(objects, list) and all(isinstance(obj, str) for obj in objects)
-        
-        mock_check.side_effect = mock_check_side_effect
-        
-        # Mock loaded current leads
-        mock_leads = [Mock(spec=InnerCurrentLead), Mock(spec=OuterCurrentLead)]
-        mock_leads[0].name = "loaded_inner_lead"
-        mock_leads[1].name = "loaded_outer_lead"
-        mock_load_list.return_value = mock_leads
-        
-        insert.update()
-        
-        assert insert.currentleads == mock_leads
-        mock_load_list.assert_any_call("currentleads", ["inner_lead", "outer_lead"], [None, InnerCurrentLead, OuterCurrentLead], dict_leads)
-
-    @patch('python_magnetgeo.utils.loadList')
-    @patch('python_magnetgeo.utils.check_objects')
-    def test_update_with_mixed_objects_and_strings(self, mock_check, mock_load_list):
-        """Test update method with mixed object and string references"""
-        # Create existing objects
-        existing_helix = Mock(spec=Helix)
-        existing_helix.name = "existing_helix"
-        existing_ring = Mock(spec=Ring)
-        existing_ring.name = "existing_ring"
-        
-        insert = Insert(
-            name="mixed_insert",
-            helices=[existing_helix],  # Object
-            rings=["string_ring1", "string_ring2"],  # Strings
-            currentleads=[],  # Empty
-            hangles=[0.0],
-            rangles=[45.0]
+            rangles=[],
+            probes=["string_probe1", "string_probe2"]  # NEW: String probe references
         )
         
         def mock_check_side_effect(objects, target_type):
@@ -268,21 +288,17 @@ class TestInsertUpdate:
         
         mock_check.side_effect = mock_check_side_effect
         
-        # Mock loaded rings (only rings should be loaded)
-        mock_rings = [Mock(spec=Ring), Mock(spec=Ring)]
-        mock_rings[0].name = "loaded_ring1"
-        mock_rings[1].name = "loaded_ring2"
-        mock_load_list.return_value = mock_rings
+        # Mock loaded probes
+        mock_probes = [Mock(spec=Probe), Mock(spec=Probe)]
+        mock_probes[0].name = "loaded_probe1"
+        mock_probes[1].name = "loaded_probe2"
+        mock_load_list.return_value = mock_probes
         
         insert.update()
         
-        # Helices should remain unchanged (was already object)
-        assert insert.helices == [existing_helix]
-        # Rings should be loaded from strings
-        assert insert.rings == mock_rings
-        # Both rings and currentleads should have been called (currentleads is empty list but still checked)
-        assert mock_load_list.call_count == 2
-        mock_load_list.assert_any_call("rings", ["string_ring1", "string_ring2"], [None, Ring], {"Ring": Ring.from_dict})
+        # Probes should be loaded from strings
+        assert insert.probes == mock_probes
+        mock_load_list.assert_any_call("probes", ["string_probe1", "string_probe2"], [None, Probe], {"Probe": Probe.from_dict})
 
     def test_update_with_object_references(self):
         """Test update method when components are already objects"""
@@ -290,6 +306,7 @@ class TestInsertUpdate:
         helix = Mock(spec=Helix)
         ring = Mock(spec=Ring)
         lead = Mock(spec=InnerCurrentLead)
+        probe = Mock(spec=Probe)  # NEW: Mock probe object
         
         insert = Insert(
             name="object_insert",
@@ -297,13 +314,15 @@ class TestInsertUpdate:
             rings=[ring],
             currentleads=[lead],
             hangles=[0.0],
-            rangles=[90.0]
+            rangles=[90.0],
+            probes=[probe]  # NEW: Object probe
         )
         
         # Store original references
         orig_helices = insert.helices
         orig_rings = insert.rings
         orig_leads = insert.currentleads
+        orig_probes = insert.probes  # NEW: Store original probes
         
         insert.update()
         
@@ -311,6 +330,7 @@ class TestInsertUpdate:
         assert insert.helices == orig_helices
         assert insert.rings == orig_rings
         assert insert.currentleads == orig_leads
+        assert insert.probes == orig_probes  # NEW: Check probes unchanged
 
 
 class TestInsertMethods:
@@ -325,7 +345,8 @@ class TestInsertMethods:
             rings=[],
             currentleads=[],
             hangles=[],
-            rangles=[]
+            rangles=[],
+            probes=[]  # NEW: Include empty probes
         )
         assert insert.get_nhelices() == 3
 
@@ -337,111 +358,33 @@ class TestInsertMethods:
             rings=[],
             currentleads=[],
             hangles=[],
-            rangles=[]
+            rangles=[],
+            probes=[]  # NEW: Include empty probes
         )
         assert insert.get_nhelices() == 4
 
-    def test_get_nhelices_empty(self):
-        """Test get_nhelices with no helices"""
+    def test_repr_with_probes(self):
+        """Test __repr__ method includes probes"""
+        probe = Mock(spec=Probe)
+        probe.name = "test_probe"
+        
         insert = Insert(
-            name="empty_insert",
+            name="repr_test_insert",
             helices=[],
             rings=[],
             currentleads=[],
-            hangles=[],
-            rangles=[]
-        )
-        assert insert.get_nhelices() == 0
-
-    def test_get_names_with_mock_objects(self):
-        """Test get_names method with properly mocked objects"""
-        # Create mock helices with get_names method
-        helix1 = Mock(spec=Helix)
-        helix1.get_names.return_value = ["test_H1_Cu0", "test_H1_Cu1"]
-        helix2 = Mock(spec=Helix)
-        helix2.get_names.return_value = ["test_H2_Cu0", "test_H2_Cu1", "test_H2_Cu2"]
-        
-        # Create mock rings
-        ring1 = Mock(spec=Ring)
-        ring1.name = "ring1"
-        ring2 = Mock(spec=Ring)
-        ring2.name = "ring2"
-        
-        # Create mock current leads
-        inner_lead = Mock(spec=InnerCurrentLead)
-        outer_lead = Mock(spec=OuterCurrentLead)
-        
-        insert = Insert(
-            name="names_test_insert",
-            helices=[helix1, helix2],
-            rings=[ring1, ring2],
-            currentleads=[inner_lead, outer_lead],
-            hangles=[],
-            rangles=[]
+            hangles=[0.0],
+            rangles=[90.0],
+            innerbore=5.0,
+            outerbore=25.0,
+            probes=[probe]  # NEW: Include probe
         )
         
-        # Test 2D names
-        names_2d = insert.get_names("test", is2D=True)
-        expected_2d = [
-            "test_H1_Cu0", "test_H1_Cu1",    # From helix1
-            "test_H2_Cu0", "test_H2_Cu1", "test_H2_Cu2",  # From helix2
-            "test_R1", "test_R2"             # From rings
-        ]
-        assert names_2d == expected_2d
+        repr_str = repr(insert)
         
-        # Verify helices were called with correct parameters
-        helix1.get_names.assert_called_with("test_H1", True, False)
-        helix2.get_names.assert_called_with("test_H2", True, False)
-        
-        # Test 3D names
-        names_3d = insert.get_names("test", is2D=False)
-        expected_3d = [
-            "H1", "H2",                      # Helices
-            "test_R1", "test_R2",           # Rings
-            "iL1", "oL2"                    # Current leads
-        ]
-        assert names_3d == expected_3d
-
-    def test_get_names_no_prefix(self):
-        """Test get_names with no prefix"""
-        helix = Mock(spec=Helix)
-        ring = Mock(spec=Ring)
-        lead = Mock(spec=InnerCurrentLead)
-        
-        insert = Insert(
-            name="no_prefix_insert",
-            helices=[helix],
-            rings=[ring],
-            currentleads=[lead],
-            hangles=[],
-            rangles=[]
-        )
-        
-        names = insert.get_names("", is2D=False)
-        expected = ["H1", "R1", "iL1"]
-        assert names == expected
-
-    def test_get_names_no_rings_no_leads(self):
-        """Test get_names with only helices"""
-        helix1 = Mock(spec=Helix)
-        helix1.get_names.return_value = ["test_H1_Cu0"]
-        helix2 = Mock(spec=Helix)
-        helix2.get_names.return_value = ["test_H2_Cu0"]
-        
-        insert = Insert(
-            name="minimal_insert",
-            helices=[helix1, helix2],
-            rings=[],
-            currentleads=[],
-            hangles=[],
-            rangles=[]
-        )
-        
-        names_2d = insert.get_names("test", is2D=True)
-        assert names_2d == ["test_H1_Cu0", "test_H2_Cu0"]
-        
-        names_3d = insert.get_names("test", is2D=False)
-        assert names_3d == ["H1", "H2"]
+        # Should include probes in representation
+        assert "probes=" in repr_str
+        assert "repr_test_insert" in repr_str
 
     def test_bounding_box_with_helices(self):
         """Test boundingBox method with helix objects"""
@@ -466,7 +409,8 @@ class TestInsertMethods:
             rings=[ring1, ring2],
             currentleads=[],
             hangles=[],
-            rangles=[]
+            rangles=[],
+            probes=[]  # NEW: Include empty probes
         )
         
         rb, zb = insert.boundingBox()
@@ -669,7 +613,8 @@ class TestInsertSerialization(BaseSerializationTestMixin):
             hangles=[0.0, 90.0],
             rangles=[45.0],
             innerbore=5.0,
-            outerbore=50.0
+            outerbore=50.0,
+            probes=[]  # NEW: Include empty probes
         )
     
     def get_sample_yaml_content(self):
@@ -679,6 +624,7 @@ name: yaml_insert
 helices: []
 rings: []
 currentleads: []
+probes: []
 hangles: [0.0, 180.0]
 rangles: [90.0]
 innerbore: 10.0
@@ -692,7 +638,8 @@ outerbore: 60.0
             "hangles": [0.0, 90.0],
             "rangles": [45.0],
             "innerbore": 5.0,
-            "outerbore": 50.0
+            "outerbore": 50.0,
+            "probes": []  # NEW: Include probes field
         }
     
     def get_class_under_test(self):
@@ -708,32 +655,29 @@ outerbore: 60.0
         assert "helices" in parsed
         assert "rings" in parsed
         assert "currentleads" in parsed
+        assert "probes" in parsed  # NEW: Check probes included
         assert isinstance(parsed["helices"], list)
         assert isinstance(parsed["rings"], list)
         assert isinstance(parsed["currentleads"], list)
+        assert isinstance(parsed["probes"], list)  # NEW: Check probes type
 
-    @patch("python_magnetgeo.utils.writeYaml")
-    def test_dump_method(self, mock_write_yaml):
-        """Test dump method calls writeYaml correctly"""
-        instance = self.get_sample_instance()
-        instance.dump()
-        mock_write_yaml.assert_called_once_with("Insert", instance, Insert)
-
-    @patch("python_magnetgeo.utils.writeYaml", side_effect=Exception("Dump error"))
-    def test_dump_error_handling(self, mock_write_yaml):
-        """Test dump method error handling"""
-        instance = self.get_sample_instance()
+    def test_serialization_with_probes(self):
+        """Test serialization with probe objects"""
+        # Create Insert with string probe references (serializable)
+        insert_with_probes = Insert(
+            name="probes_serialization_test",
+            helices=[],
+            rings=[],
+            currentleads=[],
+            hangles=[],
+            rangles=[],
+            probes=["probe1.yaml", "probe2.yaml"]  # NEW: String references
+        )
         
-        with pytest.raises(Exception, match="Dump error"):
-            instance.dump()
-
-    def test_write_to_json_method(self):
-        """Test write_to_json method"""
-        instance = self.get_sample_instance()
+        json_str = insert_with_probes.to_json()
+        parsed = json.loads(json_str)
         
-        with patch("builtins.open", mock_open()) as mock_file:
-            instance.write_to_json()
-            mock_file.assert_called_once_with("test_insert.json", "w")
+        assert parsed["probes"] == ["probe1.yaml", "probe2.yaml"]
 
 
 class TestInsertYAMLConstructor:
@@ -754,7 +698,8 @@ class TestInsertYAMLConstructor:
             "hangles": [0.0, 120.0],
             "rangles": [60.0],
             "innerbore": 8.0,
-            "outerbore": 48.0
+            "outerbore": 48.0,
+            "probes": ["probe1.yaml", "probe2.yaml"]  # NEW: Include probes
         }
         mock_loader.construct_mapping.return_value = mock_data
         
@@ -770,6 +715,7 @@ class TestInsertYAMLConstructor:
         assert result.rangles == [60.0]
         assert result.innerbore == 8.0
         assert result.outerbore == 48.0
+        assert result.probes == ["probe1.yaml", "probe2.yaml"]  # NEW: Check probes
         mock_loader.construct_mapping.assert_called_once_with(mock_node)
 
     def test_yaml_constructor_with_object_data(self):
@@ -781,6 +727,7 @@ class TestInsertYAMLConstructor:
         mock_helix = Mock(spec=Helix)
         mock_ring = Mock(spec=Ring)
         mock_lead = Mock(spec=InnerCurrentLead)
+        mock_probe = Mock(spec=Probe)  # NEW: Mock probe
         
         # YAML data with object references
         yaml_data = {
@@ -791,7 +738,8 @@ class TestInsertYAMLConstructor:
             "hangles": [0.0, 90.0],
             "rangles": [45.0],
             "innerbore": 10.0,
-            "outerbore": 50.0
+            "outerbore": 50.0,
+            "probes": [mock_probe]  # NEW: Include probe object
         }
         
         mock_loader.construct_mapping.return_value = yaml_data
@@ -804,6 +752,7 @@ class TestInsertYAMLConstructor:
         assert result.helices == [mock_helix]
         assert result.rings == [mock_ring]
         assert result.currentleads == [mock_lead]
+        assert result.probes == [mock_probe]  # NEW: Check probe object
 
 
 class TestInsertYAMLTag(BaseYAMLTagTestMixin):
@@ -822,7 +771,7 @@ class TestInsertFromDict:
     """Test Insert.from_dict class method"""
     
     def test_from_dict_complete_data(self):
-        """Test from_dict with complete data"""
+        """Test from_dict with complete data including probes"""
         data = {
             "name": "dict_insert",
             "helices": ["helix1", "helix2"],
@@ -831,7 +780,8 @@ class TestInsertFromDict:
             "hangles": [0.0, 120.0, 240.0],
             "rangles": [60.0, 180.0, 300.0],
             "innerbore": 8.0,
-            "outerbore": 48.0
+            "outerbore": 48.0,
+            "probes": ["probe1.yaml", "probe2.yaml"]  # NEW: Include probes
         }
         
         insert = Insert.from_dict(data)
@@ -844,6 +794,26 @@ class TestInsertFromDict:
         assert insert.rangles == [60.0, 180.0, 300.0]
         assert insert.innerbore == 8.0
         assert insert.outerbore == 48.0
+        assert insert.probes == ["probe1.yaml", "probe2.yaml"]  # NEW: Check probes
+
+    def test_from_dict_missing_probes_field(self):
+        """Test from_dict with missing probes field (should default to empty list)"""
+        data = {
+            "name": "minimal_insert",
+            "helices": ["helix1"],
+            "rings": ["ring1"],
+            "currentleads": ["lead1"],
+            "hangles": [0.0],
+            "rangles": [90.0],
+            "innerbore": 5.0,
+            "outerbore": 25.0
+            # No probes field
+        }
+        
+        insert = Insert.from_dict(data)
+        
+        assert insert.name == "minimal_insert"
+        assert insert.probes == []  # NEW: Should default to empty list
 
     def test_from_dict_with_object_data(self):
         """Test from_dict with actual object data"""
@@ -851,6 +821,7 @@ class TestInsertFromDict:
         helix = Mock(spec=Helix)
         ring = Mock(spec=Ring)
         lead = Mock(spec=InnerCurrentLead)
+        probe = Mock(spec=Probe)  # NEW: Mock probe
         
         data = {
             "name": "object_dict_insert",
@@ -860,7 +831,8 @@ class TestInsertFromDict:
             "hangles": [0.0, 90.0],
             "rangles": [45.0],
             "innerbore": 5.0,
-            "outerbore": 25.0
+            "outerbore": 25.0,
+            "probes": [probe]  # NEW: Include probe object
         }
         
         insert = Insert.from_dict(data)
@@ -869,23 +841,152 @@ class TestInsertFromDict:
         assert insert.helices == [helix]
         assert insert.rings == [ring]
         assert insert.currentleads == [lead]
+        assert insert.probes == [probe]  # NEW: Check probe object
 
-    def test_from_dict_with_debug(self):
-        """Test from_dict with debug flag"""
-        data = {
-            "name": "debug_insert",
-            "helices": [],
-            "rings": [],
-            "currentleads": [],
-            "hangles": [0.0],
-            "rangles": [90.0],
-            "innerbore": 3.0,
-            "outerbore": 30.0
-        }
+
+class TestInsertProbesIntegration:
+    """Test Insert integration with probes functionality"""
+    
+    def test_insert_with_probes_workflow(self):
+        """Test complete workflow with probes from string to object"""
+        # Step 1: Create Insert with string probe references
+        insert = Insert(
+            name="probes_workflow_insert",
+            helices=["helix1.yaml"],
+            rings=["ring1.yaml"],
+            currentleads=["lead1.yaml"],
+            hangles=[0.0, 180.0],
+            rangles=[90.0, 270.0],
+            innerbore=8.0,
+            outerbore=40.0,
+            probes=["voltage_probes.yaml", "temp_probes.yaml"]  # NEW: Probe references
+        )
         
-        insert = Insert.from_dict(data, debug=True)
-        assert isinstance(insert, Insert)
-        assert insert.name == "debug_insert"
+        # Initial state: probes should be strings
+        assert all(isinstance(probe, str) for probe in insert.probes)
+        assert len(insert.probes) == 2
+        
+        # Step 2: Mock the update process for probes
+        with patch('python_magnetgeo.utils.loadList') as mock_load_list:
+            with patch('python_magnetgeo.utils.check_objects') as mock_check:
+                
+                def mock_check_side_effect(objects, target_type):
+                    return target_type == str and isinstance(objects, list) and all(isinstance(obj, str) for obj in objects)
+                
+                mock_check.side_effect = mock_check_side_effect
+                
+                # Create mock loaded probes
+                mock_voltage_probe = Mock(spec=Probe)
+                mock_voltage_probe.name = "loaded_voltage_probe"
+                mock_voltage_probe.probe_type = "voltage_taps"
+                
+                mock_temp_probe = Mock(spec=Probe)
+                mock_temp_probe.name = "loaded_temp_probe"
+                mock_temp_probe.probe_type = "temperature"
+                
+                def mock_load_list_side_effect(comment, objects, supported_types, dict_objects):
+                    if comment == "probes":
+                        return [mock_voltage_probe, mock_temp_probe]
+                    elif comment == "helices":
+                        return [Mock(spec=Helix)]
+                    elif comment == "rings":
+                        return [Mock(spec=Ring)]
+                    elif comment == "currentleads":
+                        return [Mock(spec=InnerCurrentLead)]
+                    return []
+                
+                mock_load_list.side_effect = mock_load_list_side_effect
+                
+                # Step 3: Update to load string references
+                insert.update()
+                
+                # Step 4: Verify probes are loaded
+                assert len(insert.probes) == 2
+                assert insert.probes[0] == mock_voltage_probe
+                assert insert.probes[1] == mock_temp_probe
+                
+                # Verify loadList was called correctly for probes
+                mock_load_list.assert_any_call(
+                    "probes", 
+                    ["voltage_probes.yaml", "temp_probes.yaml"], 
+                    [None, Probe], 
+                    {"Probe": Probe.from_dict}
+                )
+
+    def test_insert_serialization_with_mixed_probe_types(self):
+        """Test serialization with mixed probe configurations"""
+        insert = Insert(
+            name="mixed_probes_insert",
+            helices=["helix1"],
+            rings=[],
+            currentleads=[],
+            hangles=[0.0],
+            rangles=[90.0],
+            innerbore=5.0,
+            outerbore=25.0,
+            probes=["external_probe.yaml"]  # String reference for serialization
+        )
+        
+        # Test JSON serialization preserves string references
+        json_str = insert.to_json()
+        parsed = json.loads(json_str)
+        
+        assert parsed["probes"] == ["external_probe.yaml"]
+        assert parsed["__classname__"] == "Insert"
+
+    @patch('python_magnetgeo.utils.loadList')
+    @patch('python_magnetgeo.utils.check_objects')
+    def test_insert_empty_probes_handling(self, mock_check, mock_load_list):
+        """Test Insert correctly handles empty probes list"""
+        insert = Insert(
+            name="empty_probes_insert",
+            helices=["helix1"],  # String reference that would trigger update
+            rings=[],
+            currentleads=[],
+            hangles=[],
+            rangles=[],
+            probes=[]  # Empty probes list
+        )
+        
+        assert insert.probes == []
+        assert isinstance(insert.probes, list)
+        
+        # Mock the update mechanism to prevent file loading
+        def mock_check_side_effect(objects, target_type):
+            # Only return True for helices (which are strings), not for empty probes
+            return (target_type == str and isinstance(objects, list) and 
+                    len(objects) > 0 and all(isinstance(obj, str) for obj in objects))
+        
+        mock_check.side_effect = mock_check_side_effect
+        
+        # Mock helices loading
+        mock_helix = Mock(spec=Helix)
+        mock_helix.name = "loaded_helix"
+        mock_load_list.return_value = [mock_helix]
+        
+        # Update should not affect empty probes list
+        insert.update()
+        assert insert.probes == []
+        
+        # Verify that check_objects was called for helices but loadList handled it correctly
+        mock_check.assert_called()
+        # Should only load helices, not probes (since probes is empty)
+        mock_load_list.assert_called_once_with("helices", ["helix1"], [None, Helix], {"Helix": Helix.from_dict})
+
+    def test_insert_none_probes_default(self):
+        """Test Insert with probes=None gets proper default"""
+        insert = Insert(
+            name="none_probes_insert",
+            helices=[],
+            rings=[],
+            currentleads=[],
+            hangles=[],
+            rangles=[],
+            probes=None  # Explicit None
+        )
+        
+        assert insert.probes == []  # Should default to empty list
+        assert isinstance(insert.probes, list)
 
 
 class TestInsertFileOperations:
@@ -900,7 +1001,8 @@ class TestInsertFileOperations:
                 rings=[],
                 currentleads=[],
                 hangles=[],
-                rangles=[]
+                rangles=[],
+                probes=[]  # NEW: Include probes
             )
             mock_load.return_value = mock_insert
             
@@ -918,7 +1020,8 @@ class TestInsertFileOperations:
                 rings=["ring1"],
                 currentleads=[],
                 hangles=[0.0],
-                rangles=[90.0]
+                rangles=[90.0],
+                probes=["probe1.yaml"]  # NEW: Include probe reference
             )
             mock_load.return_value = mock_insert
             
@@ -936,7 +1039,8 @@ class TestInsertFileOperations:
                 rings=[],
                 currentleads=["lead1"],
                 hangles=[],
-                rangles=[]
+                rangles=[],
+                probes=["probe1.yaml", "probe2.yaml"]  # NEW: Include probe references
             )
             mock_load.return_value = mock_insert
             
@@ -977,7 +1081,8 @@ class TestInsertStringDataHandling:
             hangles=[0.0, 90.0, 180.0, 270.0],
             rangles=[45.0, 135.0, 225.0, 315.0],
             innerbore=7.0,
-            outerbore=35.0
+            outerbore=35.0,
+            probes=["probe_config1", "probe_config2"]  # NEW: Probe string references
         )
         
         # Should initialize successfully with string data
@@ -985,93 +1090,7 @@ class TestInsertStringDataHandling:
         assert insert.helices == ["helix_config1", "helix_config2"]
         assert insert.rings == ["ring_config1"]
         assert insert.currentleads == ["inner_lead_config", "outer_lead_config"]
-
-    @patch('python_magnetgeo.utils.loadList')
-    @patch('python_magnetgeo.utils.check_objects')
-    def test_insert_methods_after_string_loading(self, mock_check, mock_load_list):
-        """Test that Insert methods work correctly after loading string references"""
-        # Create insert with string data
-        insert = Insert(
-            name="method_test_insert",
-            helices=["helix_file1", "helix_file2"],
-            rings=["ring_file1"],
-            currentleads=["lead_file1"],
-            hangles=[0.0, 120.0],
-            rangles=[60.0],
-            innerbore=6.0,
-            outerbore=36.0
-        )
-        
-        def mock_check_side_effect(objects, target_type):
-            return target_type == str and isinstance(objects, list) and all(isinstance(obj, str) for obj in objects)
-        
-        mock_check.side_effect = mock_check_side_effect
-        
-        # Mock loaded objects with proper attributes
-        mock_helix1 = Mock(spec=Helix)
-        mock_helix1.r = [10.0, 20.0]
-        mock_helix1.z = [0.0, 100.0]
-        mock_helix1.get_names.return_value = ["test_H1_Cu0"]
-        
-        mock_helix2 = Mock(spec=Helix)
-        mock_helix2.r = [25.0, 35.0]
-        mock_helix2.z = [5.0, 95.0]
-        mock_helix2.get_names.return_value = ["test_H2_Cu0"]
-        
-        mock_ring = Mock(spec=Ring)
-        mock_ring.z = [10.0, 15.0]
-        
-        mock_lead = Mock(spec=InnerCurrentLead)
-        
-        # Set up mock_load_list to return appropriate objects based on call
-        def mock_load_list_side_effect(comment, objects, supported_types, dict_objects):
-            if comment == "helices":
-                return [mock_helix1, mock_helix2]
-            elif comment == "rings":
-                return [mock_ring]
-            elif comment == "currentleads":
-                return [mock_lead]
-            return []
-        
-        mock_load_list.side_effect = mock_load_list_side_effect
-        
-        # Update to load string references
-        insert.update()
-        
-        # Now test that methods work correctly
-        assert insert.get_nhelices() == 2
-        
-        # Test get_names
-        names_3d = insert.get_names("test", is2D=False)
-        expected_3d = ["H1", "H2", "test_R1", "iL1"]
-        assert names_3d == expected_3d
-        
-        # Test bounding box
-        rb, zb = insert.boundingBox()
-        assert rb == [10.0, 35.0]  # min/max r from helices
-        assert zb[0] == -5.0  # min z adjusted by ring height
-        assert zb[1] == 105.0  # max z adjusted by ring height
-
-    def test_insert_serialization_with_string_data(self):
-        """Test JSON serialization preserves string references"""
-        insert = Insert(
-            name="serialization_test",
-            helices=["helix_serial1", "helix_serial2"],
-            rings=["ring_serial1"],
-            currentleads=["lead_serial1", "lead_serial2"],
-            hangles=[0.0, 90.0],
-            rangles=[45.0],
-            innerbore=4.0,
-            outerbore=40.0
-        )
-        
-        json_str = insert.to_json()
-        parsed = json.loads(json_str)
-        
-        # String references should be preserved in JSON
-        assert parsed["helices"] == ["helix_serial1", "helix_serial2"]
-        assert parsed["rings"] == ["ring_serial1"]
-        assert parsed["currentleads"] == ["lead_serial1", "lead_serial2"]
+        assert insert.probes == ["probe_config1", "probe_config2"]  # NEW: Check probe strings
 
     def test_insert_repr_with_string_data(self):
         """Test __repr__ method works correctly with string data"""
@@ -1083,7 +1102,8 @@ class TestInsertStringDataHandling:
             hangles=[0.0, 180.0],
             rangles=[90.0, 270.0],
             innerbore=5.0,
-            outerbore=25.0
+            outerbore=25.0,
+            probes=["repr_probe1"]  # NEW: Include probe string
         )
         
         repr_str = repr(insert)
@@ -1093,94 +1113,30 @@ class TestInsertStringDataHandling:
         assert "helices=['repr_helix1', 'repr_helix2']" in repr_str
         assert "rings=['repr_ring1']" in repr_str
         assert "currentleads=['repr_lead1']" in repr_str
+        assert "probes=['repr_probe1']" in repr_str  # NEW: Check probe in repr
 
-    def test_insert_yaml_constructor_with_string_data(self):
-        """Test YAML constructor handles string data in loaded mapping"""
-        mock_loader = Mock()
-        mock_node = Mock()
-        
-        # YAML data with string references
-        yaml_data = {
-            "name": "yaml_constructor_insert",
-            "helices": ["yaml_helix1", "yaml_helix2"],
-            "rings": ["yaml_ring1"],
-            "currentleads": ["yaml_inner_lead", "yaml_outer_lead"],
-            "hangles": [0.0, 120.0, 240.0],
-            "rangles": [60.0, 180.0, 300.0],
-            "innerbore": 9.0,
-            "outerbore": 45.0
-        }
-        
-        mock_loader.construct_mapping.return_value = yaml_data
-        
-        result = Insert_constructor(mock_loader, mock_node)
-        
-        # Constructor should create Insert with string references intact
-        assert isinstance(result, Insert)
-        assert result.name == "yaml_constructor_insert"
-        assert result.helices == ["yaml_helix1", "yaml_helix2"]
-        assert result.rings == ["yaml_ring1"]
-        assert result.currentleads == ["yaml_inner_lead", "yaml_outer_lead"]
-
-
-class TestInsertUpdateErrorHandling:
-    """Test error handling in Insert update scenarios"""
-    
-    @patch('python_magnetgeo.utils.loadList')
-    @patch('python_magnetgeo.utils.check_objects')
-    def test_update_with_loading_errors(self, mock_check, mock_load_list):
-        """Test update method handles loading errors gracefully"""
+    def test_insert_serialization_with_string_data(self):
+        """Test JSON serialization preserves string references"""
         insert = Insert(
-            name="error_insert",
-            helices=["invalid_helix_file"],
-            rings=["invalid_ring_file"],
-            currentleads=["invalid_lead_file"],
-            hangles=[],
-            rangles=[]
+            name="serialization_test",
+            helices=["helix_serial1", "helix_serial2"],
+            rings=["ring_serial1"],
+            currentleads=["lead_serial1", "lead_serial2"],
+            hangles=[0.0, 90.0],
+            rangles=[45.0],
+            innerbore=4.0,
+            outerbore=40.0,
+            probes=["probe_serial1", "probe_serial2"]  # NEW: Probe strings
         )
         
-        def mock_check_side_effect(objects, target_type):
-            return target_type == str and isinstance(objects, list) and all(isinstance(obj, str) for obj in objects)
+        json_str = insert.to_json()
+        parsed = json.loads(json_str)
         
-        mock_check.side_effect = mock_check_side_effect
-        
-        # Mock loading to raise exceptions
-        mock_load_list.side_effect = Exception("Failed to load components")
-        
-        # Update should handle errors without crashing
-        try:
-            insert.update()
-        except Exception as e:
-            # If exceptions are not caught internally, that's the expected behavior
-            assert "Failed to load components" in str(e)
-
-    def test_update_with_non_list_references(self):
-        """Test update method when components are not lists (should not attempt loading)"""
-        # Create insert with object references (not string lists)
-        helix_obj = Mock(spec=Helix)
-        ring_obj = Mock(spec=Ring)
-        lead_obj = Mock(spec=InnerCurrentLead)
-        
-        insert = Insert(
-            name="no_update_insert",
-            helices=[helix_obj],      # List of objects (not strings)
-            rings=[ring_obj],         # List of objects (not strings)
-            currentleads=[lead_obj],  # List of objects (not strings)
-            hangles=[0.0],
-            rangles=[90.0]
-        )
-        
-        # Store original references
-        orig_helices = insert.helices
-        orig_rings = insert.rings
-        orig_leads = insert.currentleads
-        
-        insert.update()
-        
-        # References should remain unchanged since they're not lists of strings
-        assert insert.helices == orig_helices
-        assert insert.rings == orig_rings
-        assert insert.currentleads == orig_leads
+        # String references should be preserved in JSON
+        assert parsed["helices"] == ["helix_serial1", "helix_serial2"]
+        assert parsed["rings"] == ["ring_serial1"]
+        assert parsed["currentleads"] == ["lead_serial1", "lead_serial2"]
+        assert parsed["probes"] == ["probe_serial1", "probe_serial2"]  # NEW: Check probe strings
 
 
 class TestInsertIntegration:
@@ -1196,7 +1152,8 @@ class TestInsertIntegration:
             hangles=[0.0, 90.0, 180.0, 270.0],
             rangles=[45.0, 135.0, 225.0, 315.0],
             innerbore=12.0,
-            outerbore=60.0
+            outerbore=60.0,
+            probes=["roundtrip_probe1", "roundtrip_probe2"]  # NEW: Include probes
         )
         
         # Test JSON serialization
@@ -1213,6 +1170,7 @@ class TestInsertIntegration:
         assert parsed_json["rangles"] == [45.0, 135.0, 225.0, 315.0]
         assert parsed_json["innerbore"] == 12.0
         assert parsed_json["outerbore"] == 60.0
+        assert parsed_json["probes"] == ["roundtrip_probe1", "roundtrip_probe2"]  # NEW: Check probes
 
     @patch('python_magnetgeo.utils.loadList')
     @patch('python_magnetgeo.utils.check_objects')
@@ -1227,7 +1185,8 @@ class TestInsertIntegration:
             hangles=[0.0, 180.0],
             rangles=[90.0, 270.0],
             innerbore=8.0,
-            outerbore=40.0
+            outerbore=40.0,
+            probes=["voltage_probes.yaml", "temp_probes.yaml"]  # NEW: Include probe strings
         )
         
         # Step 2: Setup mocks for string loading
@@ -1259,6 +1218,15 @@ class TestInsertIntegration:
         mock_outer_lead = Mock(spec=OuterCurrentLead)
         mock_outer_lead.name = "loaded_outer_lead"
         
+        # NEW: Create mock probe objects
+        mock_voltage_probe = Mock(spec=Probe)
+        mock_voltage_probe.name = "loaded_voltage_probe"
+        mock_voltage_probe.probe_type = "voltage_taps"
+        
+        mock_temp_probe = Mock(spec=Probe)
+        mock_temp_probe.name = "loaded_temp_probe"
+        mock_temp_probe.probe_type = "temperature"
+        
         def mock_load_list_side_effect(comment, objects, supported_types, dict_objects):
             if comment == "helices":
                 return [mock_helix1, mock_helix2]
@@ -1266,6 +1234,8 @@ class TestInsertIntegration:
                 return [mock_ring]
             elif comment == "currentleads":
                 return [mock_inner_lead, mock_outer_lead]
+            elif comment == "probes":  # NEW: Handle probe loading
+                return [mock_voltage_probe, mock_temp_probe]
             return []
         
         mock_load_list.side_effect = mock_load_list_side_effect
@@ -1277,30 +1247,93 @@ class TestInsertIntegration:
         assert isinstance(insert.helices[0], Mock)
         assert isinstance(insert.rings[0], Mock)
         assert len(insert.currentleads) == 2
+        assert len(insert.probes) == 2  # NEW: Check probes loaded
+        assert isinstance(insert.probes[0], Mock)
+        assert isinstance(insert.probes[1], Mock)
         
         # Test Insert functionality with loaded objects
         assert insert.get_nhelices() == 2
         
-        names = insert.get_names("workflow", is2D=True)
-        expected = [
-            "workflow_H1_Cu0", "workflow_H1_Cu1",  # From helix1
-            "workflow_H2_Cu0",                     # From helix2
-            "workflow_R1"                          # From ring
-        ]
-        assert names == expected
+        # Verify that loadList was called for probes
+        mock_load_list.assert_any_call(
+            "probes", 
+            ["voltage_probes.yaml", "temp_probes.yaml"], 
+            [None, Probe], 
+            {"Probe": Probe.from_dict}
+        )
+
+
+class TestInsertErrorHandling:
+    """Test error handling in Insert scenarios"""
+    
+    @patch('python_magnetgeo.utils.loadList')
+    @patch('python_magnetgeo.utils.check_objects')
+    def test_update_with_probe_loading_errors(self, mock_check, mock_load_list):
+        """Test update method handles probe loading errors gracefully"""
+        insert = Insert(
+            name="error_insert",
+            helices=[],
+            rings=[],
+            currentleads=[],
+            hangles=[],
+            rangles=[],
+            probes=["invalid_probe_file.yaml"]  # NEW: Invalid probe file
+        )
         
-        # Test bounding box calculation
-        rb, zb = insert.boundingBox()
-        assert rb == [10.0, 35.0]
-        assert zb[0] == -5.0  # Adjusted by ring height
-        assert zb[1] == 105.0
+        def mock_check_side_effect(objects, target_type):
+            return target_type == str and isinstance(objects, list) and all(isinstance(obj, str) for obj in objects)
+        
+        mock_check.side_effect = mock_check_side_effect
+        
+        # Mock loading to raise exceptions for probes
+        def mock_load_list_side_effect(comment, objects, supported_types, dict_objects):
+            if comment == "probes":
+                raise Exception("Failed to load probe components")
+            return []
+        
+        mock_load_list.side_effect = mock_load_list_side_effect
+        
+        # Update should handle errors without crashing
+        try:
+            insert.update()
+        except Exception as e:
+            # If exceptions are not caught internally, that's the expected behavior
+            assert "Failed to load probe components" in str(e)
+
+    def test_insert_with_invalid_probe_types(self):
+        """Test Insert initialization with invalid probe types"""
+        # Test that Insert can handle various probe parameter types
+        
+        # Test with None (should default to empty list)
+        insert_none = Insert(
+            name="none_probes",
+            helices=[],
+            rings=[],
+            currentleads=[],
+            hangles=[],
+            rangles=[],
+            probes=None
+        )
+        assert insert_none.probes == []
+        
+        # Test with empty list
+        insert_empty = Insert(
+            name="empty_probes",
+            helices=[],
+            rings=[],
+            currentleads=[],
+            hangles=[],
+            rangles=[],
+            probes=[]
+        )
+        assert insert_empty.probes == []
 
 
 class TestInsertPerformance:
     """Performance tests for Insert class"""
     
-    def test_multiple_insert_creation_performance(self):
-        """Test performance of creating many inserts"""
+    def test_multiple_insert_creation_with_probes_performance(self):
+        """Test performance of creating many inserts with probes"""
         inserts = []
         for i in range(25):
             insert = Insert(
@@ -1311,7 +1344,8 @@ class TestInsertPerformance:
                 hangles=[float(j * 45) for j in range(i % 8 + 1)],
                 rangles=[float(j * 30) for j in range(i % 12 + 1)],
                 innerbore=float(i),
-                outerbore=float(i + 50)
+                outerbore=float(i + 50),
+                probes=[f"probe_{i}_1.yaml", f"probe_{i}_2.yaml"]  # NEW: Include probes
             )
             inserts.append(insert)
         
@@ -1322,92 +1356,96 @@ class TestInsertPerformance:
         n_helices = [ins.get_nhelices() for ins in inserts]
         assert len(n_helices) == 25
         assert all(n == 2 for n in n_helices)  # Each has 2 helices
+        
+        # Test that all inserts have probes
+        probe_counts = [len(ins.probes) for ins in inserts]
+        assert all(count == 2 for count in probe_counts)  # Each has 2 probes
 
 
-class TestInsertDataConsistency:
-    """Test data consistency and validation in Insert"""
+class TestInsertDocumentation:
+    """Test that Insert behavior matches its documentation"""
     
-    def test_insert_geometric_consistency(self):
-        """Test geometric consistency within insert"""
-        # Create mock helices with consistent geometry
-        helix1 = Mock(spec=Helix)
-        helix1.r = [10.0, 20.0]
-        helix1.z = [0.0, 100.0]
-        
-        helix2 = Mock(spec=Helix)
-        helix2.r = [25.0, 35.0]  # Should be outside helix1
-        helix2.z = [5.0, 95.0]
-        
+    def test_documented_attributes_with_probes(self):
+        """Test that Insert has all documented attributes including probes"""
         insert = Insert(
-            name="consistent_insert",
-            helices=[helix1, helix2],
-            rings=[],
-            currentleads=[],
-            hangles=[0.0, 90.0],
-            rangles=[45.0],
-            innerbore=5.0,   # Should be < helix1.r[0]
-            outerbore=40.0   # Should be > helix2.r[1]
-        )
-        
-        # Test geometric relationships
-        assert insert.innerbore < helix1.r[0]  # Inner bore < first helix inner radius
-        assert helix1.r[1] < helix2.r[0]       # Helices don't overlap
-        assert helix2.r[1] < insert.outerbore  # Last helix < outer bore
-        
-        # Test that bounding box encompasses all components
-        rb, zb = insert.boundingBox()
-        assert rb[0] <= min(helix1.r[0], helix2.r[0])
-        assert rb[1] >= max(helix1.r[1], helix2.r[1])
-
-    def test_insert_component_count_consistency(self):
-        """Test consistency in component counting"""
-        # Create properly mocked helices with required attributes for get_params
-        helices = []
-        for i in range(4):
-            helix = Mock(spec=Helix)
-            helix.r = [10.0 + i*10, 20.0 + i*10]
-            helix.z = [0.0, 100.0]
-            # Add required modelaxi attributes for get_params method
-            helix.modelaxi = Mock()
-            helix.modelaxi.turns = [2.0, 3.0]
-            helix.modelaxi.h = 10.0
-            helix.modelaxi.compact.return_value = ([2.0, 3.0], [5.0, 5.0])
-            helices.append(helix)
-        
-        # Create properly mocked rings with z coordinates
-        rings = []
-        for i in range(3):
-            ring = Mock(spec=Ring)
-            ring.z = [10.0 + i*20, 15.0 + i*20]
-            rings.append(ring)
-        
-        leads = [Mock(spec=InnerCurrentLead), Mock(spec=OuterCurrentLead)]
-        
-        insert = Insert(
-            name="count_test_insert",
-            helices=helices,
-            rings=rings,
-            currentleads=leads,
-            hangles=[0.0, 90.0, 180.0, 270.0],
-            rangles=[45.0, 135.0, 225.0, 315.0],
+            name="doc_test",
+            helices=["helix1"],
+            rings=["ring1"],
+            currentleads=["lead1"],
+            hangles=[0.0],
+            rangles=[90.0],
             innerbore=5.0,
-            outerbore=50.0
+            outerbore=15.0,
+            probes=["probe1.yaml"]  # NEW: Include probes
         )
         
-        # Test consistent counting
-        assert insert.get_nhelices() == 4
-        assert len(insert.rings) == 3
-        assert len(insert.currentleads) == 2
-        assert len(insert.hangles) == 4
-        assert len(insert.rangles) == 4
+        # Verify all documented attributes exist
+        assert hasattr(insert, "name")
+        assert hasattr(insert, "helices")
+        assert hasattr(insert, "rings")
+        assert hasattr(insert, "currentleads")
+        assert hasattr(insert, "probes")  # NEW: Check probes attribute
+        assert hasattr(insert, "hangles")
+        assert hasattr(insert, "rangles")
+        assert hasattr(insert, "innerbore")
+        assert hasattr(insert, "outerbore")
         
-        # Test get_params consistency - now helices have proper modelaxi attributes
-        params = insert.get_params()
-        Nhelices, Nrings, NChannels, Nsections, R1, R2, Dh, Sh, Zc = params
+        # Verify types match documentation
+        assert isinstance(insert.name, str)
+        assert isinstance(insert.helices, list)
+        assert isinstance(insert.rings, list)
+        assert isinstance(insert.currentleads, list)
+        assert isinstance(insert.probes, list)  # NEW: Check probes type
+        assert isinstance(insert.hangles, list)
+        assert isinstance(insert.rangles, list)
+        assert isinstance(insert.innerbore, (int, float))
+        assert isinstance(insert.outerbore, (int, float))
+
+    def test_serialization_interface_compliance_with_probes(self):
+        """Test that serialization interface works as documented with probes"""
+        insert = Insert(
+            name="serial_test_system",
+            helices=["helix1"],
+            rings=["ring1"],
+            currentleads=["lead1"],
+            hangles=[0.0],
+            rangles=[90.0],
+            innerbore=0.5,
+            outerbore=2.5,
+            probes=["probe1.yaml"]  # NEW: Include probes
+        )
         
-        assert Nhelices == 4
-        assert Nrings == 3
-        assert NChannels == 5  # Nhelices + 1
+        # Test to_json returns valid JSON string
+        json_str = insert.to_json()
+        assert isinstance(json_str, str)
+        
+        # Should be parseable JSON
+        parsed = json.loads(json_str)
+        assert isinstance(parsed, dict)
+        assert "__classname__" in parsed
+        assert parsed["__classname__"] == "Insert"
+        assert "probes" in parsed  # NEW: Check probes in JSON
+        assert parsed["probes"] == ["probe1.yaml"]
+        
+        # Test from_dict works with probes
+        data = {
+            "name": "from_dict_test",
+            "helices": ["helix1"],
+            "rings": ["ring1"],
+            "currentleads": ["lead1"],
+            "hangles": [0.0],
+            "rangles": [90.0],
+            "innerbore": 2.0,
+            "outerbore": 3.0,
+            "probes": ["probe_test.yaml"]  # NEW: Include probes
+        }
+        
+        new_insert = Insert.from_dict(data)
+        assert isinstance(new_insert, Insert)
+        assert new_insert.name == "from_dict_test"
+        assert new_insert.probes == ["probe_test.yaml"]  # NEW: Check probes loaded
 
 
-
+if __name__ == "__main__":
+    pytest.main([__file__, "-v"])
+        

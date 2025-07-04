@@ -12,10 +12,14 @@ from .Helix import Helix
 from .Ring import Ring
 from .InnerCurrentLead import InnerCurrentLead
 from .OuterCurrentLead import OuterCurrentLead
+from .Probe import Probe
 
 dict_leads = {
     "InnerCurrentLead": InnerCurrentLead.from_dict,
     "OuterCurrentLead": OuterCurrentLead.from_dict,
+}
+dict_probes = {
+    "Probe": Probe.from_dict,
 }
 
 def filter(data: list[float], tol: float = 1.0e-6) -> list[float]:
@@ -43,6 +47,7 @@ class Insert(yaml.YAMLObject):
 
     innerbore:
     outerbore:
+    probes :           # NEW ATTRIBUTE
     """
 
     yaml_tag = "Insert"
@@ -57,6 +62,7 @@ class Insert(yaml.YAMLObject):
         rangles: list[float],
         innerbore: float = 0,
         outerbore: float = 0,
+        probes: list = None,  # NEW PARAMETER
     ):
         """
         constructor
@@ -75,6 +81,7 @@ class Insert(yaml.YAMLObject):
 
         self.innerbore = innerbore
         self.outerbore = outerbore
+        self.probes = probes if probes is not None else []  # NEW ATTRIBUTE
 
     def update(self):
         """
@@ -91,6 +98,10 @@ class Insert(yaml.YAMLObject):
         if check_objects(self.currentleads, str):
             self.currentleads = loadList("currentleads", self.currentleads, [None, InnerCurrentLead, OuterCurrentLead], dict_leads)
             print("update currentleads:", self.currentleads)
+        # NEW: Update probes
+        if check_objects(self.probes, str):
+            self.probes = loadList("probes", self.probes, [None, Probe], dict_probes)
+            print("update probes:", self.probes)
 
     def get_channels(
         self, mname: str, hideIsolant: bool = True, debug: bool = False
@@ -204,7 +215,7 @@ class Insert(yaml.YAMLObject):
     def __repr__(self):
         """representation"""
         return (
-            "%s(name=%r, helices=%r, rings=%r, currentleads=%r, hangles=%r, rangles=%r, innerbore=%r, outerbore=%r)"
+            "%s(name=%r, helices=%r, rings=%r, currentleads=%r, hangles=%r, rangles=%r, innerbore=%r, outerbore=%r, probes=%r)"
             % (
                 self.__class__.__name__,
                 self.name,
@@ -215,6 +226,7 @@ class Insert(yaml.YAMLObject):
                 self.rangles,
                 self.innerbore,
                 self.outerbore,
+                self.probes,  # NEW
             )
         )
 
@@ -252,9 +264,10 @@ class Insert(yaml.YAMLObject):
         outerbore = data["outerbore"]
         hangles = data["hangles"]
         rangles = data["rangles"]
-    
+        probes = data.get("probes", [])  # NEW: Optional with default empty list
+
         return cls(
-            name, helices, rings, currentleads, hangles, rangles, innerbore, outerbore
+            name, helices, rings, currentleads, hangles, rangles, innerbore, outerbore, probes
         )
 
     @classmethod

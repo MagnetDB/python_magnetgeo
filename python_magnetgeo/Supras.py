@@ -8,8 +8,11 @@ import yaml
 
 from .Supra import Supra
 
-dict_supras = {
-    "Supra": Supra.from_dict,
+# Add import at the top
+from .Probe import Probe
+
+dict_probes = {
+    "Probe": Probe.from_dict,
 }
 
 class Supras(yaml.YAMLObject):
@@ -24,22 +27,24 @@ class Supras(yaml.YAMLObject):
     yaml_tag = "Supras"
 
     def __init__(
-        self, name: str, magnets: list, innerbore: float, outerbore: float
+            self, name: str, magnets: list, innerbore: float, outerbore: float, probes: list = None,  # NEW PARAMETER
     ) -> None:
         """constructor"""
         self.name = name
         self.magnets = magnets
         self.innerbore = innerbore
         self.outerbore = outerbore
+        self.probes = probes if probes is not None else []  # NEW ATTRIBUTE
 
     def __repr__(self):
         """representation"""
-        return "%s(name=%r, magnets=%r, innerbore=%r, outerbore=%r)" % (
+        return "%s(name=%r, magnets=%r, innerbore=%r, outerbore=%r, probes=%r)" % (
             self.__class__.__name__,
             self.name,
             self.magnets,
             self.innerbore,
             self.outerbore,
+            self.probes,  # NEW
         )
 
     def update(self):
@@ -50,6 +55,10 @@ class Supras(yaml.YAMLObject):
         if check_objects(self.magnets, str):
             self.magnets = loadList("magnets", self.magnets, [None, Supra], {"Supra": Supra.from_dict})
             print("update magnets:", self.magnets)
+        # NEW: Update probes
+        if check_objects(self.probes, str):
+            self.probes = loadList("probes", self.probes, [None, Probe], dict_probes)
+            print("update probes:", self.probes)
 
     def get_channels(
         self, mname: str, hideIsolant: bool = True, debug: bool = False
@@ -109,7 +118,8 @@ class Supras(yaml.YAMLObject):
         
         innerbore = values["innerbore"] if "innerbore" in values else 0
         outerbore = values["outerbore"] if "outerbore" in values else 0
-        return cls(name, magnets, innerbore, outerbore)        
+        probes = values.get("probes", [])  # NEW: Optional with default empty list
+        return cls(name, magnets, innerbore, outerbore, probes)        
 
     @classmethod
     def from_yaml(cls, filename: str, debug: bool = False):

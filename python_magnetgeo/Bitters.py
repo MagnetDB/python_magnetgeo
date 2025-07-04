@@ -6,6 +6,12 @@
 import json
 import yaml
 
+# Add import at the top
+from .Probe import Probe
+
+dict_probes = {
+    "Probe": Probe.from_dict,
+}
 
 class Bitters(yaml.YAMLObject):
     """
@@ -14,12 +20,13 @@ class Bitters(yaml.YAMLObject):
 
     innerbore:
     outerbore:
+    probes :       # NEW ATTRIBUTE
     """
 
     yaml_tag = "Bitters"
 
     def __init__(
-        self, name: str, magnets: list, innerbore: float, outerbore: float
+            self, name: str, magnets: list, innerbore: float, outerbore: float, probes: list = None,  # NEW PARAMETER
     ) -> None:
         """constructor"""
 
@@ -27,15 +34,17 @@ class Bitters(yaml.YAMLObject):
         self.magnets = magnets 
         self.innerbore = innerbore
         self.outerbore = outerbore
+        self.probes = probes if probes is not None else []  # NEW ATTRIBUTE
 
     def __repr__(self):
         """representation"""
-        return "%s(name=%r, magnets=%r, innerbore=%r, outerbore=%r)" % (
+        return "%s(name=%r, magnets=%r, innerbore=%r, outerbore=%r, probes=%r)" % (
             self.__class__.__name__,
             self.name,
             self.magnets,
             self.innerbore,
             self.outerbore,
+            self.probes,  # NEW
         )
 
     def update(self):
@@ -47,6 +56,10 @@ class Bitters(yaml.YAMLObject):
         if check_objects(self.magnets, str):
             self.magnets = loadList("magnets", self.magnets, [None, Bitter], {"Bitter": Bitter.from_dict})
             print("update magnets:", self.magnets)
+        # NEW: Update probes
+        if check_objects(self.probes, str):
+            self.probes = loadList("probes", self.probes, [None, Probe], dict_probes)
+            print("update probes:", self.probes)
 
     def get_channels(
         self, mname: str, hideIsolant: bool = True, debug: bool = False
@@ -115,7 +128,7 @@ class Bitters(yaml.YAMLObject):
             ostream.write(str(jsondata))
 
     @classmethod
-    def from_dict(cls, values: str, debug: bool = False):
+    def from_dict(cls, values: dict, debug: bool = False):
         """
         create from dict
         """
@@ -123,8 +136,9 @@ class Bitters(yaml.YAMLObject):
         magnets = values["magnets"]
         innerbore = values.get("innerbore", 0)
         outerbore = values.get("outerbore", 0)
+        probes = values.get("probes", [])  # NEW: Optional with default empty list
 
-        return cls(name, magnets, innerbore, outerbore)
+        return cls(name, magnets, innerbore, outerbore, probes)
 
     @classmethod
     def from_yaml(cls, filename: str, debug: bool = False):
