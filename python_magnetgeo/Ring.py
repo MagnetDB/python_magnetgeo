@@ -160,6 +160,6 @@ def Ring_constructor(loader, node):
     ring = Ring(name, r, z, n, angle, BPside, fillets, cad)
     if not hasattr(ring, 'cad'):
         ring.cad = ''
-    return cad
+    return ring
 
 yaml.add_constructor("!Ring", Ring_constructor)
