@@ -53,13 +53,15 @@ class Bitters(yaml.YAMLObject):
         """
         from .Bitter import Bitter
         from .utils import check_objects,loadList
-        if check_objects(self.magnets, str):
-            self.magnets = loadList("magnets", self.magnets, [None, Bitter], {"Bitter": Bitter.from_dict})
-            print("update magnets:", self.magnets)
+        if self.magnets:
+            if check_objects(self.magnets, str):
+                self.magnets = loadList("magnets", self.magnets, [None, Bitter], {"Bitter": Bitter.from_dict})
+                print("update magnets:", self.magnets)
         # NEW: Update probes
-        if check_objects(self.probes, str):
-            self.probes = loadList("probes", self.probes, [None, Probe], dict_probes)
-            print("update probes:", self.probes)
+        if self.probes:
+            if check_objects(self.probes, str):
+                self.probes = loadList("probes", self.probes, [None, Probe], dict_probes)
+                print("update probes:", self.probes)
 
     def get_channels(
         self, mname: str, hideIsolant: bool = True, debug: bool = False
@@ -146,7 +148,9 @@ class Bitters(yaml.YAMLObject):
         create from yaml
         """
         from .utils import loadYaml
-        return loadYaml("Bitters", filename, Bitters, debug)
+        object = loadYaml("Bitters", filename, Bitters, debug)
+        object.update()
+        return object
 
     @classmethod
     def from_json(cls, filename: str, debug: bool = False):

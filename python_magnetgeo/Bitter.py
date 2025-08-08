@@ -11,7 +11,11 @@ Provides definition for Bitter:
 
 import json
 import yaml
-
+from .ModelAxi import ModelAxi
+from .tierod import Tierod
+from .Shape2D import Shape2D
+from .coolingslit import CoolingSlit
+from .utils import loadObject, loadList, check_objects  
 
 class Bitter(yaml.YAMLObject):
     """

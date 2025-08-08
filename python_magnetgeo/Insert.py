@@ -95,13 +95,15 @@ class Insert(yaml.YAMLObject):
         if check_objects(self.rings, str):
             self.rings = loadList("rings", self.rings, [None, Ring], {"Ring": Ring.from_dict})
             print("update rings:", self.rings)
-        if check_objects(self.currentleads, str):
-            self.currentleads = loadList("currentleads", self.currentleads, [None, InnerCurrentLead, OuterCurrentLead], dict_leads)
-            print("update currentleads:", self.currentleads)
+        if self.currentleads:
+            if check_objects(self.currentleads, str):
+                self.currentleads = loadList("currentleads", self.currentleads, [None, InnerCurrentLead, OuterCurrentLead], dict_leads)
+                print("update currentleads:", self.currentleads)
         # NEW: Update probes
-        if check_objects(self.probes, str):
-            self.probes = loadList("probes", self.probes, [None, Probe], dict_probes)
-            print("update probes:", self.probes)
+        if self.probes:
+            if check_objects(self.probes, str):
+                self.probes = loadList("probes", self.probes, [None, Probe], dict_probes)
+                print("update probes:", self.probes)
 
     def get_channels(
         self, mname: str, hideIsolant: bool = True, debug: bool = False
@@ -259,7 +261,7 @@ class Insert(yaml.YAMLObject):
 
         helices = data["helices"]
         rings = data["rings"]
-        currentleads = data["currentleads"]
+        currentleads = data.get("currentleads", [])
         innerbore = data["innerbore"]
         outerbore = data["outerbore"]
         hangles = data["hangles"]
@@ -276,7 +278,7 @@ class Insert(yaml.YAMLObject):
         create from yaml
         """
         from .utils import loadYaml
-        return loadYaml("Insert", filename, Insert, debug)
+        # return loadYaml("Insert", filename, Insert, debug)
         object = loadYaml("Insert", filename, Insert, debug)
         object.update()
         return object

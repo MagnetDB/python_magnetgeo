@@ -52,13 +52,15 @@ class Supras(yaml.YAMLObject):
         update magnets if there were loaded as str
         """
         from .utils import check_objects, loadList
-        if check_objects(self.magnets, str):
-            self.magnets = loadList("magnets", self.magnets, [None, Supra], {"Supra": Supra.from_dict})
-            print("update magnets:", self.magnets)
+        if self.magnets:
+            if check_objects(self.magnets, str):
+                self.magnets = loadList("magnets", self.magnets, [None, Supra], {"Supra": Supra.from_dict})
+                print("update magnets:", self.magnets)
         # NEW: Update probes
-        if check_objects(self.probes, str):
-            self.probes = loadList("probes", self.probes, [None, Probe], dict_probes)
-            print("update probes:", self.probes)
+        if self.probes:
+            if check_objects(self.probes, str):
+                self.probes = loadList("probes", self.probes, [None, Probe], dict_probes)
+                print("update probes:", self.probes)
 
     def get_channels(
         self, mname: str, hideIsolant: bool = True, debug: bool = False
@@ -127,7 +129,9 @@ class Supras(yaml.YAMLObject):
         create from yaml
         """
         from .utils import loadYaml
-        return loadYaml("Supras", filename, Supras, debug)
+        object = loadYaml("Supras", filename, Supras, debug)
+        object.update()
+        return object
 
     @classmethod
     def from_json(cls, filename: str, debug: bool = False):

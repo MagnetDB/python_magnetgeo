@@ -84,7 +84,7 @@ class Model3D(yaml.YAMLObject):
         """
         create from dict
         """
-        name = values["name"]
+        name = values.get("name", "")
         cad = values["cad"]
         with_shapes = values.get("with_shapes", False)
         with_channels = values.get("with_channels", False)
