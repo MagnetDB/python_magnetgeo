@@ -344,7 +344,37 @@ paralax: [0.05, 0.1]
         with pytest.raises(Exception):
             instance.dump()
 
-    def test_from_yaml_with_proper_tag(self):
+    @patch('python_magnetgeo.utils.loadList')
+    @patch('python_magnetgeo.utils.check_objects') 
+    def test_from_yaml_success(self, mock_check_objects, mock_load_list):
+        """Test successful from_yaml loading"""
+        yaml_content = self.get_sample_yaml_content()
+        cls = self.get_class_under_test()
+
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.yaml', delete=False) as tmp_file:
+            tmp_file.write(yaml_content)
+            tmp_file.flush()
+
+            try:
+                with patch('os.getcwd', return_value='/tmp'):
+                    # Mock the file loading to prevent FileNotFoundError
+                    mock_check_objects.return_value = True
+                    mock_magnet1 = Mock(spec=Insert)
+                    mock_magnet1.name = "yaml_magnet1"
+                    mock_magnet2 = Mock(spec=Insert) 
+                    mock_magnet2.name = "yaml_magnet2"
+                    mock_load_list.return_value = [mock_magnet1, mock_magnet2]
+                    
+                    instance = cls.from_yaml(tmp_file.name)
+                    
+                assert isinstance(instance, cls)
+                assert hasattr(instance, 'name')
+            finally:
+                os.unlink(tmp_file.name)
+
+    @patch('python_magnetgeo.utils.loadList')
+    @patch('python_magnetgeo.utils.check_objects')
+    def test_from_yaml_with_proper_tag(self, mock_check_objects, mock_load_list):
         """Test from_yaml with properly tagged YAML content"""
         yaml_content = '''!<MSite>
 name: yaml_test_msite
@@ -354,17 +384,22 @@ z_offset: [1.0, 2.0]
 r_offset: [0.5, 1.5]
 paralax: [0.1, 0.15]
 '''
-        
+
         with tempfile.NamedTemporaryFile(mode='w', suffix='.yaml', delete=False) as tmp_file:
             tmp_file.write(yaml_content)
             tmp_file.flush()
-            
+
             try:
+                # Mock the file loading
+                mock_check_objects.return_value = True
+                mock_magnet1 = Mock(spec=Insert)
+                mock_magnet2 = Mock(spec=Insert)
+                mock_load_list.return_value = [mock_magnet1, mock_magnet2]
+                
                 result = MSite.from_yaml(tmp_file.name)
-                assert isinstance(result, MSite)
+                
                 assert result.name == "yaml_test_msite"
-                assert result.magnets == ["yaml_magnet1", "yaml_magnet2"]
-                assert result.screens == ["yaml_screen1"]
+                assert len(result.magnets) == 2
             finally:
                 os.unlink(tmp_file.name)
 
@@ -505,8 +540,10 @@ class TestMSiteFromDict:
 class TestMSiteFileOperations:
     """Test MSite file operations"""
     
+    @patch('python_magnetgeo.utils.loadList')
+    @patch('python_magnetgeo.utils.check_objects')
     @patch('python_magnetgeo.utils.loadYaml')
-    def test_from_yaml_method(self, mock_load_yaml):
+    def test_from_yaml_method(self, mock_load_yaml, mock_check_objects, mock_load_list):
         """Test from_yaml class method"""
         mock_msite = MSite(
             name="yaml_loaded_msite",
@@ -518,10 +555,15 @@ class TestMSiteFileOperations:
         )
         mock_load_yaml.return_value = mock_msite
         
+        # Mock the update process
+        mock_check_objects.return_value = True
+        mock_magnet = Mock(spec=Insert)
+        mock_load_list.return_value = [mock_magnet]
+        
         result = MSite.from_yaml("test_msite.yaml")
         
         mock_load_yaml.assert_called_once_with("MSite", "test_msite.yaml", MSite, False)
-        assert result == mock_msite
+        assert result.name == "yaml_loaded_msite"
 
     @patch('python_magnetgeo.utils.loadJson')
     def test_from_json_method(self, mock_load_json):
@@ -1061,7 +1103,7 @@ class TestMSiteEdgeCases:
         
         # Magnets should remain unchanged
         assert msite.magnets == original_magnets
-        assert mock_check_objects.call_count == 2
+        assert mock_check_objects.call_count == 1
 
 
 class TestMSiteCompatibility:

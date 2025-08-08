@@ -87,11 +87,19 @@ def loadJson(comment, filename, debug: bool = False):
 def check_objects(objects, supported_type):
     """
     check if objects are of supported type
+    Handle None and empty cases gracefully
     """
-    for item in objects:
-        if isinstance(item, supported_type):
-            return True
-    return False
+    if objects is None:
+        return False
+    if not objects:  # Empty list/dict/string
+        return False
+    
+    if isinstance(objects, list):
+        return any(isinstance(item, supported_type) for item in objects)
+    elif isinstance(objects, dict):
+        return any(isinstance(item, supported_type) for item in objects.values())
+    else:
+        return isinstance(objects, supported_type)
     
 def check_type(object, lTypes):
     for item in lTypes:

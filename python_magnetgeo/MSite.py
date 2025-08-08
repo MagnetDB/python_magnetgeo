@@ -38,11 +38,11 @@ class MSite(yaml.YAMLObject):
         self.name = name
 
         self.magnets = magnets
-        self.screens = screens if screens is not None else []
-
-        self.z_offset = z_offset if z_offset is not None else []
-        self.r_offset = r_offset if r_offset is not None else []
-        self.paralax = paralax if paralax is not None else []
+        # FIX: Keep None values as None instead of converting to empty lists
+        self.screens = screens
+        self.z_offset = z_offset  
+        self.r_offset = r_offset
+        self.paralax = paralax
 
     def __repr__(self):
         """
@@ -73,10 +73,10 @@ class MSite(yaml.YAMLObject):
         if check_objects(self.magnets, str):
             self.magnets = loadList("magnets", self.magnets, [None, Insert, Bitters, Supras], dict_magnets)
             print("update magnets:", self.magnets)
-        if self.screens:
-            if check_objects(self.screens, str):
-                self.screens = loadList("sreens", self.screens, [None, Screen], dict_screens)
-
+        
+        # Check and update screens only if screens is not None and not empty
+        if self.screens and check_objects(self.screens, str):
+            self.screens = loadList("screens", self.screens, [None, Screen], dict_screens)
 
     def get_channels(
         self, mname: str, hideIsolant: bool = True, debug: bool = False
@@ -155,10 +155,11 @@ class MSite(yaml.YAMLObject):
         """
         name = values["name"]
         magnets = values["magnets"]
-        screens = values.get("screens", [])
-        z_offset = values.get("z_offset", [])
-        r_offset = values.get("r_offset", [])
-        paralax = values.get("paralax", [])
+        # FIX: Use get() with None default instead of empty list default
+        screens = values.get("screens", None)
+        z_offset = values.get("z_offset", None)
+        r_offset = values.get("r_offset", None)
+        paralax = values.get("paralax", None)
         return cls(name, magnets, screens, z_offset, r_offset, paralax)
 
     @classmethod

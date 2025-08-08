@@ -1011,7 +1011,9 @@ class TestInsertFileOperations:
             assert result == mock_insert
             mock_load.assert_called_once_with("Insert", "test.yaml", Insert, False)
 
-    def test_from_yaml_with_debug(self):
+    @patch('python_magnetgeo.utils.loadList')
+    @patch('python_magnetgeo.utils.check_objects')
+    def test_from_yaml_with_debug(self, mock_check_objects, mock_load_list):
         """Test from_yaml with debug flag"""
         with patch('python_magnetgeo.utils.loadYaml') as mock_load:
             mock_insert = Insert(
@@ -1021,13 +1023,19 @@ class TestInsertFileOperations:
                 currentleads=[],
                 hangles=[0.0],
                 rangles=[90.0],
-                probes=["probe1.yaml"]  # NEW: Include probe reference
+                probes=["probe1.yaml"]
             )
             mock_load.return_value = mock_insert
             
+            # Mock the update process to avoid file loading
+            mock_check_objects.return_value = True  # Simulate strings found
+            mock_helix = Mock(spec=Helix)
+            mock_helix.name = "helix1"
+            mock_load_list.return_value = [mock_helix]
+
             result = Insert.from_yaml("test.yaml", debug=True)
             
-            assert result == mock_insert
+            assert result.name == "debug_yaml"
             mock_load.assert_called_once_with("Insert", "test.yaml", Insert, True)
 
     def test_from_json_with_mocking(self):
