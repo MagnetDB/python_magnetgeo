@@ -38,11 +38,11 @@ class MSite(yaml.YAMLObject):
         self.name = name
 
         self.magnets = magnets
-        self.screens = screens
+        self.screens = screens if screens is not None else []
 
-        self.z_offset = z_offset
-        self.r_offset = r_offset
-        self.paralax = paralax
+        self.z_offset = z_offset if z_offset is not None else []
+        self.r_offset = r_offset if r_offset is not None else []
+        self.paralax = paralax if paralax is not None else []
 
     def __repr__(self):
         """
@@ -73,8 +73,9 @@ class MSite(yaml.YAMLObject):
         if check_objects(self.magnets, str):
             self.magnets = loadList("magnets", self.magnets, [None, Insert, Bitters, Supras], dict_magnets)
             print("update magnets:", self.magnets)
-        if check_objects(self.screens, str):
-            self.screens = loadList("sreens", self.screens, [None, Screen], dict_screens)
+        if self.screens:
+            if check_objects(self.screens, str):
+                self.screens = loadList("sreens", self.screens, [None, Screen], dict_screens)
 
 
     def get_channels(
@@ -154,10 +155,10 @@ class MSite(yaml.YAMLObject):
         """
         name = values["name"]
         magnets = values["magnets"]
-        screens = values["screens"]
-        z_offset = values["z_offset"]
-        r_offset = values["r_offset"]
-        paralax = values["paralax"]
+        screens = values.get("screens", [])
+        z_offset = values.get("z_offset", [])
+        r_offset = values.get("r_offset", [])
+        paralax = values.get("paralax", [])
         return cls(name, magnets, screens, z_offset, r_offset, paralax)
 
     @classmethod
@@ -166,7 +167,6 @@ class MSite(yaml.YAMLObject):
         create from yaml
         """
         from .utils import loadYaml
-        return loadYaml("MSite", filename, MSite, debug)
         object = loadYaml("MSite", filename, MSite, debug)
         object.update()
         return object
