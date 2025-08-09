@@ -134,13 +134,8 @@ class Screen(yaml.YAMLObject):
         Check if intersection with rectangle defined by r,z is empty or not
         return False if empty, True otherwise
         """
-        # Check if rectangles overlap in r-dimension
-        r_overlap = self.r[0] < r[1] and r[0] < self.r[1]
-        
-        # Check if rectangles overlap in z-dimension  
-        z_overlap = self.z[0] < z[1] and z[0] < self.z[1]
-        
-        # Rectangles intersect if they overlap in both dimensions
+        r_overlap = max(self.r[0], r[0]) < min(self.r[1], r[1])
+        z_overlap = max(self.z[0], z[0]) < min(self.z[1], z[1])
         return r_overlap and z_overlap
 
 

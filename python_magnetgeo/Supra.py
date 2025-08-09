@@ -228,13 +228,9 @@ class Supra(yaml.YAMLObject):
 
         (r_i, z_i) = self.boundingBox()
 
-        # Check if rectangles overlap in r-dimension
-        r_overlap = r_i[0] < r[1] and r[0] < r_i[1]
+        r_overlap = max(r_i[0], r[0]) < min(r_i[1], r[1])
+        z_overlap = max(z_i[0], z[0]) < min(z_i[1], z[1])
 
-        # Check if rectangles overlap in z-dimension
-        z_overlap = z_i[0] < z[1] and z[0] < z_i[1]
-
-        # Rectangles intersect if they overlap in both dimensions
         return r_overlap and z_overlap
 
 
