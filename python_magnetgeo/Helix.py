@@ -112,9 +112,9 @@ class Helix(yaml.YAMLObject):
         sInsulator = "Glue"
         nInsulators = 0
         nturns = self.get_Nturns()
+        htype = self.get_type()
         if self.model3d.with_shapes and self.model3d.with_channels:
             sInsulator = "Kapton"
-            htype = "HR"
             angle = self.shape.angle
             nshapes = nturns * (360 / float(angle[0]))  # only one angle to be checked
             if verbose:
@@ -130,7 +130,6 @@ class Helix(yaml.YAMLObject):
             nInsulators = int(nshapes)
             print("nKaptons=", nInsulators)
         else:
-            htype = "HL"
             nInsulators = 1
             if self.dble:
                 nInsulators = 2
@@ -175,14 +174,6 @@ class Helix(yaml.YAMLObject):
         """
         from .utils import writeYaml
         writeYaml("Helix", self, Helix)
-
-    @property
-    def axi(self):
-        return self.modelaxi
-
-    @property
-    def m3d(self):
-        return self.model3d
 
     def to_json(self):
         """
@@ -276,6 +267,20 @@ class Helix(yaml.YAMLObject):
 
             subprocess.run(cmd, shell=True, check=True)
 
+    def intersect(self, r: list[float], z: list[float]) -> bool:
+        """
+        Check if intersection with rectangle defined by r,z is empty or not
+        return False if empty, True otherwise
+        """
+        # Check if rectangles overlap in r-dimension
+        r_overlap = self.r[0] < r[1] and r[0] < self.r[1]
+        
+        # Check if rectangles overlap in z-dimension  
+        z_overlap = self.z[0] < z[1] and z[0] < self.z[1]
+        
+        # Rectangles intersect if they overlap in both dimensions
+        return r_overlap and z_overlap
+
     def boundingBox(self) -> tuple:
         """
         return Bounding as r[], z[]
@@ -284,15 +289,6 @@ class Helix(yaml.YAMLObject):
         """
         return (self.r, self.z)
 
-    def htype(self):
-        """
-        return the type of Helix (aka HR or HL)
-        """
-        htype = "HL"
-        if self.model3d.with_shapes and self.model3d.with_channels:
-            htype = "HR"
-        return htype
-
     def insulators(self):
         """
         return name and number of insulators depending on htype
@@ -300,7 +296,8 @@ class Helix(yaml.YAMLObject):
 
         sInsulator = "Glue"
         nInsulators = 0
-        if self.htype() == "HL":
+        htype = self.get_type()
+        if htype == "HL":
             nInsulators = 2 if self.dble else 1
         else:
             sInsulator = "Kapton"

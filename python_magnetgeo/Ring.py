@@ -126,6 +126,11 @@ class Ring(yaml.YAMLObject):
         from .utils import loadJson
         return loadJson("Ring", filename, debug)
 
+    def boundingBox(self) -> tuple:
+        """
+        return Bounding as r[0,-1], z[]
+        """
+        return ([self.r[0], self.r[-1]], self.z)
 
 def Ring_constructor(loader, node):
     """

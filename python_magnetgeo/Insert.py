@@ -307,24 +307,27 @@ class Insert(yaml.YAMLObject):
         so far exclude Leads
         """
 
-        rb = [0, 0]
-        zb = [0, 0]
+        if not self.helices:
+            return ([0, 0], [0, 0])
 
-        for i, helix in enumerate(self.helices):
-            if i == 0:
-                rb = helix.r
-                zb = helix.z
+        rb = [float('inf'), float('-inf')]
+        zb = [float('inf'), float('-inf')]
 
+        # Get bounds from all helices
+        for helix in self.helices:
             rb[0] = min(rb[0], helix.r[0])
-            zb[0] = min(zb[0], helix.z[0])
             rb[1] = max(rb[1], helix.r[1])
+            zb[0] = min(zb[0], helix.z[0])
             zb[1] = max(zb[1], helix.z[1])
 
+        # Adjust for rings if they exist
         if self.rings:
             ring_dz_max = 0
-            for i, ring in enumerate(self.rings):
-                ring_dz_max = abs(ring.z[-1] - ring.z[0])
+            for ring in self.rings:
+                ring_height = abs(ring.z[1] - ring.z[0])
+                ring_dz_max = max(ring_dz_max, ring_height)
 
+            # Extend z bounds by maximum ring height
             zb[0] -= ring_dz_max
             zb[1] += ring_dz_max
 

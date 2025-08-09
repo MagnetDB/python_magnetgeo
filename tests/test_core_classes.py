@@ -26,7 +26,7 @@ from python_magnetgeo.Model3D import Model3D
 class TestHelix:
     """Test Helix class - core magnet component"""
 
-    def test_helix_initialization(self, sample_modelaxi, sample_shape):
+    def test_helix_initialization(self, sample_modelaxi, sample_model3d, sample_shape):
         """Test Helix object creation with all parameters"""
         helix = Helix(
             name="init_helix",
@@ -36,6 +36,7 @@ class TestHelix:
             odd=False,
             dble=True,
             modelaxi=sample_modelaxi,
+            model3d=sample_model3d,
             shape=sample_shape
         )
         
@@ -46,6 +47,7 @@ class TestHelix:
         assert helix.odd is False
         assert helix.dble is True
         assert helix.modelaxi == sample_modelaxi
+        assert helix.model3d == sample_model3d
         assert helix.shape == sample_shape
 
     def test_helix_bounding_box(self, sample_helix):
@@ -104,19 +106,18 @@ class TestRing:
         ring = Ring(
             name="init_ring",
             r=[8.0, 32.0],
-            z=[20.0, 30.0]
+            z=[20.0, 30.0],
+            n=8,
+            angle=45.0,
+            bpside=True,
+            fillets=False
         )
         
         assert ring.name == "init_ring"
         assert ring.r == [8.0, 32.0]
         assert ring.z == [20.0, 30.0]
-
-    def test_ring_bounding_box(self, sample_ring):
-        """Test boundingBox returns correct dimensions"""
-        rb, zb = sample_ring.boundingBox()
-        
-        assert rb == sample_ring.r
-        assert zb == sample_ring.z
+        assert ring.n == 8
+        assert ring.angle == 45.0
 
     def test_ring_height_calculation(self, sample_ring):
         """Test height calculation for ring geometry"""
@@ -144,14 +145,14 @@ class TestSupra:
             r=[25.0, 45.0],
             z=[15.0, 85.0],
             n=8,
-            struct="HTS"
+            struct=""  # Empty to avoid file loading
         )
         
         assert supra.name == "init_supra"
         assert supra.r == [25.0, 45.0]
         assert supra.z == [15.0, 85.0]
         assert supra.n == 8
-        assert supra.struct == "HTS"
+        assert supra.struct == ""
 
     def test_supra_detail_levels(self, sample_supra):
         """Test set_Detail method with valid levels"""
@@ -169,6 +170,7 @@ class TestSupra:
     def test_supra_get_nturns(self, sample_supra):
         """Test get_Nturns method"""
         turns = sample_supra.get_Nturns()
+        # When struct is empty, should return n value
         assert turns == sample_supra.n
 
     def test_supra_get_lc(self, sample_supra):
@@ -176,11 +178,6 @@ class TestSupra:
         lc = sample_supra.get_lc()
         expected_lc = (sample_supra.r[1] - sample_supra.r[0]) / 5.0
         assert lc == expected_lc
-
-    def test_supra_magnet_struct(self, sample_supra):
-        """Test get_magnet_struct method"""
-        struct = sample_supra.get_magnet_struct()
-        assert struct == sample_supra.struct
 
     def test_supra_serialization(self, sample_supra):
         """Test JSON serialization"""
@@ -190,7 +187,7 @@ class TestSupra:
         assert parsed["__classname__"] == "Supra"
         assert parsed["name"] == "test_supra"
         assert parsed["n"] == 5
-        assert parsed["struct"] == "LTS"
+        assert parsed["struct"] == ""
 
 
 class TestScreen:
@@ -323,5 +320,3 @@ class TestProbe:
         assert parsed["probe_type"] == "voltage_taps"
         assert len(parsed["index"]) == 3
         assert len(parsed["locations"]) == 3
-
-

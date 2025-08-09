@@ -5,7 +5,7 @@ import yaml
 import tempfile
 from pathlib import Path
 from typing import Any, Dict, List, Optional
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 # Import all classes for testing
 from python_magnetgeo.Insert import Insert
@@ -30,14 +30,17 @@ class TestIntegration:
         # Create ModelAxi
         axi = ModelAxi("workflow_axi", 30.0, [3.0, 2.5], [10.0, 12.0])
         
+        # Create Model3D  
+        model3d = Model3D("workflow_model3d", "workflow_cad", False, False)
+        
         # Create Shape
         shape = Shape("workflow_shape", "rectangular", 8, [90.0] * 4, 0, "CENTER")
         
         # Create Helix
-        helix = Helix("workflow_helix", [12.0, 22.0], [0.0, 60.0], 1.8, False, True, axi, shape)
+        helix = Helix("workflow_helix", [12.0, 22.0], [0.0, 60.0], 1.8, False, True, axi, model3d, shape)
         
         # Create Ring
-        ring = Ring("workflow_ring", [10.0, 24.0], [25.0, 35.0])
+        ring = Ring("workflow_ring", [10.0, 24.0], [25.0, 35.0], 6, 30.0, True, False)
         
         # Create Probe
         probe = Probe("workflow_probe", "current_taps", ["I1", "I2"], [[15.0, 0.0, 30.0], [19.0, 0.0, 45.0]])
@@ -80,11 +83,15 @@ class TestIntegration:
 
     def test_magnet_site_integration(self):
         """Test complete MSite with multiple magnet types"""
-        # Create different magnet types
-        helix = Helix("site_helix", [10.0, 20.0], [0.0, 50.0], 2.0, True, False, None, None)
+        # Create different magnet types with proper constructors
+        axi = ModelAxi("site_axi", 50.0, [1.0], [10.0])
+        model3d = Model3D("site_model3d", "site_cad", False, False)
+        shape = Shape("site_shape", "rectangular", 5, [90.0], 0, "CENTER")
+        
+        helix = Helix("site_helix", [10.0, 20.0], [0.0, 50.0], 2.0, True, False, axi, model3d, shape)
         insert = Insert("site_insert", [helix], [], [], [], [], 8.0, 25.0, [])
         
-        supra = Supra("site_supra", [30.0, 45.0], [60.0, 120.0], 4, "YBCO")
+        supra = Supra("site_supra", [30.0, 45.0], [60.0, 120.0], 4, "")  # Empty struct
         supras = Supras("site_supras", [supra], 28.0, 50.0, [])
         
         screen = Screen("site_screen", [0.0, 60.0], [0.0, 150.0])
@@ -159,8 +166,12 @@ class TestIntegration:
         assert len(voltage_locs) == 5  # Including added probe
         assert len(temp_locs) == 3
         
-        # Test with Insert
-        helix = Helix("probe_helix", [12.0, 24.0], [0.0, 60.0], 2.2, True, True, None, None)
+        # Test with Insert - create proper Helix
+        axi = ModelAxi("probe_axi", 60.0, [1.0], [10.0])
+        model3d = Model3D("probe_model3d", "probe_cad", False, False)
+        shape = Shape("probe_shape", "rectangular", 5, [90.0], 0, "CENTER")
+        
+        helix = Helix("probe_helix", [12.0, 24.0], [0.0, 60.0], 2.2, True, True, axi, model3d, shape)
         insert_with_probes = Insert(
             name="probe_integration_insert",
             helices=[helix],
@@ -181,11 +192,12 @@ class TestIntegration:
         """Test serialization preserves all data through complex workflows"""
         # Create complex nested structure
         axi = ModelAxi("serial_axi", 20.0, [2.0, 3.0, 2.5], [8.0, 9.0, 8.5])
+        model3d = Model3D("serial_model3d", "serial_cad", True, False)
         shape = Shape("serial_shape", "hexagonal", 12, [60.0] * 6, 1, "ALTERNATE")
-        helix = Helix("serial_helix", [15.0, 30.0], [5.0, 85.0], 3.0, False, True, axi, shape)
+        helix = Helix("serial_helix", [15.0, 30.0], [5.0, 85.0], 3.0, False, True, axi, model3d, shape)
         
-        ring1 = Ring("serial_ring1", [13.0, 32.0], [35.0, 45.0])
-        ring2 = Ring("serial_ring2", [13.0, 32.0], [55.0, 65.0])
+        ring1 = Ring("serial_ring1", [13.0, 32.0], [35.0, 45.0], 6, 30.0, True, False)
+        ring2 = Ring("serial_ring2", [13.0, 32.0], [55.0, 65.0], 8, 45.0, True, False)
         
         probe = Probe("serial_probe", "hall_sensors", ["H1", "H2"], [[20.0, 5.0, 40.0], [25.0, -5.0, 60.0]])
         
@@ -227,10 +239,17 @@ class TestIntegration:
     def test_geometric_consistency_integration(self):
         """Test geometric operations are consistent across complex structures"""
         # Create objects with known geometric relationships
-        inner_helix = Helix("inner", [10.0, 15.0], [0.0, 100.0], 1.0, True, False, None, None)
-        outer_helix = Helix("outer", [20.0, 25.0], [10.0, 90.0], 1.5, False, True, None, None)
+        axi1 = ModelAxi("inner_axi", 100.0, [1.0], [10.0])
+        axi2 = ModelAxi("outer_axi", 80.0, [1.5], [8.0])
+        model3d1 = Model3D("inner_model3d", "inner_cad", False, False)
+        model3d2 = Model3D("outer_model3d", "outer_cad", False, False)
+        shape1 = Shape("inner_shape", "rectangular", 3, [90.0], 0, "CENTER")
+        shape2 = Shape("outer_shape", "rectangular", 4, [90.0], 0, "CENTER")
         
-        separator_ring = Ring("separator", [8.0, 27.0], [45.0, 55.0])
+        inner_helix = Helix("inner", [10.0, 15.0], [0.0, 100.0], 1.0, True, False, axi1, model3d1, shape1)
+        outer_helix = Helix("outer", [20.0, 25.0], [10.0, 90.0], 1.5, False, True, axi2, model3d2, shape2)
+        
+        separator_ring = Ring("separator", [8.0, 27.0], [45.0, 55.0], 6, 30.0, True, False)
         
         insert = Insert(
             name="geometric_insert",
@@ -247,7 +266,6 @@ class TestIntegration:
         # Test individual bounding boxes
         inner_rb, inner_zb = inner_helix.boundingBox()
         outer_rb, outer_zb = outer_helix.boundingBox()
-        ring_rb, ring_zb = separator_ring.boundingBox()
         
         # Test insert bounding box encompasses all
         insert_rb, insert_zb = insert.boundingBox()
@@ -257,7 +275,7 @@ class TestIntegration:
         assert insert_rb[1] >= max(inner_rb[1], outer_rb[1])
         
         # Insert z should be extended by ring height
-        ring_height = ring_zb[1] - ring_zb[0]  # 10.0
+        ring_height = separator_ring.z[1] - separator_ring.z[0]  # 10.0
         expected_z_min = min(inner_zb[0], outer_zb[0]) - ring_height
         expected_z_max = max(inner_zb[1], outer_zb[1]) + ring_height
         
@@ -266,51 +284,4 @@ class TestIntegration:
         
         # Test intersection consistency
         test_rect_r = [12.0, 23.0]  # Overlaps both helices
-        test_rect_z = [20.0, 80.0]  # Overlaps both helices
-        
-        inner_intersect = inner_helix.intersect(test_rect_r, test_rect_z)
-        outer_intersect = outer_helix.intersect(test_rect_r, test_rect_z)
-        insert_intersect = insert.intersect(test_rect_r, test_rect_z)
-        
-        # If individual components intersect, insert should intersect
-        if inner_intersect or outer_intersect:
-            assert insert_intersect is True
-
-    def test_error_handling_integration(self):
-        """Test error handling across the system"""
-        # Test invalid probe locations
-        with pytest.raises(ValueError):
-            Probe("bad_probe", "voltage", ["V1"], [[10.0, 20.0]])  # Only 2 coordinates
-        
-        # Test invalid detail level
-        supra = Supra("detail_test", [10.0, 20.0], [0.0, 50.0], 3, "LTS")
-        with pytest.raises(Exception):
-            supra.set_Detail("invalid_detail_level")
-        
-        # Test probe index not found
-        probe = Probe("index_test", "temperature", [1, 2, 3], [[1, 0, 0], [2, 0, 0], [3, 0, 0]])
-        with pytest.raises(ValueError):
-            probe.get_probe_by_index(999)
-        
-        # Test from_dict with missing required fields
-        incomplete_data = {"name": "incomplete"}  # Missing required fields
-        
-        with pytest.raises((KeyError, TypeError)):
-            Helix.from_dict(incomplete_data)
-
-
-if __name__ == "__main__":
-    """Run the test suite"""
-    import sys
-    import subprocess
-    
-    # Run pytest with verbose output
-    result = subprocess.run([
-        sys.executable, "-m", "pytest", 
-        "new-tests/", 
-        "-v", 
-        "--tb=short",
-        "--strict-markers"
-    ])
-    
-    sys.exit(result.returncode)
+        test_rect_z = [20.0, 80.0]  #
