@@ -72,7 +72,7 @@ class CoolingSlit(yaml.YAMLObject):
         """
         create from dict
         """
-        name = values["name"]
+        name = values.get("name", "")
         r = values["r"]
         angle = values["angle"]
         n = values["n"]
@@ -80,8 +80,10 @@ class CoolingSlit(yaml.YAMLObject):
         sh = values["sh"]
         shape = values["shape"]
 
-        return cls(name, r, angle, n, dh, sh, shape)
-
+        object = cls(name, r, angle, n, dh, sh, shape)
+        object.update()
+        return object
+    
     @classmethod
     def from_yaml(cls, filename: str, debug: bool = False):
         """
@@ -107,14 +109,6 @@ def CoolingSlit_constructor(loader, node):
     build an coolingslit object
     """
     values = loader.construct_mapping(node)
-    name = values.get("name", '')
-    r = values["r"]
-    angle = values["angle"]
-    n = values["n"]
-    dh = values["dh"]
-    sh = values["sh"]
-    shape = values["shape"]
-
-    return CoolingSlit(name, r, angle, n, dh, sh, shape)
+    return CoolingSlit.from_dict(values)
 
 yaml.add_constructor(CoolingSlit.yaml_tag, CoolingSlit_constructor)

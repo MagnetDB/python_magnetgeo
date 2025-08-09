@@ -150,7 +150,6 @@ class Supra(yaml.YAMLObject):
         struct = values["struct"]
 
         object = cls(name, r, z, n, struct)
-
         """
         # TODO: if struct load r,z and n from struct data
         # or at least check that values are valid

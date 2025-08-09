@@ -23,17 +23,6 @@ class Ring(yaml.YAMLObject):
 
     yaml_tag = "Ring"
 
-    def __setstate__(self, state):
-        """
-        This method is called during deserialization (when loading from YAML or pickle)
-        We use it to ensure the optional attributes always exist
-        """
-        self.__dict__.update(state)
-        
-        # Ensure these attributes always exist
-        if not hasattr(self, 'cad'):
-            self.cad = ''
-
     def __init__(
         self,
         name: str,

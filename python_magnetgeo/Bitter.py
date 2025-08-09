@@ -38,7 +38,7 @@ class Bitter(yaml.YAMLObject):
         odd: bool,
         modelaxi,
         coolingslits: list,
-        tierod,
+        tierod: Tierod,
         innerbore: float,
         outerbore: float,
     ) -> None:
@@ -55,7 +55,7 @@ class Bitter(yaml.YAMLObject):
         self.innerbore = innerbore
         self.outerbore = outerbore
         self.coolingslits = coolingslits
-        self.tierod = tierod
+        self.tierod = tierod 
 
     def update(self):
         from .ModelAxi import ModelAxi
@@ -214,12 +214,14 @@ class Bitter(yaml.YAMLObject):
         z = values["z"]
         odd = values["odd"]
         modelaxi = values["modelaxi"]
-        coolingslits = values["coolingslits"]
-        tierod = values["tierod"]
+        coolingslits = values.get("coolingslits", [])
+        tierod = values.get("tierod", "")
         innerbore = values.get("innerbore", 0)
         outerbore = values.get("outerbore", 0)
 
-        return cls(name, r, z, odd, modelaxi, coolingslits, tierod, innerbore, outerbore)
+        object = cls(name, r, z, odd, modelaxi, coolingslits, tierod, innerbore, outerbore)
+        object.update()
+        return object
 
     @classmethod
     def from_yaml(cls, filename: str, debug: bool = False):

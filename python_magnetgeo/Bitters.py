@@ -52,7 +52,7 @@ class Bitters(yaml.YAMLObject):
         update magnets if there were loaded as str
         """
         from .Bitter import Bitter
-        from .utils import check_objects,loadList
+        from .utils import check_objects, loadList
         if self.magnets:
             if check_objects(self.magnets, str):
                 self.magnets = loadList("magnets", self.magnets, [None, Bitter], {"Bitter": Bitter.from_dict})
@@ -140,8 +140,10 @@ class Bitters(yaml.YAMLObject):
         outerbore = values.get("outerbore", 0)
         probes = values.get("probes", [])  # NEW: Optional with default empty list
 
-        return cls(name, magnets, innerbore, outerbore, probes)
-
+        object = cls(name, magnets, innerbore, outerbore, probes)
+        object.update()
+        return object
+    
     @classmethod
     def from_yaml(cls, filename: str, debug: bool = False):
         """

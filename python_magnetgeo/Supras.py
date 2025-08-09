@@ -121,8 +121,10 @@ class Supras(yaml.YAMLObject):
         innerbore = values["innerbore"] if "innerbore" in values else 0
         outerbore = values["outerbore"] if "outerbore" in values else 0
         probes = values.get("probes", [])  # NEW: Optional with default empty list
-        return cls(name, magnets, innerbore, outerbore, probes)        
-
+        object = cls(name, magnets, innerbore, outerbore, probes)        
+        object.update()
+        return object
+    
     @classmethod
     def from_yaml(cls, filename: str, debug: bool = False):
         """

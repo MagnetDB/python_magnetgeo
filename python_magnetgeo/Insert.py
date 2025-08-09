@@ -91,19 +91,19 @@ class Insert(yaml.YAMLObject):
         from .utils import loadList
         if check_objects(self.helices, str):
             self.helices = loadList("helices", self.helices, [None, Helix], {"Helix": Helix.from_dict})
-            print("update helices:", self.helices)
+            #print("update helices:", self.helices)
         if check_objects(self.rings, str):
             self.rings = loadList("rings", self.rings, [None, Ring], {"Ring": Ring.from_dict})
-            print("update rings:", self.rings)
+            #print("update rings:", self.rings)
         if self.currentleads:
             if check_objects(self.currentleads, str):
                 self.currentleads = loadList("currentleads", self.currentleads, [None, InnerCurrentLead, OuterCurrentLead], dict_leads)
-                print("update currentleads:", self.currentleads)
+                #print("update currentleads:", self.currentleads)
         # NEW: Update probes
         if self.probes:
             if check_objects(self.probes, str):
                 self.probes = loadList("probes", self.probes, [None, Probe], dict_probes)
-                print("update probes:", self.probes)
+                #print("update probes:", self.probes)
 
     def get_channels(
         self, mname: str, hideIsolant: bool = True, debug: bool = False
@@ -268,9 +268,11 @@ class Insert(yaml.YAMLObject):
         rangles = data["rangles"]
         probes = data.get("probes", [])  # NEW: Optional with default empty list
 
-        return cls(
+        object = cls(
             name, helices, rings, currentleads, hangles, rangles, innerbore, outerbore, probes
         )
+        object.update()
+        return object
 
     @classmethod
     def from_yaml(cls, filename: str, debug: bool = False):
@@ -289,7 +291,9 @@ class Insert(yaml.YAMLObject):
         convert from json to yaml
         """
         from .utils import loadJson
-        return loadJson("Insert", filename, debug)
+        object = loadJson("Insert", filename, debug)
+        object.update()
+        return object
 
     ###################################################################
     #
@@ -465,7 +469,6 @@ class Insert(yaml.YAMLObject):
 
 
 def Insert_constructor(loader, node):
-    print("Insert_constructor")
     data = loader.construct_mapping(node)
     return Insert.from_dict(data)
 

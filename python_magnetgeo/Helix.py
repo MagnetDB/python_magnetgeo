@@ -42,19 +42,6 @@ class Helix(yaml.YAMLObject):
 
     yaml_tag = "Helix"
     
-    def __setstate__(self, state):
-        """
-        This method is called during deserialization (when loading from YAML or pickle)
-        We use it to ensure the optional attributes always exist
-        """
-        self.__dict__.update(state)
-        
-        # Ensure these attributes always exist
-        if not hasattr(self, 'chamfers'):
-            self.chamfers = []
-        if not hasattr(self, 'grooves'):
-            self.grooves = Groove()
-
     def __init__(
         self,
         name: str,
@@ -226,9 +213,11 @@ class Helix(yaml.YAMLObject):
         chamfers = values.get("chamfers", [])
         grooves = values.get("grooves", Groove())
 
-        return cls(
+        object = cls(
             name, r, z, cutwidth, odd, dble, modelaxi, model3d, shape, chamfers, grooves
         )
+        object.update()
+        return object
 
     @classmethod
     def from_yaml(cls, filename: str, debug: bool = False):

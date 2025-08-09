@@ -63,6 +63,7 @@ class Tierod(yaml.YAMLObject):
         shape = values["shape"]
 
         object = cls(name, r, n, dh, sh, shape)
+        object.update()
         return object
     
     @classmethod
