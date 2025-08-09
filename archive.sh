@@ -33,7 +33,7 @@ done
 shift $((OPTIND - 1))
 
 # add parameters
-: ${VERSION:="0.7.0"}
+: ${VERSION:="0.8.0"}
 : ${DIST:="bookworm"}
 
 # cleanup source
@@ -56,10 +56,14 @@ tar \
     --exclude=*.crt \
     --exclude=*.pem \
     --exclude=*.log \
+    --exclude=*.old \
+    --exclude=*.new \
     --exclude=*~ \
     --exclude=#*# \
     --exclude=pyproject.toml \
     --exclude=poetry.lock \
+    --exclude=.pytest_cache \
+    --exclude=.github \
     -zcvf ${PACKAGE}_${VERSION}.orig.tar.gz ${SRCDIR}
 
 # build package
