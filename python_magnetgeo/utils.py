@@ -107,7 +107,6 @@ def check_objects(objects, supported_type):
         return isinstance(objects, supported_type)
     
 def check_type(object, lTypes):
-    print(f"check_type: object={object} type={type(object)} in {lTypes}")
     for item in lTypes:
         if isinstance(object, item):
             return True
