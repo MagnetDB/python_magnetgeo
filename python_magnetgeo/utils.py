@@ -39,6 +39,11 @@ def loadYaml(comment, filename, supported_type=None, debug: bool = True):
     try:
         with open(basename, "r") as istream:
             object = yaml.load(stream=istream, Loader=yaml.FullLoader)
+            if check_objects([object], supported_type):
+                if hasattr(object, 'update'):
+                    object.update()
+            else:
+                raise Exception(f"{comment}: {filename} - unsupported type {type(object)}")           
     except Exception as e:
         raise Exception(f"Failed to load {comment} data {filename}: {e}")
     finally:
@@ -102,6 +107,7 @@ def check_objects(objects, supported_type):
         return isinstance(objects, supported_type)
     
 def check_type(object, lTypes):
+    print(f"check_type: object={object} type={type(object)} in {lTypes}")
     for item in lTypes:
         if isinstance(object, item):
             return True
@@ -112,6 +118,11 @@ def loadObject(comment: str, data, supported_type, constructor):
         YAMLFile = os.path.join(f"{data}.yaml")
         with open(YAMLFile, "r") as istream:
             Object  = yaml.load(istream, Loader=yaml.FullLoader)
+            if check_objects([Object], supported_type):
+                if hasattr(Object, 'update'):
+                    Object.update()
+            else:
+                raise Exception(f"{comment}: {data}.yaml - unsupported type {type(Object)}")
         return Object
     elif isinstance(data, supported_type):
         return data
@@ -127,12 +138,18 @@ def loadList(comment: str, objects: list, supported_types: list, dict_objects: d
 
     return targets
     """
-    
     targets = []
     if isinstance(objects, str):
         YAMLFile = os.path.join(f"{objects}.yaml")
         with open(YAMLFile, "r") as istream:
             Object = yaml.load(istream, Loader=yaml.FullLoader)
+            if check_type(Object, supported_types[1:]):
+                if hasattr(Object, 'update'):
+                    Object.update()
+                targets.append(Object)
+                # print(f"{comment}: {mname}.yaml - loaded {type(Object)}: {Object}")
+            else:
+                raise Exception(f"{comment}: {objects}.yaml - unsupported type {type(Object)}")
         targets = Object
 
     elif isinstance(objects, list):
@@ -142,14 +159,16 @@ def loadList(comment: str, objects: list, supported_types: list, dict_objects: d
                 with open(YAMLFile, "r") as istream:
                     Object = yaml.load(istream, Loader=yaml.FullLoader)
                     if check_type(Object, supported_types[1:]):
+                        if hasattr(Object, 'update'):
+                            Object.update()
                         targets.append(Object)
-                        print(f"{comment}: {mname}.yaml - loaded {type(Object)}: {Object}")
+                        # print(f"{comment}: {mname}.yaml - loaded {type(Object)}: {Object}")
                     else:
                         raise Exception(f"{comment}: {mname}.yaml - unsupported type {type(Object)}")
                     
             elif check_type(mname, supported_types[1:]):
                 targets.append(mname)
-                
+              
     elif isinstance(objects, dict):
         for key, value in objects.items():
             if check_type(value, supported_types[1:]):
@@ -158,7 +177,12 @@ def loadList(comment: str, objects: list, supported_types: list, dict_objects: d
                 YAMLFile = os.path.join(f"{value}.yaml")
                 with open(YAMLFile, "r") as istream:
                     Object = yaml.load(istream, Loader=yaml.FullLoader)
-                    targets.append(Object)
+                    if check_type(Object, supported_types[1:]):
+                        if hasattr(Object, 'update'):
+                            Object.update()
+                        targets.append(Object)
+                    else:
+                        raise Exception(f"{comment}: {key}:{value}.yaml - unsupported type {type(Object)}")
 
             elif isinstance(value, list):
                 for mname in value:
@@ -168,7 +192,12 @@ def loadList(comment: str, objects: list, supported_types: list, dict_objects: d
                         YAMLFile = os.path.join(f"{mname}.yaml")
                         with open(YAMLFile, "r") as istream:
                             Object = yaml.load(istream, Loader=yaml.FullLoader)
-                            targets.append(Object)
+                            if check_type(Object, supported_types[1:]):
+                                if hasattr(Object, 'update'):
+                                    Object.update()
+                                targets.append(Object)
+                            else:
+                                raise Exception(f"{comment}: {mname}.yaml - unsupported type {type(Object)}")
             else:
                 raise Exception(
                     f"{comment}: unsupported type {type(value)}"
@@ -178,3 +207,22 @@ def loadList(comment: str, objects: list, supported_types: list, dict_objects: d
 
     return targets
 
+def getObject(filename: str):
+    """
+    Load an object from a YAML file and update it if necessary.
+    """
+    # import yaml
+    from . import Helix
+    from . import Insert
+    from . import Bitter
+    from . import Bitters
+    from . import Supra
+    from . import Supras
+    from . import Screen
+    from . import MSite
+
+    with open(filename, "r") as f:
+        object = yaml.load(f, Loader=yaml.FullLoader)
+        if hasattr(object, 'update'):
+            object.update()
+        return object
