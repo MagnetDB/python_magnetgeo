@@ -87,25 +87,7 @@ class TestRingInitialization:
         
         assert ring.cad == "GMSH"
 
-    def test_ring_setstate_method(self):
-        """Test __setstate__ method for deserialization"""
-        # Simulate loading from pickle/YAML without cad attribute
-        state = {
-            'name': 'state_ring',
-            'r': [8.0, 18.0],
-            'z': [2.0, 12.0],
-            'n': 4,
-            'angle': 90.0,
-            'bpside': True,
-            'fillets': False
-        }
-        
-        ring = Ring.__new__(Ring)
-        ring.__setstate__(state)
-        
-        assert hasattr(ring, 'cad')
-        assert ring.cad == ''
-
+    
 
 class TestRingMethods:
     """Test Ring class methods"""

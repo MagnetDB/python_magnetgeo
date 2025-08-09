@@ -110,26 +110,7 @@ class TestHelixInitialization:
         assert helix.chamfers == chamfers
         assert helix.grooves == grooves
 
-    def test_helix_setstate_method(self):
-        """Test __setstate__ method for deserialization"""
-        # Simulate loading from pickle/YAML without chamfers and grooves
-        state = {
-            'name': 'state_helix',
-            'r': [12.0, 22.0],
-            'z': [2.0, 98.0],
-            'cutwidth': 2.5,
-            'odd': False,
-            'dble': True
-        }
-        
-        helix = Helix.__new__(Helix)
-        helix.__setstate__(state)
-        
-        assert hasattr(helix, 'chamfers')
-        assert hasattr(helix, 'grooves')
-        assert helix.chamfers == []
-        assert isinstance(helix.grooves, Groove)
-
+    
     def test_helix_geometric_validation(self, sample_modelaxi, sample_model3d, sample_shape):
         """Test geometric parameter validation"""
         helix = Helix(

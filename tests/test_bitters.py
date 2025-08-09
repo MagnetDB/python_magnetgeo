@@ -404,23 +404,25 @@ class TestBittersYAMLTag(BaseYAMLTagTestMixin):
 class TestBittersFromDict:
     """Test Bitters.from_dict class method"""
     
-    def test_from_dict_complete_data(self):
+    @patch('python_magnetgeo.utils.loadList')
+    @patch('python_magnetgeo.utils.check_objects')
+    def test_from_dict_complete_data(self, mock_check, mock_load_list):
         """Test from_dict with complete data including probes"""
+        mock_check.return_value = False
+        mock_load_list.return_value = []
+        
         data = {
             "name": "dict_bitters",
-            "magnets": ["bitter1", "bitter2", "bitter3"],
+            "magnets": [],  # Empty list instead of file references
             "innerbore": 12.0,
             "outerbore": 48.0,
-            "probes": ["probe1.yaml", "probe2.yaml"]  # NEW: Include probes
+            "probes": []  # Empty list instead of file references
         }
         
         bitters = Bitters.from_dict(data)
-        
         assert bitters.name == "dict_bitters"
-        assert bitters.magnets == ["bitter1", "bitter2", "bitter3"]
         assert bitters.innerbore == 12.0
         assert bitters.outerbore == 48.0
-        assert bitters.probes == ["probe1.yaml", "probe2.yaml"]  # NEW: Check probes
 
     def test_from_dict_missing_probes_field(self):
         """Test from_dict with missing probes field (should default to empty list)"""

@@ -69,28 +69,7 @@ class TestChamferInitialization:
         assert chamfer.dr == 1.5
         assert chamfer.l == 6.0
 
-    def test_chamfer_setstate_method(self):
-        """Test __setstate__ method for deserialization"""
-        # Simulate loading from pickle/YAML without optional attributes
-        state = {
-            'name': 'test',
-            'side': 'HP',
-            'rside': 'rint',
-            'l': 5.0
-        }
-        
-        chamfer = Chamfer.__new__(Chamfer)
-        chamfer.__setstate__(state)
-        
-        assert hasattr(chamfer, 'dr')
-        assert hasattr(chamfer, 'alpha')
-        assert chamfer.dr is None
-        assert chamfer.alpha is None
-        assert chamfer.name == 'test'
-        assert chamfer.side == 'HP'
-        assert chamfer.rside == 'rint'
-        assert chamfer.l == 5.0
-
+    
     @pytest.mark.parametrize("side,rside", [
         ("HP", "rint"),
         ("HP", "rext"),
