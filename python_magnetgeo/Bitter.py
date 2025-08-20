@@ -54,8 +54,8 @@ class Bitter(yaml.YAMLObject):
         
         self.innerbore = innerbore
         self.outerbore = outerbore
-        self.coolingslits = coolingslits
-        self.tierod = tierod 
+        self.coolingslits = coolingslits if coolingslits is not None else []
+        self.tierod = tierod
 
     def update(self):
         from .ModelAxi import ModelAxi
@@ -215,7 +215,7 @@ class Bitter(yaml.YAMLObject):
         odd = values["odd"]
         modelaxi = values["modelaxi"]
         coolingslits = values.get("coolingslits", [])
-        tierod = values.get("tierod", "")
+        tierod = values.get("tierod", None)
         innerbore = values.get("innerbore", 0)
         outerbore = values.get("outerbore", 0)
 

@@ -58,8 +58,8 @@ class Tierod(yaml.YAMLObject):
         name = values.get("name", "")
         r = values["r"]
         n = values["n"]
-        dh = values["dh"]
-        sh = values["sh"]
+        dh = values.get("dh", 0)
+        sh = values.get("sh", 0)
         shape = values["shape"]
 
         object = cls(name, r, n, dh, sh, shape)
