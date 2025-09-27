@@ -1,0 +1,45 @@
+#!/usr/bin/env python3
+# -*- coding:utf-8 -*-
+
+"""
+Validation framework for geometry objects.
+"""
+
+from typing import List, Any
+import warnings
+
+class ValidationWarning(UserWarning):
+    """Warning for non-critical validation issues"""
+    pass
+
+class ValidationError(ValueError):
+    """Error for critical validation issues"""
+    pass
+
+class GeometryValidator:
+    @staticmethod
+    def validate_name(name: str) -> None:
+        """General name validation - same for all geometries"""
+        if not name or not isinstance(name, str):
+            raise ValidationError("Name must be a non-empty string")
+    
+    @staticmethod
+    def validate_numeric_list(values: List[float], name: str, expected_length: int = None) -> None:
+        """General validation for numeric lists"""
+        if not isinstance(values, list):
+            raise ValidationError(f"{name} must be a list")
+        
+        if expected_length and len(values) != expected_length:
+            raise ValidationError(f"{name} must have exactly {expected_length} values, got {len(values)}")
+        
+        if not all(isinstance(val, (int, float)) for val in values):
+            raise ValidationError(f"All {name} values must be numeric")
+    
+    @staticmethod
+    def validate_ascending_order(values: List[float], name: str) -> None:
+        """Validate that values are in ascending order"""
+        for i in range(1, len(values)):
+            if values[i] <= values[i-1]:
+                raise ValidationError(f"{name} values must be in ascending order: {values}")
+
+
