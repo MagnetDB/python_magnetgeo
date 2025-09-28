@@ -24,6 +24,20 @@ class GeometryValidator:
             raise ValidationError("Name must be a non-empty string")
     
     @staticmethod
+    def validate_positive(r: float) -> None:
+        """Must be positive number"""
+        if not isinstance(r, float) and not isinstance(r, int):
+            raise ValidationError("Value must be either a float or an integer")
+        if r <= 0:
+            raise ValidationError("Value must be positive")
+    
+    @staticmethod
+    def validate_integer(n: int)  -> None:
+        """Must be integer"""
+        if not isinstance(n, int):
+            raise ValidationError("Value must be an integer")
+
+    @staticmethod
     def validate_numeric_list(values: List[float], name: str, expected_length: int = None) -> None:
         """General validation for numeric lists"""
         if not isinstance(values, list):
