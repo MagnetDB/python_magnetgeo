@@ -5,11 +5,12 @@
 Provides Inner and OuterCurrentLead class
 """
 
-import json
-import yaml
+from typing import List
+from .base import YAMLObjectBase
+from .validation import GeometryValidator, ValidationError
 
 
-class InnerCurrentLead(yaml.YAMLObject):
+class InnerCurrentLead(YAMLObjectBase):
     """
     name :
     r : [R0, R1]
@@ -54,34 +55,6 @@ class InnerCurrentLead(yaml.YAMLObject):
             self.fillet,
         )
 
-    def dump(self):
-        """
-        dump object to file
-        """        
-        from .utils import writeYaml
-        writeYaml("InnerCurrentLead", self, InnerCurrentLead)
-
-    def to_json(self):
-        """
-        convert from yaml to json
-        """
-        from . import deserialize
-
-        return json.dumps(
-            self, default=deserialize.serialize_instance, sort_keys=True, indent=4
-        )
-
-    def write_to_json(self):
-        """
-        write from json file
-        """
-        jsondata = self.to_json()
-        try:
-            with open(f"{self.name}.json", "w") as ofile:
-                ofile.write(str(jsondata))
-        except:
-            raise Exception(f"Failed to write to {self.name}.json")
-
     @classmethod
     def from_dict(cls, values: dict, debug: bool = False):
         """
@@ -95,68 +68,3 @@ class InnerCurrentLead(yaml.YAMLObject):
         fillet = values["fillet"]
         return cls(name, r, h, holes, support, fillet)        
 
-    @classmethod
-    def from_yaml(cls, filename: str, debug: bool = False):
-        """
-        create from yaml
-        """
-        from .utils import loadYaml
-        return loadYaml("InnerCurrentLead", filename, InnerCurrentLead, debug)
-
-    @classmethod
-    def from_json(cls, filename: str, debug: bool = False):
-        """
-        convert from json to yaml
-        """
-        from .utils import loadJson
-        return loadJson("InnerCurrentLead", filename, debug)
-
-
-def InnerCurrentLead_constructor(loader, node):
-    """
-    build an inner object
-    """
-    values = loader.construct_mapping(node)
-    name = values["name"]
-    r = values["r"]
-    h = values["h"]
-    holes = values["holes"]
-    support = values["support"]
-    fillet = values["fillet"]
-    return InnerCurrentLead(name, r, h, holes, support, fillet)        
-
-
-
-yaml.add_constructor(InnerCurrentLead.yaml_tag, InnerCurrentLead_constructor)
-
-#
-# To operate from command line
-
-if __name__ == "__main__":
-    import argparse
-
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "name",
-        help="name of the inner currentlead model to be stored",
-        type=str,
-        nargs="?",
-    )
-    parser.add_argument("--tojson", help="convert to json", action="store_true")
-    args = parser.parse_args()
-
-    if not args.name:
-        r = [38.6 / 2.0, 48.4 / 2.0]
-        h = 480.0
-        bars = [123, 12, 90, 60, 45, 3]
-        support = [24.2, 0]
-        lead = InnerCurrentLead("Inner", r, 480.0, bars, support, False)
-        lead.dump()
-    else:
-        lead = None
-        with open(args.name, "r") as f:
-            lead = yaml.load(f, Loader=yaml.FullLoader)
-        print("lead=", lead)
-
-    if args.tojson:
-        lead.write_to_json()

@@ -5,12 +5,12 @@
 Provides Inner and OuterCurrentLead class
 """
 
-import os
-import json
-import yaml
+from typing import List
+from .base import YAMLObjectBase
+from .validation import GeometryValidator, ValidationError
 
 
-class OuterCurrentLead(yaml.YAMLObject):
+class OuterCurrentLead(YAMLObjectBase):
     """
     name :
 
@@ -67,34 +67,6 @@ class OuterCurrentLead(yaml.YAMLObject):
             self.support,
         )
 
-    def dump(self):
-        """
-        dump object to file
-        """        
-        from .utils import writeYaml
-        writeYaml("OuterCurrentLead", self, OuterCurrentLead)
-
-    def to_json(self):
-        """
-        convert from yaml to json
-        """
-        from . import deserialize
-
-        return json.dumps(
-            self, default=deserialize.serialize_instance, sort_keys=True, indent=4
-        )
-
-    def write_to_json(self):
-        """
-        write from json file
-        """
-        jsondata = self.to_json()
-        try:
-            with open(f"{self.name}.json", "w") as ofile:
-                ofile.write(str(jsondata))
-        except:
-            raise Exception(f"Failed to write to {self.name}.json")
-
     @classmethod
     def from_dict(cls, values: dict, debug: bool = False):
         """
@@ -106,37 +78,5 @@ class OuterCurrentLead(yaml.YAMLObject):
         bar = values["bar"]
         support = values["support"]
         return cls(name, r, h, bar, support)
-
-    @classmethod
-    def from_yaml(cls, filename: str, debug: bool = False):
-        """
-        create from yaml
-        """
-        from .utils import loadYaml
-        return loadYaml("OuterCurrentLead", filename, OuterCurrentLead, debug)
-
-    @classmethod
-    def from_json(cls, filename: str, debug: bool = False):
-        """
-        convert from json to yaml
-        """
-        from .utils import loadJson
-        return loadJson("OuterCurrentLead", filename, debug)
-
-
-def OuterCurrentLead_constructor(loader, node):
-    """
-    build an outer object
-    """
-    values = loader.construct_mapping(node)
-    name = values["name"]
-    r = values["r"]
-    h = values["h"]
-    bar = values["bar"]
-    support = values["support"]
-    return OuterCurrentLead(name, r, h, bar, support)
-
-
-yaml.add_constructor(OuterCurrentLead.yaml_tag, OuterCurrentLead_constructor)
 
 
