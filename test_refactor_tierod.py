@@ -190,6 +190,10 @@ def test_contour2d_handling():
     except Exception as e:
         print(f"Note: String reference loading may need implementation: {e}")
     
+    assert ref_tierod.contour2d.name == "string_reference"
+    assert ref_tierod.contour2d.pts == [[0.0, 0.0], [8.0, 0.0], [8.0, 4.0], [0.0, 4.0]]
+    print("✓ String reference contour2d handling works")
+    
     # Clean up the YAML file
     if os.path.exists('string_reference.yaml'):
         os.unlink('string_reference.yaml')
