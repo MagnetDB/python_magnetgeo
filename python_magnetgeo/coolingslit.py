@@ -49,24 +49,29 @@ class CoolingSlit(YAMLObjectBase):
         """
         create from dict
         """
-        # Basic parameters
-        _params = {
-            "name": values.get("name", ""),
-            "r": values["r"],
-            "angle": values["angle"],
-            "n": values["n"],
-            "dh": values["dh"],
-            "sh": values["sh"],
-        }
-
-        # Handle nested objects (they might be dicts or already instantiated)
-        if 'contour2d' in values and values['contour2d']:
-            contour2d_data = values['contour2d']
-            if isinstance(contour2d_data, dict):
-                from .Contour2D import Contour2D
-                _params['contour2d'] = Contour2D.from_dict(contour2d_data)
-            else:
-                _params['contour2d'] = contour2d_data
-        
-        return cls(**_params)
+        # Smart nested object handling
+        contour2d = cls._load_nested_contour2d(values.get('contour2d'), debug=debug)
+        return cls(
+            name=values.get("name", ""),
+            r=values["r"],
+            angle=values["angle"],
+            n=values["n"],
+            dh=values["dh"],
+            sh=values["sh"],
+            contour2d=contour2d
+        )
     
+    @classmethod  
+    def _load_nested_contour2d(cls, contour2d_data, debug=False):
+        if isinstance(contour2d_data, str):
+            # String reference → load from "contour2d_data.yaml"
+            from .utils import loadObject
+            from .Contour2D import Contour2D
+            return loadObject("contour2d", contour2d_data, Contour2D, Contour2D.from_yaml)
+        elif isinstance(contour2d_data, dict):
+            # Inline object → create from dict
+            from .Contour2D import Contour2D
+            return Contour2D.from_dict(contour2d_data)
+        else:
+            # None or already instantiated
+            return contour2d_data
