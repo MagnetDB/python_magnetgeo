@@ -20,7 +20,7 @@ from .Screen import Screen
 from .MSite import MSite
 from .Bitters import Bitters
 from .Supras import Supras
-from .Shape2D import Shape2D
+from .Contour2D import Contour2D
 from .Chamfer import Chamfer
 from .Groove import Groove
 from .tierod import Tierod
@@ -46,7 +46,7 @@ classes = {
     "Bitters": Bitters,
     "Supras": Supras,
     "MSite": MSite,
-    "Shape2D": Shape2D,
+    "Contour2D": Contour2D,
     "Chamfer": Chamfer,
     "Groove": Groove,
     "Tierod": Tierod,

@@ -5,9 +5,6 @@
 Provides definiton for CoolingSlits:
 """
 
-import yaml
-import json
-
 from typing import List
 from .base import YAMLObjectBase
 from .validation import GeometryValidator, ValidationError
@@ -66,8 +63,8 @@ class CoolingSlit(YAMLObjectBase):
         if 'shape' in values and values['shape']:
             shape_data = values['shape']
             if isinstance(shape_data, dict):
-                from .Shape import Shape
-                _params['shape'] = Shape.from_dict(shape_data)
+                from .Contour2D import Contour2D
+                _params['shape'] = Contour2D.from_dict(shape_data)
             else:
                 _params['shape'] = shape_data
         

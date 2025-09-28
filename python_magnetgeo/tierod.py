@@ -10,6 +10,11 @@ class Tierod(YAMLObjectBase):
     def __init__(
         self, name: str, r: float, n: int, dh: float, sh: float, shape
     ) -> None:
+        # validation
+        GeometryValidator.validate_name(name)      # Must be non-empty string
+        GeometryValidator.validate_positive(r)     # Must be positive number
+        GeometryValidator.validate_integer(n)      # Must be integer
+    
         self.name = name
         self.r = r
         self.n = n
@@ -19,40 +24,39 @@ class Tierod(YAMLObjectBase):
         
 
     def __repr__(self):
-        return "%s(name=%s, r=%r, n=%r, dh=%r, sh=%r, shape=%r)" % (
-            self.__class__.__name__,
-            self.name,
-            self.r,
-            self.n,
-            self.dh,
-            self.sh,
-            self.shape,
-        )
+        return (f"{self.__class__.__name__}(name={self.name!r}, "
+                f"r={self.r!r}, n={self.n!r}, "
+                f"dh={self.dh!r}, sh={self.sh!r}, "
+                f"shape={self.shape!r})")
+            
     
     @classmethod
     def from_dict(cls, values: dict, debug: bool = False):
-        """
-        create from dict
-        """
+        # Smart nested object handling
+        shape = cls._load_nested_shape(values.get('shape'), debug=debug)
+        return cls(
+            name=values["name"], 
+            r=values["r"], 
+            n=values["n"], 
+            dh=values.get("dh", 0.0), 
+            sh=values.get("sh", 0.0), 
+            shape=shape
+        )
 
-        # Basic parameters
-        _params = {
-            'name': values.get("name", ""),
-            'r': values["r"],
-            'n': values["n"],
-            'dh': values.get("dh", 0),
-            'sh': values.get("sh", 0),
-        }
-
-        # Handle nested objects (they might be dicts or already instantiated)
-        if 'shape' in values and values['shape']:
-            shape_data = values['shape']
-            if isinstance(shape_data, dict):
-                from .Shape import Shape
-                _params['shape'] = Shape.from_dict(shape_data)
-            else:
-                _params['shape'] = shape_data
+    @classmethod  
+    def _load_nested_shape(cls, shape_data, debug=False):
+        if isinstance(shape_data, str):
+            # String reference → load from "shape_data.yaml"
+            from .utils import loadObject
+            from .Contour2D import Contour2D
+            return loadObject("shape", shape_data, Contour2D, Contour2D.from_yaml)
+        elif isinstance(shape_data, dict):
+            # Inline object → create from dict
+            from .Contour2D import Contour2D
+            return Contour2D.from_dict(shape_data)
+        else:
+            # None or already instantiated
+            return shape_data
         
-        return cls(**_params)
     
     
