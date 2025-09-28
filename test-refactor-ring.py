@@ -15,7 +15,7 @@ def test_refactored_ring_functionality():
     # Test basic creation
     ring = Ring(
         name="test_ring",
-        r=[10.0, 20.0],
+        r=[10.0, 20.0, 30.0, 40.0],
         z=[0.0, 5.0],
         n=1,
         angle=45.0,
@@ -40,7 +40,7 @@ def test_refactored_ring_functionality():
     json_str = ring.to_json()
     parsed = json.loads(json_str)
     assert parsed['name'] == 'test_ring'
-    assert parsed['r'] == [10.0, 20.0]
+    assert parsed['r'] == [10.0, 20.0, 30.0, 40.0]
     assert parsed['__classname__'] == 'Ring'
     
     print("✓ JSON serialization works identically")
@@ -48,7 +48,7 @@ def test_refactored_ring_functionality():
     # Test from_dict
     test_dict = {
         'name': 'dict_ring',
-        'r': [5.0, 15.0],
+        'r': [5.0, 15.0, 20.0, 25.0],
         'z': [1.0, 6.0],
         'n': 2,
         'angle': 90.0,
@@ -59,19 +59,19 @@ def test_refactored_ring_functionality():
     
     dict_ring = Ring.from_dict(test_dict)
     assert dict_ring.name == 'dict_ring'
-    assert dict_ring.r == [5.0, 15.0]
+    assert dict_ring.r == [5.0, 15.0, 20.0, 25.0]
     
     print("✓ from_dict works identically")
     
     # Test validation
     try:
-        Ring(name="", r=[1.0, 2.0], z=[0.0, 1.0])
+        Ring(name="", r=[1.0, 2.0, 3.0, 4.0], z=[0.0, 1.0])
         assert False, "Should have raised ValidationError for empty name"
     except Exception as e:
         print(f"✓ Validation works: {e}")
     
     try:
-        Ring(name="bad_ring", r=[2.0, 1.0], z=[0.0, 1.0])  # inner > outer
+        Ring(name="bad_ring", r=[2.0, 1.0, 3.0, 4.0], z=[0.0, 1.0])  # inner > outer
         assert False, "Should have raised ValidationError for bad radii"
     except Exception as e:
         print(f"✓ Validation works: {e}")
