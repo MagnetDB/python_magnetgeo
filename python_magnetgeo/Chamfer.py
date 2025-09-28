@@ -15,8 +15,12 @@ import yaml
 import json
 import math
 
+from typing import List
+from .base import YAMLObjectBase
+from .validation import GeometryValidator, ValidationError
+
     
-class Chamfer(yaml.YAMLObject):
+class Chamfer(YAMLObjectBase):
     """
     name :
 
@@ -70,23 +74,6 @@ class Chamfer(yaml.YAMLObject):
         msg += f",l={self.l})"
         return msg
 
-    def dump(self):
-        """
-        dump object to file
-        """
-        from .utils import writeYaml
-        writeYaml("Insert", self, Chamfer)
-
-    def to_json(self):
-        """
-        convert from yaml to json
-        """
-        from . import deserialize
-
-        return json.dumps(
-            self, default=deserialize.serialize_instance, sort_keys=True, indent=4
-        )
-
     @classmethod
     def from_dict(cls, values: dict, debug: bool = False):
         """
@@ -104,24 +91,6 @@ class Chamfer(yaml.YAMLObject):
 
         return cls(name, side, rside, alpha, dr, l)
     
-    @classmethod
-    def from_yaml(cls, filename: str, debug: bool = False):
-        """
-        create from yaml
-        """
-        from .utils import loadYaml
-        return loadYaml("Chamfer", filename, Chamfer, debug)
-
-        
-
-    @classmethod
-    def from_json(cls, filename: str, debug: bool = False):
-        """
-        convert from json to yaml
-        """
-        from .utils import loadJson
-        return loadJson("Chamfer", filename, debug)
-
     def getDr(self):
         """
         returns chamfer radius reduction 
@@ -152,13 +121,3 @@ class Chamfer(yaml.YAMLObject):
         return angle * 180 / math.pi
     
 
-def Chamfer_constructor(loader, node):
-    """
-    build an Shape object
-    """
-    values = loader.construct_mapping(node)
-    return Chamfer.from_dict(values)
-
-
-
-yaml.add_constructor(Chamfer.yaml_tag, Chamfer_constructor)

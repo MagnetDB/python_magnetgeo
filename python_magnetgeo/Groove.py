@@ -10,8 +10,11 @@ n: number of grooves
 eps: depth of groove
 """
 
+from typing import List
+from .base import YAMLObjectBase
+from .validation import GeometryValidator, ValidationError
 
-class Groove(yaml.YAMLObject):
+class Groove(YAMLObjectBase):
     yaml_tag = "Groove"
 
     def __init__(self, name: str='', gtype: str=None, n: int=0, eps: float=0) -> None:
@@ -29,26 +32,6 @@ class Groove(yaml.YAMLObject):
             self.eps,
         )
 
-    def dump(self):
-        """
-        dump object to file
-        """
-        try:
-            with open(f"{self.name}.yaml", "w") as ostream:
-                yaml.dump(self, stream=ostream)
-        except Exception:
-            raise Exception("Failed to Tierod dump")
-
-    def to_json(self):
-        """
-        convert from yaml to json
-        """
-        from . import deserialize
-
-        return json.dumps(
-            self, default=deserialize.serialize_instance, sort_keys=True, indent=4
-        )
-
     @classmethod
     def from_dict(cls, values: dict, debug: bool = False):
         """
@@ -60,28 +43,3 @@ class Groove(yaml.YAMLObject):
         eps = values["eps"]
         return Groove(name, gtype, n, eps)
     
-    @classmethod
-    def from_yaml(cls, filename: str, debug: bool = False):
-        """
-        create from yaml
-        """
-        from .utils import loadYaml
-        return loadYaml("Groove", filename, Groove, debug)
-        
-    @classmethod
-    def from_json(cls, filename: str, debug: bool = False):
-        """
-        convert from json to yaml
-        """
-        from .utils import loadJson
-        return loadJson("Groove", filename, debug)
-
-
-def Groove_constructor(loader, node):
-    """
-    build an Groove object
-    """
-    values = loader.construct_mapping(node)
-    return Groove.from_dict(values)
-
-yaml.add_constructor(Groove.yaml_tag, Groove_constructor)

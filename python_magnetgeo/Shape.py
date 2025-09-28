@@ -10,15 +10,12 @@ Provides definiton for Helix:
 * Shape: definition of Shape eventually added to the helical cut
 """
 
-import json
-import yaml
 
-# from Shape import *
-# from ModelAxi import *
-# from Model3D import *
+from typing import List
+from .base import YAMLObjectBase
+from .validation import GeometryValidator, ValidationError
 
-
-class Shape(yaml.YAMLObject):
+class Shape(YAMLObjectBase):
     """
     name :
     profile : name of the cut profile to be added
@@ -69,24 +66,6 @@ class Shape(yaml.YAMLObject):
             )
         )
 
-    def dump(self):
-        """
-        dump object to file
-        """
-        from .utils import writeYaml
-        writeYaml("Shape", self, Shape)
-
-
-    def to_json(self):
-        """
-        convert from yaml to json
-        """
-        from . import deserialize
-
-        return json.dumps(
-            self, default=deserialize.serialize_instance, sort_keys=True, indent=4
-        )
-
     @classmethod
     def from_dict(cls, values: dict, debug: bool = False):
         """
@@ -100,29 +79,3 @@ class Shape(yaml.YAMLObject):
         position = values["position"]
         return cls(name, profile, length, angle, onturns, position)
 
-    @classmethod
-    def from_yaml(cls, filename: str, debug: bool = False):
-        """
-        create from yaml
-        """
-        from .utils import loadYaml
-        return loadYaml("Shape", filename, Shape, debug)
-
-    @classmethod
-    def from_json(cls, filename: str, debug: bool = False):
-        """
-        convert from json to yaml
-        """
-        from .utils import loadJson
-        return loadJson("Shape", filename, debug)
-
-
-def Shape_constructor(loader, node):
-    """
-    build an Shape object
-    """
-    values = loader.construct_mapping(node)
-    return Shape.from_dict(values)
-
-
-yaml.add_constructor(Shape.yaml_tag, Shape_constructor)

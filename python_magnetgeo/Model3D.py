@@ -10,18 +10,12 @@ Provides definiton for Helix:
 * Shape: definition of Shape eventually added to the helical cut
 """
 
-import json
-import yaml
-
-# from Shape import *
-# from ModelAxi import *
-# from Model3D import *
-
-from . import Shape
-from . import ModelAxi
+from typing import List
+from .base import YAMLObjectBase
+from .validation import GeometryValidator, ValidationError
 
 
-class Model3D(yaml.YAMLObject):
+class Model3D(YAMLObjectBase):
     """
     name:
     cad :
@@ -54,31 +48,6 @@ class Model3D(yaml.YAMLObject):
             self.with_channels,
         )
 
-    def dump(self):
-        """
-        dump object to file
-        """
-        from .utils import writeYaml
-        writeYaml("Model3D", self, Model3D)
-
-    def to_json(self):
-        """
-        convert from yaml to json
-        """
-        from . import deserialize
-
-        return json.dumps(
-            self, default=deserialize.serialize_instance, sort_keys=True, indent=4
-        )
-
-    def write_to_json(self, name: str = ""):
-        """
-        write from json file
-        """
-        with open(f"{name}.json", "w") as ostream:
-            jsondata = self.to_json()
-            ostream.write(str(jsondata))
-
     @classmethod
     def from_dict(cls, values: dict, debug: bool = False):
         """
@@ -91,28 +60,3 @@ class Model3D(yaml.YAMLObject):
 
         return cls(name, cad, with_shapes, with_channels)
     
-    @classmethod
-    def from_yaml(cls, filename: str, debug: bool = False):
-        """
-        create from yaml
-        """
-        from .utils import loadYaml
-        return loadYaml("Model3D", filename, Model3D, debug)
-
-    @classmethod
-    def from_json(cls, filename: str, debug: bool = False):
-        """
-        convert from json to yaml
-        """
-        from .utils import loadJson
-        return loadJson("Model3D", filename)
-
-def Model3D_constructor(loader, node):
-    """
-    build an Model3d object
-    """
-    values = loader.construct_mapping(node)
-    return Model3D.from_dict(values)
-
-
-yaml.add_constructor(Model3D.yaml_tag, Model3D_constructor)

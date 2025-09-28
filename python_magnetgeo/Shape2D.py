@@ -7,11 +7,13 @@ Provides definiton for 2D Shape:
 * Geom data: x, y
 """
 
-import yaml
-import json
+
+from typing import List
+from .base import YAMLObjectBase
+from .validation import GeometryValidator, ValidationError
 
 
-class Shape2D(yaml.YAMLObject):
+class Shape2D(YAMLObjectBase):
     """
     name :
 
@@ -34,23 +36,6 @@ class Shape2D(yaml.YAMLObject):
         """
         return "%s(name=%r, pts=%r)" % (self.__class__.__name__, self.name, self.pts)
 
-    def dump(self):
-        """
-        dump object to file
-        """
-        from .utils import writeYaml
-        writeYaml("Shape2D", self, Shape2D)
-
-    def to_json(self):
-        """
-        convert from yaml to json
-        """
-        from . import deserialize
-
-        return json.dumps(
-            self, default=deserialize.serialize_instance, sort_keys=True, indent=4
-        )
-
     @classmethod
     def from_dict(cls, values: dict, debug: bool = False):
         """
@@ -62,37 +47,6 @@ class Shape2D(yaml.YAMLObject):
         object = cls(name, pts)
         return object
 
-    @classmethod
-    def from_yaml(cls, filename: str, debug: bool = False):
-        """
-        create from yaml
-        """
-        from .utils import loadYaml
-        return loadYaml("Shape2D", filename, Shape2D, debug)
-        
-
-    @classmethod
-    def from_json(cls, filename: str, debug: bool = False):
-        """
-        convert from json to yaml
-        """
-        from .utils import loadJson
-        return loadJson("Shape2D", filename, debug)
-    
-
-
-def Shape_constructor(loader, node):
-    """
-    build an Shape object
-    """
-    values = loader.construct_mapping(node)
-    name = values["name"]
-    pts = values["pts"]
-    return Shape2D(name, pts)
-    
-
-
-yaml.add_constructor(Shape2D.yaml_tag, Shape_constructor)
 
 
 def create_circle(r: float, n: int = 20) -> Shape2D:

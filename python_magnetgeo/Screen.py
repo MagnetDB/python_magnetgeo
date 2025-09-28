@@ -7,11 +7,13 @@ Provides definition for Screen:
 * Geom data: r, z
 """
 
-import json
-import yaml
+from typing import List
+from .base import YAMLObjectBase
+from .validation import GeometryValidator, ValidationError
 
 
-class Screen(yaml.YAMLObject):
+
+class Screen(YAMLObjectBase):
     """
     name :
     r :
@@ -70,32 +72,6 @@ class Screen(yaml.YAMLObject):
             self.z,
         )
 
-    def dump(self):
-        """
-        dump object to file
-        """
-        from .utils import writeYaml
-        writeYaml("Screen", self, Screen)
-
-    def to_json(self):
-        """
-        convert from yaml to json
-        """
-        from . import deserialize
-
-        return json.dumps(
-            self, default=deserialize.serialize_instance, sort_keys=True, indent=4
-        )
-
-    def write_to_json(self):
-        """
-        write from json file
-        """
-        ostream = open(self.name + ".json", "w")
-        jsondata = self.to_json()
-        ostream.write(str(jsondata))
-        ostream.close()
-
     @classmethod
     def from_dict(cls, values: dict, debug: bool = False):
         """
@@ -105,22 +81,6 @@ class Screen(yaml.YAMLObject):
         r = values["r"]
         z = values["z"]
         return cls(name, r, z)        
-
-    @classmethod
-    def from_yaml(cls, filename: str, debug: bool = False):
-        """
-        create from yaml
-        """
-        from .utils import loadYaml
-        return loadYaml("Screen", filename, Screen , debug)
-
-    @classmethod
-    def from_json(cls, filename: str, debug: bool = False):
-        """
-        convert from json to yaml
-        """
-        from .utils import loadJson
-        return loadJson("Screen", filename, debug)
 
     def boundingBox(self) -> tuple:
         """
@@ -138,14 +98,3 @@ class Screen(yaml.YAMLObject):
         z_overlap = max(self.z[0], z[0]) < min(self.z[1], z[1])
         return r_overlap and z_overlap
 
-
-def Screen_constructor(loader, node):
-    """
-    build an screen object
-    """
-    values = loader.construct_mapping(node)
-    return Screen.from_dict(values)
-
-
-
-yaml.add_constructor(Screen.yaml_tag, Screen_constructor)

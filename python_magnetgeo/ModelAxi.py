@@ -10,11 +10,12 @@ Provides definiton for Helix:
 * Shape: definition of Shape eventually added to the helical cut
 """
 
-import json
-import yaml
 
+from typing import List
+from .base import YAMLObjectBase
+from .validation import GeometryValidator, ValidationError
 
-class ModelAxi(yaml.YAMLObject):
+class ModelAxi(YAMLObjectBase):
     """
     name :
     h :
@@ -52,30 +53,6 @@ class ModelAxi(yaml.YAMLObject):
         )
 
 
-    def dump(self):
-        """
-        dump object to file
-        """
-        from .utils import writeYaml
-        writeYaml("ModelAxi", self, ModelAxi)
-        
-    def to_json(self):
-        """
-        convert from yaml to json
-        """
-        from . import deserialize
-
-        return json.dumps(
-            self, default=deserialize.serialize_instance, sort_keys=True, indent=4
-        )
-
-    def write_to_json(self):
-        """
-        write from json file
-        """
-        with open(f"{self.name}.json", "w") as ostream:
-            jsondata = self.to_json()
-            ostream.write(str(jsondata))
 
     @classmethod
     def from_dict(cls, values: dict, debug: bool = False):
@@ -88,23 +65,6 @@ class ModelAxi(yaml.YAMLObject):
         pitch = values["pitch"]
 
         return cls(name, h, turns, pitch)
-    
-    @classmethod
-    def from_yaml(cls, filename: str, debug: bool = False):
-        """
-        create from yaml
-        """
-        from .utils import loadYaml
-        return loadYaml("ModelAxi", filename, ModelAxi, debug)
-
-
-    @classmethod
-    def from_json(cls, filename: str, debug: bool = False):
-        """
-        convert from json to yaml
-        """
-        from .utils import loadJson
-        return loadJson("ModelAxi", filename, debug)
     
 
     def get_Nturns(self) -> float:
@@ -141,13 +101,3 @@ class ModelAxi(yaml.YAMLObject):
         
         return new_turns, new_pitch
         
-
-def ModelAxi_constructor(loader, node):
-    """
-    build an ModelAxi object
-    """
-    values = loader.construct_mapping(node)
-    return ModelAxi.from_dict(values)
-
-
-yaml.add_constructor(ModelAxi.yaml_tag, ModelAxi_constructor)
