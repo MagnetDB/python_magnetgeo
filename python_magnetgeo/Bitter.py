@@ -24,8 +24,8 @@ class Bitter(yaml.YAMLObject):
     z :
 
     axi :
-    coolingslits: [(r, angle, n, dh, sh, shape)]
-    tierods: [r, n, shape]
+    coolingslits: [(r, angle, n, dh, sh, contour2d)]
+    tierods: [r, n, contour2d]
     """
 
     yaml_tag = "Bitter"

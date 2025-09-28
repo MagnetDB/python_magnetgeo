@@ -16,13 +16,13 @@ class CoolingSlit(YAMLObjectBase):
     n:
     dh: 4*Sh/Ph with Ph wetted perimeter
     sh:
-    shape:
+    contour2d:
     """
 
     yaml_tag = "CoolingSlit"
 
     def __init__(
-        self, name: str, r: float, angle: float, n: int, dh: float, sh: float, shape
+        self, name: str, r: float, angle: float, n: int, dh: float, sh: float, contour2d
     ) -> None:
         self.name: str = name
         self.r: float = r
@@ -30,10 +30,10 @@ class CoolingSlit(YAMLObjectBase):
         self.n: int = n
         self.dh: float = dh
         self.sh: float = sh
-        self.shape = shape
+        self.contour2d = contour2d
 
     def __repr__(self):
-        return "%s(name=%s, r=%r, angle=%r, n=%r, dh=%r, sh=%r, shape=%r)" % (
+        return "%s(name=%s, r=%r, angle=%r, n=%r, dh=%r, sh=%r, contour2d=%r)" % (
             self.__class__.__name__,
             self.name,
             self.r,
@@ -41,7 +41,7 @@ class CoolingSlit(YAMLObjectBase):
             self.n,
             self.dh,
             self.sh,
-            self.shape,
+            self.contour2d,
         )
 
     @classmethod
@@ -60,13 +60,13 @@ class CoolingSlit(YAMLObjectBase):
         }
 
         # Handle nested objects (they might be dicts or already instantiated)
-        if 'shape' in values and values['shape']:
-            shape_data = values['shape']
-            if isinstance(shape_data, dict):
+        if 'contour2d' in values and values['contour2d']:
+            contour2d_data = values['contour2d']
+            if isinstance(contour2d_data, dict):
                 from .Contour2D import Contour2D
-                _params['shape'] = Contour2D.from_dict(shape_data)
+                _params['contour2d'] = Contour2D.from_dict(contour2d_data)
             else:
-                _params['shape'] = shape_data
+                _params['contour2d'] = contour2d_data
         
         return cls(**_params)
     
