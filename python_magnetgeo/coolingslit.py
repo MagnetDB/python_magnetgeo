@@ -8,8 +8,11 @@ Provides definiton for CoolingSlits:
 import yaml
 import json
 
+from typing import List
+from .base import YAMLObjectBase
+from .validation import GeometryValidator, ValidationError
 
-class CoolingSlit(yaml.YAMLObject):
+class CoolingSlit(YAMLObjectBase):
     """
     r: radius
     angle: anglar shift from tierod
@@ -44,71 +47,29 @@ class CoolingSlit(yaml.YAMLObject):
             self.shape,
         )
 
-    def update(self):
-        from .utils import check_objects, loadObject
-        from .Shape2D import Shape2D
-        if isinstance(self.shape, str):
-            self.shape = loadObject("shape", self.shape, Shape2D, Shape2D.from_yaml)
-
-    def dump(self):
-        """
-        dump object to file
-        """
-        from .utils import writeYaml
-        writeYaml("CoolingSlit", self, CoolingSlit)
-
-    def to_json(self):
-        """
-        convert from yaml to json
-        """
-        from . import deserialize
-
-        return json.dumps(
-            self, default=deserialize.serialize_instance, sort_keys=True, indent=4
-        )
-
     @classmethod
     def from_dict(cls, values: dict, debug: bool = False):
         """
         create from dict
         """
-        name = values.get("name", "")
-        r = values["r"]
-        angle = values["angle"]
-        n = values["n"]
-        dh = values["dh"]
-        sh = values["sh"]
-        shape = values["shape"]
+        # Basic parameters
+        _params = {
+            "name": values.get("name", ""),
+            "r": values["r"],
+            "angle": values["angle"],
+            "n": values["n"],
+            "dh": values["dh"],
+            "sh": values["sh"],
+        }
 
-        object = cls(name, r, angle, n, dh, sh, shape)
-        object.update()
-        return object
-    
-    @classmethod
-    def from_yaml(cls, filename: str, debug: bool = False):
-        """
-        create from yaml
-        """
-        from .utils import loadYaml
-        # return loadYaml("CoolingSlit", filename, CoolingSlit, debug)
-        object = loadYaml("CoolingSlit", filename, CoolingSlit, debug)
-        object.update()
-        return object
+        # Handle nested objects (they might be dicts or already instantiated)
+        if 'shape' in values and values['shape']:
+            shape_data = values['shape']
+            if isinstance(shape_data, dict):
+                from .Shape import Shape
+                _params['shape'] = Shape.from_dict(shape_data)
+            else:
+                _params['shape'] = shape_data
         
-    @classmethod
-    def from_json(cls, filename: str, debug: bool = False):
-        """
-        convert from json to yaml
-        """
-        from .utils import loadJson
-        return loadJson("CoolingSlit", filename, debug)
-
-
-def CoolingSlit_constructor(loader, node):
-    """
-    build an coolingslit object
-    """
-    values = loader.construct_mapping(node)
-    return CoolingSlit.from_dict(values)
-
-yaml.add_constructor(CoolingSlit.yaml_tag, CoolingSlit_constructor)
+        return cls(**_params)
+    

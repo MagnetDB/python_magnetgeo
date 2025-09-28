@@ -1,8 +1,10 @@
-import yaml
-import json
+
+from typing import List
+from .base import YAMLObjectBase
+from .validation import GeometryValidator, ValidationError
 
 
-class Tierod(yaml.YAMLObject):
+class Tierod(YAMLObjectBase):
     yaml_tag = "Tierod"
 
     def __init__(
@@ -27,71 +29,30 @@ class Tierod(yaml.YAMLObject):
             self.shape,
         )
     
-    def update(self):
-        from .utils import check_objects, loadObject
-        from .Shape2D import Shape2D
-        if isinstance(self.shape, str):
-            self.shape = loadObject("shape", self.shape, Shape2D, Shape2D.from_yaml)
-
-    def dump(self):
-        """
-        dump object to file
-        """
-        from .utils import writeYaml
-        writeYaml("Tierod", self, Tierod)
-
-    def to_json(self):
-        """
-        convert from yaml to json
-        """
-        from . import deserialize
-
-        return json.dumps(
-            self, default=deserialize.serialize_instance, sort_keys=True, indent=4
-        )
-
     @classmethod
     def from_dict(cls, values: dict, debug: bool = False):
         """
         create from dict
         """
-        name = values.get("name", "")
-        r = values["r"]
-        n = values["n"]
-        dh = values.get("dh", 0)
-        sh = values.get("sh", 0)
-        shape = values["shape"]
 
-        object = cls(name, r, n, dh, sh, shape)
-        object.update()
-        return object
+        # Basic parameters
+        _params = {
+            'name': values.get("name", ""),
+            'r': values["r"],
+            'n': values["n"],
+            'dh': values.get("dh", 0),
+            'sh': values.get("sh", 0),
+        }
+
+        # Handle nested objects (they might be dicts or already instantiated)
+        if 'shape' in values and values['shape']:
+            shape_data = values['shape']
+            if isinstance(shape_data, dict):
+                from .Shape import Shape
+                _params['shape'] = Shape.from_dict(shape_data)
+            else:
+                _params['shape'] = shape_data
+        
+        return cls(**_params)
     
-    @classmethod
-    def from_yaml(cls, filename: str, debug: bool = False):
-        """
-        create from yaml
-        """
-        from .utils import loadYaml
-        object = loadYaml("Tierod", filename, Tierod, debug)
-        object.update()
-        return object
-
-    @classmethod
-    def from_json(cls, filename: str, debug: bool = False):
-        """
-        convert from json to yaml
-        """
-        from .utils import loadJson
-        object = loadJson("Tierod", filename, debug)
-        object.update()
-        return object
-
-
-def Tierod_constructor(loader, node):
-    """
-    build an Tierod object
-    """
-    values = loader.construct_mapping(node)
-    return Tierod.from_dict(values)
-
-yaml.add_constructor(Tierod.yaml_tag, Tierod_constructor)
+    
