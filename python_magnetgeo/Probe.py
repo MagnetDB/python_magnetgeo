@@ -10,12 +10,11 @@ Provides definition for Probe:
 * locations: List of 3D coordinates [x, y, z] for each probe location
 """
 
-import json
-import yaml
 from typing import List, Union
+from .base import YAMLObjectBase
+from .validation import GeometryValidator, ValidationError
 
-
-class Probe(yaml.YAMLObject):
+class Probe(YAMLObjectBase):
     """
     name: Identifier for this probe collection
     probe_type: Type of probes (e.g., "voltage_taps", "temperature", "magnetic_field")
@@ -66,31 +65,6 @@ class Probe(yaml.YAMLObject):
             )
         )
 
-    def dump(self):
-        """
-        dump object to file
-        """
-        from .utils import writeYaml
-        writeYaml("Probe", self, Probe)
-
-    def to_json(self):
-        """
-        convert from yaml to json
-        """
-        from . import deserialize
-
-        return json.dumps(
-            self, default=deserialize.serialize_instance, sort_keys=True, indent=4
-        )
-
-    def write_to_json(self):
-        """
-        write from json file
-        """
-        with open(f"{self.name}.json", "w") as ostream:
-            jsondata = self.to_json()
-            ostream.write(str(jsondata))
-
     @classmethod
     def from_dict(cls, values: dict, debug: bool = False):
         """
@@ -102,22 +76,6 @@ class Probe(yaml.YAMLObject):
         locations = values["locations"]
 
         return cls(name, probe_type, index, locations)
-
-    @classmethod
-    def from_yaml(cls, filename: str, debug: bool = False):
-        """
-        create from yaml
-        """
-        from .utils import loadYaml
-        return loadYaml("Probe", filename, Probe, debug)
-
-    @classmethod
-    def from_json(cls, filename: str, debug: bool = False):
-        """
-        convert from json to yaml
-        """
-        from .utils import loadJson
-        return loadJson("Probe", filename, debug)
 
     def get_probe_count(self) -> int:
         """
@@ -172,15 +130,3 @@ class Probe(yaml.YAMLObject):
         except ValueError:
             raise ValueError(f"Probe index {probe_index} not found in {self.name}")
 
-
-
-
-def Probe_constructor(loader, node):
-    """
-    build a Probe object
-    """
-    values = loader.construct_mapping(node)
-    return Probe.from_dict(values)
-
-
-yaml.add_constructor(Probe.yaml_tag, Probe_constructor)
