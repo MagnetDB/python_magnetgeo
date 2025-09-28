@@ -122,5 +122,6 @@ ENV/
 
 *~
 *.orig
+*.backup
 *log
 \#*\#
