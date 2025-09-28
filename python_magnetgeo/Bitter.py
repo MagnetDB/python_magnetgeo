@@ -9,15 +9,16 @@ Provides definition for Bitter:
 * Model 3D: actual 3D CAD
 """
 
-import json
-import yaml
+
 from .ModelAxi import ModelAxi
 from .tierod import Tierod
-from .Contour2D import Contour2D
 from .coolingslit import CoolingSlit
-from .utils import loadObject, loadList, check_objects  
 
-class Bitter(yaml.YAMLObject):
+from typing import List
+from .base import YAMLObjectBase
+from .validation import GeometryValidator, ValidationError
+
+class Bitter(YAMLObjectBase):
     """
     name :
     r :
@@ -37,14 +38,26 @@ class Bitter(yaml.YAMLObject):
         z: list[float],
         odd: bool,
         modelaxi,
-        coolingslits: list,
-        tierod: Tierod,
-        innerbore: float,
-        outerbore: float,
+        coolingslits: list = None,
+        tierod: Tierod = None,
+        innerbore: float = 0,
+        outerbore: float = 0,
     ) -> None:
         """
         initialize object
         """
+        
+        # Validate inputs
+        GeometryValidator.validate_name(name)
+        GeometryValidator.validate_numeric_list(r, 'r', expected_length=2)
+        GeometryValidator.validate_ascending_order(r, "r")
+        
+        GeometryValidator.validate_numeric_list(z, 'z', expected_length=2)
+        GeometryValidator.validate_ascending_order(z, "z")
+        
+        # Additional Ring-specific checks
+        if r[0] < 0:
+            raise ValidationError("Inner radius cannot be negative") 
         
         self.name = name
         self.r = r
@@ -57,17 +70,108 @@ class Bitter(yaml.YAMLObject):
         self.coolingslits = coolingslits if coolingslits is not None else []
         self.tierod = tierod
 
-    def update(self):
-        from .ModelAxi import ModelAxi
-        from .coolingslit import CoolingSlit
-        from .tierod import Tierod
-        from .utils import loadObject, loadList, check_objects
-        if isinstance(self.modelaxi, str):
-            self.modelaxi = loadObject("modelaxi", self.modelaxi, ModelAxi, ModelAxi.from_yaml)
-        if check_objects(self.coolingslits, str):
-            self.coolingslits = loadList("coolingslit", self.coolingslits, [None, CoolingSlit], {"CoolingSlit": CoolingSlit.from_yaml})
-        if isinstance(self.tierod, str):
-            self.tierod = loadObject("tierod", self.tierod, Tierod, Tierod.from_yaml)
+    def __repr__(self):
+        """
+        representation of object
+        """
+        return (
+            "%s(name=%r, r=%r, z=%r, odd=%r, axi=%r, coolingslits=%r, tierod=%r, innerbore=%r, outerbore=%r)"
+            % (
+                self.__class__.__name__,
+                self.name,
+                self.r,
+                self.z,
+                self.odd,
+                self.modelaxi,
+                self.coolingslits,
+                self.tierod,
+                self.innerbore,
+                self.outerbore,
+            )
+        )
+
+    @classmethod
+    def from_dict(cls, values: dict, debug: bool = False):
+        """
+        create from yaml
+        """
+        modelaxi = cls._load_nested_modelaxi(values.get('modelaxi'), debug=debug)
+        coolingslits = cls._load_nested_coolingslits(values.get('coolingslits'), debug=debug)
+        tierod = cls._load_nested_tierod(values.get('tierod'), debug=debug)
+
+        name = values["name"]
+        r = values["r"]
+        z = values["z"]
+        odd = values["odd"]
+        # modelaxi = values["modelaxi"]
+        # coolingslits = values.get("coolingslits", [])
+        # tierod = values.get("tierod", None)
+        innerbore = values.get("innerbore", 0)
+        outerbore = values.get("outerbore", 0)
+
+        object = cls(name, r, z, odd, modelaxi, coolingslits, tierod, innerbore, outerbore)
+        return object
+
+    @classmethod  
+    def _load_nested_modelaxi(cls, modelaxi_data, debug=False):
+        if isinstance(modelaxi_data, str):
+            # String reference → load from "modelaxi_data.yaml"
+            from .utils import loadObject
+            return loadObject("modelaxi", modelaxi_data, ModelAxi, ModelAxi.from_yaml)
+        elif isinstance(modelaxi_data, dict):
+            # Inline object → create from dict
+            return ModelAxi.from_dict(modelaxi_data)
+        else:
+            # None or already instantiated
+            return modelaxi_data
+
+    @classmethod  
+    def _load_nested_coolingslits(cls, coolingslits_data, debug=False):
+        """Load list of CoolingSlit objects from various input formats and track references"""
+        if coolingslits_data is None:
+            return []
+        
+        if not isinstance(coolingslits_data, list):
+            raise TypeError(f"coolingslits must be a list, got {type(coolingslits_data)}")
+        
+        objects = []
+        references = []
+        for i, slit_data in enumerate(coolingslits_data):
+            if isinstance(slit_data, str):
+                # String reference → load from "slit_data.yaml" and track reference
+                if debug:
+                    print(f"Loading CoolingSlit[{i}] from file: {slit_data}")
+                from .utils import loadObject
+                from .coolingslit import CoolingSlit
+                obj = loadObject("coolingslit", slit_data, CoolingSlit, CoolingSlit.from_yaml)
+                objects.append(obj)
+            elif isinstance(slit_data, dict):
+                # Inline object → create from dict, no reference to track
+                if debug:
+                    print(f"Creating CoolingSlit[{i}] from inline dict: {slit_data.get('name', 'unnamed')}")
+                from .coolingslit import CoolingSlit
+                obj = CoolingSlit.from_dict(slit_data)
+                objects.append(obj)
+            else:
+                # Already instantiated or None
+                objects.append(slit_data)
+                references.append(None)  # No string reference
+        
+        return objects
+
+    @classmethod  
+    def _load_nested_tierod(cls, tierod_data, debug=False):
+        if isinstance(tierod_data, str):
+            # String reference → load from "modelaxi_data.yaml"
+            from .utils import loadObject
+            return loadObject("modelaxi", tierod_data, Tierod, Tierod.from_yaml)
+        elif isinstance(tierod_data, dict):
+            # Inline object → create from dict
+            return Tierod.from_dict(tierod_data)
+        else:
+            # None or already instantiated
+            return tierod_data
+
 
     def equivalent_eps(self, i: int):
         """
@@ -159,89 +263,6 @@ class Bitter(yaml.YAMLObject):
             print(f"Bitter/get_names: solid_names {len(solid_names)}")
         return solid_names
 
-    def __repr__(self):
-        """
-        representation of object
-        """
-        return (
-            "%s(name=%r, r=%r, z=%r, odd=%r, axi=%r, coolingslits=%r, tierod=%r, innerbore=%r, outerbore=%r)"
-            % (
-                self.__class__.__name__,
-                self.name,
-                self.r,
-                self.z,
-                self.odd,
-                self.modelaxi,
-                self.coolingslits,
-                self.tierod,
-                self.innerbore,
-                self.outerbore,
-            )
-        )
-
-    def dump(self):
-        """
-        dump object to file
-        """
-        from .utils import writeYaml
-        writeYaml("Bitter", self, Bitter)
-
-    def to_json(self):
-        """
-        convert from yaml to json
-        """
-        from . import deserialize
-
-        return json.dumps(
-            self, default=deserialize.serialize_instance, sort_keys=True, indent=4
-        )
-
-    def write_to_json(self):
-        """
-        write from json file
-        """
-        with open(f"{self.name}.json", "w") as ostream:
-            jsondata = self.to_json()
-            ostream.write(jsondata)
-
-    @classmethod
-    def from_dict(cls, values: dict, debug: bool = False):
-        """
-        create from yaml
-        """
-        name = values["name"]
-        r = values["r"]
-        z = values["z"]
-        odd = values["odd"]
-        modelaxi = values["modelaxi"]
-        coolingslits = values.get("coolingslits", [])
-        tierod = values.get("tierod", None)
-        innerbore = values.get("innerbore", 0)
-        outerbore = values.get("outerbore", 0)
-
-        object = cls(name, r, z, odd, modelaxi, coolingslits, tierod, innerbore, outerbore)
-        object.update()
-        return object
-
-    @classmethod
-    def from_yaml(cls, filename: str, debug: bool = False):
-        """
-        create from yaml
-        """
-        from .utils import loadYaml
-        # return loadYaml("Bitter", filename, Bitter, debug)
-        object = loadYaml("Bitter", filename, Bitter, debug)
-        object.update()
-        return object   
-
-    @classmethod
-    def from_json(cls, filename: str, debug: bool = False):
-        """
-        convert from json to yaml
-        """
-        from .utils import loadJson
-        return loadJson("Bitter", filename, debug)
-
     def get_Nturns(self) -> float:
         """
         returns the number of turn
@@ -317,16 +338,3 @@ class Bitter(yaml.YAMLObject):
 
         create_cut(self, format, self.name)
 
-
-def Bitter_constructor(loader, node):
-    """
-    build an bitter object
-    """
-    #print("Bitter_constructor: called")
-    #print(node)
-    values = loader.construct_mapping(node)
-    return Bitter.from_dict(values)
-
-
-
-yaml.add_constructor(Bitter.yaml_tag, Bitter_constructor)
