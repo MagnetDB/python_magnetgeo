@@ -7,6 +7,7 @@ import json
 import yaml
 
 # Add import at the top
+from .Bitter import Bitter
 from .Probe import Probe
 
 dict_probes = {
@@ -33,6 +34,8 @@ class Bitters(YAMLObjectBase):
             self, name: str, magnets: list, innerbore: float, outerbore: float, probes: list = None,  # NEW PARAMETER
     ) -> None:
         """constructor"""
+        # General validation
+        GeometryValidator.validate_name(name)
 
         self.name = name
         self.magnets = magnets 
@@ -128,20 +131,21 @@ class Bitters(YAMLObjectBase):
             if isinstance(magnet_data, str):
                 # Reference to external file → load from file
                 if debug:
-                    print(f"Loading Magnet[{i}] from file: {magnet_data}")
+                    print(f"Loading Magnet[{i}] from file: {magnet_data}", flush=True)
                 from .utils import loadObject
-                from .Ring import Ring
-                obj = loadObject("ring", magnet_data, Ring, Ring.from_yaml)
+                obj = loadObject("ring", magnet_data, Bitter, Bitter.from_yaml)
                 objects.append(obj)
             elif isinstance(magnet_data, dict):
                 # Inline object → create from dict, no reference to track
                 if debug:
-                    print(f"Creating Magnet[{i}] from inline dict: {magnet_data.get('name', 'unnamed')}")
-                from .Ring import Ring
-                obj = Ring.from_dict(magnet_data)
+                    print(f"Creating Magnet[{i}] from inline dict: {magnet_data.get('name', 'unnamed')}", flush=True)
+                obj = Bitter.from_dict(magnet_data)
                 objects.append(obj)
+            elif isinstance(magnet_data, Bitter):
+                # None or already instantiated
+                objects.append(magnet_data)
             else:
-                raise ValidationError(f"Invalid magnet data at index {i}: {magnet_data}")
+                raise ValidationError(f"Invalid magnet data at index {i}: {magnet_data}")            
         return objects
     
     @classmethod
