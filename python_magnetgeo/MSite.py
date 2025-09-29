@@ -5,16 +5,17 @@
 Provides definition for Site:
 
 """
-from typing import Union, Optional
 
-import os
+from .Insert import Insert
+from .Bitter import Bitter
+from .Supra import Supra
 
-import json
-import yaml
+from typing import Union, Optional, List
+from .base import YAMLObjectBase
+from .validation import GeometryValidator, ValidationError
 
 
-
-class MSite(yaml.YAMLObject):
+class MSite(YAMLObjectBase):
     """
     name :
     magnets : dict holding magnet list ("insert", "Bitter", "Supra")
@@ -35,6 +36,9 @@ class MSite(yaml.YAMLObject):
         """
         initialize onject
         """
+        # Validate inputs
+        GeometryValidator.validate_name(name)
+        
         self.name = name
 
         self.magnets = magnets
@@ -49,34 +53,6 @@ class MSite(yaml.YAMLObject):
         representation of object
         """
         return f"name: {self.name}, magnets:{self.magnets}, screens: {self.screens}, z_offset={self.z_offset}, r_offset={self.r_offset}, paralax_offset={self.paralax}"
-
-    def update(self):
-        """
-        update magnets if there were loaded as str
-        """
-        from .Bitters import Bitters
-        from .Supras import Supras
-        from .Insert import Insert
-        from .Screen import Screen
-
-        dict_magnets = {
-            "Bitters": Bitters.from_dict,
-            "Supras": Supras.from_dict,
-            "Insert": Insert.from_dict,
-        }
-
-        dict_screens = {
-            "Screen": Screen.from_dict,
-        }
-
-        from .utils import check_objects, loadList
-        if check_objects(self.magnets, str):
-            self.magnets = loadList("magnets", self.magnets, [None, Insert, Bitters, Supras], dict_magnets)
-            print("update magnets:", self.magnets)
-        
-        # Check and update screens only if screens is not None and not empty
-        if self.screens and check_objects(self.screens, str):
-            self.screens = loadList("screens", self.screens, [None, Screen], dict_screens)
 
     def get_channels(
         self, mname: str, hideIsolant: bool = True, debug: bool = False
@@ -123,36 +99,14 @@ class MSite(yaml.YAMLObject):
             print(f"MSite/get_names: solid_names {len(solid_names)}")
         return solid_names
 
-    def dump(self):
-        """
-        dump object to file
-        """
-        from .utils import writeYaml
-        writeYaml("MSite", self, MSite)
-
-    def to_json(self):
-        """
-        convert from yaml to json
-        """
-        from . import deserialize
-
-        return json.dumps(
-            self, default=deserialize.serialize_instance, sort_keys=True, indent=4
-        )
-
-    def write_to_json(self):
-        """
-        write from json file
-        """
-        with open(f"{self.name}.json", "w") as ostream:
-            jsondata = self.to_json()
-            ostream.write(str(jsondata))
-
     @classmethod
     def from_dict(cls, values: dict, debug: bool = False):
         """
         create from dict
         """
+        magnets = cls._load_nested_magnets(values.get('magnets'), debug=debug)
+        screens = cls._load_nested_screens(values.get('screens'), debug=debug)  # NEW: Load screens
+
         name = values["name"]
         magnets = values["magnets"]
         # FIX: Use get() with None default instead of empty list default
@@ -163,23 +117,49 @@ class MSite(yaml.YAMLObject):
         return cls(name, magnets, screens, z_offset, r_offset, paralax)
 
     @classmethod
-    def from_yaml(cls, filename: str, debug: bool = False):
+    def _load_nested_magnets(cls, magnets_data, debug=False):   
         """
-        create from yaml
+        Helper method to load nested magnets from dict or list
         """
-        from .utils import loadYaml
-        object = loadYaml("MSite", filename, MSite, debug)
-        object.update()
-        return object
-
+        if magnets_data is None:
+            return []
+        elif isinstance(magnets_data, list):
+            magnets = []
+            for item in magnets_data:
+                if isinstance(item, dict):
+                    magnet = cls._load_single_magnet(item, debug)
+                    magnets.append(magnet)
+                elif isinstance(item, (Insert, Bitter, Supra)):
+                    magnets.append(item)
+                else:
+                    raise ValidationError("Each magnet must be a dictionary")
+            return magnets
+        elif isinstance(magnets_data, dict):
+            return [cls._load_single_magnet(magnets_data, debug)]
+        else:
+            raise ValidationError("Magnets must be a list or a dictionary")
+        
     @classmethod
-    def from_json(cls, filename: str, debug: bool = False):
+    def _load_nested_screens(cls, screens_data, debug=False):
         """
-        convert from json to yaml
+        Helper method to load nested screens from dict or list
         """
-        from .utils import loadJson
-        return loadJson("MSite", filename, debug)
-
+        if screens_data is None:
+            return None
+        elif isinstance(screens_data, list):
+            screens = []
+            for item in screens_data:
+                if isinstance(item, dict):
+                    screen = cls._load_single_screen(item, debug)
+                    screens.append(screen)
+                else:
+                    raise ValidationError("Each screen must be a dictionary")
+            return screens
+        elif isinstance(screens_data, dict):
+            return [cls._load_single_screen(screens_data, debug)]
+        else:
+            raise ValidationError("Screens must be a list or a dictionary") 
+        
     def boundingBox(self) -> tuple:
         """"""
         zmin = None
@@ -208,16 +188,3 @@ class MSite(yaml.YAMLObject):
 
         return ([rmin, rmax], [zmin, zmax])
 
-
-def MSite_constructor(loader, node):
-    """
-    build an site object
-    """
-    print(f"MSite_constructor")
-    values = loader.construct_mapping(node)
-    return MSite.from_dict(values)
-
-
-
-
-yaml.add_constructor(MSite.yaml_tag, MSite_constructor)

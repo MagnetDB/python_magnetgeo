@@ -14,6 +14,10 @@ from .InnerCurrentLead import InnerCurrentLead
 from .OuterCurrentLead import OuterCurrentLead
 from .Probe import Probe
 
+from typing import List
+from .base import YAMLObjectBase
+from .validation import GeometryValidator, ValidationError
+
 dict_leads = {
     "InnerCurrentLead": InnerCurrentLead.from_dict,
     "OuterCurrentLead": OuterCurrentLead.from_dict,
@@ -35,7 +39,7 @@ def filter(data: list[float], tol: float = 1.0e-6) -> list[float]:
     return [data[i] for i in range(ndata) if i not in result]
 
 
-class Insert(yaml.YAMLObject):
+class Insert(YAMLObjectBase):
     """
     name :
     helices :
@@ -67,6 +71,16 @@ class Insert(yaml.YAMLObject):
         """
         constructor
         """
+        # Validate inputs
+        GeometryValidator.validate_name(name)
+        
+        # Validate bore dimensions if not zero (zero means not specified)
+        if innerbore != 0 and outerbore != 0:
+            if innerbore >= outerbore:
+                raise ValidationError(
+                    f"innerbore ({innerbore}) must be less than outerbore ({outerbore})"
+                )
+
         self.name = name
 
         self.helices = helices
@@ -82,28 +96,6 @@ class Insert(yaml.YAMLObject):
         self.innerbore = innerbore
         self.outerbore = outerbore
         self.probes = probes if probes is not None else []  # NEW ATTRIBUTE
-
-    def update(self):
-        """
-        update magnets if there were loaded as str
-        """
-        from .utils import check_objects        
-        from .utils import loadList
-        if check_objects(self.helices, str):
-            self.helices = loadList("helices", self.helices, [None, Helix], {"Helix": Helix.from_dict})
-            #print("update helices:", self.helices)
-        if check_objects(self.rings, str):
-            self.rings = loadList("rings", self.rings, [None, Ring], {"Ring": Ring.from_dict})
-            #print("update rings:", self.rings)
-        if self.currentleads:
-            if check_objects(self.currentleads, str):
-                self.currentleads = loadList("currentleads", self.currentleads, [None, InnerCurrentLead, OuterCurrentLead], dict_leads)
-                #print("update currentleads:", self.currentleads)
-        # NEW: Update probes
-        if self.probes:
-            if check_objects(self.probes, str):
-                self.probes = loadList("probes", self.probes, [None, Probe], dict_probes)
-                #print("update probes:", self.probes)
 
     def get_channels(
         self, mname: str, hideIsolant: bool = True, debug: bool = False
@@ -232,68 +224,158 @@ class Insert(yaml.YAMLObject):
             )
         )
 
-    def dump(self):
-        """dump to a yaml file name.yaml"""
-        from .utils import writeYaml
-        writeYaml("Insert", self, Insert)
-
-    def to_json(self):
-        """convert from yaml to json"""
-        from . import deserialize
-
-        return json.dumps(
-            self, default=deserialize.serialize_instance, sort_keys=True, indent=4
-        )
-
-    def write_to_json(self):
-        """write to a json file"""
-        ostream = open(self.name + ".json", "w")
-        jsondata = self.to_json()
-        ostream.write(str(jsondata))
-        ostream.close()
-
     @classmethod
     def from_dict(cls, data: dict, debug: bool = False):
         """
         create from dict
         """
+        helices = cls._load_nested_helices(data.get('helices'), debug=debug)
+        rings = cls._load_nested_rings(data.get('rings'), debug=debug)
+        currentleads = cls._load_nested_currentleads(data.get('currentleads'), debug=debug)
+        probes = cls._load_nested_probes(data.get('probes'), debug=debug)
+
         name = data["name"]
 
-        helices = data["helices"]
-        rings = data["rings"]
-        currentleads = data.get("currentleads", [])
+        # helices = data["helices"]
+        # rings = data["rings"]
+        # currentleads = data.get("currentleads", [])
         innerbore = data["innerbore"]
         outerbore = data["outerbore"]
         hangles = data["hangles"]
         rangles = data["rangles"]
-        probes = data.get("probes", [])  # NEW: Optional with default empty list
+        # probes = data.get("probes", [])  # NEW: Optional with default empty list
 
         object = cls(
             name, helices, rings, currentleads, hangles, rangles, innerbore, outerbore, probes
         )
-        object.update()
         return object
 
-    @classmethod
-    def from_yaml(cls, filename: str, debug: bool = False):
-        """
-        create from yaml
-        """
-        from .utils import loadYaml
-        # return loadYaml("Insert", filename, Insert, debug)
-        object = loadYaml("Insert", filename, Insert, debug)
-        object.update()
-        return object
+    @classmethod  
+    def _load_nested_helices(cls, data, debug=False):
+        """Load list of Helices objects from various input formats and track references"""
+        if data is None:
+            return []
+        
+        if not isinstance(data, list):
+            raise TypeError(f"helices must be a list, got {type(data)}")
+        
+        objects = []
+        for i, _data in enumerate(data):
+            if isinstance(_data, str):
+                # String reference → load from "_data.yaml" and track reference
+                if debug:
+                    print(f"Loading Helix[{i}] from file: {_data}")
+                from .utils import loadObject
+                obj = loadObject("helix", _data, Helix, Helix.from_yaml)
+                objects.append(obj)
+            elif isinstance(_data, dict):
+                # Inline object → create from dict, no reference to track
+                if debug:
+                    print(f"Creating Helix[{i}] from inline dict: {_data.get('name', 'unnamed')}")
+                obj = Helix.from_dict(_data)
+                objects.append(obj)
+            else:
+                # Already instantiated or None
+                objects.append(_data)
+        
+        return objects
+
+    @classmethod  
+    def _load_nested_rings(cls, data, debug=False):
+        """Load list of Rings objects from various input formats and track references"""
+        if data is None:
+            return []
+        
+        if not isinstance(data, list):
+            raise TypeError(f"rings must be a list, got {type(data)}")
+        
+        objects = []
+        for i, _data in enumerate(data):
+            if isinstance(_data, str):
+                # String reference → load from "_data.yaml" and track reference
+                if debug:
+                    print(f"Loading Ring[{i}] from file: {_data}")
+                from .utils import loadObject
+                obj = loadObject("ring", _data, Ring, Ring.from_yaml)
+                objects.append(obj)
+            elif isinstance(_data, dict):
+                # Inline object → create from dict, no reference to track
+                if debug:
+                    print(f"Creating Ring[{i}] from inline dict: {_data.get('name', 'unnamed')}")
+                obj = Ring.from_dict(_data)
+                objects.append(obj)
+            else:
+                # Already instantiated or None
+                objects.append(_data)
+        
+        return objects
     
-    @classmethod
-    def from_json(cls, filename: str, debug: bool = False):
-        """
-        convert from json to yaml
-        """
-        from .utils import loadJson
-        object = loadJson("Insert", filename, debug)
-        object.update()
-        return object
+
+    @classmethod  
+    def _load_nested_currentleads(cls, data, debug=False):
+        """Load list of CurrentLeads objects from various input formats and track references"""
+        if data is None:
+            return []
+        
+        if not isinstance(data, list):
+            raise TypeError(f"currentleads must be a list, got {type(data)}")
+        
+        objects = []
+        for i, _data in enumerate(data):
+            if isinstance(_data, str):
+                # String reference → load from "_data.yaml" and track reference
+                if debug:
+                    print(f"Loading Lead[{i}] from file: {_data}")
+                from .utils import loadObject
+                obj = loadObject("lead", _data, (InnerCurrentLead, OuterCurrentLead), None)
+                objects.append(obj)
+            elif isinstance(_data, dict):
+                # Inline object → create from dict, no reference to track
+                if debug:
+                    print(f"Creating Lead[{i}] from inline dict: {_data.get('name', 'unnamed')}")
+                try:
+                    obj = InnerCurrentLead.from_dict(_data)
+                except Exception:
+                    try:
+                        obj = OuterCurrentLead.from_dict(_data)
+                    except Exception as e:
+                        raise ValueError(f"Could not parse current lead (neither Inner or OuterLead) from dict: {_data}") from e    
+                objects.append(obj)
+            else:
+                # Already instantiated or None
+                objects.append(_data)
+        
+        return objects
+
+    @classmethod  
+    def _load_nested_probes(cls, data, debug=False):
+        """Load list of Probes objects from various input formats and track references"""
+        if data is None:
+            return []
+        
+        if not isinstance(data, list):
+            raise TypeError(f"probes must be a list, got {type(data)}")
+        
+        objects = []
+        for i, _data in enumerate(data):
+            if isinstance(_data, str):
+                # String reference → load from "_data.yaml" and track reference
+                if debug:
+                    print(f"Loading Probe[{i}] from file: {_data}")
+                from .utils import loadObject
+                obj = loadObject("probe", _data, Probe, Probe.from_yaml)
+                objects.append(obj)
+            elif isinstance(_data, dict):
+                # Inline object → create from dict, no reference to track
+                if debug:
+                    print(f"Creating Probe[{i}] from inline dict: {_data.get('name', 'unnamed')}")
+                obj = Probe.from_dict(_data)
+                objects.append(obj)
+            else:
+                # Already instantiated or None
+                objects.append(_data)
+        
+        return objects
 
     ###################################################################
     #
@@ -470,10 +552,3 @@ class Insert(yaml.YAMLObject):
         Sh.append(math.pi * (Rext - Rint) * (Rext + Rint))
         return (Nhelices, Nrings, NChannels, Nsections, R1, R2, Dh, Sh, Zc)
 
-
-def Insert_constructor(loader, node):
-    data = loader.construct_mapping(node)
-    return Insert.from_dict(data)
-
-
-yaml.add_constructor(Insert.yaml_tag, Insert_constructor)

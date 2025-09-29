@@ -13,8 +13,6 @@ Provides definition for Helix:
 """
 
 import math
-import json
-import yaml
 
 from python_magnetgeo.hcuts import create_cut
 
@@ -24,8 +22,11 @@ from .Shape import Shape
 from .ModelAxi import ModelAxi
 from .Model3D import Model3D
 
+from typing import List
+from .base import YAMLObjectBase
+from .validation import GeometryValidator, ValidationError
 
-class Helix(yaml.YAMLObject):
+class Helix(YAMLObjectBase):
     """
     name :
     r :
@@ -59,6 +60,8 @@ class Helix(yaml.YAMLObject):
         """
         initialize object
         """
+        # General validation
+        GeometryValidator.validate_name(name)
         
         self.name = name
         self.dble = dble
@@ -72,23 +75,6 @@ class Helix(yaml.YAMLObject):
         self.shape = shape
         self.chamfers = chamfers if chamfers is not None else []
         self.grooves = grooves if grooves is not None else Groove()
-
-    def update(self):
-        """
-        update magnets if there were loaded as str
-        """
-        from .utils import check_objects        
-        from .utils import loadObject, loadList
-        if isinstance(self.modelaxi, str):
-            self.modelaxi = loadObject("modelaxi", self.modelaxi, ModelAxi, ModelAxi.from_yaml)
-        if isinstance(self.model3d, str):
-            self.model3d = loadObject("model3d", self.model3d, Model3D, Model3D.from_yaml)
-        if isinstance(self.shape, str):
-            self.shape = loadObject("shape", self.shape, Shape, Shape.from_yaml)
-        if check_objects(self.chamfers, str):
-            self.chamfers = loadList("chamfers", self.chamfers, [None, Chamfer], {"Chamfer}": Chamfer.from_yaml})
-        if isinstance(self.grooves, str):
-            self.grooves = loadObject("groove", self.grooves, Groove, Groove.from_yaml)        
 
 
     def get_type(self) -> str:
@@ -168,76 +154,123 @@ class Helix(yaml.YAMLObject):
         msg += ")"
         return msg
 
-    def dump(self):
-        """
-        dump object to file
-        """
-        from .utils import writeYaml
-        writeYaml("Helix", self, Helix)
-
-    def to_json(self):
-        """
-        convert from yaml to json
-        """
-        from . import deserialize
-
-        return json.dumps(
-            self, default=deserialize.serialize_instance, sort_keys=True, indent=4
-        )
-
     @classmethod
     def from_dict(cls, values: dict, debug: bool = False):
         """
         create from dict
         """
+        modelaxi = cls._load_nested_modelaxi(values.get('modelaxi'), debug=debug)
+        model3d = cls._load_nested_model3d(values.get('model3d'), debug=debug)
+        shape = cls._load_nested_shape(values.get('shape'), debug=debug)
+        chamfers = cls._load_nested_chamfers(values.get('chamfers'), debug=debug)
+        grooves = cls._load_nested_groove(values.get('grooves'), debug=debug)
+        
         name = values["name"]
         r = values["r"]
         z = values["z"]
         odd = values["odd"]
         dble = values["dble"]
         cutwidth = values["cutwidth"]
-        modelaxi = values["modelaxi"]
-        model3d = values["model3d"]
-        shape = values["shape"]
+        # modelaxi = values["modelaxi"]
+        # model3d = values["model3d"]
+        # shape = values["shape"]
 
         # Make chamfers and grooves optional
-        chamfers = values.get("chamfers", [])
-        grooves = values.get("grooves", Groove())
+        # chamfers = values.get("chamfers", [])
+        # grooves = values.get("grooves", Groove())
 
         object = cls(
             name, r, z, cutwidth, odd, dble, modelaxi, model3d, shape, chamfers, grooves
         )
-        object.update()
+        # object.update()
         return object
+    
+    @classmethod  
+    def _load_nested_modelaxi(cls, modelaxi_data, debug=False):
+        if isinstance(modelaxi_data, str):
+            # String reference → load from "modelaxi_data.yaml"
+            from .utils import loadObject
+            return loadObject("modelaxi", modelaxi_data, ModelAxi, ModelAxi.from_yaml)
+        elif isinstance(modelaxi_data, dict):
+            # Inline object → create from dict
+            return ModelAxi.from_dict(modelaxi_data)
+        else:
+            # None or already instantiated
+            return modelaxi_data
 
-    @classmethod
-    def from_yaml(cls, filename: str, debug: bool = False):
-        """
-        create from yaml
-        """
-        from .utils import loadYaml
-        # return loadYaml("Helix", filename, Helix, debug)
-        object = loadYaml("Helix", filename, Helix, debug)
-        object.update()
-        return object
+    @classmethod  
+    def _load_nested_model3d(cls, model3d_data, debug=False):
+        if isinstance(model3d_data, str):
+            # String reference → load from "modelaxi_data.yaml"
+            from .utils import loadObject
+            return loadObject("model3d", model3d_data, Model3D, Model3D.from_yaml)
+        elif isinstance(model3d_data, dict):
+            # Inline object → create from dict
+            return Model3D.from_dict(model3d_data)
+        else:
+            # None or already instantiated
+            return model3d_data
 
-    @classmethod
-    def from_json(cls, filename: str, debug: bool = False):
-        """
-        convert from json to yaml
-        """
-        from .utils import loadJson
-        object = loadJson("Helix", filename, debug)
-        object.update()
-        return object
+    @classmethod  
+    def _load_nested_shape(cls, shape_data, debug=False):
+        if isinstance(shape_data, str):
+            # String reference → load from "modelaxi_data.yaml"
+            from .utils import loadObject
+            return loadObject("shape", shape_data, Shape, Shape.from_yaml)
+        elif isinstance(shape_data, dict):
+            # Inline object → create from dict
+            return Shape.from_dict(shape_data)
+        else:
+            # None or already instantiated
+            return shape_data
 
-    def write_to_json(self):
-        """
-        write from json file
-        """
-        with open(f"{self.name}.json", "w") as ostream:
-            jsondata = self.to_json()
-            ostream.write(str(jsondata))
+    @classmethod  
+    def _load_nested_groove(cls, groove_data, debug=False):
+        if groove_data is None:
+            return Groove()
+        
+        if isinstance(groove_data, str):
+            # String reference → load from "groove_data.yaml"
+            from .utils import loadObject
+            return loadObject("groove", groove_data, Groove, Groove.from_yaml)
+        elif isinstance(groove_data, dict):
+            # Inline object → create from dict
+            return Groove.from_dict(groove_data)
+        else:
+            # None or already instantiated
+            return groove_data
+
+    @classmethod  
+    def _load_nested_chamfers(cls, chamfers_data, debug=False):
+        """Load list of Chamfer objects from various input formats and track references"""
+        if chamfers_data is None:
+            return []
+        
+        if not isinstance(chamfers_data, list):
+            raise TypeError(f"chamfers must be a list, got {type(chamfers_data)}")
+        
+        objects = []
+        references = []
+        for i, chamfer_data in enumerate(chamfers_data):
+            if isinstance(chamfer_data, str):
+                # String reference → load from "chamfer_data.yaml" and track reference
+                if debug:
+                    print(f"Loading Chamfer[{i}] from file: {chamfer_data}")
+                from .utils import loadObject
+                obj = loadObject("chamfer", chamfer_data, Chamfer, Chamfer.from_yaml)
+                objects.append(obj)
+            elif isinstance(chamfer_data, dict):
+                # Inline object → create from dict, no reference to track
+                if debug:
+                    print(f"Creating Chamfer[{i}] from inline dict: {chamfer_data.get('name', 'unnamed')}")
+                obj = Chamfer.from_dict(chamfer_data)
+                objects.append(obj)
+            else:
+                # Already instantiated or None
+                objects.append(chamfer_data)
+                references.append(None)  # No string reference
+        
+        return objects
 
     def getModelAxi(self):
         return self.modelaxi
@@ -314,13 +347,3 @@ class Helix(yaml.YAMLObject):
 
         return (sInsulator, nInsulators)
 
-
-def Helix_constructor(loader, node):
-    """
-    build an helix object
-    """
-    
-    values = loader.construct_mapping(node)
-    return Helix.from_dict(values)
-
-yaml.add_constructor(Helix.yaml_tag, Helix_constructor)
