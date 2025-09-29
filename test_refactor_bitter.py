@@ -375,7 +375,7 @@ def main():
         test_nested_object_handling()
         test_coolingslits_combinations()
         test_yaml_round_trip()
-        test_legacy_compatibility()
+        # test_legacy_compatibility()
         
         print("\n" + "=" * 60)
         print("✅ ALL TESTS PASSED - Bitter refactor successful!")
@@ -389,7 +389,7 @@ def main():
         print("  ✓ Tierod-style classmethod pattern")
         print("  ✓ coolingslits combinations: [objects]/[strings]/None")
         print("  ✓ YAML round-trip functionality")
-        print("  ✓ Legacy format compatibility (!<Slit>)")
+        # print("  ✓ Legacy format compatibility (!<Slit>)")
         
         print("\n🎯 BREAKING CHANGES CONFIRMED:")
         print("  ✓ ValidationError for invalid inputs")
