@@ -13,7 +13,11 @@ dict_probes = {
     "Probe": Probe.from_dict,
 }
 
-class Bitters(yaml.YAMLObject):
+from typing import List
+from .base import YAMLObjectBase
+from .validation import GeometryValidator, ValidationError
+
+class Bitters(YAMLObjectBase):
     """
     name :
     magnets :
@@ -46,22 +50,6 @@ class Bitters(yaml.YAMLObject):
             self.outerbore,
             self.probes,  # NEW
         )
-
-    def update(self):
-        """
-        update magnets if there were loaded as str
-        """
-        from .Bitter import Bitter
-        from .utils import check_objects, loadList
-        if self.magnets:
-            if check_objects(self.magnets, str):
-                self.magnets = loadList("magnets", self.magnets, [None, Bitter], {"Bitter": Bitter.from_dict})
-                print("update magnets:", self.magnets)
-        # NEW: Update probes
-        if self.probes:
-            if check_objects(self.probes, str):
-                self.probes = loadList("probes", self.probes, [None, Probe], dict_probes)
-                print("update probes:", self.probes)
 
     def get_channels(
         self, mname: str, hideIsolant: bool = True, debug: bool = False
@@ -110,58 +98,79 @@ class Bitters(yaml.YAMLObject):
             print(f"Bitters/get_names: solid_names {len(solid_names)}")
         return solid_names
 
-    def dump(self):
-        """dump to a yaml file name.yaml"""
-        from .utils import writeYaml
-        writeYaml("Bitters", self, Bitters)
-
-    def to_json(self):
-        """convert from yaml to json"""
-        from . import deserialize
-
-        return json.dumps(
-            self, default=deserialize.serialize_instance, sort_keys=True, indent=4
-        )
-
-    def write_to_json(self):
-        """write to a json file"""
-        with open(f"{self.name}.json", "w") as ostream:
-            jsondata = self.to_json()
-            ostream.write(str(jsondata))
-
     @classmethod
     def from_dict(cls, values: dict, debug: bool = False):
         """
         create from dict
         """
+        magnets = cls._load_nested_magnets(values.get('magnets'), debug=debug)
+        probes = cls._load_nested_probes(values.get('probes'), debug=debug)  # NEW: Load probes
+
         name = values["name"]
-        magnets = values["magnets"]
+        # magnets = values["magnets"]
         innerbore = values.get("innerbore", 0)
         outerbore = values.get("outerbore", 0)
-        probes = values.get("probes", [])  # NEW: Optional with default empty list
+        # probes = values.get("probes", [])  # NEW: Optional with default empty list
 
         object = cls(name, magnets, innerbore, outerbore, probes)
-        object.update()
         return object
     
     @classmethod
-    def from_yaml(cls, filename: str, debug: bool = False):
+    def _load_nested_magnets(cls, magnets_data: List, debug: bool = False) -> List:
         """
-        create from yaml
-        """
-        from .utils import loadYaml
-        object = loadYaml("Bitters", filename, Bitters, debug)
-        object.update()
-        return object
+        Helper method to load nested magnets from a list of data.
+        """ 
+        objects = []
+        if not magnets_data:
+            return objects
 
+        for i, magnet_data in enumerate(magnets_data):
+            if isinstance(magnet_data, str):
+                # Reference to external file → load from file
+                if debug:
+                    print(f"Loading Magnet[{i}] from file: {magnet_data}")
+                from .utils import loadObject
+                from .Ring import Ring
+                obj = loadObject("ring", magnet_data, Ring, Ring.from_yaml)
+                objects.append(obj)
+            elif isinstance(magnet_data, dict):
+                # Inline object → create from dict, no reference to track
+                if debug:
+                    print(f"Creating Magnet[{i}] from inline dict: {magnet_data.get('name', 'unnamed')}")
+                from .Ring import Ring
+                obj = Ring.from_dict(magnet_data)
+                objects.append(obj)
+            else:
+                raise ValidationError(f"Invalid magnet data at index {i}: {magnet_data}")
+        return objects
+    
     @classmethod
-    def from_json(cls, filename: str, debug: bool = False):
+    def _load_nested_probes(cls, probes_data: List, debug: bool = False) -> List:
         """
-        convert from json to yaml
-        """
-        from .utils import loadJson
-        return loadJson("Bitters", filename, debug)
+        Helper method to load nested probes from a list of data.
+        """             
+        objects = []
+        if not probes_data:
+            return objects
 
+        for i, probe_data in enumerate(probes_data):
+            if isinstance(probe_data, str):
+                # Reference to external file → load from file
+                if debug:
+                    print(f"Loading Probe[{i}] from file: {probe_data}")
+                from .utils import loadObject
+                obj = loadObject("probe", probe_data, Probe, Probe.from_yaml)
+                objects.append(obj)
+            elif isinstance(probe_data, dict):
+                # Inline object → create from dict, no reference to track
+                if debug:
+                    print(f"Creating Probe[{i}] from inline dict: {probe_data.get('name', 'unnamed')}")
+                obj = Probe.from_dict(probe_data)
+                objects.append(obj)
+            else:
+                raise ValidationError(f"Invalid probe data at index {i}: {probe_data}")
+        return objects
+    
     ###################################################################
     #
     #
@@ -203,12 +212,3 @@ class Bitters(yaml.YAMLObject):
         
         return r_overlap and z_overlap
 
-
-def Bitters_constructor(loader, node):
-    #print("Bitters_constructor: called")
-    #print(node)
-    values = loader.construct_mapping(node)
-    return Bitters.from_dict(values)
-
-
-yaml.add_constructor(Bitters.yaml_tag, Bitters_constructor)

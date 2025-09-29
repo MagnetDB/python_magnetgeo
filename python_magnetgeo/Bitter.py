@@ -142,14 +142,12 @@ class Bitter(YAMLObjectBase):
                 if debug:
                     print(f"Loading CoolingSlit[{i}] from file: {slit_data}")
                 from .utils import loadObject
-                from .coolingslit import CoolingSlit
                 obj = loadObject("coolingslit", slit_data, CoolingSlit, CoolingSlit.from_yaml)
                 objects.append(obj)
             elif isinstance(slit_data, dict):
                 # Inline object → create from dict, no reference to track
                 if debug:
                     print(f"Creating CoolingSlit[{i}] from inline dict: {slit_data.get('name', 'unnamed')}")
-                from .coolingslit import CoolingSlit
                 obj = CoolingSlit.from_dict(slit_data)
                 objects.append(obj)
             else:
