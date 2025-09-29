@@ -36,6 +36,13 @@ class Bitters(YAMLObjectBase):
         """constructor"""
         # General validation
         GeometryValidator.validate_name(name)
+        
+        # Validate bore dimensions if not zero (zero means not specified)
+        if innerbore != 0 and outerbore != 0:
+            if innerbore >= outerbore:
+                raise ValidationError(
+                    f"innerbore ({innerbore}) must be less than outerbore ({outerbore})"
+                )
 
         self.name = name
         self.magnets = magnets 

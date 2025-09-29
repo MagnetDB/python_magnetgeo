@@ -39,6 +39,9 @@ class Supra(YAMLObjectBase):
         """
         initialize object
         """
+        # General validation
+        GeometryValidator.validate_name(name)
+        
         self.name = name
         self.r = r
         self.z = z
