@@ -3,8 +3,6 @@
 
 """defines Supra Insert structure"""
 
-import json
-import yaml
 
 from .Supra import Supra
 
@@ -15,7 +13,11 @@ dict_probes = {
     "Probe": Probe.from_dict,
 }
 
-class Supras(yaml.YAMLObject):
+from typing import List
+from .base import YAMLObjectBase
+from .validation import GeometryValidator, ValidationError
+
+class Supras(YAMLObjectBase):
     """
     name :
     magnets :
@@ -47,21 +49,6 @@ class Supras(yaml.YAMLObject):
             self.probes,  # NEW
         )
 
-    def update(self):
-        """
-        update magnets if there were loaded as str
-        """
-        from .utils import check_objects, loadList
-        if self.magnets:
-            if check_objects(self.magnets, str):
-                self.magnets = loadList("magnets", self.magnets, [None, Supra], {"Supra": Supra.from_dict})
-                print("update magnets:", self.magnets)
-        # NEW: Update probes
-        if self.probes:
-            if check_objects(self.probes, str):
-                self.probes = loadList("probes", self.probes, [None, Probe], dict_probes)
-                print("update probes:", self.probes)
-
     def get_channels(
         self, mname: str, hideIsolant: bool = True, debug: bool = False
     ) -> dict:
@@ -91,58 +78,53 @@ class Supras(yaml.YAMLObject):
             print(f"Supras_Gmsh: solid_names {len(solid_names)}")
         return solid_names
 
-    def dump(self):
-        """dump to a yaml file name.yaml"""
-        from .utils import writeYaml
-        writeYaml("Supras", self, Supras)
-
-    def to_json(self):
-        """convert from yaml to json"""
-        from . import deserialize
-
-        return json.dumps(
-            self, default=deserialize.serialize_instance, sort_keys=True, indent=4
-        )
-
-    def write_to_json(self):
-        """write to a json file"""
-        with open(f"{self.name}.son", "w") as ostream:
-            jsondata = self.to_json()
-            ostream.write(str(jsondata))
-
     @classmethod
     def from_dict(cls, values: dict, debug: bool = False):
         """
         create from dict
         """
+        magnets = cls._load_nested_magnets(values.get('magnets'), debug=debug)
+        probes = cls._load_nested_probes(values.get('probes'), debug=debug)  # NEW: Load probes 
+
         name = values["name"]
-        magnets = values["magnets"]        
+        # magnets = values["magnets"]        
         
         innerbore = values["innerbore"] if "innerbore" in values else 0
         outerbore = values["outerbore"] if "outerbore" in values else 0
-        probes = values.get("probes", [])  # NEW: Optional with default empty list
+        # probes = values.get("probes", [])  # NEW: Optional with default empty list
         object = cls(name, magnets, innerbore, outerbore, probes)        
-        object.update()
         return object
     
     @classmethod
-    def from_yaml(cls, filename: str, debug: bool = False):
-        """
-        create from yaml
-        """
-        from .utils import loadYaml
-        object = loadYaml("Supras", filename, Supras, debug)
-        object.update()
-        return object
-
+    def _load_nested_magnets(cls, magnets_data, debug=False) -> List[Supra]:
+        """Load nested Supra objects from data"""
+        magnets = []
+        if magnets_data:
+            for item in magnets_data:
+                if isinstance(item, Supra):
+                    magnets.append(item)
+                elif isinstance(item, dict):
+                    magnets.append(Supra.from_dict(item, debug=debug))
+                elif isinstance(item, Supra):
+                    magnets.append(item)
+                else:
+                    raise ValidationError(f"Invalid magnet entry: {item}")
+        return magnets
+    
     @classmethod
-    def from_json(cls, filename: str, debug: bool = False):
-        """
-        convert from json to yaml
-        """
-        from .utils import loadJson
-        return loadJson("Supras", filename, debug)
-
+    def _load_nested_probes(cls, probes_data, debug=False) -> List[Probe]:
+        """Load nested Probe objects from data"""
+        probes = []
+        if probes_data:
+            for item in probes_data:
+                if isinstance(item, Probe):
+                    probes.append(item)
+                elif isinstance(item, dict):
+                    probes.append(Probe.from_dict(item, debug=debug))
+                else:
+                    raise ValidationError(f"Invalid probe entry: {item}")
+        return probes
+    
     ###################################################################
     #
     #
@@ -183,10 +165,3 @@ class Supras(yaml.YAMLObject):
         
         return r_overlap and z_overlap
 
-
-def Supras_constructor(loader, node):
-    values = loader.construct_mapping(node)
-    return Supras.from_dict(values)
-
-
-yaml.add_constructor(Supras.yaml_tag, Supras_constructor)
