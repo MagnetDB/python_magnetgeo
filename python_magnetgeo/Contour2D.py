@@ -23,18 +23,18 @@ class Contour2D(YAMLObjectBase):
 
     yaml_tag = "Contour2D"
 
-    def __init__(self, name: str, pts: list[list[float]]):
+    def __init__(self, name: str, points: list[list[float]]):
         """
         initialize object
         """
         self.name = name
-        self.pts = pts
+        self.points = points
 
     def __repr__(self):
         """
         representation of object
         """
-        return "%s(name=%r, pts=%r)" % (self.__class__.__name__, self.name, self.pts)
+        return "%s(name=%r, points=%r)" % (self.__class__.__name__, self.name, self.points)
 
     @classmethod
     def from_dict(cls, values: dict, debug: bool = False):
@@ -42,9 +42,9 @@ class Contour2D(YAMLObjectBase):
         create from dict
         """
         name = values["name"]
-        pts = values["pts"]
+        points = values["points"]
 
-        object = cls(name, pts)
+        object = cls(name, points)
         return object
 
 
@@ -56,14 +56,14 @@ def create_circle(r: float, n: int = 20) -> Contour2D:
         raise RuntimeError(f"create_rectangle: n got {n}, expect a positive integer")
 
     name = f"circle-{2*r}-mm"
-    pts = []
+    points = []
     theta = 2 * pi / float(n)
     for i in range(n):
         x = r * cos(i * theta)
         y = r * sin(i * theta)
-        pts.append([x, y])
+        points.append([x, y])
 
-    return Contour2D(name, pts)
+    return Contour2D(name, points)
 
 
 def create_rectangle(
@@ -78,10 +78,10 @@ def create_rectangle(
 
     name = f"rectangle-{dx}-{dy}-mm"
     if fillet == 0:
-        pts = [[x, y], [x + dx, y], [x + dx, y + dy], [x, y + dy]]
+        points = [[x, y], [x + dx, y], [x + dx, y + dy], [x, y + dy]]
     else:
 
-        pts = [[x, y]]
+        points = [[x, y]]
         theta = pi / float(fillet)
         xc = (x + dx) / 2.0
         yc = y
@@ -89,14 +89,14 @@ def create_rectangle(
         for i in range(fillet):
             _x = xc + r * cos(pi + i * theta)
             _y = yc + r * cos(pi + i * theta)
-            pts.append([_x, _y])
+            points.append([_x, _y])
         yc = y + dy
         for i in range(fillet):
             _x = xc + r * cos(i * theta)
             _y = yc + r * cos(i * theta)
-            pts.append([_x, _y])
+            points.append([_x, _y])
 
-    return Contour2D(name, pts)
+    return Contour2D(name, points)
 
 
 def create_angularslit(
@@ -113,7 +113,7 @@ def create_angularslit(
 
     name = f"angularslit-{dx}-{angle}-mm"
 
-    pts = []
+    points = []
     theta = angle * pi / float(n)
     theta_ = None
     r = x
@@ -122,7 +122,7 @@ def create_angularslit(
     for i in range(n):
         x = r * cos(angle / 2.0 - i * theta)
         y = r * sin(angle / 2.0 - i * theta)
-        pts.append([x, y])
+        points.append([x, y])
 
     if fillet > 0:
         theta_ = pi / float(fillet)
@@ -132,13 +132,13 @@ def create_angularslit(
         for i in range(fillet):
             _x = xc + r_ * cos(pi + i * theta)
             _y = yc + r_ * cos(pi + i * theta)
-            pts.append([_x, _y])
+            points.append([_x, _y])
 
     r = x + dx
     for i in range(n):
         x = r * cos(-angle / 2.0 + i * theta)
         y = r * sin(-angle / 2.0 + i * theta)
-        pts.append([x, y])
+        points.append([x, y])
 
     if fillet > 0:
         xc = (r + dx) * cos(angle / 2.0) / 2
@@ -146,6 +146,6 @@ def create_angularslit(
         for i in range(fillet):
             _x = xc + r_ * cos(pi + i * theta)
             _y = yc + r_ * cos(pi + i * theta)
-            pts.append([_x, _y])
+            points.append([_x, _y])
 
-    return Contour2D(name, pts)
+    return Contour2D(name, points)
