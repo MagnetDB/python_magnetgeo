@@ -23,7 +23,7 @@ def test_insert_basic_creation():
     # Create nested objects
     axi = ModelAxi("test_axi", 30.0, [3.0, 2.5], [10.0, 12.0])
     model3d = Model3D("test_model3d", "SALOME", False, False)
-    shape = Shape("test_shape", "rectangular", 8, [90.0] * 4, 0, "CENTER")
+    shape = Shape("test_shape", "rectangular", [8], [90.0],  [0], "ALTERNATE")
     
     helix = Helix(
         name="test_helix",

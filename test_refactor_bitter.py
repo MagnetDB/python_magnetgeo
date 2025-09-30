@@ -144,7 +144,7 @@ def test_nested_object_handling():
         n=10,
         dh=0.002,
         sh=0.001,
-        contour2d=Contour2D(name="slit_contour", pts=[(0,0), (1,0), (1,1), (0,1)])
+        contour2d=Contour2D(name="slit_contour", points=[(0,0), (1,0), (1,1), (0,1)])
     )
     
     tierod = Tierod(
@@ -153,7 +153,7 @@ def test_nested_object_handling():
         n=6,
         dh=0.01,
         sh=0.005,
-        contour2d=Contour2D(name="tierod_contour", pts=[(0,0), (1,0), (1,1), (0,1)])
+        contour2d=Contour2D(name="tierod_contour", points=[(0,0), (1,0), (1,1), (0,1)])
     )
     
     # Test with nested objects
@@ -257,7 +257,7 @@ def test_coolingslits_combinations():
     print("✓ Empty coolingslits list")
     
     # Test with objects
-    slit = CoolingSlit(name="obj_slit", r=0.12, angle=30, n=8, dh=0.002, sh=0.001, contour2d=Contour2D(name="slit_contour", pts=[(0,0), (1,0), (1,1), (0,1)]))
+    slit = CoolingSlit(name="obj_slit", r=0.12, angle=30, n=8, dh=0.002, sh=0.001, contour2d=Contour2D(name="slit_contour", points=[(0,0), (1,0), (1,1), (0,1)]))
     bitter_objects = Bitter.from_dict({
         'name': 'objects_test',
         'r': [0.1, 0.15],

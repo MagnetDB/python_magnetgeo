@@ -328,6 +328,50 @@ def test_shape_position_values():
         assert "ABOVE, BELOW, ALTERNATE" in str(e)
         print(f"✓ Invalid position raises ValidationError: {e}")
 
+#!/usr/bin/env python3
+"""
+Fix for test_refactor_shape.py - Add the missing test_shape_json_file_operations function
+"""
+
+def test_shape_json_file_operations():
+    """Test JSON file write operations"""
+    print("\nTesting JSON file operations...")
+    
+    import tempfile
+    import os
+    import json
+    from python_magnetgeo.Shape import Shape
+    
+    shape = Shape(
+        name="json_file_test",
+        profile="file_profile",
+        length=[8.0, 16.0, 24.0],
+        angle=[60.0, 120.0, 180.0],
+        onturns=[1, 4, 7],
+        position="ALTERNATE"
+    )
+    
+    # Test write_to_json
+    with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+        filename = f.name
+    
+    shape.write_to_json(filename)
+    
+    # Verify file exists and contains correct data
+    assert os.path.exists(filename)
+    with open(filename, 'r') as f:
+        content = json.load(f)
+        assert content['name'] == 'json_file_test'
+        assert content['profile'] == 'file_profile'
+        assert content['length'] == [8.0, 16.0, 24.0]
+    
+    # Clean up
+    os.unlink(filename)
+    print("✓ JSON file operations work correctly")
+
+
+# Add this function definition to your test_refactor_shape.py file
+# Place it before the main() function, around line 340-350
 
 def test_shape_list_parameters():
     """Test list parameter handling"""

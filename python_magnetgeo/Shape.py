@@ -86,11 +86,13 @@ class Shape(YAMLObjectBase):
 
     def __repr__(self):
         """String representation of object"""
+        # Handle position being either enum or string during deserialization
+        position_str = getattr(self.position, 'value', self.position)
         return (
             f"{self.__class__.__name__}(name={self.name!r}, "
             f"profile={self.profile!r}, length={self.length!r}, "
             f"angle={self.angle!r}, onturns={self.onturns!r}, "
-            f"position={self.position.value!r})"
+            f"position={position_str!r})"
         )
 
     @classmethod

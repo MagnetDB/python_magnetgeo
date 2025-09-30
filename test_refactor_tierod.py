@@ -127,7 +127,7 @@ def test_contour2d_handling():
     # Test with Contour2D object
     contour = Contour2D(
         name="test_contour",
-        pts=[[0.0, 0.0], [10.0, 0.0], [10.0, 5.0], [0.0, 5.0]]
+        points=[[0.0, 0.0], [10.0, 0.0], [10.0, 5.0], [0.0, 5.0]]
     )
     
     tierod_with_contour = Tierod(
@@ -150,7 +150,7 @@ def test_contour2d_handling():
         'sh': 6.0,
         'contour2d': {
             'name': 'inline_contour',
-            'pts': [[0.0, 0.0], [5.0, 0.0], [5.0, 5.0], [0.0, 5.0]]
+            'points': [[0.0, 0.0], [5.0, 0.0], [5.0, 5.0], [0.0, 5.0]]
         }
     }
     
@@ -164,7 +164,7 @@ def test_contour2d_handling():
     # Create a Contour2D object and save it to YAML file for string reference test
     ref_contour = Contour2D(
         name="string_reference",
-        pts=[[0.0, 0.0], [8.0, 0.0], [8.0, 4.0], [0.0, 4.0]]
+        points=[[0.0, 0.0], [8.0, 0.0], [8.0, 4.0], [0.0, 4.0]]
     )
     
     # Save the contour2d to YAML file
@@ -191,7 +191,7 @@ def test_contour2d_handling():
         print(f"Note: String reference loading may need implementation: {e}")
     
     assert ref_tierod.contour2d.name == "string_reference"
-    assert ref_tierod.contour2d.pts == [[0.0, 0.0], [8.0, 0.0], [8.0, 4.0], [0.0, 4.0]]
+    assert ref_tierod.contour2d.points == [[0.0, 0.0], [8.0, 0.0], [8.0, 4.0], [0.0, 4.0]]
     print("✓ String reference contour2d handling works")
     
     # Clean up the YAML file
@@ -207,7 +207,7 @@ def test_yaml_round_trip_with_contour2d():
     # Create a Contour2D object
     contour = Contour2D(
         name="embedded_contour",
-        pts=[[0.0, 0.0], [12.0, 0.0], [12.0, 8.0], [0.0, 8.0]]
+        points=[[0.0, 0.0], [12.0, 0.0], [12.0, 8.0], [0.0, 8.0]]
     )
     
     # Create a Tierod object with the Contour2D
@@ -241,7 +241,7 @@ def test_yaml_round_trip_with_contour2d():
         # Verify contour2d was preserved
         if hasattr(loaded.contour2d, 'name'):
             assert loaded.contour2d.name == contour.name
-            assert loaded.contour2d.pts == contour.pts
+            assert loaded.contour2d.points == contour.points
             print("✓ Contour2D object preserved in YAML round-trip")
         else:
             print(f"Note: Contour2D loaded as: {type(loaded.contour2d)}")
@@ -264,7 +264,7 @@ def test_yaml_with_contour2d_string_reference():
     ref_contour_name = "my_special_contour"
     ref_contour = Contour2D(
         name=ref_contour_name,
-        pts=[[0.0, 0.0], [15.0, 0.0], [15.0, 10.0], [5.0, 15.0], [0.0, 10.0]]
+        points=[[0.0, 0.0], [15.0, 0.0], [15.0, 10.0], [5.0, 15.0], [0.0, 10.0]]
     )
     
     try:
@@ -303,7 +303,7 @@ contour2d: "{ref_contour_name}"
         if hasattr(loaded_tierod.contour2d, 'name'):
             # If it was loaded as a Contour2D object
             assert loaded_tierod.contour2d.name == ref_contour_name
-            assert loaded_tierod.contour2d.pts == ref_contour.pts
+            assert loaded_tierod.contour2d.points == ref_contour.points
             print(f"✓ Contour2D loaded from reference: {loaded_tierod.contour2d.name}")
         else:
             # If it remained as a string reference
