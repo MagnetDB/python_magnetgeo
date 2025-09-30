@@ -62,7 +62,13 @@ class Helix(YAMLObjectBase):
         """
         # General validation
         GeometryValidator.validate_name(name)
+        GeometryValidator.validate_numeric_list(r, "r", expected_length=2)
+        GeometryValidator.validate_ascending_order(r, "r")
         
+        GeometryValidator.validate_numeric_list(z, "z", expected_length=2) 
+        GeometryValidator.validate_ascending_order(z, "z")
+        
+
         self.name = name
         self.dble = dble
         self.odd = odd
@@ -293,7 +299,7 @@ class Helix(YAMLObjectBase):
         create_cut(self, format, self.name)
         if self.model3d.with_shapes:
             angles = " ".join(f"{t:4.2f}" for t in self.shape.angle if t != 0)
-            cmd = f'add_shape --angle="{angles}" --shape_angular_length={self.shape.length} --shape={self.shape.name} --format={format} --position="{self.shape.position}"'
+            cmd = f'add_shape --angle="{angles}" --shape_angular_length={self.shape.length} --shape={self.shape.profile}.dat --format={format} --position="{self.shape.position} {self.name}"'
             print(f"create_cut: with_shapes not implemented - shall run {cmd}")
 
             import subprocess

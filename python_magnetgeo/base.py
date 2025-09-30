@@ -163,11 +163,14 @@ class YAMLObjectBase(SerializableMixin):
             This is called during YAML dumping to convert objects to YAML nodes.
             """
             # Convert object to dictionary (excluding private attributes)
+            from enum import Enum  # ← Add this import
             data = {}
             for key, value in obj.__dict__.items():
                 if not key.startswith('_'):
-                    data[key] = value
-            
+                    if isinstance(value, Enum):  # ← Add this check
+                        data[key] = value.value
+                    else:
+                        data[key] = value
             # Create YAML mapping node with custom tag
             return dumper.represent_mapping(cls.yaml_tag, data)
             

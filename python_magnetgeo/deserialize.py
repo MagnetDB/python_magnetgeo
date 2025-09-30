@@ -57,11 +57,24 @@ classes = {
 def serialize_instance(obj):
     """
     serialize_instance of an obj
+    
+    Handles Enum values by converting them to their string values.
     """
+    from enum import Enum
+    
     d = {"__classname__": type(obj).__name__}
-    d.update(vars(obj))
+    
+    # Get object attributes
+    obj_dict = vars(obj)
+    
+    # Convert any Enum values to their string representation
+    for key, value in obj_dict.items():
+        if isinstance(value, Enum):
+            d[key] = value.value
+        else:
+            d[key] = value
+    
     return d
-
 
 def unserialize_object(d, debug: bool = True):
     """

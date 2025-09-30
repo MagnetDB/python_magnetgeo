@@ -1,0 +1,15 @@
+opt2cad HL-31.d
+
+H4: add_shape --angle="60 90 120 120" --shape_angular_length=8 --shape=HL-31-995  --format=LNCMI --position="ALTERNATE" HL-31_H4
+H5: add_shape --angle="60 90 120 120" --shape_angular_length=7 --shape=HL-31-994   --format=LNCMI --position="ALTERNATE" HL-31_H5
+H6: add_shape --angle="60 90 120 120" --shape_angular_length=6  --shape=HL-31-993   --format=LNCMI --position="ALTERNATE" HL-31_H6
+
+H7: add_shape --angle="60 90 120 120" --shape_angular_length=5 --shape=HL-31-992  --format=LNCMI --position="ALTERNATE" HL-31_H7
+H8: add_shape --angle="60 90 120 120" --shape_angular_length=4 --shape=HL-31-991   --format=LNCMI --position="ALTERNATE" HL-31_H8
+H9: add_shape --angle="60 90 120 120" --shape_angular_length=3.5  --shape=HL-31-990   --format=LNCMI --position="ALTERNATE" HL-31_H9
+
+H10: add_shape --angle="60 90 120 120" --shape_angular_length=3 --shape=HL-31-989  --format=LNCMI --position="ALTERNATE" HL-31_H10
+H11: add_shape --angle="60 90 120 120" --shape_angular_length=3 --shape=HL-31-988   --format=LNCMI --position="ALTERNATE" HL-31_H11
+H12: add_shape --angle="60 90 120 120" --shape_angular_length=2.5  --shape=HL-31-987   --format=LNCMI --position="ALTERNATE" HL-31_H12
+H13: add_shape --angle="60 90 120 120" --shape_angular_length=2 --shape=HL-31-986   --format=LNCMI --position="ALTERNATE" HL-31_H13
+H14: add_shape --angle="60 90 120 120" --shape_angular_length=2  --shape=HL-31-985   --format=LNCMI --position="ALTERNATE" HL-31_H14

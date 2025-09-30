@@ -2,30 +2,37 @@
 # -*- coding:utf-8 -*-
 
 """
-Provides definiton for Helix:
-
-* Geom data: r, z
-* Model Axi: definition of helical cut (provided from MagnetTools)
-* Model 3D: actual 3D CAD
-* Shape: definition of Shape eventually added to the helical cut
+Provides definition for Shape with Position enum
 """
 
-
-from typing import List
+from enum import Enum
+from typing import List, Union
 from .base import YAMLObjectBase
 from .validation import GeometryValidator, ValidationError
 
+
+class ShapePosition(Enum):
+    """Valid positions for shape placement"""
+    ABOVE = "ABOVE"
+    BELOW = "BELOW"  # Note: fixed typo from BELLOW
+    ALTERNATE = "ALTERNATE"
+    
+    def __str__(self):
+        """String representation returns the value"""
+        return self.value
+
+
 class Shape(YAMLObjectBase):
     """
-    name :
-    profile : name of the cut profile to be added
-      if some ids are non-nul it means that micro-channels are to be added
-
-    params :
-      length : specify shape angular length in degree - single value or list
-      angle : angle between 2 consecutive shape (in deg) - single value or list
-      onturns : specify on which turns to add cuts - single value or list
-      position : ABOVE|BELLOW|ALTERNATE
+    Shape definition for helical cuts
+    
+    Attributes:
+        name: Shape identifier
+        profile: Name of the cut profile to be added
+        length: Shape angular length in degrees - single value or list
+        angle: Angle between 2 consecutive shapes (in deg) - single value or list
+        onturns: Specify on which turns to add cuts - single value or list
+        position: Shape position (ABOVE, BELOW, or ALTERNATE)
     """
 
     yaml_tag = "Shape"
@@ -34,48 +41,78 @@ class Shape(YAMLObjectBase):
         self,
         name: str,
         profile: str,
-        length: list[float] = [0.0],
-        angle: list[float] = [0.0],
-        onturns: list[int] = [1],
-        position: str = "ABOVE",
+        length: List[float] = None,
+        angle: List[float] = None,
+        onturns: List[int] = None,
+        position: Union[ShapePosition, str] = ShapePosition.ABOVE,
     ):
         """
-        initialize object
+        Initialize Shape object
+        
+        Args:
+            name: Shape identifier
+            profile: Cut profile name
+            length: Angular length(s) in degrees
+            angle: Angle(s) between consecutive shapes
+            onturns: Turn number(s) for cut placement
+            position: Position (ABOVE, BELOW, or ALTERNATE)
+        
+        Raises:
+            ValidationError: If name is invalid or position is not recognized
         """
+        GeometryValidator.validate_name(name)
+        
         self.name = name
         self.profile = profile
-        self.length = length
-        self.angle = angle
-        self.onturns = onturns
-        self.position = position
+        self.length = length if length is not None else [0.0]
+        self.angle = angle if angle is not None else [0.0]
+        self.onturns = onturns if onturns is not None else [1]
+        
+        # Handle position - convert string to enum if needed
+        if isinstance(position, str):
+            try:
+                self.position = ShapePosition[position.upper()]
+            except KeyError:
+                valid_positions = ', '.join([p.name for p in ShapePosition])
+                raise ValidationError(
+                    f"Invalid position '{position}'. Must be one of: {valid_positions}"
+                )
+        elif isinstance(position, ShapePosition):
+            self.position = position
+        else:
+            raise ValidationError(
+                f"Position must be string or ShapePosition enum, got {type(position)}"
+            )
 
     def __repr__(self):
-        """
-        representation of object
-        """
+        """String representation of object"""
         return (
-            "%s(name=%r, profile=%r, length=%r, angle=%r, onturns=%r, position=%r)"
-            % (
-                self.__class__.__name__,
-                self.name,
-                self.profile,
-                self.length,
-                self.angle,
-                self.onturns,
-                self.position,
-            )
+            f"{self.__class__.__name__}(name={self.name!r}, "
+            f"profile={self.profile!r}, length={self.length!r}, "
+            f"angle={self.angle!r}, onturns={self.onturns!r}, "
+            f"position={self.position.value!r})"
         )
 
     @classmethod
     def from_dict(cls, values: dict, debug: bool = False):
         """
-        create from dict
+        Create Shape from dictionary with proper defaults
+        
+        Args:
+            values: Dictionary containing shape data
+            debug: Enable debug output
+            
+        Returns:
+            New Shape instance
+            
+        Raises:
+            ValidationError: If position value is invalid
         """
-        name = values["name"]
-        profile = values["profile"]
-        length = values["length"]
-        angle = values["angle"]
-        onturns = values["onturns"]
-        position = values["position"]
-        return cls(name, profile, length, angle, onturns, position)
-
+        return cls(
+            name=values["name"],
+            profile=values["profile"],
+            length=values.get("length", [0.0]),
+            angle=values.get("angle", [0.0]),
+            onturns=values.get("onturns", [1]),
+            position=values.get("position", "ABOVE")
+        )

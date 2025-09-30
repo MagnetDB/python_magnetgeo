@@ -22,7 +22,11 @@ class GeometryValidator:
         """General name validation - same for all geometries"""
         if not name or not isinstance(name, str):
             raise ValidationError("Name must be a non-empty string")
-    
+        
+        # Check for whitespace-only names
+        if not name.strip():
+            raise ValidationError("Name cannot be whitespace only")
+ 
     @staticmethod
     def validate_positive(r: float) -> None:
         """Must be positive number"""
