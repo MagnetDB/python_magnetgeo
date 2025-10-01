@@ -99,6 +99,15 @@ class MSite(YAMLObjectBase):
             print(f"MSite/get_names: solid_names {len(solid_names)}")
         return solid_names
 
+    def get_magnet(self, name: str) -> Optional[Union[Insert, Bitter, Supra]]:
+        """
+        get magnet by name
+        """
+        for magnet in self.magnets:
+            if magnet.name == name:
+                return magnet
+        return None
+
     @classmethod
     def from_dict(cls, values: dict, debug: bool = False):
         """
