@@ -39,36 +39,93 @@ class TestSerialization:
         # Cleanup
         Path(f"{sample_helix.name}.json").unlink(missing_ok=True)
 
-    @patch('python_magnetgeo.utils.load_objects')
-    def test_insert_from_dict(self, mock_load_objects):
-        """Test Insert creation from dictionary with mocked file loading"""
-        # Mock the file loading to return object instances instead of trying to load files
-        mock_load_objects.side_effect = lambda items, registry: items  # Return items as-is
+    def test_insert_from_dict(self):
+        """Test Insert creation from dictionary with inline object definitions"""
+        # Create inline object definitions instead of file references
+        helix_dict = {
+            "__classname__": "Helix",
+            "name": "helix1",
+            "r": [10.0, 20.0],
+            "z": [0.0, 50.0],
+            "cutwidth": 2.0,
+            "odd": False,
+            "dble": True,
+            "modelaxi": None,
+            "model3d": None,
+            "shape": None
+        }
+        
+        ring_dict = {
+            "__classname__": "Ring",
+            "name": "ring1",
+            "r": [10.0, 10.1, 19.9, 20.0],
+            "z": [0.0, 10.0],
+            "n": 6,
+            "angle": 30.0,
+            "bpside": True,
+            "fillets": False
+        }
+        
+        # Define inline currentleads - both InnerCurrentLead and OuterCurrentLead
+        inner_lead_dict = {
+            "__classname__": "InnerCurrentLead",
+            "name": "inner",
+            "r": [8.0, 9.5],
+            "h": 52.0,
+            "holes": [5.0, 10.0, 0.0, 45.0, 0.0, 8],
+            "support": [25.0, 5.0],
+            "fillet": True
+        }
+        
+        outer_lead_dict = {
+            "__classname__": "OuterCurrentLead",
+            "name": "outer",
+            "r": [35.0, 40.0],
+            "h": 52.0,
+            "bar": [37.5, 10.0, 15.0, 40.0],
+            "support": [5.0, 10.0, 30.0, 0.0]
+        }
+        
+        probe_dict = {
+            "__classname__": "Probe",
+            "name": "probe1",
+            "type": "field_sensors",
+            "labels": ["B1", "B2"],
+            "points": [[12.0, 5.0, 25.0], [18.0, -5.0, 45.0]]
+        }
         
         data = {
+            "__classname__": "Insert",
             "name": "dict_insert",
-            "helices": ["helix1", "helix2"],
-            "rings": ["ring1"],
-            "currentleads": ["lead1"],
+            "helices": [helix_dict],              # Use inline dict
+            "rings": [ring_dict],                 # Use inline dict
+            "currentleads": [inner_lead_dict, outer_lead_dict],  # Use inline dicts for both leads
             "hangles": [0.0, 180.0],
             "rangles": [0.0, 90.0, 180.0, 270.0],
             "innerbore": 8.0,
             "outerbore": 35.0,
-            "probes": ["probe1"]
+            "probes": [probe_dict]                # Use inline dict
         }
         
         insert = Insert.from_dict(data)
         
         assert insert.name == "dict_insert"
-        assert insert.helices == ["helix1", "helix2"]
-        assert insert.rings == ["ring1"]
-        assert insert.probes == ["probe1"]
+        assert len(insert.helices) == 1
+        assert insert.helices[0].name == "helix1"
+        assert len(insert.rings) == 1
+        assert insert.rings[0].name == "ring1"
+        assert len(insert.currentleads) == 2
+        assert insert.currentleads[0].name == "inner"
+        assert insert.currentleads[1].name == "outer"
+        assert len(insert.probes) == 1
+        assert insert.probes[0].name == "probe1"
         assert insert.innerbore == 8.0
         assert insert.outerbore == 35.0
 
     def test_supra_from_dict(self):
         """Test Supra creation from dictionary"""
         data = {
+            "__classname__": "Supra",
             "name": "dict_supra",
             "r": [30.0, 50.0],
             "z": [20.0, 80.0],
@@ -87,6 +144,7 @@ class TestSerialization:
     def test_probe_from_dict(self):
         """Test Probe creation from dictionary"""
         data = {
+            "__classname__": "Probe",
             "name": "dict_probe",
             "type": "field_sensors",
             "labels": ["B1", "B2"],
@@ -101,8 +159,22 @@ class TestSerialization:
         assert len(probe.points) == 2
 
     @pytest.mark.parametrize("class_obj,sample_data", [
-        (Ring, {"name": "test_ring", "r": [10.0, 10.1, 19.9, 20.0], "z": [0.0, 10.0], "n": 6, "angle": 30.0, "bpside": True, "fillets": False}),
-        (Screen, {"name": "test_screen", "r": [5.0, 25.0], "z": [0.0, 50.0]}),
+        (Ring, {
+            "__classname__": "Ring",
+            "name": "test_ring",
+            "r": [10.0, 10.1, 19.9, 20.0],
+            "z": [0.0, 10.0],
+            "n": 6,
+            "angle": 30.0,
+            "bpside": True,
+            "fillets": False
+        }),
+        (Screen, {
+            "__classname__": "Screen",
+            "name": "test_screen",
+            "r": [5.0, 25.0],
+            "z": [0.0, 50.0]
+        }),
     ])
     def test_class_serialization_interface(self, class_obj, sample_data):
         """Test that all classes implement required serialization methods"""
