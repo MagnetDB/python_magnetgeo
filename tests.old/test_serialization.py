@@ -101,7 +101,7 @@ class TestSerialization:
         assert len(probe.points) == 2
 
     @pytest.mark.parametrize("class_obj,sample_data", [
-        (Ring, {"name": "test_ring", "r": [10.0, 20.0], "z": [0.0, 10.0], "n": 6, "angle": 30.0, "bpside": True, "fillets": False}),
+        (Ring, {"name": "test_ring", "r": [10.0, 10.1, 19.9, 20.0], "z": [0.0, 10.0], "n": 6, "angle": 30.0, "bpside": True, "fillets": False}),
         (Screen, {"name": "test_screen", "r": [5.0, 25.0], "z": [0.0, 50.0]}),
     ])
     def test_class_serialization_interface(self, class_obj, sample_data):

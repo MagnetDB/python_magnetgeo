@@ -83,7 +83,7 @@ def sample_ring():
     """Fixture providing a sample Ring object"""
     return Ring(
         name="test_ring",
-        r=[12.0, 28.0],
+        r=[12.0, 12.1, 27.9, 28.0],
         z=[45.0, 55.0],
         n=6,
         angle=30.0,

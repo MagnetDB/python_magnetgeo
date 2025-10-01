@@ -65,7 +65,7 @@ class TestGeometricOperations:
         shape = Shape("test", "rectangular", 5, [90.0], 0, "BELOW")
         
         helix = Helix("intersect_helix", [10.0, 20.0], [0.0, 50.0], 1.0, True, False, axi, model3d, shape)
-        ring = Ring("intersect_ring", [15.0, 25.0], [20.0, 30.0], 6, 30.0, True, False)
+        ring = Ring("intersect_ring", [15.0, 15.1, 24.9, 25.0], [20.0, 30.0], 6, 30.0, True, False)
         screen = Screen("intersect_screen", [5.0, 15.0], [10.0, 40.0])
         
         test_rectangle = [12.0, 18.0], [15.0, 35.0]  # Overlaps with all

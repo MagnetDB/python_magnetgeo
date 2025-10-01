@@ -40,7 +40,7 @@ class TestIntegration:
         helix = Helix("workflow_helix", [12.0, 22.0], [0.0, 60.0], 1.8, False, True, axi, model3d, shape)
         
         # Create Ring
-        ring = Ring("workflow_ring", [10.0, 24.0], [25.0, 35.0], 6, 30.0, True, False)
+        ring = Ring("workflow_ring", [10.0, 10.1, 23.9, 24.0], [25.0, 35.0], 6, 30.0, True, False)
         
         # Create Probe
         probe = Probe("workflow_probe", "current_taps", ["I1", "I2"], [[15.0, 0.0, 30.0], [19.0, 0.0, 45.0]])
@@ -150,10 +150,10 @@ class TestIntegration:
         
         # Test probe lookup
         v2_info = voltage_probes.get_probe_by_labels("V2")
-        assert v2_info["location"] == [16.0, 0.0, 20.0]
+        assert v2_info["points"] == [16.0, 0.0, 20.0]
         
         t2_info = temp_probes.get_probe_by_labels(2)
-        assert t2_info["location"] == [17.0, -2.5, 25.0]
+        assert t2_info["points"] == [17.0, -2.5, 25.0]
         
         # Test adding probes
         voltage_probes.add_probe("V5", [22.0, 0.0, 50.0])
@@ -193,11 +193,11 @@ class TestIntegration:
         # Create complex nested structure
         axi = ModelAxi("serial_axi", 20.0, [2.0, 3.0, 2.5], [8.0, 9.0, 8.5])
         model3d = Model3D("serial_model3d", "serial_cad", True, False)
-        shape = Shape("serial_shape", "hexagonal", 12, [60.0] * 6, 1, "ALTERNATE")
+        shape = Shape("serial_shape", "hexagonal", [12] * 6, [60.0] * 6, [1], "ALTERNATE")
         helix = Helix("serial_helix", [15.0, 30.0], [5.0, 85.0], 3.0, False, True, axi, model3d, shape)
         
-        ring1 = Ring("serial_ring1", [13.0, 32.0], [35.0, 45.0], 6, 30.0, True, False)
-        ring2 = Ring("serial_ring2", [13.0, 32.0], [55.0, 65.0], 8, 45.0, True, False)
+        ring1 = Ring("serial_ring1", [13.0, 15.0, 30, 32.0], [35.0, 45.0], 6, 30.0, True, False)
+        ring2 = Ring("serial_ring2", [15.0, 30.0, 32.0, 34.0], [55.0, 65.0], 8, 45.0, True, False)
         
         probe = Probe("serial_probe", "hall_sensors", ["H1", "H2"], [[20.0, 5.0, 40.0], [25.0, -5.0, 60.0]])
         
@@ -249,7 +249,7 @@ class TestIntegration:
         inner_helix = Helix("inner", [10.0, 15.0], [0.0, 100.0], 1.0, True, False, axi1, model3d1, shape1)
         outer_helix = Helix("outer", [20.0, 25.0], [10.0, 90.0], 1.5, False, True, axi2, model3d2, shape2)
         
-        separator_ring = Ring("separator", [8.0, 27.0], [45.0, 55.0], 6, 30.0, True, False)
+        separator_ring = Ring("separator", [10.0, 15.0, 20.0, 25.0], [45.0, 55.0], 6, 30.0, True, False)
         
         insert = Insert(
             name="geometric_insert",

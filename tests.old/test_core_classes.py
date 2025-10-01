@@ -105,7 +105,7 @@ class TestRing:
         """Test Ring object creation"""
         ring = Ring(
             name="init_ring",
-            r=[8.0, 32.0],
+            r=[8.0, 8.1, 31.9, 32.0],
             z=[20.0, 30.0],
             n=8,
             angle=45.0,
@@ -114,7 +114,7 @@ class TestRing:
         )
         
         assert ring.name == "init_ring"
-        assert ring.r == [8.0, 32.0]
+        assert ring.r == [8.0, 8.1, 31.9, 32.0]
         assert ring.z == [20.0, 30.0]
         assert ring.n == 8
         assert ring.angle == 45.0
@@ -131,7 +131,7 @@ class TestRing:
         
         assert parsed["__classname__"] == "Ring"
         assert parsed["name"] == "test_ring"
-        assert parsed["r"] == [12.0, 28.0]
+        assert parsed["r"] == [12.0, 12.1, 27.9, 28.0]
         assert parsed["z"] == [45.0, 55.0]
 
 
@@ -277,7 +277,7 @@ class TestProbe:
         probe_info = sample_probe.get_probe_by_labels("V2")
         
         assert probe_info["labels"] == "V2"
-        assert probe_info["location"] == [20.0, 0.0, 50.0]
+        assert probe_info["points"] == [20.0, 0.0, 50.0]
         assert probe_info["type"] == "voltage_taps"
 
     def test_probe_by_labels_not_found(self, sample_probe):
@@ -303,7 +303,7 @@ class TestProbe:
         
         assert sample_probe.get_probe_count() == initial_count + 1
         new_probe = sample_probe.get_probe_by_labels("V4")
-        assert new_probe["location"] == [22.0, 0.0, 85.0]
+        assert new_probe["points"] == [22.0, 0.0, 85.0]
 
     def test_probe_add_invalid_location(self, sample_probe):
         """Test add_probe with invalid location coordinates"""

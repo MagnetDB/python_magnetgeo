@@ -56,7 +56,7 @@ class TestDataFactory:
         """Create Ring test data"""
         return {
             "name": name,
-            "r": [12.0, 28.0],
+            "r": [12.0, 12.1, 27.9, 28.0],
             "z": [45.0, 55.0]
         }
     
