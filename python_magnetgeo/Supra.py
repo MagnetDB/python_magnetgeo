@@ -42,6 +42,12 @@ class Supra(YAMLObjectBase):
         # General validation
         GeometryValidator.validate_name(name)
         
+        GeometryValidator.validate_numeric_list(r, "r", expected_length=2)
+        GeometryValidator.validate_ascending_order(r, "r")
+        
+        GeometryValidator.validate_numeric_list(z, "z", expected_length=2) 
+        GeometryValidator.validate_ascending_order(z, "z")
+       
         self.name = name
         self.r = r
         self.z = z
@@ -136,9 +142,8 @@ class Supra(YAMLObjectBase):
         name = values["name"]
         r = values["r"]
         z = values["z"]
-        n = values["n"]
-        struct = values["struct"]
-
+        n = values.get("n", 0)
+        struct = values.get("struct", '')
         object = cls(name, r, z, n, struct)
         """
         # TODO: if struct load r,z and n from struct data
