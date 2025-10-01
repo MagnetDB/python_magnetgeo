@@ -201,9 +201,9 @@ def test_supras_from_dict_with_probes():
             {
                 '__classname__': 'Probe',
                 'name': 'voltage_probe',
-                'probe_type': 'voltage_taps',
-                'channels': ['V1', 'V2'],
-                'locations': [[22.0, 0.0, 25.0], [28.0, 0.0, 35.0]]
+                'type': 'voltage_taps',
+                'labels': ['V1', 'V2'],
+                'points': [[22.0, 0.0, 25.0], [28.0, 0.0, 35.0]]
             }
         ]
     }
@@ -219,7 +219,7 @@ def test_supras_from_dict_with_probes():
     print("✓ from_dict with probes successful")
     print(f"  magnets: {len(supras.magnets)}")
     print(f"  probes: {len(supras.probes)}")
-    print(f"  probe[0]: {supras.probes[0].name} ({supras.probes[0].probe_type})")
+    print(f"  probe[0]: {supras.probes[0].name} ({supras.probes[0].type})")
     
     print("\n✅ PASSED: from_dict with probes\n")
 
