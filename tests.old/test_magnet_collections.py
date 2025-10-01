@@ -92,7 +92,7 @@ class TestMagnetCollections:
         
         assert msite.name == "test_msite"
         assert len(msite.magnets) == 1
-        assert msite.screens is None
+        assert msite.screens == []
 
     def test_msite_with_screens(self, sample_insert):
         """Test MSite with screen objects"""

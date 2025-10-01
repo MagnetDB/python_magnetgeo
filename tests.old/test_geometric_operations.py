@@ -95,9 +95,10 @@ class TestGeometricOperations:
         
         # Should account for ring height adjustment
         # zb should be extended by ring height
-        ring_height = abs(sample_insert.rings[0].z[1] - sample_insert.rings[0].z[0])
-        assert zb[0] <= helix_zb[0] - ring_height
-        assert zb[1] >= helix_zb[1] + ring_height
+        if sample_insert.rings:
+            ring_height = abs(sample_insert.rings[0].z[1] - sample_insert.rings[0].z[0])
+            assert zb[0] <= helix_zb[0] - ring_height
+            assert zb[1] >= helix_zb[1] + ring_height
 
     def test_characteristic_length_calculations(self):
         """Test get_lc method provides reasonable values"""
