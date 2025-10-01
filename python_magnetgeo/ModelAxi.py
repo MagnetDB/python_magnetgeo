@@ -35,10 +35,26 @@ class ModelAxi(YAMLObjectBase):
         """
         initialize object
         """
+        GeometryValidator.validate_name(name)
+        if pitch and turns:
+            if len(pitch) != len(turns):
+                raise ValidationError(
+                    f"Number of pitch ({len(pitch)}) must be equal to number of turns ({len(turns)})"
+                )
+        
         self.name = name
         self.h = h
         self.turns = turns
         self.pitch = pitch
+
+        # sum of pitch*turns must be equal to 2*h
+        if pitch:
+            total_height = sum(p * t for p, t in zip(pitch, turns))
+            if abs(total_height - 2 * self.h) > 1.0e-6:
+                raise ValidationError(
+                    f"Sum of pitch*turns ({total_height}) must be equal to 2*h ({2*self.h})"
+                )
+        
 
     def __repr__(self):
         """

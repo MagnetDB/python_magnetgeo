@@ -51,21 +51,23 @@ class MSite(YAMLObjectBase):
 
         # FIX: Keep None values as None instead of converting to empty lists
         self.screens = []
-        for screen in screens:
-            if isinstance(screen, str):
-                self.screens.append(getObject(f"{screen}.yaml"))
-            else:
-                self.screens.append(screen)
-                
+        if screens is not None:
+            for screen in screens:
+                if isinstance(screen, str):
+                    self.screens.append(getObject(f"{screen}.yaml"))
+                else:
+                    self.screens.append(screen)
+
         self.z_offset = z_offset  
         self.r_offset = r_offset
         self.paralax = paralax
 
-        # check that magnets are stored in ascending order of radius
+        # check that magnets are not intersecting
         for i in range(1, len(self.magnets)):
-            if self.magnets[i].r[0] <= self.magnets[i - 1].r[0]:
+            rb, zb = self.magnets[i - 1].boundingBox()
+            if self.magnets[i].intersect(rb, zb):
                 raise ValidationError(
-                    f"magnets must be ordered by ascending inner radius: helix {i} has inner radius {self.magnets[i].r[0]} which is not greater than previous helix inner radius {self.magnets[i - 1].r[0]}"
+                    f"magnets intersect: magnet[{i}] intersect magnet[{i-1}]: /n{self.magnets[i]} /n{self.magnets[i-1]}"
                 )   
 
     def __repr__(self):

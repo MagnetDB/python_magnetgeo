@@ -68,7 +68,6 @@ class Helix(YAMLObjectBase):
         GeometryValidator.validate_numeric_list(z, "z", expected_length=2) 
         GeometryValidator.validate_ascending_order(z, "z")
         
-
         self.name = name
         self.dble = dble
         self.odd = odd
@@ -76,36 +75,43 @@ class Helix(YAMLObjectBase):
         self.z = z
         self.cutwidth = cutwidth
         
-        if isinstance(modelaxi, str):
+        if modelaxi is not None and isinstance(modelaxi, str):
             self.modelaxi = ModelAxi.from_yaml(f"{modelaxi}.yaml")
         else:
             self.modelaxi = modelaxi
 
-        if isinstance(model3d, str):
+        if model3d is not None and isinstance(model3d, str):
             self.model3d = Model3D.from_yaml(f"{model3d}.yaml")
         else:
             self.model3d = model3d
 
-        if isinstance(shape, str):
+        if shape is not None and isinstance(shape, str):
             self.shape = Shape.from_yaml(f"{shape}.yaml")
         else:
             self.shape = shape
         
         self.chamfers = []
-        for chamfer in chamfers:
-            if isinstance(chamfer, str):
-                self.chamfers.append(Chamfer.from_yaml(f"{chamfer}.yaml"))
-            else:
-                self.chamfers.append(chamfer)
+        if chamfers is not None:
+            for chamfer in chamfers:
+                if isinstance(chamfer, str):
+                    self.chamfers.append(Chamfer.from_yaml(f"{chamfer}.yaml"))
+                else:
+                    self.chamfers.append(chamfer)
                 
         if grooves is not None:
             if isinstance(grooves, str):
-                self.grooves = Groove.from_yaml(f"{grooves}.yam")
+                self.grooves = Groove.from_yaml(f"{grooves}.yaml")
             else:
                 self.grooves = grooves
         else:
             self.grooves = Groove()
 
+        # add check for self.modelaxi.h must be less than (z[1]-z[0])/2.
+        if self.modelaxi is not None and self.modelaxi.h > (z[1] - z[0]) / 2.0:
+            raise ValidationError(
+                f"modelaxi.h ({self.modelaxi.h}) must be less than half the helix height ({(z[1]-z[0])/2.0})"
+            )
+        
     def get_type(self) -> str:
         if self.model3d.with_shapes and self.model3d.with_channels:
             return "HR"

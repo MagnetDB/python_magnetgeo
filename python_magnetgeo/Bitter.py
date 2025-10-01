@@ -63,12 +63,25 @@ class Bitter(YAMLObjectBase):
         self.r = r
         self.z = z
         self.odd = odd
-        self.modelaxi = modelaxi
+        if isinstance(modelaxi, str):
+            self.modelaxi = ModelAxi.from_yaml(f"{modelaxi}.yaml")
+        else:
+            self.modelaxi = modelaxi
         
         self.innerbore = innerbore
         self.outerbore = outerbore
-        self.coolingslits = coolingslits if coolingslits is not None else []
-        self.tierod = tierod
+
+        self.coolingslits = []
+        for coolingslit in coolingslits:
+            if isinstance(coolingslit, str):
+                self.coolingslits.append(CoolingSlit.from_yaml(f"{coolingslit}.yaml"))
+            else:
+                self.coolingslits.append(coolingslit)
+                
+        if isinstance(tierod, str):
+            self.tireod = Tierod.from_yaml(f"{tierod}.yaml")
+        else:
+            self.tierod = tierod
 
     def __repr__(self):
         """

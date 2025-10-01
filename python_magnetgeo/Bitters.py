@@ -43,36 +43,37 @@ class Bitters(YAMLObjectBase):
         self.magnets = []
         for magnet in magnets:
             if isinstance(magnet, str):
-                magnets.append(getObject(f"{magnet}.yaml"))
+                self.magnets.append(getObject(f"{magnet}.yaml"))
             else:
                 self.magnets.append(magnet)
+
         self.innerbore = innerbore
         self.outerbore = outerbore
         
         self.probes = []
-        for probe in probes:
-            if isinstance(probe, str):
-                self.probes.append(Probe.from_yam(f"{probe}.yaml"))
-            else:
-                self.probes.append(probe)
+        if probes is not None:
+            for probe in probes:
+                if isinstance(probe, str):
+                    self.probes.append(Probe.from_yam(f"{probe}.yaml"))
+                else:
+                    self.probes.append(probe)
         
         # Compute overall bounding box
-        self.r, self.z = self.boundingBox()
-
-        if self.magnets and innerbore > self.magnets[0].r[0]:
+        if self.magnets and innerbore > min([magnet.r[0] for magnet in self.magnets]):
             raise ValidationError(
-                f"innerbore ({innerbore}) must be less than first bitter inner radius ({self.magnets[0].r[0]})"
+                f"innerbore ({innerbore}) must be less than ({min([magnet.r[0] for magnet in self.magnets])})"
             )
-        if self.magnets and outerbore < self.magnets[-1].r[1]:
+        if self.magnets and outerbore < max([magnet.r[1] for magnet in self.magnets]):
             raise ValidationError(
-                f"outerbore ({outerbore}) must be greater than last bitter outer radius ({self.magnets[-1].r[1]})"
+                f"outerbore ({outerbore}) must be greater than last bitter outer radius ({max([magnet.r[1] for magnet in self.magnets])})"
             )
         
-        # check that magnets are stored in ascending order of radius
+        # check that magnets are not intersecting
         for i in range(1, len(self.magnets)):
-            if self.magnets[i].r[0] <= self.magnets[i - 1].r[0]:
+            rb, zb = self.magnets[i - 1].boundingBox()
+            if self.magnets[i].intersect(rb, zb):
                 raise ValidationError(
-                    f"magnets must be ordered by ascending inner radius: magnet {i} has inner radius {self.magnets[i].r[0]} which is not greater than previous helix inner radius {self.magnets[i - 1].r[0]}"
+                    f"magnets intersect: magnet[{i}] intersect magnet[{i-1}]: /n{self.magnets[i]} /n{self.magnets[i-1]}"
                 )   
         
 
@@ -238,14 +239,18 @@ class Bitters(YAMLObjectBase):
 
     def intersect(self, r: list[float], z: list[float]) -> bool:
         """
-        Check if intersection with rectangle defined by r,z is empty or not
-        return False if empty, True otherwise
+        Check if rectangle defined by r,z intersects with bounding box.
+        
+        Args:
+            r: [r_min, r_max] radial bounds to check
+            z: [z_min, z_max] axial bounds to check
+            
+        Returns:
+            True if intersection is non-empty, False otherwise
         """
-
         (r_i, z_i) = self.boundingBox()
 
         r_overlap = max(r_i[0], r[0]) < min(r_i[1], r[1])
-        z_overlap = max(z_i[0], z[0]) < min(z_i[1], z[1])#
+        z_overlap = max(z_i[0], z[0]) < min(z_i[1], z[1])
         
         return r_overlap and z_overlap
-
