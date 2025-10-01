@@ -482,14 +482,29 @@ def test_comparison_with_original_functionality():
             os.unlink(json_file)
 
 
-    inner_json = json.loads(inner.to_json())
+    inner_json = json.loads(inner.to_json())    
+    with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+        json_str_file = f.name
+        json.dump(inner_json, f)
+
+    try:
+        inner_from_json = InnerCurrentLead.from_json(json_str_file)
+        assert inner_from_json.name == inner.name
+    finally:
+        if os.path.exists(json_str_file):
+            os.unlink(json_str_file)
+
     outer_json = json.loads(outer.to_json())
-    
-    inner_from_json = InnerCurrentLead.from_json(json.dumps(inner_json))
-    outer_from_json = OuterCurrentLead.from_json(json.dumps(outer_json))
-    
-    assert inner_from_json.name == inner.name
-    assert outer_from_json.name == outer.name
+    with tempfile.NamedTemporaryFile(mode='w', suffix='.json', delete=False) as f:
+        json_str_file = f.name
+        json.dump(outer_json, f)
+
+    try:
+        outer_from_json = InnerCurrentLead.from_json(json_str_file)
+        assert outer_from_json.name == outer.name
+    finally:
+        if os.path.exists(json_str_file):
+            os.unlink(json_str_file)
     
     print("✓ All functionality preserved and working correctly")
     print("  - Attribute preservation: ✓")
