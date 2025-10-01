@@ -62,7 +62,7 @@ class TestGeometricOperations:
         
         axi = ModelAxi("test", 50.0, [1.0], [10.0])
         model3d = Model3D("test", "test_cad", False, False)
-        shape = Shape("test", "rectangular", 5, [90.0], 0, "CENTER")
+        shape = Shape("test", "rectangular", 5, [90.0], 0, "BELOW")
         
         helix = Helix("intersect_helix", [10.0, 20.0], [0.0, 50.0], 1.0, True, False, axi, model3d, shape)
         ring = Ring("intersect_ring", [15.0, 25.0], [20.0, 30.0], 6, 30.0, True, False)

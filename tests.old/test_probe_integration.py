@@ -50,7 +50,7 @@ class TestProbeIntegration:
         )
         
         assert len(supras.probes) == 1
-        assert supras.probes[0].probe_type == "voltage_taps"
+        assert supras.probes[0].type == "voltage_taps"
 
     def test_probe_string_references(self):
         """Test probe collections can handle string references"""

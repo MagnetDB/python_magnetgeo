@@ -58,7 +58,7 @@ def sample_shape():
         length=10,
         angle=[90.0, 90.0, 90.0, 90.0],
         onturns=0,
-        position="CENTER"
+        position="BELOW"
     )
 
 
@@ -97,9 +97,9 @@ def sample_probe():
     """Fixture providing a sample Probe object"""
     return Probe(
         name="test_probe",
-        probe_type="voltage_taps",
-        index=["V1", "V2", "V3"],
-        locations=[[16.0, 0.0, 25.0], [20.0, 0.0, 50.0], [24.0, 0.0, 75.0]]
+        type="voltage_taps",
+        labels=["V1", "V2", "V3"],
+        points=[[16.0, 0.0, 25.0], [20.0, 0.0, 50.0], [24.0, 0.0, 75.0]]
     )
 
 

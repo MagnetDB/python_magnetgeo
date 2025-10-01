@@ -34,7 +34,7 @@ class TestIntegration:
         model3d = Model3D("workflow_model3d", "workflow_cad", False, False)
         
         # Create Shape
-        shape = Shape("workflow_shape", "rectangular", 8, [90.0] * 4, 0, "CENTER")
+        shape = Shape("workflow_shape", "rectangular", 8, [90.0] * 4, 0, "BELOW")
         
         # Create Helix
         helix = Helix("workflow_helix", [12.0, 22.0], [0.0, 60.0], 1.8, False, True, axi, model3d, shape)
@@ -86,7 +86,7 @@ class TestIntegration:
         # Create different magnet types with proper constructors
         axi = ModelAxi("site_axi", 50.0, [1.0], [10.0])
         model3d = Model3D("site_model3d", "site_cad", False, False)
-        shape = Shape("site_shape", "rectangular", 5, [90.0], 0, "CENTER")
+        shape = Shape("site_shape", "rectangular", 5, [90.0], 0, "BELOW")
         
         helix = Helix("site_helix", [10.0, 20.0], [0.0, 50.0], 2.0, True, False, axi, model3d, shape)
         insert = Insert("site_insert", [helix], [], [], [], [], 8.0, 25.0, [])
@@ -122,9 +122,9 @@ class TestIntegration:
         # Create voltage tap probes
         voltage_probes = Probe(
             name="integration_voltage",
-            probe_type="voltage_taps", 
-            index=["V1", "V2", "V3", "V4"],
-            locations=[
+            type="voltage_taps", 
+            labels=["V1", "V2", "V3", "V4"],
+            points=[
                 [14.0, 0.0, 10.0],
                 [16.0, 0.0, 20.0], 
                 [18.0, 0.0, 30.0],
@@ -135,9 +135,9 @@ class TestIntegration:
         # Create temperature probes
         temp_probes = Probe(
             name="integration_temperature",
-            probe_type="temperature",
-            index=[1, 2, 3],
-            locations=[
+            type="temperature",
+            labels=[1, 2, 3],
+            points=[
                 [15.0, 2.5, 15.0],
                 [17.0, -2.5, 25.0],
                 [19.0, 0.0, 35.0]
@@ -149,10 +149,10 @@ class TestIntegration:
         assert temp_probes.get_probe_count() == 3
         
         # Test probe lookup
-        v2_info = voltage_probes.get_probe_by_index("V2")
+        v2_info = voltage_probes.get_probe_by_labels("V2")
         assert v2_info["location"] == [16.0, 0.0, 20.0]
         
-        t2_info = temp_probes.get_probe_by_index(2)
+        t2_info = temp_probes.get_probe_by_labels(2)
         assert t2_info["location"] == [17.0, -2.5, 25.0]
         
         # Test adding probes
@@ -160,8 +160,8 @@ class TestIntegration:
         assert voltage_probes.get_probe_count() == 5
         
         # Test location filtering
-        voltage_locs = voltage_probes.get_locations_by_type("voltage_taps")
-        temp_locs = temp_probes.get_locations_by_type("temperature")
+        voltage_locs = voltage_probes.get_points_by_type("voltage_taps")
+        temp_locs = temp_probes.get_points_by_type("temperature")
         
         assert len(voltage_locs) == 5  # Including added probe
         assert len(temp_locs) == 3
@@ -169,7 +169,7 @@ class TestIntegration:
         # Test with Insert - create proper Helix
         axi = ModelAxi("probe_axi", 60.0, [1.0], [10.0])
         model3d = Model3D("probe_model3d", "probe_cad", False, False)
-        shape = Shape("probe_shape", "rectangular", 5, [90.0], 0, "CENTER")
+        shape = Shape("probe_shape", "rectangular", 5, [90.0], 0, "BELOW")
         
         helix = Helix("probe_helix", [12.0, 24.0], [0.0, 60.0], 2.2, True, True, axi, model3d, shape)
         insert_with_probes = Insert(
@@ -185,8 +185,8 @@ class TestIntegration:
         )
         
         assert len(insert_with_probes.probes) == 2
-        assert insert_with_probes.probes[0].probe_type == "voltage_taps"
-        assert insert_with_probes.probes[1].probe_type == "temperature"
+        assert insert_with_probes.probes[0].type == "voltage_taps"
+        assert insert_with_probes.probes[1].type == "temperature"
 
     def test_serialization_integration(self, temp_json_file):
         """Test serialization preserves all data through complex workflows"""
@@ -233,8 +233,8 @@ class TestIntegration:
         # Verify probe data
         probe_data = parsed["probes"][0]
         assert probe_data["__classname__"] == "Probe"
-        assert probe_data["probe_type"] == "hall_sensors"
-        assert len(probe_data["locations"]) == 2
+        assert probe_data["type"] == "hall_sensors"
+        assert len(probe_data["points"]) == 2
 
     def test_geometric_consistency_integration(self):
         """Test geometric operations are consistent across complex structures"""
@@ -243,8 +243,8 @@ class TestIntegration:
         axi2 = ModelAxi("outer_axi", 80.0, [1.5], [8.0])
         model3d1 = Model3D("inner_model3d", "inner_cad", False, False)
         model3d2 = Model3D("outer_model3d", "outer_cad", False, False)
-        shape1 = Shape("inner_shape", "rectangular", 3, [90.0], 0, "CENTER")
-        shape2 = Shape("outer_shape", "rectangular", 4, [90.0], 0, "CENTER")
+        shape1 = Shape("inner_shape", "rectangular", 3, [90.0], 0, "BELOW")
+        shape2 = Shape("outer_shape", "rectangular", 4, [90.0], 0, "BELOW")
         
         inner_helix = Helix("inner", [10.0, 15.0], [0.0, 100.0], 1.0, True, False, axi1, model3d1, shape1)
         outer_helix = Helix("outer", [20.0, 25.0], [10.0, 90.0], 1.5, False, True, axi2, model3d2, shape2)

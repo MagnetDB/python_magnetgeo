@@ -88,17 +88,17 @@ class TestSerialization:
         """Test Probe creation from dictionary"""
         data = {
             "name": "dict_probe",
-            "probe_type": "field_sensors",
-            "index": ["B1", "B2"],
-            "locations": [[12.0, 5.0, 25.0], [18.0, -5.0, 45.0]]
+            "type": "field_sensors",
+            "labels": ["B1", "B2"],
+            "points": [[12.0, 5.0, 25.0], [18.0, -5.0, 45.0]]
         }
         
         probe = Probe.from_dict(data)
         
         assert probe.name == "dict_probe"
-        assert probe.probe_type == "field_sensors"
-        assert probe.index == ["B1", "B2"]
-        assert len(probe.locations) == 2
+        assert probe.type == "field_sensors"
+        assert probe.labels == ["B1", "B2"]
+        assert len(probe.points) == 2
 
     @pytest.mark.parametrize("class_obj,sample_data", [
         (Ring, {"name": "test_ring", "r": [10.0, 20.0], "z": [0.0, 10.0], "n": 6, "angle": 30.0, "bpside": True, "fillets": False}),
