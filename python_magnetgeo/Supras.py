@@ -73,7 +73,7 @@ class Supras(YAMLObjectBase):
         if probes is not None:
             for probe in probes:
                 if isinstance(probe, str):
-                    self.probes.append(Probe.from_yam(f"{probe}.yaml"))
+                    self.probes.append(Probe.from_yaml(f"{probe}.yaml"))
                 else:
                     self.probes.append(probe)
         

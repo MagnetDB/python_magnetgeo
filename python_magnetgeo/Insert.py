@@ -121,11 +121,12 @@ class Insert(YAMLObjectBase):
         self.innerbore = innerbore
         self.outerbore = outerbore
         self.probes = []
-        for probe in probes:
-            if isinstance(probe, str):
-                self.probes.append(Probe.from_yam(f"{probe}.yaml"))
-            else:
-                self.probes.append(probe)
+        if probes is not None:
+            for probe in probes:
+                if isinstance(probe, str):
+                    self.probes.append(Probe.from_yaml(f"{probe}.yaml"))
+                else:
+                    self.probes.append(probe)
 
         # Compute overall bounding box
         self.r, self.z = self.boundingBox()
@@ -155,9 +156,9 @@ class Insert(YAMLObjectBase):
             
             # check that rings radius matches with helices[i] and helices[i+1] radius 
             helices_radius = [helix.r for helix in (self.helices[i], self.helices[i+1])]
-            if rings.r != helices_radius:
+            if self.rings[i].r != helices_radius:
                 raise ValidationError(
-                    f"Ring {i} radius {rings[i].r} does not match with adjacent helices radii {helices_radius}"
+                    f"Ring {i} radius {self.rings[i].r} does not match with adjacent helices radii {helices_radius}"
                 )
 
     def get_channels(
