@@ -221,19 +221,8 @@ class Bitters(YAMLObjectBase):
         so far exclude Leads
         """
 
-        rb = [0, 0]
-        zb = [0, 0]
-
-        for i, bitter in enumerate(self.magnets):
-
-            if i == 0:
-                rb = bitter.r
-                zb = bitter.z
-
-            rb[0] = min(rb[0], bitter.r[0])
-            zb[0] = min(zb[0], bitter.z[0])
-            rb[1] = max(rb[1], bitter.r[1])
-            zb[1] = max(zb[1], bitter.z[1])
+        rb = [min([bitter.r[0] for bitter in self.magnets]), max([bitter.r[1] for bitter in self.magnets])]
+        zb = [min([bitter.z[0] for bitter in self.magnets]), max([bitter.z[1] for bitter in self.magnets])]
 
         return (rb, zb)
 

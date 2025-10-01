@@ -46,7 +46,7 @@ def test_refactored_bitters_functionality():
         outerbore=0.18,
         probes=[]
     )
-    
+
     print(f"✓ Bitters created: {bitters}")
     
     # Test that all inherited methods exist
