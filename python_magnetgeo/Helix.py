@@ -75,13 +75,36 @@ class Helix(YAMLObjectBase):
         self.r = r
         self.z = z
         self.cutwidth = cutwidth
-        self.modelaxi = modelaxi
-        self.model3d = model3d
+        
+        if isinstance(modelaxi, str):
+            self.modelaxi = ModelAxi.from_yaml(f"{modelaxi}.yaml")
+        else:
+            self.modelaxi = modelaxi
 
-        self.shape = shape
-        self.chamfers = chamfers if chamfers is not None else []
-        self.grooves = grooves if grooves is not None else Groove()
+        if isinstance(model3d, str):
+            self.model3d = Model3D.from_yaml(f"{model3d}.yaml")
+        else:
+            self.model3d = model3d
 
+        if isinstance(shape, str):
+            self.shape = Shape.from_yaml(f"{shape}.yaml")
+        else:
+            self.shape = shape
+        
+        self.chamfers = []
+        for chamfer in chamfers:
+            if isinstance(chamfer, str):
+                self.chamfers.append(Chamfer.from_yaml(f"{chamfer}.yaml"))
+            else:
+                self.chamfers.append(chamfer)
+                
+        if grooves is not None:
+            if isinstance(grooves, str):
+                self.grooves = Groove.from_yaml(f"{grooves}.yam")
+            else:
+                self.grooves = grooves
+        else:
+            self.grooves = Groove()
 
     def get_type(self) -> str:
         if self.model3d.with_shapes and self.model3d.with_channels:

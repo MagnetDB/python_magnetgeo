@@ -3,16 +3,11 @@
 
 """defines Bitter Insert structure"""
 
-import json
-import yaml
-
 # Add import at the top
 from .Bitter import Bitter
 from .Probe import Probe
+from .utils import getObject
 
-dict_probes = {
-    "Probe": Probe.from_dict,
-}
 
 from typing import List
 from .base import YAMLObjectBase
@@ -43,12 +38,43 @@ class Bitters(YAMLObjectBase):
                 raise ValidationError(
                     f"innerbore ({innerbore}) must be less than outerbore ({outerbore})"
                 )
-
+            
         self.name = name
-        self.magnets = magnets 
+        self.magnets = []
+        for magnet in magnets:
+            if isinstance(magnet, str):
+                magnets.append(getObject(f"{magnet}.yaml"))
+            else:
+                self.magnets.append(magnet)
         self.innerbore = innerbore
         self.outerbore = outerbore
-        self.probes = probes if probes is not None else []  # NEW ATTRIBUTE
+        
+        self.probes = []
+        for probe in probes:
+            if isinstance(probe, str):
+                self.probes.append(Probe.from_yam(f"{probe}.yaml"))
+            else:
+                self.probes.append(probe)
+        
+        # Compute overall bounding box
+        self.r, self.z = self.boundingBox()
+
+        if self.magnets and innerbore > self.magnets[0].r[0]:
+            raise ValidationError(
+                f"innerbore ({innerbore}) must be less than first bitter inner radius ({self.magnets[0].r[0]})"
+            )
+        if self.magnets and outerbore < self.magnets[-1].r[1]:
+            raise ValidationError(
+                f"outerbore ({outerbore}) must be greater than last bitter outer radius ({self.magnets[-1].r[1]})"
+            )
+        
+        # check that magnets are stored in ascending order of radius
+        for i in range(1, len(self.magnets)):
+            if self.magnets[i].r[0] <= self.magnets[i - 1].r[0]:
+                raise ValidationError(
+                    f"magnets must be ordered by ascending inner radius: magnet {i} has inner radius {self.magnets[i].r[0]} which is not greater than previous helix inner radius {self.magnets[i - 1].r[0]}"
+                )   
+        
 
     def __repr__(self):
         """representation"""

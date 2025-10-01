@@ -13,18 +13,12 @@ from .Ring import Ring
 from .InnerCurrentLead import InnerCurrentLead
 from .OuterCurrentLead import OuterCurrentLead
 from .Probe import Probe
+from .utils import getObject
 
 from typing import List
 from .base import YAMLObjectBase
 from .validation import GeometryValidator, ValidationError
 
-dict_leads = {
-    "InnerCurrentLead": InnerCurrentLead.from_dict,
-    "OuterCurrentLead": OuterCurrentLead.from_dict,
-}
-dict_probes = {
-    "Probe": Probe.from_dict,
-}
 
 def filter(data: list[float], tol: float = 1.0e-6) -> list[float]:
     result = []
@@ -80,22 +74,91 @@ class Insert(YAMLObjectBase):
                 raise ValidationError(
                     f"innerbore ({innerbore}) must be less than outerbore ({outerbore})"
                 )
-
-        self.name = name
-
-        self.helices = helices
-
-        self.rings = rings
-            
         
-        self.currentleads = currentleads
+        if len(rings) > 0 and len(helices) == len(rings) -1:
+            raise ValidationError(
+                f"Number of rings ({len(rings)}) must be equal to number of helices ({len(helices)}) or one less"
+            )
+        
+        if len(hangles) > 0:
+            if len(hangles) != len(helices):
+                raise ValidationError(
+                    f"Number of hangles ({len(hangles)}) must match number of helices ({len(helices)})"
+                )
+            
+        if len(rangles) > 0:
+            if len(rangles) != len(rings):
+                raise ValidationError(
+                    f"Number of rangles ({len(rangles)}) must match number of rings ({len(rings)})"
+                )
+        
+            
+        self.name = name
+        self.helices = []
+        for helix in helices:
+            if isinstance(helix, str):
+                self.helices.append(Helix.from_yaml(f"{helix}.yaml"))
+            else:
+                self.helices.append(helix)
+
+        self.rings = []
+        for ring in rings:
+            if isinstance(ring, str):
+                self.rings.append(Ring.from_yaml(f"{ring}.yaml"))
+            else:
+                self.rings.append(ring)
+                    
+        self.currentleads = []
+        for lead in currentleads:
+            if isinstance(lead, str):
+                self.currentleads.append(getObject(f"{lead}.yaml"))
+            else:
+                self.currentleads.append(lead)
 
         self.hangles = hangles
         self.rangles = rangles
 
         self.innerbore = innerbore
         self.outerbore = outerbore
-        self.probes = probes if probes is not None else []  # NEW ATTRIBUTE
+        self.probes = []
+        for probe in probes:
+            if isinstance(probe, str):
+                self.probes.append(Probe.from_yam(f"{probe}.yaml"))
+            else:
+                self.probes.append(probe)
+
+        # Compute overall bounding box
+        self.r, self.z = self.boundingBox()
+
+        if self.helices and innerbore > self.helices[0].r[0]:
+            raise ValidationError(
+                f"innerbore ({innerbore}) must be less than first helix inner radius ({helices[0].r[0]})"
+            )
+        if self.helices and outerbore < self.helices[-1].r[1]:
+            raise ValidationError(
+                f"outerbore ({outerbore}) must be greater than last helix outer radius ({helices[-1].r[1]})"
+            )
+
+        # check that helices are stored in ascending order of radius
+        for i in range(1, len(self.helices)):
+            if self.helices[i].r[0] <= self.helices[i - 1].r[0]:
+                raise ValidationError(
+                    f"Helices must be ordered by ascending inner radius: helix {i} has inner radius {self.helices[i].r[0]} which is not greater than previous helix inner radius {self.helices[i - 1].r[0]}"
+                )   
+            
+        # check that rings are stored in ascending order of radius
+        for i in range(1, len(self.rings)):
+            if self.rings[i].r[0] <= self.rings[i - 1].r[0]:
+                raise ValidationError(
+                    f"Rings must be ordered by ascending inner radius: ring {i} has inner radius {self.rings[i].r[0]} which is not greater than previous ring inner radius {self.rings[i - 1].r[0]}"
+                )
+            
+            # check that rings radius matches with helices[i] and helices[i+1] radius 
+            helices_radius = [helix.r for helix in (self.helices[i], self.helices[i+1])]
+            if rings.r != helices_radius:
+                raise ValidationError(
+                    f"Ring {i} radius {rings[i].r} does not match with adjacent helices radii {helices_radius}"
+                )
 
     def get_channels(
         self, mname: str, hideIsolant: bool = True, debug: bool = False

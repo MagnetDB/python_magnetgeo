@@ -9,6 +9,7 @@ Provides definition for Site:
 from .Insert import Insert
 from .Bitter import Bitter
 from .Supra import Supra
+from .utils import getObject
 
 from typing import Union, Optional, List
 from .base import YAMLObjectBase
@@ -41,12 +42,31 @@ class MSite(YAMLObjectBase):
         
         self.name = name
 
-        self.magnets = magnets
+        self.magnets = []
+        for magnet in magnets:
+            if isinstance(magnet, str):
+                magnets.append(getObject(f"{magnet}.yaml"))
+            else:
+                self.magnets.append(magnet)
+
         # FIX: Keep None values as None instead of converting to empty lists
-        self.screens = screens
+        self.screens = []
+        for screen in screens:
+            if isinstance(screen, str):
+                self.screens.append(getObject(f"{screen}.yaml"))
+            else:
+                self.screens.append(screen)
+                
         self.z_offset = z_offset  
         self.r_offset = r_offset
         self.paralax = paralax
+
+        # check that magnets are stored in ascending order of radius
+        for i in range(1, len(self.magnets)):
+            if self.magnets[i].r[0] <= self.magnets[i - 1].r[0]:
+                raise ValidationError(
+                    f"magnets must be ordered by ascending inner radius: helix {i} has inner radius {self.magnets[i].r[0]} which is not greater than previous helix inner radius {self.magnets[i - 1].r[0]}"
+                )   
 
     def __repr__(self):
         """

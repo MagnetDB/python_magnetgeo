@@ -6,9 +6,10 @@
 from typing import List
 from .base import YAMLObjectBase
 from .validation import GeometryValidator, ValidationError
+
 from .Supra import Supra
 from .Probe import Probe
-
+from .utils import getObject
 
 class Supras(YAMLObjectBase):
     """
@@ -57,12 +58,49 @@ class Supras(YAMLObjectBase):
                 raise ValidationError(
                     f"innerbore ({innerbore}) must be less than outerbore ({outerbore})"
                 )
-        
         self.name = name
-        self.magnets = magnets
+        for magnet in magnets:
+            if isinstance(magnet, str):
+                magnets.append(getObject(f"{magnet}.yaml"))
+            else:
+                self.magnets.append(magnet)
         self.innerbore = innerbore
         self.outerbore = outerbore
-        self.probes = probes if probes is not None else []
+
+        self.probes = []
+        for probe in probes:
+            if isinstance(probe, str):
+                self.probes.append(Probe.from_yam(f"{probe}.yaml"))
+            else:
+                self.probes.append(probe)
+        
+        # Compute overall bounding box
+        self.r, self.z = self.boundingBox()
+
+        if self.magnets and innerbore > self.magnets[0].r[0]:
+            raise ValidationError(
+                f"innerbore ({innerbore}) must be less than first helix inner radius ({self.magnets[0].r[0]})"
+            )
+        if self.magnets and outerbore < self.magnets[-1].r[1]:
+            raise ValidationError(
+                f"outerbore ({outerbore}) must be greater than last helix outer radius ({self.magnets[-1].r[1]})"
+            )
+        
+        # check that magnets are stored in ascending order of radius
+        for i in range(1, len(self.magnets)):
+            if self.magnets[i].r[0] <= self.magnets[i - 1].r[0]:
+                raise ValidationError(
+                    f"magnets must be ordered by ascending inner radius: magnet {i} has inner radius {self.magnets[i].r[0]} which is not greater than previous helix inner radius {self.magnets[i - 1].r[0]}"
+                )   
+        
+        # Validate bore dimensions if not zero (zero means not specified)
+        if innerbore != 0 and outerbore != 0:
+            if innerbore >= outerbore:
+                raise ValidationError(
+                    f"innerbore ({innerbore}) must be less than outerbore ({outerbore})"
+                )
+        
+                
 
     def __repr__(self):
         """String representation"""
