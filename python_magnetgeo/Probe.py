@@ -44,10 +44,10 @@ class Probe(YAMLObjectBase):
             raise ValueError(f"Probe {name}: labels and points must have the same length. "
                            f"Got {len(self.labels)} indices and {len(self.points)} points.")
         
-        # Validate that each location has exactly 3 coordinates
+        # Validate that each point has exactly 3 coordinates
         for i, loc in enumerate(self.points):
             if len(loc) != 3:
-                raise ValueError(f"Probe {name}: location {i} must have exactly 3 coordinates [x, y, z]. "
+                raise ValueError(f"Probe {name}: point {i} must have exactly 3 coordinates [x, y, z]. "
                                f"Got {len(loc)} coordinates: {loc}")
 
     def __repr__(self):
@@ -83,19 +83,19 @@ class Probe(YAMLObjectBase):
         """
         return len(self.labels)
 
-    def get_probe_by_labels(self, probe_labels: Union[str, int]) -> dict:
+    def get_probe_by_labels(self, probe_label: Union[str, int]) -> dict:
         """
         return probe information by its labels
         """
         try:
-            idx = self.labels.labels(probe_labels)
+            idx = self.labels.index(probe_label)
             return {
                 "labels": self.labels[idx],
-                "location": self.points[idx],
+                "points": self.points[idx],
                 "type": self.type
             }
         except ValueError:
-            raise ValueError(f"Probe labels {probe_labels} not found in {self.name}")
+            raise ValueError(f"Probe labels {probe_label} not found in {self.name}")
 
     def get_points_by_type(self, type: str = None) -> List[List[float]]:
         """
@@ -106,27 +106,27 @@ class Probe(YAMLObjectBase):
         else:
             return []
 
-    def add_probe(self, probe_labels: Union[str, int], location: List[float]) -> None:
+    def add_probe(self, probe_labels: Union[str, int], point: List[float]) -> None:
         """
         add a new probe to the collection
         """
-        if len(location) != 3:
-            raise ValueError(f"Location must have exactly 3 coordinates [x, y, z]. Got {len(location)}: {location}")
+        if len(point) != 3:
+            raise ValueError(f"Point must have exactly 3 coordinates [x, y, z]. Got {len(point)}: {point}")
         
         if probe_labels in self.labels:
             raise ValueError(f"Probe labels {probe_labels} already exists in {self.name}")
         
         self.labels.append(probe_labels)
-        self.points.append(location)
+        self.points.append(point)
 
-    def remove_probe(self, probe_labels: Union[str, int]) -> None:
+    def remove_probe(self, probe_label: Union[str, int]) -> None:
         """
         remove a probe from the collection
         """
         try:
-            idx = self.labels.labels(probe_labels)
+            idx = self.labels.index(probe_label)
             del self.labels[idx]
             del self.points[idx]
         except ValueError:
-            raise ValueError(f"Probe labels {probe_labels} not found in {self.name}")
+            raise ValueError(f"Probe labels {probe_label} not found in {self.name}")
 
