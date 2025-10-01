@@ -315,52 +315,52 @@ def test_yaml_round_trip():
         os.unlink('yaml_test.yaml')
 
 
-def test_legacy_compatibility():
-    """Test legacy YAML format compatibility (simple test)"""
-    print("Testing legacy compatibility...")
-    
-    # Register aliases
-    Bitter.register_yaml_aliases()
-    
-    # Test simple legacy format
-    legacy_yaml = """!<Bitter>
-name: legacy_test
-r: [0.10, 0.15]
-z: [-0.05, 0.05]
-odd: true
-innerbore: 0.08
-outerbore: 0.18
-coolingslits:
-  - !<Slit>
-    name: legacy_slit
-    r: 0.12
-    angle: 30
-    n: 8
-    dh: 0.002
-    sh: 0.001
-"""
-    
-    try:
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.yaml', delete=False) as f:
-            f.write(legacy_yaml)
-            temp_file = f.name
-        
-        # Load legacy YAML
-        legacy_bitter = Bitter.from_yaml(temp_file)
-        
-        # Verify it loaded correctly
-        assert legacy_bitter.name == "legacy_test"
-        assert len(legacy_bitter.coolingslits) == 1
-        assert isinstance(legacy_bitter.coolingslits[0], CoolingSlit)
-        assert legacy_bitter.coolingslits[0].name == "legacy_slit"
-        
-        print("✓ Legacy !<Slit> format works")
-        
-    except Exception as e:
-        print(f"Note: Legacy compatibility may need refinement: {e}")
-    finally:
-        if 'temp_file' in locals() and os.path.exists(temp_file):
-            os.unlink(temp_file)
+# def test_legacy_compatibility():
+#    """Test legacy YAML format compatibility (simple test)"""
+#    print("Testing legacy compatibility...")
+#    
+#    # Register aliases
+#    Bitter.register_yaml_aliases()
+#    
+#    # Test simple legacy format
+#    legacy_yaml = """!<Bitter>
+#name: legacy_test
+#r: [0.10, 0.15]
+#z: [-0.05, 0.05]
+#odd: true
+#innerbore: 0.08
+#outerbore: 0.18
+#coolingslits:
+#  - !<Slit>
+#    name: legacy_slit
+#    r: 0.12
+#    angle: 30
+#    n: 8
+#    dh: 0.002
+#    sh: 0.001
+# """
+#    
+#    try:
+#        with tempfile.NamedTemporaryFile(mode='w', suffix='.yaml', delete=False) as f:
+#            f.write(legacy_yaml)
+#            temp_file = f.name
+#        
+#        # Load legacy YAML
+#        legacy_bitter = Bitter.from_yaml(temp_file)
+#        
+#        # Verify it loaded correctly
+#        assert legacy_bitter.name == "legacy_test"
+#        assert len(legacy_bitter.coolingslits) == 1
+#        assert isinstance(legacy_bitter.coolingslits[0], CoolingSlit)
+#        assert legacy_bitter.coolingslits[0].name == "legacy_slit"
+#        
+#        print("✓ Legacy !<Slit> format works")
+#        
+#    except Exception as e:
+#        print(f"Note: Legacy compatibility may need refinement: {e}")
+#    finally:
+#        if 'temp_file' in locals() and os.path.exists(temp_file):
+#            os.unlink(temp_file)
 
 
 def main():

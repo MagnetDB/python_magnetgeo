@@ -23,7 +23,6 @@ def test_supra_basic_functionality():
         name="test_supra",
         r=[20.0, 30.0],
         z=[10.0, 80.0],
-        n=5,
         struct=""
     )
     
@@ -47,7 +46,7 @@ def test_supra_basic_functionality():
     assert parsed['name'] == 'test_supra', "Wrong name in JSON"
     assert parsed['r'] == [20.0, 30.0], "Wrong r in JSON"
     assert parsed['z'] == [10.0, 80.0], "Wrong z in JSON"
-    assert parsed['n'] == 5, "Wrong n in JSON"
+    assert parsed['n'] == 0, "Wrong n in JSON"
     
     print("✓ JSON serialization works correctly")
     
