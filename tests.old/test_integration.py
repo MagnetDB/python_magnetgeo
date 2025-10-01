@@ -49,10 +49,10 @@ class TestIntegration:
         insert = Insert(
             name="workflow_insert",
             helices=[helix],
-            rings=[ring],
+            rings=[],
             currentleads=["inner_lead"],
-            hangles=[0.0, 180.0],
-            rangles=[0.0, 90.0, 180.0, 270.0],
+            hangles=[180.0],
+            rangles=[],
             innerbore=8.0,
             outerbore=26.0,
             probes=[probe]
@@ -178,7 +178,7 @@ class TestIntegration:
             rings=[],
             currentleads=["lead1"],
             hangles=[0.0],
-            rangles=[0.0, 90.0],
+            rangles=[],
             innerbore=10.0,
             outerbore=26.0,
             probes=[voltage_probes, temp_probes]
@@ -194,22 +194,24 @@ class TestIntegration:
         axi = ModelAxi("serial_axi", 20.0, [2.0, 3.0, 2.5], [8.0, 9.0, 8.5])
         model3d = Model3D("serial_model3d", "serial_cad", True, False)
         shape = Shape("serial_shape", "hexagonal", [12] * 6, [60.0] * 6, [1], "ALTERNATE")
-        helix = Helix("serial_helix", [15.0, 30.0], [5.0, 85.0], 3.0, False, True, axi, model3d, shape)
+        helix1 = Helix("serial_helix", [15.0, 30.0], [5.0, 85.0], 3.0, False, True, axi, model3d, shape)
+        helix2 = Helix("serial_helix", [35.0, 40.0], [5.0, 85.0], 3.0, False, True, axi, model3d, shape)
+        helix3 = Helix("serial_helix", [45.0, 60.0], [5.0, 85.0], 3.0, False, True, axi, model3d, shape)
         
-        ring1 = Ring("serial_ring1", [13.0, 15.0, 30, 32.0], [35.0, 45.0], 6, 30.0, True, False)
-        ring2 = Ring("serial_ring2", [15.0, 30.0, 32.0, 34.0], [55.0, 65.0], 8, 45.0, True, False)
+        ring1 = Ring("serial_ring1", [15.0, 30, 35.0, 40.0], [35.0, 45.0], 6, 30.0, True, False)
+        ring2 = Ring("serial_ring2", [35.0, 40.0, 45.0, 60.0], [55.0, 65.0], 8, 45.0, True, False)
         
         probe = Probe("serial_probe", "hall_sensors", ["H1", "H2"], [[20.0, 5.0, 40.0], [25.0, -5.0, 60.0]])
         
         insert = Insert(
             name="serialization_insert",
-            helices=[helix],
+            helices=[helix1, helix2, helix3],
             rings=[ring1, ring2],
             currentleads=["inner", "outer"],
-            hangles=[0.0, 120.0, 240.0],
-            rangles=[30.0, 90.0, 150.0, 210.0, 270.0, 330.0],
+            hangles=[120.0, 90.0, 60.0],
+            rangles=[30.0, 90.0],
             innerbore=11.0,
-            outerbore=35.0,
+            outerbore=65.0,
             probes=[probe]
         )
         
@@ -220,7 +222,7 @@ class TestIntegration:
         # Verify all nested structures preserved
         assert parsed["__classname__"] == "Insert"
         assert parsed["name"] == "serialization_insert"
-        assert len(parsed["helices"]) == 1
+        assert len(parsed["helices"]) == 3
         assert len(parsed["rings"]) == 2
         assert len(parsed["probes"]) == 1
         

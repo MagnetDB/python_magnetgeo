@@ -111,8 +111,8 @@ def sample_insert(sample_helix, sample_ring, sample_probe):
         helices=[sample_helix],
         rings=[sample_ring],
         currentleads=["inner_lead"],
-        hangles=[0.0, 180.0],
-        rangles=[0.0, 90.0, 180.0, 270.0],
+        hangles=[180.0],
+        rangles=[90.0],
         innerbore=10.0,
         outerbore=30.0,
         probes=[sample_probe]

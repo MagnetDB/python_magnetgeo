@@ -37,8 +37,8 @@ class TestMagnetCollections:
             helices=["helix1", "helix2", "helix3"],
             rings=["ring1", "ring2"],
             currentleads=["inner", "outer"],
-            hangles=[0.0, 90.0, 180.0, 270.0],
-            rangles=[45.0, 135.0, 225.0, 315.0],
+            hangles=[0.0, 90.0, 180.0],
+            rangles=[45.0, 135.0],
             innerbore=12.0,
             outerbore=40.0,
             probes=[]

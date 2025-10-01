@@ -47,8 +47,8 @@ def test_insert_yaml_roundtrip():
         helices=[helix],
         rings=[],
         currentleads=[inner_lead],  # FIX: Use object instead of string reference
-        hangles=[0.0, 180.0],
-        rangles=[0.0, 90.0],
+        hangles=[0.0],
+        rangles=[],
         innerbore=9.0,
         outerbore=27.0,
         probes=[]
@@ -116,8 +116,8 @@ def test_insert_yaml_with_string_references():
         helices=[helix],
         rings=[],
         currentleads=["inner"],  # String reference to "inner.yaml"
-        hangles=[0.0, 180.0],
-        rangles=[0.0, 90.0],
+        hangles=[180.0],
+        rangles=[],
         innerbore=9.0,
         outerbore=27.0,
         probes=[]
@@ -172,8 +172,8 @@ def test_insert_empty_currentleads():
         helices=[helix],
         rings=[],
         currentleads=[],  # Empty list - no current leads
-        hangles=[0.0, 180.0],
-        rangles=[0.0, 90.0],
+        hangles=[0.0],
+        rangles=[],
         innerbore=9.0,
         outerbore=27.0,
         probes=[]

@@ -100,8 +100,8 @@ class TestSerialization:
             "helices": [helix_dict],              # Use inline dict
             "rings": [ring_dict],                 # Use inline dict
             "currentleads": [inner_lead_dict, outer_lead_dict],  # Use inline dicts for both leads
-            "hangles": [0.0, 180.0],
-            "rangles": [0.0, 90.0, 180.0, 270.0],
+            "hangles": [180.0],
+            "rangles": [90.0],
             "innerbore": 8.0,
             "outerbore": 35.0,
             "probes": [probe_dict]                # Use inline dict

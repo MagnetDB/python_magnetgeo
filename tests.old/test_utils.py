@@ -93,8 +93,8 @@ class TestDataFactory:
             "helices": ["helix1"],
             "rings": ["ring1"],
             "currentleads": ["inner_lead"],
-            "hangles": [0.0, 180.0],
-            "rangles": [0.0, 90.0, 180.0, 270.0],
+            "hangles": [180.0],
+            "rangles": [90.0],
             "innerbore": 10.0,
             "outerbore": 30.0,
             "probes": []
