@@ -31,7 +31,7 @@ class TestHelix:
         helix = Helix(
             name="init_helix",
             r=[10.0, 20.0],
-            z=[0.0, 50.0],
+            z=[0.0, 80.0],
             cutwidth=1.5,
             odd=False,
             dble=True,
@@ -42,7 +42,7 @@ class TestHelix:
         
         assert helix.name == "init_helix"
         assert helix.r == [10.0, 20.0]
-        assert helix.z == [0.0, 50.0]
+        assert helix.z == [0.0, 80.0]
         assert helix.cutwidth == 1.5
         assert helix.odd is False
         assert helix.dble is True

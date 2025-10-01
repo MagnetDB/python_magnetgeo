@@ -84,7 +84,7 @@ class TestIntegration:
     def test_magnet_site_integration(self):
         """Test complete MSite with multiple magnet types"""
         # Create different magnet types with proper constructors
-        axi = ModelAxi("site_axi", 50.0, [1.0], [10.0])
+        axi = ModelAxi("site_axi", 5.0, [1.0], [10.0])
         model3d = Model3D("site_model3d", "site_cad", False, False)
         shape = Shape("site_shape", "rectangular", 5, [90.0], 0, "BELOW")
         
@@ -167,7 +167,7 @@ class TestIntegration:
         assert len(temp_locs) == 3
         
         # Test with Insert - create proper Helix
-        axi = ModelAxi("probe_axi", 60.0, [1.0], [10.0])
+        axi = ModelAxi("probe_axi", 5.0, [1.0], [10.0])
         model3d = Model3D("probe_model3d", "probe_cad", False, False)
         shape = Shape("probe_shape", "rectangular", 5, [90.0], 0, "BELOW")
         
@@ -191,7 +191,7 @@ class TestIntegration:
     def test_serialization_integration(self, temp_json_file):
         """Test serialization preserves all data through complex workflows"""
         # Create complex nested structure
-        axi = ModelAxi("serial_axi", 20.0, [2.0, 3.0, 2.5], [8.0, 9.0, 8.5])
+        axi = ModelAxi("serial_axi", 32.125, [2.0, 3.0, 2.5], [8.0, 9.0, 8.5])
         model3d = Model3D("serial_model3d", "serial_cad", True, False)
         shape = Shape("serial_shape", "hexagonal", [12] * 6, [60.0] * 6, [1], "ALTERNATE")
         helix1 = Helix("serial_helix", [15.0, 30.0], [5.0, 85.0], 3.0, False, True, axi, model3d, shape)
@@ -241,8 +241,8 @@ class TestIntegration:
     def test_geometric_consistency_integration(self):
         """Test geometric operations are consistent across complex structures"""
         # Create objects with known geometric relationships
-        axi1 = ModelAxi("inner_axi", 100.0, [1.0], [10.0])
-        axi2 = ModelAxi("outer_axi", 80.0, [1.5], [8.0])
+        axi1 = ModelAxi("inner_axi", 5.0, [1.0], [10.0])
+        axi2 = ModelAxi("outer_axi", 6.0, [1.5], [8.0])
         model3d1 = Model3D("inner_model3d", "inner_cad", False, False)
         model3d2 = Model3D("outer_model3d", "outer_cad", False, False)
         shape1 = Shape("inner_shape", "rectangular", 3, [90.0], 0, "BELOW")

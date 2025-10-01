@@ -232,7 +232,7 @@ def test_refactored_modelaxi():
     # Test basic creation
     modelaxi = ModelAxi(
         name="test_modelaxi",
-        h=100.0,
+        h=112.5,
         turns=[10.0, 20.0, 15.0],
         pitch=[5.0, 5.0, 5.0]
     )
@@ -240,12 +240,11 @@ def test_refactored_modelaxi():
     print(f"✓ ModelAxi created: {modelaxi}")
     
     # Test default constructor
-    empty_modelaxi = ModelAxi()
-    assert empty_modelaxi.name == ""
-    assert empty_modelaxi.h == 0.0
-    assert empty_modelaxi.turns == []
-    assert empty_modelaxi.pitch == []
-    print("✓ Default ModelAxi created successfully")
+    try:
+        empty_modelaxi = ModelAxi()
+        assert False, "Should have raised ValidationError for empty name"
+    except ValidationError as e:
+        print(f"✓ Empty name validation: {e}")
     
     # Test that all inherited methods exist
     assert hasattr(modelaxi, 'dump')
@@ -261,7 +260,7 @@ def test_refactored_modelaxi():
     json_str = modelaxi.to_json()
     parsed = json.loads(json_str)
     assert parsed['name'] == 'test_modelaxi'
-    assert parsed['h'] == 100.0
+    assert parsed['h'] == 112.5
     assert parsed['turns'] == [10.0, 20.0, 15.0]
     assert parsed['pitch'] == [5.0, 5.0, 5.0]
     assert parsed['__classname__'] == 'ModelAxi'
@@ -271,14 +270,14 @@ def test_refactored_modelaxi():
     # Test from_dict
     dict_data = {
         'name': 'dict_modelaxi',
-        'h': 150.0,
+        'h': 30.0,
         'turns': [5.0, 10.0, 5.0],
         'pitch': [3.0, 3.0, 3.0]
     }
     
     dict_modelaxi = ModelAxi.from_dict(dict_data)
     assert dict_modelaxi.name == 'dict_modelaxi'
-    assert dict_modelaxi.h == 150.0
+    assert dict_modelaxi.h == 30.0
     assert dict_modelaxi.turns == [5.0, 10.0, 5.0]
     assert dict_modelaxi.pitch == [3.0, 3.0, 3.0]
     
@@ -294,7 +293,7 @@ def test_refactored_modelaxi():
     test_pitch = [5.0, 5.0, 5.0, 3.0, 3.0]
     modelaxi_compact = ModelAxi(
         name="compact_test",
-        h=100.0,
+        h=90.0,
         turns=test_turns,
         pitch=test_pitch
     )
@@ -352,7 +351,7 @@ def test_cross_class_integration():
     
     modelaxi = ModelAxi(
         name="integration_modelaxi",
-        h=100.0,
+        h=75.0,
         turns=[10.0, 20.0],
         pitch=[5.0, 5.0]
     )
@@ -430,7 +429,7 @@ def test_validation_edge_cases():
     # Test compact with single element
     single_model = ModelAxi(
         name="single",
-        h=50.0,
+        h=37.5,
         turns=[15.0],
         pitch=[5.0]
     )
@@ -443,7 +442,7 @@ def test_validation_edge_cases():
     # Test compact with very similar pitches (within tolerance)
     similar_model = ModelAxi(
         name="similar",
-        h=100.0,
+        h=75.0,
         turns=[10.0, 10.0, 10.0],
         pitch=[5.0, 5.00001, 4.99999]  # Within default tolerance
     )

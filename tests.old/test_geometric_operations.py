@@ -60,7 +60,7 @@ class TestGeometricOperations:
         from python_magnetgeo.Model3D import Model3D
         from python_magnetgeo.Shape import Shape
         
-        axi = ModelAxi("test", 50.0, [1.0], [10.0])
+        axi = ModelAxi("test", 5.0, [1.0], [10.0])
         model3d = Model3D("test", "test_cad", False, False)
         shape = Shape("test", "rectangular", 5, [90.0], 0, "BELOW")
         

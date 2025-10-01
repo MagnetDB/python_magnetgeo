@@ -132,7 +132,7 @@ def test_nested_object_handling():
     # Create nested objects
     modelaxi = ModelAxi(
         name="test_helix",
-        h=0.04,
+        h=0.048,
         turns=[5, 7],
         pitch=[0.008, 0.008]
     )
@@ -188,7 +188,7 @@ def test_nested_object_handling():
         'outerbore': 0.19,
         'modelaxi': {
             'name': 'inline_helix',
-            'h': 0.05,
+            'h': 0.063,
             'turns': [6, 8],
             'pitch': [0.009, 0.009]
         },

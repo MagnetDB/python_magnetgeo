@@ -32,7 +32,7 @@ from python_magnetgeo.validation import ValidationError
 
 def create_sample_helix():
     """Create a sample helix for testing"""
-    axi = ModelAxi("test_axi", 50.0, [1.0], [10.0])
+    axi = ModelAxi("test_axi", 5.0, [1.0], [10.0])
     model3d = Model3D("test_model3d", "test_cad", False, False)
     shape = Shape("test_shape", "rectangular", [5], [90.0], [0], "ABOVE")
     
@@ -45,7 +45,7 @@ def create_sample_helix():
         cutwidth=0.1,
         modelaxi=axi,
         model3d=model3d,
-        shape=shape
+        shape=shape,
     )
     return helix
 
@@ -61,6 +61,8 @@ def create_sample_insert():
         hangles=[],
         rangles=[],
         probes=[],
+        innerbore=5.0,
+        outerbore=25.0
     )
     return insert
 
@@ -90,7 +92,7 @@ def test_basic_msite_creation():
     
     assert msite.name == "minimal_msite"
     assert len(msite.magnets) == 1
-    assert msite.screens is None
+    assert msite.screens == []
     assert msite.z_offset is None
     assert msite.r_offset is None
     assert msite.paralax is None

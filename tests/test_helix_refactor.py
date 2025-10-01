@@ -26,9 +26,9 @@ def test_refactored_helix_basic_functionality():
     # Create minimal nested objects
     modelaxi = ModelAxi(
         name="test_axi",
-        pitch=15.0,
+        pitch=[15.0, 10.0, 5.0],
         turns=[2.0, 3.0, 2.5],
-        h=[10.0, 11.0, 10.5]
+        h=36.25
     )
     
     model3d = Model3D(
@@ -93,7 +93,7 @@ def test_helix_json_serialization():
     print("\nTesting Helix JSON serialization...")
     
     # Create minimal nested objects
-    modelaxi = ModelAxi("json_axi", 12.0, [1.5, 2.0, 1.5], [8.0, 9.0, 8.5])
+    modelaxi = ModelAxi("json_axi", 21.375, [1.5, 2.0, 1.5], [8.0, 9.0, 8.5])
     model3d = Model3D("json_model3d", "GMSH", False, True)
     shape = Shape("json_shape", "test", [15.0, 15.0, 15.0], [60.0, 60.0, 60.0], [1], "ABOVE")
     
@@ -143,9 +143,9 @@ def test_helix_from_dict():
         'dble': False,
         'modelaxi': {
             'name': 'dict_axi',
-            'pitch': 14.0,
+            'pitch': [10.0, 10.0, 10.],
             'turns': [2.0, 2.5, 2.0],
-            'h': [9.0, 10.0, 9.5]
+            'h': 32.5
         },
         'model3d': {
             'name': 'dict_model3d',
@@ -185,7 +185,7 @@ def test_helix_with_chamfers_and_grooves():
     """Test Helix with optional chamfers and grooves"""
     print("\nTesting Helix with chamfers and grooves...")
     
-    modelaxi = ModelAxi("groove_axi", 10.0, [2.0], [9.0])
+    modelaxi = ModelAxi("groove_axi", 9.0, [2.0], [9.0])
     model3d = Model3D("groove_model3d", "SALOME", True, True)
     shape = Shape("groove_shape", "rectangular", [15.0], [90.0, 90.0, 90.0, 90.0], [2], "ALTERNATE")
     
@@ -223,7 +223,7 @@ def test_helix_default_values():
     """Test Helix with default/optional parameters"""
     print("\nTesting Helix with default values...")
     
-    modelaxi = ModelAxi("default_axi", 11.0, [1.8], [8.8])
+    modelaxi = ModelAxi("default_axi", 7.92, [1.8], [8.8])
     model3d = Model3D("default_model3d", "GMSH", False, False)
     shape = Shape("default_shape", "rectangular", [15.0, 15, 15, 15], [90.0, 90.0, 90.0, 90.0], [1], "ALTERNATE")
     
@@ -256,7 +256,7 @@ def test_helix_validation():
     """Test that Helix validation works via GeometryValidator"""
     print("\nTesting Helix validation...")
     
-    modelaxi = ModelAxi("val_axi", 10.0, [2.0], [9.0])
+    modelaxi = ModelAxi("val_axi", 9.0, [2.0], [9.0])
     model3d = Model3D("val_model3d", "SALOME", True, False)
     shape = Shape("val_shape", "rectangular", [15.0], [90.0, 90.0, 90.0, 90.0], [2], "ALTERNATE")
     
@@ -316,14 +316,14 @@ def test_helix_yaml_roundtrip():
     """Test YAML dump and load roundtrip for Helix"""
     print("\nTesting Helix YAML round-trip...")
     
-    modelaxi = ModelAxi("yaml_axi", 13.0, [2.2, 2.8, 2.2], [10.0, 11.0, 10.5])
+    modelaxi = ModelAxi("yaml_axi", 37.95, [2.2, 2.8, 2.2], [10.0, 11.0, 10.5])
     model3d = Model3D("yaml_model3d", "SALOME", True, False)
     shape = Shape("yaml_shape", "hexagonal", [15.0], [60.0, 60.0, 60.0, 60.0, 60.0, 60.0], [1], "ALTERNATE")
     
     helix = Helix(
         name="yaml_helix",
         r=[17.0, 37.0],
-        z=[7.0, 87.0],
+        z=[7.0, 167.0],
         cutwidth=2.7,
         odd=False,
         dble=True,
@@ -365,7 +365,7 @@ def test_helix_complex_serialization():
     """Test serialization with all features (chamfers, grooves, etc)"""
     print("\nTesting complex Helix serialization...")
     
-    modelaxi = ModelAxi("complex_axi", 16.0, [2.5, 3.0, 2.5], [11.0, 12.0, 11.5])
+    modelaxi = ModelAxi("complex_axi", 46.125, [2.5, 3.0, 2.5], [11.0, 12.0, 11.5])
     model3d = Model3D("complex_model3d", "GMSH", True, True)
     shape = Shape("complex_shape", "rectangular", [15.0, 15.0, 15.0] , [45.0, 45.0, 45.0], [3], "BELOW")
     
@@ -376,7 +376,7 @@ def test_helix_complex_serialization():
     helix = Helix(
         name="complex_helix",
         r=[19.0, 39.0],
-        z=[9.0, 89.0],
+        z=[9.0, 109.0],
         cutwidth=3.2,
         odd=True,
         dble=True,
@@ -421,7 +421,7 @@ def test_helix_repr():
     """Test string representation of Helix"""
     print("\nTesting Helix __repr__...")
     
-    modelaxi = ModelAxi("repr_axi", 10.0, [2.0], [9.0])
+    modelaxi = ModelAxi("repr_axi", 9.0, [2.0], [9.0])
     model3d = Model3D("repr_model3d", "SALOME", False, False)
     shape = Shape("repr_shape", "rectangular", [15.0], [90.0, 90.0, 90.0, 90.0], [1], "ALTERNATE")
     
@@ -456,7 +456,7 @@ def test_backward_compatibility():
     print("\nTesting backward compatibility...")
     
     # Create Helix in a way that mimics old code
-    modelaxi = ModelAxi("bc_axi", 12.0, [2.0], [10.0])
+    modelaxi = ModelAxi("bc_axi", 10.0, [2.0], [10.0])
     model3d = Model3D("bc_model3d", "SALOME", True, False)
     shape = Shape("bc_shape", "rectangular", [15.0], [90.0, 90.0, 90.0, 90.0], [2], "ALTERNATE")
     

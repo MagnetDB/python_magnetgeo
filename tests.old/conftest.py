@@ -32,7 +32,7 @@ def sample_modelaxi():
     """Fixture providing a sample ModelAxi object"""
     return ModelAxi(
         name="test_axi",
-        h=25.0,
+        h=35.4,
         turns=[2.5, 3.0, 2.8],
         pitch=[8.0, 9.0, 8.5]
     )
@@ -109,10 +109,10 @@ def sample_insert(sample_helix, sample_ring, sample_probe):
     return Insert(
         name="test_insert",
         helices=[sample_helix],
-        rings=[sample_ring],
+        rings=[],
         currentleads=["inner_lead"],
         hangles=[180.0],
-        rangles=[90.0],
+        rangles=[],
         innerbore=10.0,
         outerbore=30.0,
         probes=[sample_probe]

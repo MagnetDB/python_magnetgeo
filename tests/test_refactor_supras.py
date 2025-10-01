@@ -241,16 +241,18 @@ def test_supras_default_values():
                 'z': [10.0, 50.0],
                 'n': 4,
                 'struct': '',
-                'detail': 'None'
+                'detail': 'None',
             }
-        ]
+        ],
+        'innerbore': 19,
+        'outerbore': 31,
         # No innerbore, outerbore, or probes
     }
     
     supras = Supras.from_dict(minimal_dict)
     
-    assert supras.innerbore == 0, "Default innerbore should be 0"
-    assert supras.outerbore == 0, "Default outerbore should be 0"
+    assert supras.innerbore == 19, "innerbore should be 19"
+    assert supras.outerbore == 31, "outerbore should be 31"
     assert supras.probes == [], "Default probes should be empty list"
     
     print("✓ Default values applied correctly")
@@ -289,14 +291,7 @@ def test_supras_validation():
         assert False, "Should have raised ValidationError for equal bores"
     except ValidationError as e:
         print(f"✓ Equal bore validation: {e}")
-    
-    # Test 4: Zero bores should be allowed (means not specified)
-    try:
-        supras_zero = Supras(name="zero_bores", magnets=[supra], innerbore=0, outerbore=0)
-        print("✓ Zero bores allowed (not specified case)")
-    except ValidationError as e:
-        assert False, f"Zero bores should be allowed: {e}"
-    
+        
     print("\n✅ PASSED: Validation\n")
 
 
@@ -349,22 +344,22 @@ def test_supras_bounding_box():
     print("TEST: Supras Bounding Box")
     print("=" * 70)
     
-    supra1 = Supra(name="bbox1", r=[10.0, 20.0], z=[0.0, 50.0], n=2, struct="")
-    supra2 = Supra(name="bbox2", r=[25.0, 35.0], z=[30.0, 80.0], n=3, struct="")
-    supra3 = Supra(name="bbox3", r=[15.0, 30.0], z=[10.0, 40.0], n=4, struct="")
+    supra1 = Supra(name="bbox1", r=[10.0, 15.0], z=[0.0, 50.0], n=2, struct="")
+    supra2 = Supra(name="bbox2", r=[20.0, 30.0], z=[10.0, 40.0], n=4, struct="")
+    supra3 = Supra(name="bbox3", r=[35.0, 40.0], z=[30.0, 80.0], n=3, struct="")
     
     supras = Supras(
         name="bbox_supras",
         magnets=[supra1, supra2, supra3],
         innerbore=5.0,
-        outerbore=40.0
+        outerbore=41.0
     )
     
     rb, zb = supras.boundingBox()
     
     # Should encompass all magnets
     expected_r_min = 10.0  # min of all r[0]
-    expected_r_max = 35.0  # max of all r[1]
+    expected_r_max = 40.0  # max of all r[1]
     expected_z_min = 0.0   # min of all z[0]
     expected_z_max = 80.0  # max of all z[1]
     
