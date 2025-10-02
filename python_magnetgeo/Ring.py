@@ -23,17 +23,26 @@ class Ring(YAMLObjectBase):
                  n: int = 0, angle: float = 0, bpside: bool = True, 
                  fillets: bool = False, cad: str = None) -> None:
         """
-        Initialize Ring object.
+        Initialize Ring object that connect to helices: Helix 0 and Helix 1.
         
         Args:
             name: Ring identifier
-            r: [inner_radius, outer_radius] 
+            r: [inner_radius Helix0, outer_radius Helix 0, inner_radius Helix 1, outer_radius Helix 1] 
             z: [lower_z, upper_z]
             n: Number parameter
             angle: Angular position in degrees
             bpside: Boolean parameter side
             fillets: Whether to include fillets
             cad: CAD identifier
+
+        Raises:
+            - ValidationError if geometry is not valid
+
+        Note:
+            - Radii are in mm
+            - z coordinates are in mm
+            - angle is in degrees
+            - radius for Helix 0 and Helix 1 shall be given  according to bpside
         """
         # General validation
         GeometryValidator.validate_name(name)
@@ -52,9 +61,6 @@ class Ring(YAMLObjectBase):
         # Check ring cooling slits
         if n * angle > 360:
             raise ValidationError(f"Ring: {n} coolingslits total angular length ({n * angle} cannot exceed 360 degrees")
-        
-        print(f"Ring.__init__: name={name}, r={r}, z={z}", flush=True)
-        
         
         # Set all attributes
         self.name = name
