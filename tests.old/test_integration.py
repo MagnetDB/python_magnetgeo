@@ -21,6 +21,8 @@ from python_magnetgeo.Probe import Probe
 from python_magnetgeo.Shape import Shape
 from python_magnetgeo.ModelAxi import ModelAxi
 from python_magnetgeo.Model3D import Model3D
+from python_magnetgeo.InnerCurrentLead import InnerCurrentLead
+from python_magnetgeo.OuterCurrentLead import OuterCurrentLead
 
 class TestIntegration:
     """End-to-end integration tests"""
@@ -201,13 +203,16 @@ class TestIntegration:
         ring1 = Ring("serial_ring1", [15.0, 30, 35.0, 40.0], [35.0, 45.0], 6, 30.0, True, False)
         ring2 = Ring("serial_ring2", [35.0, 40.0, 45.0, 60.0], [55.0, 65.0], 8, 45.0, True, False)
         
+        inner = InnerCurrentLead("inner", [8.0, 9.5], 52.0, [5.0, 10.0, 0.0, 45.0, 0.0, 8], [25.0, 5.0], True)
+        outer = OuterCurrentLead("outer", [35.0, 40.0], 52.0, [37.5, 10.0, 15.0, 40.0], [5.0, 10.0, 30.0, 0.0])
+
         probe = Probe("serial_probe", "hall_sensors", ["H1", "H2"], [[20.0, 5.0, 40.0], [25.0, -5.0, 60.0]])
         
         insert = Insert(
             name="serialization_insert",
             helices=[helix1, helix2, helix3],
             rings=[ring1, ring2],
-            currentleads=["inner", "outer"],
+            currentleads=[inner, outer],
             hangles=[120.0, 90.0, 60.0],
             rangles=[30.0, 90.0],
             innerbore=11.0,

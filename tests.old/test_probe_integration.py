@@ -66,7 +66,7 @@ class TestProbeIntegration:
             probes=["probe_ref1", "probe_ref2"]  # String references
         )
         
-        assert insert.probes == ["probe_ref1", "probe_ref2"]
+        assert [probe.name for probe in insert.probes] == ["probe_ref1", "probe_ref2"]
 
     def test_empty_probe_collections(self):
         """Test classes handle empty probe collections properly"""

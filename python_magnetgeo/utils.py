@@ -355,3 +355,8 @@ def getObject(filename: str):
     """
     obj = loadYaml("getObject", filename)
     return obj
+
+def flatten(S: list) -> list:
+    from pandas.core.common import flatten as pd_flatten
+
+    return list(pd_flatten(S))

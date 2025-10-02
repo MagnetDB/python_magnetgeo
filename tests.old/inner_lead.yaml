@@ -1,0 +1,7 @@
+!<InnerCurrentLead>
+name: "inner_lead"
+r: [10.0, 12.0]
+h: 60.0
+holes: []
+support: []
+fillet: false

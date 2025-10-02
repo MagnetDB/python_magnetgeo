@@ -13,7 +13,7 @@ from .Ring import Ring
 from .InnerCurrentLead import InnerCurrentLead
 from .OuterCurrentLead import OuterCurrentLead
 from .Probe import Probe
-from .utils import getObject
+from .utils import getObject, flatten
 
 from typing import List
 from .base import YAMLObjectBase
@@ -156,7 +156,7 @@ class Insert(YAMLObjectBase):
             
             # check that rings radius matches with helices[i] and helices[i+1] radius 
             helices_radius = [helix.r for helix in (self.helices[i], self.helices[i+1])]
-            if self.rings[i].r != helices_radius:
+            if self.rings[i].r != flatten(helices_radius):
                 raise ValidationError(
                     f"Ring {i} radius {self.rings[i].r} does not match with adjacent helices radii {helices_radius}"
                 )

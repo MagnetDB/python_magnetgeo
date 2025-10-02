@@ -1,0 +1,21 @@
+!<Probe>
+labels:
+- T1
+- T2
+- T3
+- T4
+points:
+- - 10.5
+  - 0.0
+  - 15.2
+- - 12.3
+  - 0.0
+  - 18.7
+- - 14.1
+  - 0.0
+  - 22.1
+- - 15.9
+  - 0.0
+  - 25.6
+name: probe_ref2
+type: temperature_taps
