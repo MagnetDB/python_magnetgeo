@@ -1,8 +1,14 @@
-python-magnetgeo (0.8.0-1) UNRELEASED; urgency=medium
+python-magnetgeo (1.0.0-1) UNRELEASED; urgency=medium
 
   * new upstream release
 
- -- Christophe Trophime <christophe.trophime@lncmi.cnrs.fr>  Sat, 09 Aug 2025 19:44:32 +0200
+ -- Christophe Trophime <christophe.trophime@lncmi.cnrs.fr>  Thu, 02 Oct 2025 09:46:22 +0200
+
+python-magnetgeo (0.8.0-1) UNRELEASED; urgency=medium
+
+  * add probes class
+
+ -- Christophe Trophime <christophe.trophime@lncmi.cnrs.fr>  Tue, 02 Sep 2025 09:46:22 +0200
 
 python-magnetgeo (0.7.0-1) unstable; urgency=medium
 

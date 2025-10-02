@@ -2,5 +2,5 @@
 
 __author__ = """Christophe Trophime"""
 __email__ = "christophe.trophime@lncmi.cnrs.fr"
-__version__ = "0.9.0"
+__version__ = "1.0.0"
 

@@ -48,6 +48,6 @@ setup(
     test_suite="tests",
     tests_require=test_requirements,
     url="https://github.com/Trophime/python_magnetgeo",
-    version="0.9.0",
+    version="1.0.0",
     zip_safe=False,
 )
