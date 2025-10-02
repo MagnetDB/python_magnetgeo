@@ -35,7 +35,7 @@ def test_insert_yaml_roundtrip():
     # String references like ["inner"] would require the file "inner.yaml" to exist
     inner_lead = InnerCurrentLead(
         name="yaml_inner_lead",
-        r=[10.0, 12.0],
+        r=[13.0, 23.0],
         h=60.0,
         holes=[],
         support=[],
@@ -90,7 +90,7 @@ def test_insert_yaml_with_string_references():
     # First, create and save the referenced current lead
     inner_lead = InnerCurrentLead(
         name="inner",  # This will create "inner.yaml"
-        r=[10.0, 12.0],
+        r=[13.0, 23.0],
         h=60.0,
         holes=[],
         support=[],

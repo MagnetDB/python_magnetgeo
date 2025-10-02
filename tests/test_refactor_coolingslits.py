@@ -83,7 +83,7 @@ def test_coolingslit_inherited_methods():
     slit = CoolingSlit(
         name="method_test",
         r=0.10,
-        angle=60.0,
+        angle=6.0,
         n=10,
         dh=0.0025,
         sh=0.00125,
@@ -119,7 +119,7 @@ def test_coolingslit_json_serialization():
     slit = CoolingSlit(
         name="json_test_slit",
         r=0.14,
-        angle=50.0,
+        angle=5.0,
         n=12,
         dh=0.0028,
         sh=0.0014,
@@ -132,7 +132,7 @@ def test_coolingslit_json_serialization():
     assert parsed['__classname__'] == 'CoolingSlit'
     assert parsed['name'] == 'json_test_slit'
     assert parsed['r'] == 0.14
-    assert parsed['angle'] == 50.0
+    assert parsed['angle'] == 5.0
     assert parsed['n'] == 12
     assert parsed['dh'] == 0.0028
     assert parsed['sh'] == 0.0014
@@ -245,7 +245,7 @@ def test_coolingslit_yaml_roundtrip_with_contour():
     slit = CoolingSlit(
         name="yaml_test_slit",
         r=0.13,
-        angle=55.0,
+        angle=5.0,
         n=8,
         dh=0.0027,
         sh=0.00135,
@@ -337,7 +337,7 @@ def test_coolingslit_in_bitter_context():
     slit2 = CoolingSlit(
         name="bitter_slit2",
         r=0.14,
-        angle=60.0,
+        angle=6.0,
         n=10,
         dh=0.0025,
         sh=0.00125,
@@ -442,7 +442,7 @@ def test_coolingslit_comprehensive_functionality():
     slit = CoolingSlit(
         name="complete_slit",
         r=0.155,
-        angle=47.5,
+        angle=7.5,
         n=15,
         dh=0.00265,
         sh=0.001325,

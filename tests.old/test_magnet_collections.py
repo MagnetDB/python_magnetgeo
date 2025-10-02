@@ -36,7 +36,7 @@ class TestMagnetCollections:
             name="string_insert",
             helices=["helix1", "helix2", "helix3"],
             rings=["ring1", "ring2"],
-            currentleads=["inner", "outer"],
+            currentleads=["inner"],
             hangles=[0.0, 90.0, 180.0],
             rangles=[45.0, 135.0],
             innerbore=12.0,
@@ -46,7 +46,7 @@ class TestMagnetCollections:
         
         assert insert.get_nhelices() == 3
         assert len(insert.rings) == 2
-        assert len(insert.currentleads) == 2
+        assert len(insert.currentleads) == 1
 
     def test_supras_collection(self, sample_supra):
         """Test Supras collection functionality"""

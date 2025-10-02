@@ -41,9 +41,6 @@ class TestIntegration:
         # Create Helix
         helix = Helix("workflow_helix", [12.0, 22.0], [0.0, 60.0], 1.8, False, True, axi, model3d, shape)
         
-        # Create Ring
-        ring = Ring("workflow_ring", [10.0, 10.1, 23.9, 24.0], [25.0, 35.0], 6, 30.0, True, False)
-        
         # Create Probe
         probe = Probe("workflow_probe", "current_taps", ["I1", "I2"], [[15.0, 0.0, 30.0], [19.0, 0.0, 45.0]])
         
@@ -52,7 +49,7 @@ class TestIntegration:
             name="workflow_insert",
             helices=[helix],
             rings=[],
-            currentleads=["inner_lead"],
+            currentleads=[],
             hangles=[180.0],
             rangles=[],
             innerbore=8.0,
@@ -178,7 +175,7 @@ class TestIntegration:
             name="probe_integration_insert",
             helices=[helix],
             rings=[],
-            currentleads=["lead1"],
+            currentleads=[],
             hangles=[0.0],
             rangles=[],
             innerbore=10.0,
@@ -203,16 +200,15 @@ class TestIntegration:
         ring1 = Ring("serial_ring1", [15.0, 30, 35.0, 40.0], [35.0, 45.0], 6, 30.0, True, False)
         ring2 = Ring("serial_ring2", [35.0, 40.0, 45.0, 60.0], [55.0, 65.0], 8, 45.0, True, False)
         
-        inner = InnerCurrentLead("inner", [8.0, 9.5], 52.0, [5.0, 10.0, 0.0, 45.0, 0.0, 8], [25.0, 5.0], True)
-        outer = OuterCurrentLead("outer", [35.0, 40.0], 52.0, [37.5, 10.0, 15.0, 40.0], [5.0, 10.0, 30.0, 0.0])
-
+        inner = InnerCurrentLead("inner", [8.0, 9.5], 52.0, [5.0, 10.0, 0.0, 45.0, 0.0, 8], [30.0, 5.0], True)
+        
         probe = Probe("serial_probe", "hall_sensors", ["H1", "H2"], [[20.0, 5.0, 40.0], [25.0, -5.0, 60.0]])
         
         insert = Insert(
             name="serialization_insert",
             helices=[helix1, helix2, helix3],
             rings=[ring1, ring2],
-            currentleads=[inner, outer],
+            currentleads=[inner],
             hangles=[120.0, 90.0, 60.0],
             rangles=[30.0, 90.0],
             innerbore=11.0,

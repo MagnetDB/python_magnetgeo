@@ -140,7 +140,7 @@ def test_nested_object_handling():
     cooling_slit = CoolingSlit(
         name="test_slit",
         r=0.13,
-        angle=45,
+        angle=4.5,
         n=10,
         dh=0.002,
         sh=0.001,
@@ -196,7 +196,7 @@ def test_nested_object_handling():
             {
                 'name': 'inline_slit',
                 'r': 0.14,
-                'angle': 60,
+                'angle': 6,
                 'n': 12,
                 'dh': 0.0025,
                 'sh': 0.00125
