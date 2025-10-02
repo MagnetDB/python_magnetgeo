@@ -34,6 +34,31 @@ class InnerCurrentLead(YAMLObjectBase):
         """
         initialize object
         """
+        # General validation
+        GeometryValidator.validate_name(name)
+        GeometryValidator.validate_numeric_list(r, "r", expected_length=2)
+        GeometryValidator.validate_ascending_order(r, "r")
+        GeometryValidator.validate_positive(h, "h")
+        
+        if holes:
+            GeometryValidator.validate_numeric_list(holes, "holes", expected_length=6)
+            if holes[0] <= 0:
+                raise ValidationError("H_Holes must be positive")
+            if holes[1] < 0:
+                raise ValidationError("Shift_from_Top must be non-negative")
+            if not (0 <= holes[2] < 360):
+                raise ValidationError("Angle_Zero must be in [0, 360)")
+            if not (0 < holes[3] <= 360):
+                raise ValidationError("Angle must be in (0, 360]")
+            if not (0 <= holes[4] < 360):
+                raise ValidationError("Angular_Position must be in [0, 360)")
+            if holes[5] <= 0 or not isinstance(holes[5], int):
+                raise ValidationError("N_Holes must be a positive integer")
+        if support:
+            GeometryValidator.validate_numeric_list(support, "support", expected_length=2)
+            GeometryValidator.validate_positive(support[0], "R support")
+            GeometryValidator.validate_numeric(support[1], "Dz support")
+
         self.name = name
         self.r = r
         self.h = h

@@ -10,11 +10,16 @@ class Tierod(YAMLObjectBase):
     def __init__(
         self, name: str, r: float, n: int, dh: float, sh: float, contour2d
     ) -> None:
-        # validation
-        GeometryValidator.validate_name(name)      # Must be non-empty string
-        GeometryValidator.validate_positive(r)     # Must be positive number
-        GeometryValidator.validate_integer(n)      # Must be integer
-    
+        # General validation
+        GeometryValidator.validate_name(name)
+        
+        # Ring-specific validation
+        GeometryValidator.validate_integer(n, "n")
+        GeometryValidator.validate_positive(n, "n")
+        GeometryValidator.validate_positive(r, "r")
+        GeometryValidator.validate_positive(dh, "dh")
+        GeometryValidator.validate_positive(sh, "sh") 
+        
         self.name = name
         self.r = r
         self.n = n

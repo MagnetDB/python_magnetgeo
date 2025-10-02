@@ -27,6 +27,9 @@ class Contour2D(YAMLObjectBase):
         """
         initialize object
         """
+        # General validation
+        GeometryValidator.validate_name(name)
+        
         self.name = name
         self.points = points
 

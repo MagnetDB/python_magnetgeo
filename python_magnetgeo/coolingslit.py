@@ -24,6 +24,21 @@ class CoolingSlit(YAMLObjectBase):
     def __init__(
         self, name: str, r: float, angle: float, n: int, dh: float, sh: float, contour2d
     ) -> None:
+        
+        # General validation
+        GeometryValidator.validate_name(name)
+        
+        # Ring-specific validation
+        GeometryValidator.validate_integer(n, "n")
+        GeometryValidator.validate_positive(n, "n")
+        GeometryValidator.validate_positive(r, "r")
+        GeometryValidator.validate_positive(dh, "dh")
+        GeometryValidator.validate_positive(sh, "sh") 
+
+        # Check ring cooling slits
+        if n * angle > 360:
+            raise ValidationError(f"CoolingSlit: {n} slits total angular length ({n * angle} cannot exceed 360 degrees")
+
         self.name: str = name
         self.r: float = r
         self.angle: float = angle

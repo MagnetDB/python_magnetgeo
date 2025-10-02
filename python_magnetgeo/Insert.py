@@ -149,17 +149,68 @@ class Insert(YAMLObjectBase):
             
         # check that rings are stored in ascending order of radius
         for i in range(1, len(self.rings)):
+            ring_side = "BP" if self.rings[i].bpside else "HP"
             if self.rings[i].r[0] <= self.rings[i - 1].r[0]:
                 raise ValidationError(
                     f"Rings must be ordered by ascending inner radius: ring {i} has inner radius {self.rings[i].r[0]} which is not greater than previous ring inner radius {self.rings[i - 1].r[0]}"
                 )
             
-            # check that rings radius matches with helices[i] and helices[i+1] radius 
-            helices_radius = [helix.r for helix in (self.helices[i], self.helices[i+1])]
+            # check that rings radius matches with helices[i] and helices[i+1] radius only valid when helix has not chamfer
+            helix0 = self.helices[i]
+            helix1 = self.helices[i+1] 
+            helices_radius = [helix.r for helix in (helix0, helix1)]
+
+            if helix0.chamfers:
+                # select chamfer that are on same side as ring
+                chamfers = [chamfer for chamfer in helix0.chamfers if chamfer.side == ring_side] # for chamfer in helix0.chamfers:
+                for chamfer in chamfers:
+                    if chamfer.rside == "rext":
+                        helices_radius[1] -= chamfer.getDr() 
+                    else:
+                        helices_radius[0] -= chamfer.getDr()
+
+            if helix1.chamfers:
+                # select chamfer that are on same side as ring
+                chamfers = [chamfer for chamfer in helix1.chamfers if chamfer.side == ring_side] # for chamfer in helix1.chamfers:
+                for chamfer in chamfers:
+                    if chamfer.rside == "rext":
+                        helices_radius[3] -= chamfer.getDr() 
+                    else:
+                        helices_radius[2] -= chamfer.getDr()
+
             if self.rings[i].r != flatten(helices_radius):
                 raise ValidationError(
                     f"Ring {i} radius {self.rings[i].r} does not match with adjacent helices radii {helices_radius}"
                 )
+
+        for helix in self.helices:
+            print(helix)
+
+        # check leads radius
+        if self.currentleads is not None:
+            for lead in self.currentleads:
+                print(lead, type(lead))
+                zinf_inner = None
+                if isinstance(lead, InnerCurrentLead):
+                    rext = lead.r[1]
+                    zinf_inner = self.helices[0].z[0] - lead.h
+                    if lead.support is not None and lead.support:
+                        if lead.support[1] != 0:
+                            rext = lead.support[0]
+                        zinf_inner -= lead.support[1]
+                    if rext != self.helices[0].r[1]:
+                        raise ValidationError(
+                            f"InnerCurrentLead outer radius ({rext}) must be egal to first helix outer radius ({self.helices[0].r[1]})"
+                        )
+                else:
+                    zinf_outer = self.helices[-1].z[0] - lead.h
+                    if lead.bar is not None and lead.bar:
+                        zinf_outer -= lead.bar[1]
+                    if lead.support is not None and lead.support:
+                        zinf_outer -= lead.support[1]
+                    if zinf_inner is not None and zinf_inner != zinf_outer:
+                        raise ValidationError(f"Insert: zinf_inner ({zinf_inner}) and zinf_outer ({zinf_outer}) must be egal")
+                
 
     def get_channels(
         self, mname: str, hideIsolant: bool = True, debug: bool = False

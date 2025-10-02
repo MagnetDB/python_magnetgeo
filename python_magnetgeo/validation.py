@@ -28,18 +28,24 @@ class GeometryValidator:
             raise ValidationError("Name cannot be whitespace only")
  
     @staticmethod
-    def validate_positive(r: float) -> None:
-        """Must be positive number"""
+    def validate_positive(r: float, name: str) -> None:
+        """Must be positive or null number"""
         if not isinstance(r, float) and not isinstance(r, int):
-            raise ValidationError("Value must be either a float or an integer")
-        if r <= 0:
-            raise ValidationError("Value must be positive")
+            raise ValidationError(f"{name} must be either a float or an integer")
+        if r < 0:
+            raise ValidationError(f"{name} must be positive or null")
     
     @staticmethod
-    def validate_integer(n: int)  -> None:
+    def validate_integer(n: int, name: str)  -> None:
         """Must be integer"""
         if not isinstance(n, int):
-            raise ValidationError("Value must be an integer")
+            raise ValidationError(f"{name} must be an integer")
+
+    @staticmethod
+    def validate_numeric(n: int|float, name: str)  -> None:
+        """Must be integer or float"""
+        if not isinstance(n, (int, float)):
+            raise ValidationError(f"{name} must be an integer or a float")
 
     @staticmethod
     def validate_numeric_list(values: List[float], name: str, expected_length: int = None) -> None:

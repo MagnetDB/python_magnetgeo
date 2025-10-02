@@ -90,12 +90,11 @@ class Supras(YAMLObjectBase):
         # check that magnets are not intersecting
         for i in range(1, len(self.magnets)):
             rb, zb = self.magnets[i - 1].boundingBox()
-            if self.magnets[i].intersect(rb, zb):
-                raise ValidationError(
-                    f"magnets intersect: magnet[{i}] intersect magnet[{i-1}]: /n{self.magnets[i]} /n{self.magnets[i-1]}"
-                )   
-        
-        
+            for j in range(i+1, len(self.magnets)):
+                if self.magnets[i].intersect(rb, zb):
+                    raise ValidationError(
+                        f"magnets intersect: magnet[{i}] intersect magnet[{i-1}]: /n{self.magnets[i]} /n{self.magnets[i-1]}"
+                    )   
                 
 
     def __repr__(self):

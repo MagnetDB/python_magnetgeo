@@ -49,6 +49,10 @@ class Ring(YAMLObjectBase):
         if r[0] < 0:
             raise ValidationError("Inner radius cannot be negative")        
         
+        # Check ring cooling slits
+        if n * angle > 360:
+            raise ValidationError(f"Ring: {n} coolingslits total angular length ({n * angle} cannot exceed 360 degrees")
+        
         print(f"Ring.__init__: name={name}, r={r}, z={z}", flush=True)
         
         

@@ -48,6 +48,25 @@ class OuterCurrentLead(YAMLObjectBase):
         """
         create object
         """
+        # General validation
+        GeometryValidator.validate_name(name)
+        GeometryValidator.validate_numeric_list(r, "r", expected_length=2)
+        GeometryValidator.validate_ascending_order(r, "r")
+        GeometryValidator.validate_positive(h, "h")
+
+        if bar is not None and bar:
+            GeometryValidator.validate_numeric_list(bar, "bar", expected_length=4)
+            for i, item in enumerate(bar):
+                GeometryValidator.validate_positive(item, f"bar[{i}]")
+        if support is not None and support:
+            GeometryValidator.validate_numeric_list(support, "support", expected_length=4)
+            GeometryValidator.validate_positive(support[0], "support[0]")
+            GeometryValidator.validate_positive(support[1], "support[1]")
+            if not (0 < support[2] <= 360):
+                raise ValidationError("Angle must be in (0, 360]")
+            if not (0 <= support[3] < 360):
+                raise ValidationError("Angle_Zero must be in [0, 360)")
+            
         self.name = name
         self.r = r
         self.h = h
