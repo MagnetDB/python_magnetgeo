@@ -9,6 +9,8 @@ Provides definition for Site:
 from .Insert import Insert
 from .Bitter import Bitter
 from .Supra import Supra
+from .Bitters import Bitters
+from .Supras import Supras
 from .Screen import Screen
 from .utils import getObject
 
@@ -350,7 +352,7 @@ class MSite(YAMLObjectBase):
             ... }
             >>> msite = MSite.from_dict(data)
         """
-        magnets = cls._load_nested_magnets(values.get('magnets'), debug=debug)
+        magnets = cls._load_nested_list(values.get('magnets'), (Insert, Bitters, Supras), debug=debug)
         screens = cls._load_nested_list(values.get('screens'), Screen, debug=debug)  # NEW: Load screens
 
         name = values["name"]

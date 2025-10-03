@@ -433,7 +433,7 @@ class YAMLObjectBase(SerializableMixin):
         
         Args:
             data: List of strings/dicts/objects, or None
-            object_class: The class to instantiate (e.g., Helix, Ring)
+            object_class: The class to instantiate (e.g., Helix) OR tuple/list of classes to try
             debug: Enable debug output
             
         Returns:
@@ -441,6 +441,7 @@ class YAMLObjectBase(SerializableMixin):
             
         Example:
             helices = cls._load_nested_list(data, Helix, debug)
+            leads = cls._load_nested_list(data, (InnerCurrentLead, OuterCurrentLead), debug)
         """
         if data is None:
             return []
@@ -450,28 +451,43 @@ class YAMLObjectBase(SerializableMixin):
                 f"Expected list for nested objects, got {type(data).__name__}"
             )
         
+        # Normalize object_class to tuple
+        classes_to_try = (object_class,) if not isinstance(object_class, (list, tuple)) else tuple(object_class)
+        
         objects = []
-        class_name = object_class.__name__.lower()
         
         for i, item in enumerate(data):
             if isinstance(item, str):
                 # String reference → load from file
                 if debug:
-                    print(f"Loading {object_class.__name__}[{i}] from file: {item}")
-                from .utils import loadObject
-                obj = loadObject(
-                    class_name, 
-                    item, 
-                    object_class, 
-                    object_class.from_yaml
-                )
+                    print(f"Loading object[{i}] from file: {item}")
+                from .utils import getObject
+                obj = getObject(f"{item}.yaml")
                 objects.append(obj)
                 
             elif isinstance(item, dict):
-                # Inline dictionary → create from dict
+                # Inline dictionary → try each class until one works
                 if debug:
-                    print(f"Creating {object_class.__name__}[{i}] from inline dict")
-                obj = object_class.from_dict(item, debug=debug)
+                    print(f"Creating object[{i}] from inline dict")
+                
+                obj = None
+                last_error = None
+                
+                for candidate_class in classes_to_try:
+                    try:
+                        obj = candidate_class.from_dict(item, debug=debug)
+                        break
+                    except (KeyError, TypeError, ValueError) as e:
+                        last_error = e
+                        continue
+                
+                if obj is None:
+                    class_names = [c.__name__ for c in classes_to_try]
+                    raise TypeError(
+                        f"Could not create object at index {i} using any of {class_names}. "
+                        f"Last error: {last_error}"
+                    )
+                
                 objects.append(obj)
                 
             elif item is None:
@@ -481,16 +497,17 @@ class YAMLObjectBase(SerializableMixin):
                 continue
                 
             else:
-                # Already instantiated object
-                if not isinstance(item, object_class):
+                # Already instantiated object - verify it's one of the expected types
+                if not any(isinstance(item, cls) for cls in classes_to_try):
+                    class_names = [c.__name__ for c in classes_to_try]
                     raise TypeError(
-                        f"Expected {object_class.__name__}, str, or dict, "
+                        f"Expected one of {class_names}, str, or dict, "
                         f"got {type(item).__name__} at index {i}"
                     )
                 objects.append(item)
         
         return objects
-    
+
     @classmethod
     def _load_nested_single(cls, data, object_class, debug=False):
         """
@@ -504,7 +521,7 @@ class YAMLObjectBase(SerializableMixin):
         
         Args:
             data: String/dict/object, or None
-            object_class: The class to instantiate
+            object_class: The class to instantiate OR tuple/list of classes to try
             debug: Enable debug output
             
         Returns:
@@ -512,34 +529,48 @@ class YAMLObjectBase(SerializableMixin):
             
         Example:
             modelaxi = cls._load_nested_single(data, ModelAxi, debug)
+            lead = cls._load_nested_single(data, (InnerCurrentLead, OuterCurrentLead), debug)
         """
         if data is None:
             return None
         
+        # Normalize object_class to tuple
+        classes_to_try = (object_class,) if not isinstance(object_class, (list, tuple)) else tuple(object_class)
+        
         if isinstance(data, str):
             # String reference → load from file
             if debug:
-                print(f"Loading {object_class.__name__} from file: {data}")
-            from .utils import loadObject
-            return loadObject(
-                object_class.__name__.lower(),
-                data,
-                object_class,
-                object_class.from_yaml
-            )
+                print(f"Loading object from file: {data}")
+            from .utils import getObject
+            return getObject(f"{data}.yaml")
             
         elif isinstance(data, dict):
-            # Inline dictionary → create from dict
+            # Inline dictionary → try each class until one works
             if debug:
-                print(f"Creating {object_class.__name__} from inline dict")
-            return object_class.from_dict(data, debug=debug)
+                print(f"Creating object from inline dict")
             
-        elif isinstance(data, object_class):
-            # Already instantiated
-            return data
+            last_error = None
+            
+            for candidate_class in classes_to_try:
+                try:
+                    return candidate_class.from_dict(data, debug=debug)
+                except (KeyError, TypeError, ValueError) as e:
+                    last_error = e
+                    continue
+            
+            # If we get here, none of the classes worked
+            class_names = [c.__name__ for c in classes_to_try]
+            raise TypeError(
+                f"Could not create object using any of {class_names}. "
+                f"Last error: {last_error}"
+            )
             
         else:
-            raise TypeError(
-                f"Expected {object_class.__name__}, str, dict, or None, "
-                f"got {type(data).__name__}"
-            )
+            # Already instantiated - verify it's one of the expected types
+            if not any(isinstance(data, cls) for cls in classes_to_try):
+                class_names = [c.__name__ for c in classes_to_try]
+                raise TypeError(
+                    f"Expected one of {class_names}, str, dict, or None, "
+                    f"got {type(data).__name__}"
+                )
+            return data

@@ -556,7 +556,7 @@ class Insert(YAMLObjectBase):
             debug=debug
         )
     
-        currentleads = cls._load_nested_currentleads(data.get('currentleads'), debug=debug)
+        currentleads = cls._load_nested_list(data.get('currentleads'), (InnerCurrentLead, OuterCurrentLead), debug=debug)
         probes = cls._load_nested_list(
             data.get('probes'), 
             Probe, 
@@ -578,70 +578,6 @@ class Insert(YAMLObjectBase):
             name, helices, rings, currentleads, hangles, rangles, innerbore, outerbore, probes
         )
         return object
-
-    @classmethod  
-    def _load_nested_currentleads(cls, data, debug=False):
-        """
-        Load list of CurrentLead objects from various input formats.
-        
-        This internal method handles flexible loading of current leads, supporting:
-        - String references: loads from "{string}.yaml" files
-        - Dictionary definitions: creates objects inline
-        - Pre-instantiated objects: uses as-is
-        
-        Supports both InnerCurrentLead and OuterCurrentLead types.
-        
-        Args:
-            data: List of current lead specifications in any supported format, or None
-            debug: Enable debug output showing loading process for each lead
-        
-        Returns:
-            list: List of CurrentLead objects (InnerCurrentLead or OuterCurrentLead)
-                (empty list if data is None)
-        
-        Raises:
-            TypeError: If data is not a list or None
-            TypeError: If list items are not string/dict/CurrentLead objects
-        
-        Example:
-            >>> leads_data = [
-            ...     "inner_lead",  # Load from inner_lead.yaml
-            ...     {"type": "OuterCurrentLead", ...}  # Inline definition
-            ... ]
-            >>> leads = Insert._load_nested_currentleads(leads_data)
-        """
-        if data is None:
-            return []
-        
-        if not isinstance(data, list):
-            raise TypeError(f"currentleads must be a list, got {type(data)}")
-        
-        objects = []
-        for i, _data in enumerate(data):
-            if isinstance(_data, str):
-                # String reference → load from "_data.yaml" and track reference
-                if debug:
-                    print(f"Loading Lead[{i}] from file: {_data}")
-                from .utils import loadObject
-                obj = loadObject("lead", _data, (InnerCurrentLead, OuterCurrentLead), None)
-                objects.append(obj)
-            elif isinstance(_data, dict):
-                # Inline object → create from dict, no reference to track
-                if debug:
-                    print(f"Creating Lead[{i}] from inline dict: {_data.get('name', 'unnamed')}")
-                try:
-                    obj = InnerCurrentLead.from_dict(_data)
-                except Exception:
-                    try:
-                        obj = OuterCurrentLead.from_dict(_data)
-                    except Exception as e:
-                        raise ValueError(f"Could not parse current lead (neither Inner or OuterLead) from dict: {_data}") from e    
-                objects.append(obj)
-            else:
-                # Already instantiated or None
-                objects.append(_data)
-        
-        return objects
 
     ###################################################################
     #
