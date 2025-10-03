@@ -37,8 +37,8 @@ class Bitter(YAMLObjectBase):
         r: list[float],
         z: list[float],
         odd: bool,
-        modelaxi,
-        coolingslits: list = None,
+        modelaxi: ModelAxi,
+        coolingslits: List[CoolingSlit] = None,
         tierod: Tierod = None,
         innerbore: float = 0,
         outerbore: float = 0,
@@ -63,7 +63,7 @@ class Bitter(YAMLObjectBase):
         self.r = r
         self.z = z
         self.odd = odd
-        if isinstance(modelaxi, str):
+        if modelaxi is not None and isinstance(modelaxi, str):
             self.modelaxi = ModelAxi.from_yaml(f"{modelaxi}.yaml")
         else:
             self.modelaxi = modelaxi
@@ -72,13 +72,14 @@ class Bitter(YAMLObjectBase):
         self.outerbore = outerbore
 
         self.coolingslits = []
-        for coolingslit in coolingslits:
-            if isinstance(coolingslit, str):
-                self.coolingslits.append(CoolingSlit.from_yaml(f"{coolingslit}.yaml"))
-            else:
-                self.coolingslits.append(coolingslit)
+        if coolingslits is not None:
+            for coolingslit in coolingslits:
+                if isinstance(coolingslit, str):
+                    self.coolingslits.append(CoolingSlit.from_yaml(f"{coolingslit}.yaml"))
+                else:
+                    self.coolingslits.append(coolingslit)
                 
-        if isinstance(tierod, str):
+        if tierod is not None and  isinstance(tierod, str):
             self.tireod = Tierod.from_yaml(f"{tierod}.yaml")
         else:
             self.tierod = tierod

@@ -50,14 +50,15 @@ class GeometryValidator:
     @staticmethod
     def validate_numeric_list(values: List[float], name: str, expected_length: int = None) -> None:
         """General validation for numeric lists"""
-        if not isinstance(values, list):
+        if not isinstance(values, (list, tuple)):
             raise ValidationError(f"{name} must be a list")
+        
+        if not all(isinstance(x, (int, float)) for x in values):
+            raise ValidationError(f"All elements in {name} must be numeric")
         
         if expected_length and len(values) != expected_length:
             raise ValidationError(f"{name} must have exactly {expected_length} values, got {len(values)}")
         
-        if not all(isinstance(val, (int, float)) for val in values):
-            raise ValidationError(f"All {name} values must be numeric")
     
     @staticmethod
     def validate_ascending_order(values: List[float], name: str) -> None:

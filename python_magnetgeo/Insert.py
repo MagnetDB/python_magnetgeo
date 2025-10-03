@@ -15,7 +15,7 @@ from .OuterCurrentLead import OuterCurrentLead
 from .Probe import Probe
 from .utils import getObject, flatten
 
-from typing import List
+from typing import List, Union
 from .base import YAMLObjectBase
 from .validation import GeometryValidator, ValidationError
 
@@ -35,17 +35,41 @@ def filter(data: list[float], tol: float = 1.0e-6) -> list[float]:
 
 class Insert(YAMLObjectBase):
     """
-    name :
-    helices :
-    rings :
-    currentleads :
-
-    hangles :
-    rangles :
-
-    innerbore:
-    outerbore:
-    probes :           # NEW ATTRIBUTE
+    Complete magnet insert assembly.
+    
+    An Insert combines multiple helices (coils) with optional rings connecting them.
+    
+    Geometric Rules:
+        - Rings connect adjacent helices: len(rings) = len(helices) - 1
+        - Minimum 2 helices required when rings are present
+        - Each helix can have one angle specification (hangles)
+        - Each ring can have one angle specification (rangles)
+        - innerbore < first helix inner radius
+        - outerbore > last helix outer radius
+    
+    Args:
+        name: Insert identifier
+        helices: List of Helix objects or filenames (required)
+        rings: List of Ring objects or filenames connecting helices (optional)
+        currentleads: List of current lead objects or filenames (optional)
+        hangles: Angular positions for each helix in degrees (optional)
+        rangles: Angular positions for each ring in degrees (optional)
+        innerbore: Inner bore diameter in mm (optional, default=0)
+        outerbore: Outer bore diameter in mm (optional, default=0)
+        probes: List of Probe objects for measurements (optional)
+    
+    Raises:
+        ValidationError: If geometric constraints are violated
+    
+    Examples:
+        >>> # Insert with 3 helices and 2 connecting rings
+        >>> insert = Insert(
+        ...     name="HL-31",
+        ...     helices=["H1", "H2", "H3"],
+        ...     rings=["R1", "R2"],  # R1 connects H1-H2, R2 connects H2-H3
+        ...     innerbore=18.54,
+        ...     outerbore=186.25
+        ... )
     """
 
     yaml_tag = "Insert"
@@ -53,14 +77,14 @@ class Insert(YAMLObjectBase):
     def __init__(
         self,
         name: str,
-        helices: list[Helix],
-        rings: list[Ring],
-        currentleads: list,
+        helices: List[Union[str, Helix]],
+        rings: List[Union[str, Ring]],
+        currentleads: List[Union[str, InnerCurrentLead, OuterCurrentLead]],
         hangles: list[float],
         rangles: list[float],
         innerbore: float = 0,
         outerbore: float = 0,
-        probes: list = None,  # NEW PARAMETER
+        probes: List[Union[str, Probe]] = None,  # NEW PARAMETER
     ):
         """
         constructor
@@ -75,22 +99,25 @@ class Insert(YAMLObjectBase):
                     f"innerbore ({innerbore}) must be less than outerbore ({outerbore})"
                 )
         
-        if len(rings) > 0 and len(helices) == len(rings) -1:
-            raise ValidationError(
-                f"Number of rings ({len(rings)}) must be equal to number of helices ({len(helices)}) or one less"
-            )
+        if rings and len(rings) > 0:
+            if len(rings) != len(helices) -1:
+                raise ValidationError(
+                    f"Number of rings ({len(rings)}) must be equal to number of helices ({len(helices)}) minus one"
+                )
         
-        if len(hangles) > 0:
-            if len(hangles) != len(helices):
-                raise ValidationError(
-                    f"Number of hangles ({len(hangles)}) must match number of helices ({len(helices)})"
-                )
+        if hangles and len(hangles) > 0:
+            if len(hangles) > 0:
+                if len(hangles) != len(helices):
+                    raise ValidationError(
+                        f"Number of hangles ({len(hangles)}) must match number of helices ({len(helices)})"
+                    )
             
-        if len(rangles) > 0:
-            if len(rangles) != len(rings):
-                raise ValidationError(
-                    f"Number of rangles ({len(rangles)}) must match number of rings ({len(rings)})"
-                )
+        if rangles and len(rangles) > 0:
+            if len(rangles) > 0:
+                if len(rangles) != len(rings):
+                    raise ValidationError(
+                        f"Number of rangles ({len(rangles)}) must match number of rings ({len(rings)})"
+                    )
         
             
         self.name = name
@@ -180,7 +207,7 @@ class Insert(YAMLObjectBase):
 
             if self.rings[i].r != flatten(helices_radius):
                 raise ValidationError(
-                    f"Ring {i} radius {self.rings[i].r} does not match with adjacent helices radii {helices_radius}"
+                    f"Ring {i} radius {self.rings[i].r} does not match with adjacent helices radii {flatten(helices_radius)}"
                 )
 
         for helix in self.helices:

@@ -52,8 +52,8 @@ class Helix(YAMLObjectBase):
         odd: bool,
         dble: bool,
         modelaxi: ModelAxi,
-        model3d: Model3D,
-        shape: Shape,
+        model3d: Model3D = None,
+        shape: Shape = None,
         chamfers: list = None,
         grooves: Groove = None,
     ) -> None:
@@ -206,13 +206,6 @@ class Helix(YAMLObjectBase):
         odd = values["odd"]
         dble = values["dble"]
         cutwidth = values["cutwidth"]
-        # modelaxi = values["modelaxi"]
-        # model3d = values["model3d"]
-        # shape = values["shape"]
-
-        # Make chamfers and grooves optional
-        # chamfers = values.get("chamfers", [])
-        # grooves = values.get("grooves", Groove())
 
         object = cls(
             name, r, z, cutwidth, odd, dble, modelaxi, model3d, shape, chamfers, grooves
