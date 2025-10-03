@@ -1,6 +1,10 @@
 python-magnetgeo (1.0.0-1) UNRELEASED; urgency=medium
 
-  * new upstream release
+  * New upstream release
+  * Switch to pyproject.toml build system
+  * Update to Python 3.11+
+  * Add pybuild-plugin-pyproject dependency
+
 
  -- Christophe Trophime <christophe.trophime@lncmi.cnrs.fr>  Thu, 02 Oct 2025 09:46:22 +0200
 
