@@ -5,6 +5,11 @@
 Provides tools to un/serialize data from json
 """
 
+from .base import YAMLObjectBase
+
+# Import all classes to ensure they're registered
+# (importing triggers __init_subclass__ which registers them)
+ 
 from .Probe import Probe
 from .Shape import Shape
 from .ModelAxi import ModelAxi
@@ -20,7 +25,7 @@ from .Screen import Screen
 from .MSite import MSite
 from .Bitters import Bitters
 from .Supras import Supras
-from .Shape2D import Shape2D
+from .Contour2D import Contour2D
 from .Chamfer import Chamfer
 from .Groove import Groove
 from .tierod import Tierod
@@ -30,6 +35,7 @@ from .coolingslit import CoolingSlit
 # From : http://chimera.labs.oreilly.com/books/1230000000393/ch06.html#_discussion_95
 # Dictionary mapping names to known classes
 
+"""
 classes = {
     "Probe": Probe,
     "Shape": Shape,
@@ -46,22 +52,39 @@ classes = {
     "Bitters": Bitters,
     "Supras": Supras,
     "MSite": MSite,
-    "Shape2D": Shape2D,
+    "Contour2D": Contour2D,
     "Chamfer": Chamfer,
     "Groove": Groove,
     "Tierod": Tierod,
     "CoolingSlit": CoolingSlit,
 }
+"""
+# Get class registry from base class
+# This is automatically populated by __init_subclass__
+classes = YAMLObjectBase.get_all_classes()
 
 
 def serialize_instance(obj):
     """
     serialize_instance of an obj
+    
+    Handles Enum values by converting them to their string values.
     """
+    from enum import Enum
+    
     d = {"__classname__": type(obj).__name__}
-    d.update(vars(obj))
+    
+    # Get object attributes
+    obj_dict = vars(obj)
+    
+    # Convert any Enum values to their string representation
+    for key, value in obj_dict.items():
+        if isinstance(value, Enum):
+            d[key] = value.value
+        else:
+            d[key] = value
+    
     return d
-
 
 def unserialize_object(d, debug: bool = True):
     """
@@ -75,7 +98,15 @@ def unserialize_object(d, debug: bool = True):
     if debug:
         print(f"clsname: {clsname}", flush=True)
     if clsname:
-        cls = classes[clsname]
+        # Use auto-registered class
+        cls = YAMLObjectBase.get_class(clsname)
+        
+        if cls is None:
+            raise ValueError(
+                f"Unknown class '{clsname}'. "
+                f"Available classes: {list(classes.keys())}"
+            )
+        
         obj = cls.__new__(cls)  # Make instance without calling __init__
         for key, value in d.items():
             if debug:

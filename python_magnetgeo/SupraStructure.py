@@ -4,11 +4,7 @@ Define HTS insert geometry
 from typing import Self, Optional
 
 
-def flatten(S: list) -> list:
-    from pandas.core.common import flatten as pd_flatten
-
-    return list(pd_flatten(S))
-
+from .utils import flatten
 
 class tape:
     """

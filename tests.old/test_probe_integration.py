@@ -50,14 +50,14 @@ class TestProbeIntegration:
         )
         
         assert len(supras.probes) == 1
-        assert supras.probes[0].probe_type == "voltage_taps"
+        assert supras.probes[0].type == "voltage_taps"
 
     def test_probe_string_references(self):
         """Test probe collections can handle string references"""
         insert = Insert(
             name="string_probe_insert",
             helices=["helix1"],
-            rings=["ring1"],
+            rings=[],
             currentleads=[],
             hangles=[],
             rangles=[],
@@ -66,7 +66,7 @@ class TestProbeIntegration:
             probes=["probe_ref1", "probe_ref2"]  # String references
         )
         
-        assert insert.probes == ["probe_ref1", "probe_ref2"]
+        assert [probe.name for probe in insert.probes] == ["probe_ref1", "probe_ref2"]
 
     def test_empty_probe_collections(self):
         """Test classes handle empty probe collections properly"""

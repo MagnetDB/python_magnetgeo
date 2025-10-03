@@ -36,9 +36,9 @@ class TestMagnetCollections:
             name="string_insert",
             helices=["helix1", "helix2", "helix3"],
             rings=["ring1", "ring2"],
-            currentleads=["inner", "outer"],
-            hangles=[0.0, 90.0, 180.0, 270.0],
-            rangles=[45.0, 135.0, 225.0, 315.0],
+            currentleads=["inner"],
+            hangles=[0.0, 90.0, 180.0],
+            rangles=[45.0, 135.0],
             innerbore=12.0,
             outerbore=40.0,
             probes=[]
@@ -46,7 +46,7 @@ class TestMagnetCollections:
         
         assert insert.get_nhelices() == 3
         assert len(insert.rings) == 2
-        assert len(insert.currentleads) == 2
+        assert len(insert.currentleads) == 1
 
     def test_supras_collection(self, sample_supra):
         """Test Supras collection functionality"""
@@ -92,7 +92,7 @@ class TestMagnetCollections:
         
         assert msite.name == "test_msite"
         assert len(msite.magnets) == 1
-        assert msite.screens is None
+        assert msite.screens == []
 
     def test_msite_with_screens(self, sample_insert):
         """Test MSite with screen objects"""

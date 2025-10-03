@@ -31,7 +31,7 @@ class TestHelix:
         helix = Helix(
             name="init_helix",
             r=[10.0, 20.0],
-            z=[0.0, 50.0],
+            z=[0.0, 80.0],
             cutwidth=1.5,
             odd=False,
             dble=True,
@@ -42,7 +42,7 @@ class TestHelix:
         
         assert helix.name == "init_helix"
         assert helix.r == [10.0, 20.0]
-        assert helix.z == [0.0, 50.0]
+        assert helix.z == [0.0, 80.0]
         assert helix.cutwidth == 1.5
         assert helix.odd is False
         assert helix.dble is True
@@ -105,7 +105,7 @@ class TestRing:
         """Test Ring object creation"""
         ring = Ring(
             name="init_ring",
-            r=[8.0, 32.0],
+            r=[8.0, 8.1, 31.9, 32.0],
             z=[20.0, 30.0],
             n=8,
             angle=45.0,
@@ -114,7 +114,7 @@ class TestRing:
         )
         
         assert ring.name == "init_ring"
-        assert ring.r == [8.0, 32.0]
+        assert ring.r == [8.0, 8.1, 31.9, 32.0]
         assert ring.z == [20.0, 30.0]
         assert ring.n == 8
         assert ring.angle == 45.0
@@ -131,9 +131,8 @@ class TestRing:
         
         assert parsed["__classname__"] == "Ring"
         assert parsed["name"] == "test_ring"
-        assert parsed["r"] == [12.0, 28.0]
+        assert parsed["r"] == [12.0, 12.1, 27.9, 28.0]
         assert parsed["z"] == [45.0, 55.0]
-
 
 class TestSupra:
     """Test Supra class - superconducting magnet"""
@@ -257,43 +256,43 @@ class TestProbe:
         """Test Probe object creation"""
         probe = Probe(
             name="init_probe",
-            probe_type="temperature",
-            index=[1, 2, 3],
-            locations=[[10.0, 0.0, 5.0], [15.0, 0.0, 10.0], [20.0, 0.0, 15.0]]
+            type="temperature",
+            labels=[1, 2, 3],
+            points=[[10.0, 0.0, 5.0], [15.0, 0.0, 10.0], [20.0, 0.0, 15.0]]
         )
         
         assert probe.name == "init_probe"
-        assert probe.probe_type == "temperature"
-        assert probe.index == [1, 2, 3]
-        assert len(probe.locations) == 3
+        assert probe.type == "temperature"
+        assert probe.labels == [1, 2, 3]
+        assert len(probe.points) == 3
 
     def test_probe_count(self, sample_probe):
         """Test get_probe_count method"""
         count = sample_probe.get_probe_count()
         assert count == 3
 
-    def test_probe_by_index(self, sample_probe):
-        """Test get_probe_by_index method"""
-        probe_info = sample_probe.get_probe_by_index("V2")
+    def test_probe_by_labels(self, sample_probe):
+        """Test get_probe_by_labels method"""
+        probe_info = sample_probe.get_probe_by_labels("V2")
         
-        assert probe_info["index"] == "V2"
-        assert probe_info["location"] == [20.0, 0.0, 50.0]
-        assert probe_info["probe_type"] == "voltage_taps"
+        assert probe_info["labels"] == "V2"
+        assert probe_info["points"] == [20.0, 0.0, 50.0]
+        assert probe_info["type"] == "voltage_taps"
 
-    def test_probe_by_index_not_found(self, sample_probe):
-        """Test get_probe_by_index with invalid index"""
+    def test_probe_by_labels_not_found(self, sample_probe):
+        """Test get_probe_by_labels with invalid labels"""
         with pytest.raises(ValueError):
-            sample_probe.get_probe_by_index("V999")
+            sample_probe.get_probe_by_labels("V999")
 
-    def test_probe_locations_by_type(self, sample_probe):
-        """Test get_locations_by_type method"""
-        locations = sample_probe.get_locations_by_type("voltage_taps")
-        assert len(locations) == 3
-        assert locations == sample_probe.locations
+    def test_probe_points_by_type(self, sample_probe):
+        """Test get_points_by_type method"""
+        points = sample_probe.get_points_by_type("voltage_taps")
+        assert len(points) == 3
+        assert points == sample_probe.points
         
         # Test with different type
-        empty_locations = sample_probe.get_locations_by_type("temperature")
-        assert empty_locations == []
+        empty_points = sample_probe.get_points_by_type("temperature")
+        assert empty_points == []
 
     def test_probe_add_probe(self, sample_probe):
         """Test add_probe method"""
@@ -302,8 +301,8 @@ class TestProbe:
         sample_probe.add_probe("V4", [22.0, 0.0, 85.0])
         
         assert sample_probe.get_probe_count() == initial_count + 1
-        new_probe = sample_probe.get_probe_by_index("V4")
-        assert new_probe["location"] == [22.0, 0.0, 85.0]
+        new_probe = sample_probe.get_probe_by_labels("V4")
+        assert new_probe["points"] == [22.0, 0.0, 85.0]
 
     def test_probe_add_invalid_location(self, sample_probe):
         """Test add_probe with invalid location coordinates"""
@@ -317,6 +316,6 @@ class TestProbe:
         
         assert parsed["__classname__"] == "Probe"
         assert parsed["name"] == "test_probe"
-        assert parsed["probe_type"] == "voltage_taps"
-        assert len(parsed["index"]) == 3
-        assert len(parsed["locations"]) == 3
+        assert parsed["type"] == "voltage_taps"
+        assert len(parsed["labels"]) == 3
+        assert len(parsed["points"]) == 3

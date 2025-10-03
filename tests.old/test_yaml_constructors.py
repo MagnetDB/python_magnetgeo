@@ -42,32 +42,6 @@ class TestYAMLConstructors:
             assert hasattr(cls, 'yaml_tag')
             assert cls.yaml_tag == expected_tag
 
-    def test_yaml_constructor_registration(self):
-        """Test YAML constructors are properly registered"""
-        # This test verifies the constructors exist and are callable
-        from python_magnetgeo.Insert import Insert_constructor
-        from python_magnetgeo.Helix import Helix_constructor
-        from python_magnetgeo.Ring import Ring_constructor
-        from python_magnetgeo.Supra import Supra_constructor
-        from python_magnetgeo.Supras import Supras_constructor
-        from python_magnetgeo.Screen import Screen_constructor
-        from python_magnetgeo.MSite import MSite_constructor
-        from python_magnetgeo.Probe import Probe_constructor
-        
-        constructors = [
-            Insert_constructor,
-            Helix_constructor, 
-            Ring_constructor,
-            Supra_constructor,
-            Supras_constructor,
-            Screen_constructor,
-            MSite_constructor,
-            Probe_constructor
-        ]
-        
-        for constructor in constructors:
-            assert callable(constructor)
-
     def test_yaml_loading_interface(self, temp_yaml_file):
         """Test YAML loading works for simple objects"""
         # Create simple YAML content

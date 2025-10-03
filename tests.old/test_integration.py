@@ -21,6 +21,8 @@ from python_magnetgeo.Probe import Probe
 from python_magnetgeo.Shape import Shape
 from python_magnetgeo.ModelAxi import ModelAxi
 from python_magnetgeo.Model3D import Model3D
+from python_magnetgeo.InnerCurrentLead import InnerCurrentLead
+from python_magnetgeo.OuterCurrentLead import OuterCurrentLead
 
 class TestIntegration:
     """End-to-end integration tests"""
@@ -34,13 +36,10 @@ class TestIntegration:
         model3d = Model3D("workflow_model3d", "workflow_cad", False, False)
         
         # Create Shape
-        shape = Shape("workflow_shape", "rectangular", 8, [90.0] * 4, 0, "CENTER")
+        shape = Shape("workflow_shape", "rectangular", 8, [90.0] * 4, 0, "BELOW")
         
         # Create Helix
         helix = Helix("workflow_helix", [12.0, 22.0], [0.0, 60.0], 1.8, False, True, axi, model3d, shape)
-        
-        # Create Ring
-        ring = Ring("workflow_ring", [10.0, 24.0], [25.0, 35.0], 6, 30.0, True, False)
         
         # Create Probe
         probe = Probe("workflow_probe", "current_taps", ["I1", "I2"], [[15.0, 0.0, 30.0], [19.0, 0.0, 45.0]])
@@ -49,10 +48,10 @@ class TestIntegration:
         insert = Insert(
             name="workflow_insert",
             helices=[helix],
-            rings=[ring],
-            currentleads=["inner_lead"],
-            hangles=[0.0, 180.0],
-            rangles=[0.0, 90.0, 180.0, 270.0],
+            rings=[],
+            currentleads=[],
+            hangles=[180.0],
+            rangles=[],
             innerbore=8.0,
             outerbore=26.0,
             probes=[probe]
@@ -84,9 +83,9 @@ class TestIntegration:
     def test_magnet_site_integration(self):
         """Test complete MSite with multiple magnet types"""
         # Create different magnet types with proper constructors
-        axi = ModelAxi("site_axi", 50.0, [1.0], [10.0])
+        axi = ModelAxi("site_axi", 5.0, [1.0], [10.0])
         model3d = Model3D("site_model3d", "site_cad", False, False)
-        shape = Shape("site_shape", "rectangular", 5, [90.0], 0, "CENTER")
+        shape = Shape("site_shape", "rectangular", 5, [90.0], 0, "BELOW")
         
         helix = Helix("site_helix", [10.0, 20.0], [0.0, 50.0], 2.0, True, False, axi, model3d, shape)
         insert = Insert("site_insert", [helix], [], [], [], [], 8.0, 25.0, [])
@@ -122,9 +121,9 @@ class TestIntegration:
         # Create voltage tap probes
         voltage_probes = Probe(
             name="integration_voltage",
-            probe_type="voltage_taps", 
-            index=["V1", "V2", "V3", "V4"],
-            locations=[
+            type="voltage_taps", 
+            labels=["V1", "V2", "V3", "V4"],
+            points=[
                 [14.0, 0.0, 10.0],
                 [16.0, 0.0, 20.0], 
                 [18.0, 0.0, 30.0],
@@ -135,9 +134,9 @@ class TestIntegration:
         # Create temperature probes
         temp_probes = Probe(
             name="integration_temperature",
-            probe_type="temperature",
-            index=[1, 2, 3],
-            locations=[
+            type="temperature",
+            labels=[1, 2, 3],
+            points=[
                 [15.0, 2.5, 15.0],
                 [17.0, -2.5, 25.0],
                 [19.0, 0.0, 35.0]
@@ -149,67 +148,71 @@ class TestIntegration:
         assert temp_probes.get_probe_count() == 3
         
         # Test probe lookup
-        v2_info = voltage_probes.get_probe_by_index("V2")
-        assert v2_info["location"] == [16.0, 0.0, 20.0]
+        v2_info = voltage_probes.get_probe_by_labels("V2")
+        assert v2_info["points"] == [16.0, 0.0, 20.0]
         
-        t2_info = temp_probes.get_probe_by_index(2)
-        assert t2_info["location"] == [17.0, -2.5, 25.0]
+        t2_info = temp_probes.get_probe_by_labels(2)
+        assert t2_info["points"] == [17.0, -2.5, 25.0]
         
         # Test adding probes
         voltage_probes.add_probe("V5", [22.0, 0.0, 50.0])
         assert voltage_probes.get_probe_count() == 5
         
         # Test location filtering
-        voltage_locs = voltage_probes.get_locations_by_type("voltage_taps")
-        temp_locs = temp_probes.get_locations_by_type("temperature")
+        voltage_locs = voltage_probes.get_points_by_type("voltage_taps")
+        temp_locs = temp_probes.get_points_by_type("temperature")
         
         assert len(voltage_locs) == 5  # Including added probe
         assert len(temp_locs) == 3
         
         # Test with Insert - create proper Helix
-        axi = ModelAxi("probe_axi", 60.0, [1.0], [10.0])
+        axi = ModelAxi("probe_axi", 5.0, [1.0], [10.0])
         model3d = Model3D("probe_model3d", "probe_cad", False, False)
-        shape = Shape("probe_shape", "rectangular", 5, [90.0], 0, "CENTER")
+        shape = Shape("probe_shape", "rectangular", 5, [90.0], 0, "BELOW")
         
         helix = Helix("probe_helix", [12.0, 24.0], [0.0, 60.0], 2.2, True, True, axi, model3d, shape)
         insert_with_probes = Insert(
             name="probe_integration_insert",
             helices=[helix],
             rings=[],
-            currentleads=["lead1"],
+            currentleads=[],
             hangles=[0.0],
-            rangles=[0.0, 90.0],
+            rangles=[],
             innerbore=10.0,
             outerbore=26.0,
             probes=[voltage_probes, temp_probes]
         )
         
         assert len(insert_with_probes.probes) == 2
-        assert insert_with_probes.probes[0].probe_type == "voltage_taps"
-        assert insert_with_probes.probes[1].probe_type == "temperature"
+        assert insert_with_probes.probes[0].type == "voltage_taps"
+        assert insert_with_probes.probes[1].type == "temperature"
 
     def test_serialization_integration(self, temp_json_file):
         """Test serialization preserves all data through complex workflows"""
         # Create complex nested structure
-        axi = ModelAxi("serial_axi", 20.0, [2.0, 3.0, 2.5], [8.0, 9.0, 8.5])
+        axi = ModelAxi("serial_axi", 32.125, [2.0, 3.0, 2.5], [8.0, 9.0, 8.5])
         model3d = Model3D("serial_model3d", "serial_cad", True, False)
-        shape = Shape("serial_shape", "hexagonal", 12, [60.0] * 6, 1, "ALTERNATE")
-        helix = Helix("serial_helix", [15.0, 30.0], [5.0, 85.0], 3.0, False, True, axi, model3d, shape)
+        shape = Shape("serial_shape", "hexagonal", [12] * 6, [60.0] * 6, [1], "ALTERNATE")
+        helix1 = Helix("serial_helix", [15.0, 30.0], [5.0, 85.0], 3.0, False, True, axi, model3d, shape)
+        helix2 = Helix("serial_helix", [35.0, 40.0], [5.0, 85.0], 3.0, False, True, axi, model3d, shape)
+        helix3 = Helix("serial_helix", [45.0, 60.0], [5.0, 85.0], 3.0, False, True, axi, model3d, shape)
         
-        ring1 = Ring("serial_ring1", [13.0, 32.0], [35.0, 45.0], 6, 30.0, True, False)
-        ring2 = Ring("serial_ring2", [13.0, 32.0], [55.0, 65.0], 8, 45.0, True, False)
+        ring1 = Ring("serial_ring1", [15.0, 30, 35.0, 40.0], [35.0, 45.0], 6, 30.0, True, False)
+        ring2 = Ring("serial_ring2", [35.0, 40.0, 45.0, 60.0], [55.0, 65.0], 8, 45.0, True, False)
+        
+        inner = InnerCurrentLead("inner", [8.0, 9.5], 52.0, [5.0, 10.0, 0.0, 45.0, 0.0, 8], [30.0, 5.0], True)
         
         probe = Probe("serial_probe", "hall_sensors", ["H1", "H2"], [[20.0, 5.0, 40.0], [25.0, -5.0, 60.0]])
         
         insert = Insert(
             name="serialization_insert",
-            helices=[helix],
+            helices=[helix1, helix2, helix3],
             rings=[ring1, ring2],
-            currentleads=["inner", "outer"],
-            hangles=[0.0, 120.0, 240.0],
-            rangles=[30.0, 90.0, 150.0, 210.0, 270.0, 330.0],
+            currentleads=[inner],
+            hangles=[120.0, 90.0, 60.0],
+            rangles=[30.0, 90.0],
             innerbore=11.0,
-            outerbore=35.0,
+            outerbore=65.0,
             probes=[probe]
         )
         
@@ -220,7 +223,7 @@ class TestIntegration:
         # Verify all nested structures preserved
         assert parsed["__classname__"] == "Insert"
         assert parsed["name"] == "serialization_insert"
-        assert len(parsed["helices"]) == 1
+        assert len(parsed["helices"]) == 3
         assert len(parsed["rings"]) == 2
         assert len(parsed["probes"]) == 1
         
@@ -233,23 +236,23 @@ class TestIntegration:
         # Verify probe data
         probe_data = parsed["probes"][0]
         assert probe_data["__classname__"] == "Probe"
-        assert probe_data["probe_type"] == "hall_sensors"
-        assert len(probe_data["locations"]) == 2
+        assert probe_data["type"] == "hall_sensors"
+        assert len(probe_data["points"]) == 2
 
     def test_geometric_consistency_integration(self):
         """Test geometric operations are consistent across complex structures"""
         # Create objects with known geometric relationships
-        axi1 = ModelAxi("inner_axi", 100.0, [1.0], [10.0])
-        axi2 = ModelAxi("outer_axi", 80.0, [1.5], [8.0])
+        axi1 = ModelAxi("inner_axi", 5.0, [1.0], [10.0])
+        axi2 = ModelAxi("outer_axi", 6.0, [1.5], [8.0])
         model3d1 = Model3D("inner_model3d", "inner_cad", False, False)
         model3d2 = Model3D("outer_model3d", "outer_cad", False, False)
-        shape1 = Shape("inner_shape", "rectangular", 3, [90.0], 0, "CENTER")
-        shape2 = Shape("outer_shape", "rectangular", 4, [90.0], 0, "CENTER")
+        shape1 = Shape("inner_shape", "rectangular", 3, [90.0], 0, "BELOW")
+        shape2 = Shape("outer_shape", "rectangular", 4, [90.0], 0, "BELOW")
         
         inner_helix = Helix("inner", [10.0, 15.0], [0.0, 100.0], 1.0, True, False, axi1, model3d1, shape1)
         outer_helix = Helix("outer", [20.0, 25.0], [10.0, 90.0], 1.5, False, True, axi2, model3d2, shape2)
         
-        separator_ring = Ring("separator", [8.0, 27.0], [45.0, 55.0], 6, 30.0, True, False)
+        separator_ring = Ring("separator", [10.0, 15.0, 20.0, 25.0], [45.0, 55.0], 6, 30.0, True, False)
         
         insert = Insert(
             name="geometric_insert",

@@ -122,5 +122,9 @@ ENV/
 
 *~
 *.orig
+*.backup
 *log
 \#*\#
+
+# ut track this specific test file
+!tests.old/*.yaml

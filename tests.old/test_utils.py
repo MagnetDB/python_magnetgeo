@@ -36,7 +36,7 @@ class TestDataFactory:
             "length": 10,
             "angle": [90.0, 90.0, 90.0, 90.0],
             "onturns": 0,
-            "position": "CENTER"
+            "position": "BELOW"
         }
     
     @staticmethod
@@ -56,7 +56,7 @@ class TestDataFactory:
         """Create Ring test data"""
         return {
             "name": name,
-            "r": [12.0, 28.0],
+            "r": [12.0, 12.1, 27.9, 28.0],
             "z": [45.0, 55.0]
         }
     
@@ -76,7 +76,7 @@ class TestDataFactory:
         """Create Probe test data"""
         return {
             "name": name,
-            "probe_type": "voltage_taps",
+            "type": "voltage_taps",
             "index": ["V1", "V2", "V3"],
             "locations": [
                 [16.0, 0.0, 25.0],
@@ -93,8 +93,8 @@ class TestDataFactory:
             "helices": ["helix1"],
             "rings": ["ring1"],
             "currentleads": ["inner_lead"],
-            "hangles": [0.0, 180.0],
-            "rangles": [0.0, 90.0, 180.0, 270.0],
+            "hangles": [180.0],
+            "rangles": [90.0],
             "innerbore": 10.0,
             "outerbore": 30.0,
             "probes": []
@@ -248,19 +248,19 @@ class ProbeTestUtils:
         return [
             {
                 "name": "voltage_probes",
-                "probe_type": "voltage_taps",
+                "type": "voltage_taps",
                 "index": ["V1", "V2", "V3"],
                 "locations": [[10.0, 0.0, 5.0], [15.0, 0.0, 10.0], [20.0, 0.0, 15.0]]
             },
             {
                 "name": "temp_probes", 
-                "probe_type": "temperature",
+                "type": "temperature",
                 "index": [1, 2, 3, 4],
                 "locations": [[12.0, 2.0, 8.0], [16.0, -2.0, 12.0], [18.0, 0.0, 16.0], [22.0, 1.0, 20.0]]
             },
             {
                 "name": "hall_probes",
-                "probe_type": "hall_sensors", 
+                "type": "hall_sensors", 
                 "index": ["H1", "H2"],
                 "locations": [[14.0, 5.0, 25.0], [19.0, -5.0, 35.0]]
             }
@@ -270,7 +270,7 @@ class ProbeTestUtils:
     def assert_valid_probe_data(probe_obj: Any) -> None:
         """Assert probe object has valid data structure"""
         assert hasattr(probe_obj, 'name'), "Probe missing name attribute"
-        assert hasattr(probe_obj, 'probe_type'), "Probe missing probe_type attribute"
+        assert hasattr(probe_obj, 'type'), "Probe missing type attribute"
         assert hasattr(probe_obj, 'index'), "Probe missing index attribute"
         assert hasattr(probe_obj, 'locations'), "Probe missing locations attribute"
         
