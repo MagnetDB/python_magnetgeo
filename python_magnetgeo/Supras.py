@@ -13,17 +13,23 @@ from .utils import getObject
 
 class Supras(YAMLObjectBase):
     """
-    Supras - Collection of Supra magnets with probes.
+    Supras - Collection of superconducting Supra magnets with measurement probes.
     
-    Represents a superconducting magnet insert containing multiple Supra objects.
-    All serialization functionality inherited from YAMLObjectBase.
+    Represents a superconducting magnet insert containing multiple Supra objects
+    arranged with defined bore dimensions. All serialization functionality is
+    inherited from YAMLObjectBase.
     
     Attributes:
-        name: Identifier for the Supras collection
-        magnets: List of Supra objects or string references
-        innerbore: Inner bore radius [m]
-        outerbore: Outer bore radius [m]
-        probes: List of Probe objects (optional)
+        name (str): Unique identifier for the Supras collection
+        magnets (list): List of Supra objects or string references to Supra definitions
+        innerbore (float): Inner bore radius in meters
+        outerbore (float): Outer bore radius in meters  
+        probes (list): Optional list of Probe objects for measurements
+    
+    Notes:
+        - Validates that magnets do not intersect each other
+        - Ensures bore dimensions are consistent with magnet geometry
+        - Automatically computes overall bounding box from constituent magnets
     """
 
     yaml_tag = "Supras"
@@ -37,17 +43,26 @@ class Supras(YAMLObjectBase):
         probes: list = None
     ) -> None:
         """
-        Initialize Supras collection.
+        Initialize Supras collection with validation.
         
         Args:
-            name: Collection identifier
-            magnets: List of Supra objects or string references
-            innerbore: Inner bore radius
-            outerbore: Outer bore radius
-            probes: Optional list of Probe objects
+            name: Unique identifier for the Supras collection
+            magnets: List of Supra objects or string references to YAML files
+            innerbore: Inner bore radius in meters
+            outerbore: Outer bore radius in meters
+            probes: Optional list of Probe objects or string references
             
         Raises:
-            ValidationError: If validation fails
+            ValidationError: If any validation fails:
+                - Empty or invalid name
+                - innerbore >= outerbore (when both non-zero)
+                - innerbore larger than minimum magnet inner radius
+                - outerbore smaller than maximum magnet outer radius
+                - Magnets intersect each other
+        
+        Notes:
+            String references in magnets or probes are automatically loaded
+            from corresponding YAML files (e.g., "magnet_name" → "magnet_name.yaml")
         """
         # Validate inputs
         GeometryValidator.validate_name(name)
@@ -98,7 +113,12 @@ class Supras(YAMLObjectBase):
                 
 
     def __repr__(self):
-        """String representation"""
+        """
+        Generate string representation of Supras object.
+        
+        Returns:
+            str: String representation including name, magnets, bore dimensions, and probes
+        """
         return (
             f"{self.__class__.__name__}(name={self.name!r}, "
             f"magnets={self.magnets!r}, innerbore={self.innerbore!r}, "
@@ -108,16 +128,25 @@ class Supras(YAMLObjectBase):
     @classmethod
     def from_dict(cls, values: dict, debug: bool = False):
         """
-        Create Supras from dictionary.
+        Create Supras instance from dictionary representation.
         
-        Handles nested Supra and Probe objects properly.
+        Handles nested Supra and Probe objects properly, supporting both
+        inline objects (dicts) and string references to external files.
         
         Args:
-            values: Dictionary containing Supras data
-            debug: Enable debug output
+            values: Dictionary containing Supras data with keys:
+                - name: Collection identifier (required)
+                - magnets: List of Supra objects/dicts/strings (required)
+                - innerbore: Inner bore radius (optional, default 0)
+                - outerbore: Outer bore radius (optional, default 0)
+                - probes: List of Probe objects/dicts/strings (optional)
+            debug: Enable debug output for nested object loading
             
         Returns:
-            Supras instance
+            Supras: New Supras instance
+        
+        Notes:
+            Uses helper methods to handle complex nested object loading
         """
         magnets = cls._load_nested_magnets(values.get('magnets'), debug=debug)
         probes = cls._load_nested_probes(values.get('probes'), debug=debug)
@@ -131,19 +160,26 @@ class Supras(YAMLObjectBase):
     @classmethod
     def _load_nested_magnets(cls, magnets_data, debug: bool = False) -> List[Supra]:
         """
-        Load nested Supra objects from data.
+        Load nested Supra objects from various input formats.
         
-        Handles both Supra instances and dictionaries.
+        Handles three input formats for each magnet:
+        1. Supra instance - used directly
+        2. Dictionary - converted to Supra via from_dict()
+        3. String reference - kept as-is for lazy loading
         
         Args:
             magnets_data: List of Supra objects, dicts, or string references
-            debug: Enable debug output
+            debug: Enable debug output showing loading details
             
         Returns:
-            List of Supra objects (or string references)
+            list: List of Supra objects (or string references for lazy loading)
             
         Raises:
-            ValidationError: If magnet data is invalid
+            ValidationError: If any magnet entry has invalid type
+        
+        Notes:
+            String references allow lazy loading where magnets are loaded
+            from YAML files only when needed
         """
         magnets = []
         if magnets_data:
@@ -166,17 +202,25 @@ class Supras(YAMLObjectBase):
     @classmethod
     def _load_nested_probes(cls, probes_data, debug: bool = False) -> List[Probe]:
         """
-        Load nested Probe objects from data.
+        Load nested Probe objects from various input formats.
+        
+        Handles three input formats for each probe:
+        1. Probe instance - used directly
+        2. Dictionary - converted to Probe via from_dict()
+        3. String reference - kept as-is for lazy loading
         
         Args:
             probes_data: List of Probe objects, dicts, or string references
-            debug: Enable debug output
+            debug: Enable debug output showing loading details
             
         Returns:
-            List of Probe objects (or string references)
+            list: List of Probe objects (or string references for lazy loading)
             
         Raises:
-            ValidationError: If probe data is invalid
+            ValidationError: If any probe entry has invalid type
+        
+        Notes:
+            Returns empty list if probes_data is None
         """
         probes = []
         if probes_data:
@@ -200,28 +244,36 @@ class Supras(YAMLObjectBase):
         self, mname: str, hideIsolant: bool = True, debug: bool = False
     ) -> dict:
         """
-        Get channel definitions (placeholder - returns empty dict).
+        Get channel definitions for cooling or instrumentation.
         
         Args:
-            mname: Magnet name prefix
-            hideIsolant: Hide isolant channels
+            mname: Magnet name prefix for channel identification
+            hideIsolant: If True, hide insulator channels in output
             debug: Enable debug output
             
         Returns:
-            Empty dictionary
+            dict: Empty dictionary (placeholder for future implementation)
+        
+        Notes:
+            Currently returns empty dict as Supras don't define internal channels.
+            Override in subclasses if channel definitions are needed.
         """
         return {}
 
     def get_isolants(self, mname: str, debug: bool = False) -> dict:
         """
-        Get isolant definitions (placeholder - returns empty dict).
+        Get isolant/insulator definitions.
         
         Args:
-            mname: Magnet name
+            mname: Magnet name for isolant identification
             debug: Enable debug output
             
         Returns:
-            Empty dictionary
+            dict: Empty dictionary (placeholder for future implementation)
+        
+        Notes:
+            Currently returns empty dict as Supras don't define isolants at this level.
+            Individual Supra objects may have their own isolant definitions.
         """
         return {}
 
@@ -229,15 +281,27 @@ class Supras(YAMLObjectBase):
         self, mname: str, is2D: bool = False, verbose: bool = False
     ) -> list[str]:
         """
-        Get names for markers/identifiers.
+        Generate marker names for mesh identification and physics assignments.
+        
+        Aggregates names from all constituent Supra magnets, adding an
+        optional prefix for hierarchical identification.
         
         Args:
-            mname: Name prefix
-            is2D: 2D mode flag
-            verbose: Enable verbose output
+            mname: Name prefix to prepend to all magnet names (e.g., "system_")
+            is2D: True for 2D axisymmetric mesh, False for 3D mesh
+            verbose: Enable verbose output showing name generation details
             
         Returns:
-            List of solid names
+            list[str]: List of marker names from all magnets with prefix applied
+        
+        Notes:
+            - Each magnet's names are prefixed with "{mname}_{magnet.name}_"
+            - Delegates to each Supra's get_names() method
+            - Used by mesh generators and physics solvers for region identification
+        
+        Example:
+            If mname="M20" and magnets are ["supra1", "supra2"], names might be:
+            ["M20_supra1_DblPancake1", "M20_supra1_DblPancake2", "M20_supra2_DblPancake1", ...]
         """
         prefix = ""
         if mname:
@@ -255,12 +319,27 @@ class Supras(YAMLObjectBase):
 
     def boundingBox(self) -> tuple:
         """
-        Calculate bounding box encompassing all magnets.
+        Calculate bounding box encompassing all constituent magnets.
+        
+        Computes the minimal axis-aligned bounding box that contains all
+        Supra magnets in the collection.
         
         Returns:
-            Tuple of (rb, zb) where:
-                rb: [r_min, r_max] radial bounds
-                zb: [z_min, z_max] axial bounds
+            tuple: (r_bounds, z_bounds) where:
+                - r_bounds: [r_min, r_max] radial extent in meters
+                - z_bounds: [z_min, z_max] axial extent in meters
+        
+        Notes:
+            - r_min: minimum inner radius across all magnets
+            - r_max: maximum outer radius across all magnets
+            - z_min: minimum bottom z-coordinate across all magnets
+            - z_max: maximum top z-coordinate across all magnets
+        
+        Example:
+            >>> supras = Supras("test", [supra1, supra2], 10, 50)
+            >>> rb, zb = supras.boundingBox()
+            >>> print(f"Radial: {rb}, Axial: {zb}")
+            Radial: [15.0, 45.0], Axial: [0.0, 100.0]
         """
         rb = [min([bitter.r[0] for bitter in self.magnets]), max([bitter.r[1] for bitter in self.magnets])]
         zb = [min([bitter.z[0] for bitter in self.magnets]), max([bitter.z[1] for bitter in self.magnets])]
@@ -268,14 +347,32 @@ class Supras(YAMLObjectBase):
 
     def intersect(self, r: list[float], z: list[float]) -> bool:
         """
-        Check if rectangle defined by r,z intersects with bounding box.
+        Check if Supras collection intersects with a given rectangular region.
+        
+        Uses the overall bounding box to test for intersection with the
+        specified region. This is a conservative test - returns True if
+        the bounding box overlaps, even if individual magnets don't.
         
         Args:
-            r: [r_min, r_max] radial bounds to check
-            z: [z_min, z_max] axial bounds to check
-            
+            r: Radial bounds [r_min, r_max] of test region in meters
+            z: Axial bounds [z_min, z_max] of test region in meters
+        
         Returns:
-            True if intersection is non-empty, False otherwise
+            bool: True if bounding boxes overlap, False otherwise
+        
+        Algorithm:
+            Uses separating axis theorem for axis-aligned rectangles:
+            - Computes overlap in r direction
+            - Computes overlap in z direction  
+            - Returns True only if both directions overlap
+        
+        Example:
+            >>> supras = Supras("test", [supra], 10, 50)
+            >>> # Test region [20, 30] × [40, 60]
+            >>> supras.intersect([20.0, 30.0], [40.0, 60.0])
+            True  # Overlaps
+            >>> supras.intersect([100.0, 110.0], [0.0, 10.0])
+            False  # No overlap
         """
         (r_i, z_i) = self.boundingBox()
 

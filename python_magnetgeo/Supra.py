@@ -22,13 +22,26 @@ from .validation import GeometryValidator, ValidationError
 
 class Supra(YAMLObjectBase):
     """
-    name :
-    r :
-    z :
-    n :
-    struct:
-
-    TODO: to link with SuperEMFL geometry.py
+    Supra - Superconducting magnet component.
+    
+    Represents a single superconducting magnet element with geometric bounds
+    and optional detailed structural definition. Can reference external HTS
+    (High-Temperature Superconductor) structure definitions for detailed modeling.
+    
+    Attributes:
+        name (str): Unique identifier for the Supra component
+        r (list[float]): Radial bounds [r_inner, r_outer] in meters
+        z (list[float]): Axial bounds [z_bottom, z_top] in meters
+        n (int): Number of turns or sections (default 0 if using struct)
+        struct (str): Path to external structure definition file (optional)
+        detail (str): Level of detail for modeling: "None", "dblpancake", "pancake", or "tape"
+    
+    yaml_tag: "Supra"
+    
+    Notes:
+        - If struct is provided, geometric dimensions can be overridden from structure file
+        - detail level controls mesh refinement and physics modeling granularity
+        - All serialization functionality inherited from YAMLObjectBase
     """
 
     yaml_tag = "Supra"
@@ -37,7 +50,26 @@ class Supra(YAMLObjectBase):
         self, name: str, r: list[float], z: list[float], n: int = 0, struct: str = ""
     ) -> None:
         """
-        initialize object
+        Initialize Supra object with validation.
+        
+        Args:
+            name: Unique identifier for the Supra component
+            r: Radial bounds [r_inner, r_outer] in meters, must be ascending
+            z: Axial bounds [z_bottom, z_top] in meters, must be ascending
+            n: Number of turns or sections (default 0, can be set from struct)
+            struct: Path to external HTS structure definition file (optional)
+        
+        Raises:
+            ValidationError: If validation fails for:
+                - Empty or invalid name
+                - r list not exactly 2 elements
+                - z list not exactly 2 elements
+                - r values not in ascending order
+                - z values not in ascending order
+        
+        Notes:
+            - detail attribute is initialized to "None" by default
+            - If struct is provided, use check_dimensions() to sync geometry
         """
         # General validation
         GeometryValidator.validate_name(name)
@@ -56,9 +88,43 @@ class Supra(YAMLObjectBase):
         self.detail = "None"  # ['None', 'dblpancake', 'pancake', 'tape']
 
     def get_magnet_struct(self, directory: Optional[str] = None) -> HTSinsert:
+        """
+        Load HTS structure definition from configuration file.
+        
+        Args:
+            directory: Optional directory path for structure files (default: None)
+        
+        Returns:
+            HTSinsert: High-temperature superconductor insert structure object
+        
+        Notes:
+            - Uses self.struct as the configuration file path
+            - Returns HTSinsert object with detailed pancake/tape geometry
+        """
         return HTSinsert.fromcfg(self.struct, directory)
 
     def check_dimensions(self, magnet: HTSinsert):
+        """
+        Synchronize geometric dimensions with HTS structure definition.
+        
+        Updates r, z, and n attributes if they differ from the values defined
+        in the provided HTSinsert structure. Prints notification if changes occur.
+        
+        Args:
+            magnet: HTSinsert structure object to check against
+        
+        Notes:
+            - Only updates if self.struct is non-empty
+            - Compares and updates: r[0], r[1], z[0], z[1], and n
+            - z bounds are computed from magnet center (Z0) ± height/2
+            - n is computed from sum of tape counts across pancakes
+        
+        Example:
+            >>> supra = Supra("test", [10, 20], [0, 50], struct="hts_config.yaml")
+            >>> hts = supra.get_magnet_struct()
+            >>> supra.check_dimensions(hts)
+            Supra/check_dimensions: override dimensions for test from hts_config.yaml
+        """
         # TODO: if struct load r,z and n from struct data
         if self.struct:
             changed = False
@@ -85,6 +151,20 @@ class Supra(YAMLObjectBase):
                 print(self)
 
     def get_lc(self):
+        """
+        Calculate characteristic length for mesh generation.
+        
+        Returns:
+            float: Characteristic length for mesh element sizing
+        
+        Algorithm:
+            - If detail is "None": (r_outer - r_inner) / 5.0
+            - Otherwise: delegates to HTSinsert.get_lc() for detailed mesh
+        
+        Notes:
+            Used by mesh generators to determine appropriate element size.
+            Finer detail levels produce smaller characteristic lengths.
+        """
         if self.detail == "None":
             return (self.r[1] - self.r[0]) / 5.0
         else:
@@ -94,11 +174,37 @@ class Supra(YAMLObjectBase):
     def get_channels(
         self, mname: str, hideIsolant: bool = True, debug: bool = False
     ) -> list:
+        """
+        Get cooling channel definitions.
+        
+        Args:
+            mname: Magnet name prefix for channel identification
+            hideIsolant: If True, exclude insulator channels from output
+            debug: Enable debug output
+        
+        Returns:
+            list: Empty list (placeholder - Supra doesn't define channels)
+        
+        Notes:
+            Supra components typically don't have internal cooling channels.
+            Override in subclasses if channel support is needed.
+        """
         return []
 
     def get_isolants(self, mname: str, debug: bool = False):
         """
-        return isolants
+        Get electrical insulator/isolant definitions.
+        
+        Args:
+            mname: Magnet name for isolant identification
+            debug: Enable debug output
+        
+        Returns:
+            list: Empty list (placeholder - isolants handled at detail level)
+        
+        Notes:
+            Insulation is typically modeled in detailed structure (HTSinsert)
+            rather than at the Supra component level.
         """
         return []
 
@@ -106,7 +212,37 @@ class Supra(YAMLObjectBase):
         self, mname: str, is2D: bool = False, verbose: bool = False
     ) -> list[str]:
         """
-        return names for Markers
+        Generate marker names for mesh identification.
+        
+        Creates identifiers for different structural elements based on the
+        level of detail requested.
+        
+        Args:
+            mname: Name prefix to prepend (typically parent magnet name)
+            is2D: True for 2D axisymmetric mesh, False for 3D mesh
+            verbose: Enable verbose output showing name generation
+        
+        Returns:
+            list[str]: List of marker names for mesh regions
+        
+        Algorithm:
+            - detail="None": Returns single marker "{mname}_Supra"
+            - detail="dblpancake": Generates markers for each double pancake
+            - detail="pancake": Generates markers for individual pancakes  
+            - detail="tape": Generates detailed tape-level markers
+        
+        Notes:
+            - Marker names used by mesh generators for region identification
+            - More detailed levels produce more marker names
+            - Names include section indices when struct is loaded
+        
+        Example:
+            >>> supra = Supra("M1", [10, 20], [0, 50], n=4)
+            >>> supra.get_names("system", is2D=False)
+            ['system_Supra']
+            >>> supra.set_Detail("dblpancake")
+            >>> supra.get_names("system", is2D=False)
+            ['system_DblPancake0', 'system_DblPancake1', ...]
         """
 
         if self.detail == "None":
@@ -122,7 +258,15 @@ class Supra(YAMLObjectBase):
 
     def __repr__(self):
         """
-        representation of object
+        Generate string representation of Supra object.
+        
+        Returns:
+            str: String showing class name and all key attributes
+        
+        Example:
+            >>> supra = Supra("M1", [10.0, 20.0], [0.0, 50.0], n=5, struct="config")
+            >>> repr(supra)
+            "Supra(name='M1', r=[10.0, 20.0], z=[0.0, 50.0], n=5, struct='config')"
         """
         return "%s(name=%r, r=%r, z=%r, n=%d, struct=%r, detail=%r)" % (
             self.__class__.__name__,
@@ -137,7 +281,29 @@ class Supra(YAMLObjectBase):
     @classmethod
     def from_dict(cls, values: dict, debug: bool = False):
         """
-        create from dict
+        Create Supra instance from dictionary representation.
+        
+        Args:
+            values: Dictionary containing Supra parameters with keys:
+                - name: Component identifier (required)
+                - r: Radial bounds [r_inner, r_outer] (required)
+                - z: Axial bounds [z_bottom, z_top] (required)
+                - n: Number of turns (optional, default 0)
+                - struct: Structure file path (optional, default "")
+            debug: Enable debug output during deserialization
+        
+        Returns:
+            Supra: New Supra instance
+        
+        Example:
+            >>> data = {
+            ...     'name': 'M1',
+            ...     'r': [10.0, 20.0],
+            ...     'z': [0.0, 50.0],
+            ...     'n': 5,
+            ...     'struct': 'hts_config.yaml'
+            ... }
+            >>> supra = Supra.from_dict(data)
         """
         name = values["name"]
         r = values["r"]
@@ -156,7 +322,20 @@ class Supra(YAMLObjectBase):
 
     def get_Nturns(self) -> int:
         """
-        returns the number of turn
+        Get the number of turns in the superconducting magnet.
+        
+        Returns:
+            int: Number of turns (from n attribute or struct if loaded)
+        
+        Notes:
+            - If struct is not set: returns self.n
+            - If struct is set but not loaded: returns -1 (error indicator)
+            - If struct is loaded: would return sum from HTSinsert (not implemented)
+        
+        Example:
+            >>> supra = Supra("test", [10, 20], [0, 50], n=5)
+            >>> supra.get_Nturns()
+            5
         """
         if not self.struct:
             return self.n
@@ -166,7 +345,28 @@ class Supra(YAMLObjectBase):
 
     def set_Detail(self, detail: str) -> None:
         """
-        returns detail level
+        Set the level of detail for structural modeling.
+        
+        Args:
+            detail: Detail level string, must be one of:
+                - "None": Simplified single-region model
+                - "dblpancake": Model at double-pancake level
+                - "pancake": Model individual pancakes
+                - "tape": Model individual tape windings
+        
+        Raises:
+            Exception: If detail value is not one of the valid options
+        
+        Notes:
+            - Higher detail levels increase mesh complexity and solve time
+            - Requires struct to be set for detail levels other than "None"
+            - Affects output of get_names() and get_lc() methods
+        
+        Example:
+            >>> supra = Supra("test", [10, 20], [0, 50], struct="config.yaml")
+            >>> supra.set_Detail("pancake")
+            >>> supra.detail
+            'pancake'
         """
         if detail in ["None", "dblpancake", "pancake", "tape"]:
             self.detail = detail
@@ -177,15 +377,60 @@ class Supra(YAMLObjectBase):
 
     def boundingBox(self) -> tuple:
         """
-        return Bounding as r[], z[]
+        Get the axis-aligned bounding box of the Supra geometry.
+        
+        Returns:
+            tuple: (r_bounds, z_bounds) where:
+                - r_bounds: [r_inner, r_outer] radial extent in meters
+                - z_bounds: [z_bottom, z_top] axial extent in meters
+        
+        Notes:
+            - Currently returns the basic r, z attributes
+            - TODO: Account for mandrin (support structure) and insulation
+                    even when detail="None"
+        
+        Example:
+            >>> supra = Supra("test", [15.0, 25.0], [10.0, 80.0])
+            >>> rb, zb = supra.boundingBox()
+            >>> print(f"Radial: {rb}, Axial: {zb}")
+            Radial: [15.0, 25.0], Axial: [10.0, 80.0]
         """
         # TODO take into account Mandrin and Isolation even if detail="None"
         return (self.r, self.z)
 
     def intersect(self, r: list[float], z: list[float]) -> bool:
         """
-        Check if intersection with rectangle defined by r,z is empty or not
-        return False if empty, True otherwise
+        Check if Supra intersects with a given rectangular region.
+        
+        Tests whether this Supra's bounding box overlaps with the specified
+        axis-aligned rectangular region in cylindrical coordinates.
+        
+        Args:
+            r: Radial bounds [r_min, r_max] of test region in meters
+            z: Axial bounds [z_min, z_max] of test region in meters
+        
+        Returns:
+            bool: True if bounding boxes overlap, False if separated
+        
+        Algorithm:
+            Uses separating axis theorem for axis-aligned rectangles:
+            - Check for overlap in radial direction
+            - Check for overlap in axial direction
+            - Both must overlap for intersection to occur
+        
+        Notes:
+            - Conservative test using bounding box
+            - Does not account for detailed internal structure
+            - Suitable for collision detection and placement validation
+        
+        Example:
+            >>> supra = Supra("test", [10.0, 20.0], [0.0, 50.0])
+            >>> # Test overlapping region
+            >>> supra.intersect([15.0, 25.0], [25.0, 75.0])
+            True
+            >>> # Test non-overlapping region
+            >>> supra.intersect([30.0, 40.0], [0.0, 10.0])
+            False
         """
 
         (r_i, z_i) = self.boundingBox()
