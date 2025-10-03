@@ -148,8 +148,8 @@ class Supras(YAMLObjectBase):
         Notes:
             Uses helper methods to handle complex nested object loading
         """
-        magnets = cls._load_nested_magnets(values.get('magnets'), debug=debug)
-        probes = cls._load_nested_probes(values.get('probes'), debug=debug)
+        magnets = cls._load_nested_list(values.get('magnets'), Supra, debug=debug)
+        probes = cls._load_nested_list(values.get('probes'), Probe, debug=debug)
 
         name = values["name"]
         innerbore = values.get("innerbore", 0)
@@ -157,88 +157,6 @@ class Supras(YAMLObjectBase):
         
         return cls(name, magnets, innerbore, outerbore, probes)
     
-    @classmethod
-    def _load_nested_magnets(cls, magnets_data, debug: bool = False) -> List[Supra]:
-        """
-        Load nested Supra objects from various input formats.
-        
-        Handles three input formats for each magnet:
-        1. Supra instance - used directly
-        2. Dictionary - converted to Supra via from_dict()
-        3. String reference - kept as-is for lazy loading
-        
-        Args:
-            magnets_data: List of Supra objects, dicts, or string references
-            debug: Enable debug output showing loading details
-            
-        Returns:
-            list: List of Supra objects (or string references for lazy loading)
-            
-        Raises:
-            ValidationError: If any magnet entry has invalid type
-        
-        Notes:
-            String references allow lazy loading where magnets are loaded
-            from YAML files only when needed
-        """
-        magnets = []
-        if magnets_data:
-            for item in magnets_data:
-                if isinstance(item, Supra):
-                    # Already a Supra object
-                    magnets.append(item)
-                elif isinstance(item, dict):
-                    # Dictionary - convert to Supra
-                    magnets.append(Supra.from_dict(item, debug=debug))
-                elif isinstance(item, str):
-                    # String reference - keep as-is for lazy loading
-                    magnets.append(item)
-                else:
-                    raise ValidationError(
-                        f"Invalid magnet entry: {item} (type: {type(item)})"
-                    )
-        return magnets
-    
-    @classmethod
-    def _load_nested_probes(cls, probes_data, debug: bool = False) -> List[Probe]:
-        """
-        Load nested Probe objects from various input formats.
-        
-        Handles three input formats for each probe:
-        1. Probe instance - used directly
-        2. Dictionary - converted to Probe via from_dict()
-        3. String reference - kept as-is for lazy loading
-        
-        Args:
-            probes_data: List of Probe objects, dicts, or string references
-            debug: Enable debug output showing loading details
-            
-        Returns:
-            list: List of Probe objects (or string references for lazy loading)
-            
-        Raises:
-            ValidationError: If any probe entry has invalid type
-        
-        Notes:
-            Returns empty list if probes_data is None
-        """
-        probes = []
-        if probes_data:
-            for item in probes_data:
-                if isinstance(item, Probe):
-                    # Already a Probe object
-                    probes.append(item)
-                elif isinstance(item, dict):
-                    # Dictionary - convert to Probe
-                    probes.append(Probe.from_dict(item, debug=debug))
-                elif isinstance(item, str):
-                    # String reference - keep as-is for lazy loading
-                    probes.append(item)
-                else:
-                    raise ValidationError(
-                        f"Invalid probe entry: {item} (type: {type(item)})"
-                    )
-        return probes
 
     def get_channels(
         self, mname: str, hideIsolant: bool = True, debug: bool = False

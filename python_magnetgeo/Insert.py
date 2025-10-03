@@ -544,10 +544,24 @@ class Insert(YAMLObjectBase):
             ... }
             >>> insert = Insert.from_dict(data)
         """
-        helices = cls._load_nested_helices(data.get('helices'), debug=debug)
-        rings = cls._load_nested_rings(data.get('rings'), debug=debug)
+        helices = cls._load_nested_list(
+            data.get('helices'), 
+            Helix, 
+            debug=debug
+        )
+        
+        rings = cls._load_nested_list(
+            data.get('rings'), 
+            Ring, 
+            debug=debug
+        )
+    
         currentleads = cls._load_nested_currentleads(data.get('currentleads'), debug=debug)
-        probes = cls._load_nested_probes(data.get('probes'), debug=debug)
+        probes = cls._load_nested_list(
+            data.get('probes'), 
+            Probe, 
+            debug=debug
+        )
 
         name = data["name"]
 
@@ -564,119 +578,6 @@ class Insert(YAMLObjectBase):
             name, helices, rings, currentleads, hangles, rangles, innerbore, outerbore, probes
         )
         return object
-
-    @classmethod  
-    def _load_nested_helices(cls, data, debug=False):
-        """
-        Load list of Helix objects from various input formats.
-        
-        This internal method handles flexible loading of helices, supporting:
-        - String references: loads from "{string}.yaml" files
-        - Dictionary definitions: creates objects inline
-        - Pre-instantiated objects: uses as-is
-        
-        Args:
-            data: List of helix specifications in any supported format, or None
-            debug: Enable debug output showing loading process for each helix
-        
-        Returns:
-            list[Helix]: List of Helix objects (empty list if data is None)
-        
-        Raises:
-            TypeError: If data is not a list or None
-            TypeError: If list items are not string/dict/Helix objects
-        
-        Example:
-            >>> # Mix of formats
-            >>> helices_data = [
-            ...     "H1",  # Load from H1.yaml
-            ...     {"name": "H2", "r": [15, 25], "z": [0, 100], ...},  # Inline
-            ...     existing_helix_object  # Already created
-            ... ]
-            >>> helices = Insert._load_nested_helices(helices_data)
-        """
-        if data is None:
-            return []
-        
-        if not isinstance(data, list):
-            raise TypeError(f"helices must be a list, got {type(data)}")
-        
-        objects = []
-        for i, _data in enumerate(data):
-            if isinstance(_data, str):
-                # String reference → load from "_data.yaml" and track reference
-                if debug:
-                    print(f"Loading Helix[{i}] from file: {_data}")
-                from .utils import loadObject
-                obj = loadObject("helix", _data, Helix, Helix.from_yaml)
-                objects.append(obj)
-            elif isinstance(_data, dict):
-                # Inline object → create from dict, no reference to track
-                if debug:
-                    print(f"Creating Helix[{i}] from inline dict: {_data.get('name', 'unnamed')}")
-                obj = Helix.from_dict(_data)
-                objects.append(obj)
-            else:
-                # Already instantiated or None
-                objects.append(_data)
-        
-        return objects
-
-    @classmethod  
-    def _load_nested_rings(cls, data, debug=False):
-        """
-        Load list of Ring objects from various input formats.
-        
-        This internal method handles flexible loading of rings, supporting:
-        - String references: loads from "{string}.yaml" files
-        - Dictionary definitions: creates objects inline
-        - Pre-instantiated objects: uses as-is
-        
-        Args:
-            data: List of ring specifications in any supported format, or None
-            debug: Enable debug output showing loading process for each ring
-        
-        Returns:
-            list[Ring]: List of Ring objects (empty list if data is None)
-        
-        Raises:
-            TypeError: If data is not a list or None
-            TypeError: If list items are not string/dict/Ring objects
-        
-        Example:
-            >>> rings_data = [
-            ...     "R1",  # Load from R1.yaml
-            ...     {"name": "R2", "r": [10, 30], "z": [50, 70]}  # Inline
-            ... ]
-            >>> rings = Insert._load_nested_rings(rings_data)
-        """
-        if data is None:
-            return []
-        
-        if not isinstance(data, list):
-            raise TypeError(f"rings must be a list, got {type(data)}")
-        
-        objects = []
-        for i, _data in enumerate(data):
-            if isinstance(_data, str):
-                # String reference → load from "_data.yaml" and track reference
-                if debug:
-                    print(f"Loading Ring[{i}] from file: {_data}")
-                from .utils import loadObject
-                obj = loadObject("ring", _data, Ring, Ring.from_yaml)
-                objects.append(obj)
-            elif isinstance(_data, dict):
-                # Inline object → create from dict, no reference to track
-                if debug:
-                    print(f"Creating Ring[{i}] from inline dict: {_data.get('name', 'unnamed')}")
-                obj = Ring.from_dict(_data)
-                objects.append(obj)
-            else:
-                # Already instantiated or None
-                objects.append(_data)
-        
-        return objects
-    
 
     @classmethod  
     def _load_nested_currentleads(cls, data, debug=False):
@@ -735,61 +636,6 @@ class Insert(YAMLObjectBase):
                         obj = OuterCurrentLead.from_dict(_data)
                     except Exception as e:
                         raise ValueError(f"Could not parse current lead (neither Inner or OuterLead) from dict: {_data}") from e    
-                objects.append(obj)
-            else:
-                # Already instantiated or None
-                objects.append(_data)
-        
-        return objects
-
-    @classmethod  
-    def _load_nested_probes(cls, data, debug=False):
-        """
-        Load list of Probe objects from various input formats.
-        
-        This internal method handles flexible loading of probes, supporting:
-        - String references: loads from "{string}.yaml" files
-        - Dictionary definitions: creates objects inline
-        - Pre-instantiated objects: uses as-is
-        
-        Args:
-            data: List of probe specifications in any supported format, or None
-            debug: Enable debug output showing loading process for each probe
-        
-        Returns:
-            list[Probe]: List of Probe objects (empty list if data is None)
-        
-        Raises:
-            TypeError: If data is not a list or None
-            TypeError: If list items are not string/dict/Probe objects
-        
-        Example:
-            >>> probes_data = [
-            ...     "probe1",  # Load from probe1.yaml
-            ...     {"name": "probe2", ...}  # Inline definition
-            ... ]
-            >>> probes = Insert._load_nested_probes(probes_data)
-        """
-        if data is None:
-            return []
-        
-        if not isinstance(data, list):
-            raise TypeError(f"probes must be a list, got {type(data)}")
-        
-        objects = []
-        for i, _data in enumerate(data):
-            if isinstance(_data, str):
-                # String reference → load from "_data.yaml" and track reference
-                if debug:
-                    print(f"Loading Probe[{i}] from file: {_data}")
-                from .utils import loadObject
-                obj = loadObject("probe", _data, Probe, Probe.from_yaml)
-                objects.append(obj)
-            elif isinstance(_data, dict):
-                # Inline object → create from dict, no reference to track
-                if debug:
-                    print(f"Creating Probe[{i}] from inline dict: {_data.get('name', 'unnamed')}")
-                obj = Probe.from_dict(_data)
                 objects.append(obj)
             else:
                 # Already instantiated or None

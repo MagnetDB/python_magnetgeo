@@ -9,6 +9,7 @@ Provides definition for Site:
 from .Insert import Insert
 from .Bitter import Bitter
 from .Supra import Supra
+from .Screen import Screen
 from .utils import getObject
 
 from typing import Union, Optional, List
@@ -350,7 +351,7 @@ class MSite(YAMLObjectBase):
             >>> msite = MSite.from_dict(data)
         """
         magnets = cls._load_nested_magnets(values.get('magnets'), debug=debug)
-        screens = cls._load_nested_screens(values.get('screens'), debug=debug)  # NEW: Load screens
+        screens = cls._load_nested_list(values.get('screens'), Screen, debug=debug)  # NEW: Load screens
 
         name = values["name"]
         magnets = values["magnets"]
@@ -415,55 +416,6 @@ class MSite(YAMLObjectBase):
         else:
             raise ValidationError("Magnets must be a list or a dictionary")
         
-    @classmethod
-    def _load_nested_screens(cls, screens_data, debug=False):
-        """
-        Load list of Screen objects from various input formats.
-        
-        This internal method handles flexible loading of screening elements,
-        which are optional components used for magnetic field shaping.
-        
-        Args:
-            screens_data: Screen specifications in any of these formats:
-                - None: returns None (no screens)
-                - List: each item must be dict (inline screen definition)
-                - Dict: single screen definition, returns list with one screen
-            debug: Enable debug output showing loading process for each screen
-        
-        Returns:
-            list[Screen] or None: List of Screen objects, or None if screens_data is None
-        
-        Raises:
-            ValidationError: If screens_data is not None/list/dict
-            ValidationError: If list items are not dictionaries
-        
-        Notes:
-            - Unlike magnets, screens are typically defined inline
-            - Returns None (not empty list) when no screens specified
-            - Delegates to _load_single_screen for individual screen loading
-        
-        Example:
-            >>> screens_data = [
-            ...     {"name": "screen1", "r": [0, 60], "z": [0, 200]},
-            ...     {"name": "screen2", "r": [0, 70], "z": [200, 400]}
-            ... ]
-            >>> screens = MSite._load_nested_screens(screens_data)
-        """
-        if screens_data is None:
-            return None
-        elif isinstance(screens_data, list):
-            screens = []
-            for item in screens_data:
-                if isinstance(item, dict):
-                    screen = cls._load_single_screen(item, debug)
-                    screens.append(screen)
-                else:
-                    raise ValidationError("Each screen must be a dictionary")
-            return screens
-        elif isinstance(screens_data, dict):
-            return [cls._load_single_screen(screens_data, debug)]
-        else:
-            raise ValidationError("Screens must be a list or a dictionary") 
         
     def boundingBox(self) -> tuple:
         """

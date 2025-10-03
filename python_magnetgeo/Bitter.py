@@ -213,9 +213,9 @@ class Bitter(YAMLObjectBase):
             ... }
             >>> bitter = Bitter.from_dict(data)
         """
-        modelaxi = cls._load_nested_modelaxi(values.get('modelaxi'), debug=debug)
-        coolingslits = cls._load_nested_coolingslits(values.get('coolingslits'), debug=debug)
-        tierod = cls._load_nested_tierod(values.get('tierod'), debug=debug)
+        modelaxi = cls._load_nested_single(values.get('modelaxi'), ModelAxi, debug=debug)
+        coolingslits = cls._load_nested_list(values.get('coolingslits'), CoolingSlit, debug=debug)
+        tierod = cls._load_nested_single(values.get('tierod'), Tierod, debug=debug)
 
         name = values["name"]
         r = values["r"]
@@ -229,152 +229,6 @@ class Bitter(YAMLObjectBase):
 
         object = cls(name, r, z, odd, modelaxi, coolingslits, tierod, innerbore, outerbore)
         return object
-
-    @classmethod  
-    def _load_nested_modelaxi(cls, modelaxi_data, debug=False):
-        """
-        Load ModelAxi object from various input formats.
-        
-        Internal method handling flexible loading of the helical cut pattern definition.
-        
-        Args:
-            modelaxi_data: ModelAxi specification in any format:
-                - String: loads from "{string}.yaml" file
-                - Dict: creates ModelAxi inline from dictionary
-                - ModelAxi object: uses as-is
-                - None: returns None (no helical pattern)
-            debug: Enable debug output showing loading process
-        
-        Returns:
-            ModelAxi or None: ModelAxi object defining helical pattern, or None
-        
-        Notes:
-            - Uses utils.loadObject for file-based loading
-            - Delegates to ModelAxi.from_dict for dictionary parsing
-        
-        Example:
-            >>> # Load from file
-            >>> modelaxi = Bitter._load_nested_modelaxi("helix")
-            >>> 
-            >>> # Create from dict
-            >>> modelaxi = Bitter._load_nested_modelaxi({
-            ...     "name": "helix", "h": 48, "turns": [5, 7], "pitch": [8, 8]
-            ... })
-        """
-        if isinstance(modelaxi_data, str):
-            # String reference → load from "modelaxi_data.yaml"
-            from .utils import loadObject
-            return loadObject("modelaxi", modelaxi_data, ModelAxi, ModelAxi.from_yaml)
-        elif isinstance(modelaxi_data, dict):
-            # Inline object → create from dict
-            return ModelAxi.from_dict(modelaxi_data)
-        else:
-            # None or already instantiated
-            return modelaxi_data
-
-    @classmethod  
-    def _load_nested_coolingslits(cls, coolingslits_data, debug=False):
-        """
-        Load list of CoolingSlit objects from various input formats.
-        
-        Internal method handling flexible loading of cooling channel definitions.
-        
-        Args:
-            coolingslits_data: List of CoolingSlit specifications:
-                - String: loads from "{string}.yaml" file
-                - Dict: creates CoolingSlit inline from dictionary
-                - CoolingSlit object: uses as-is
-                - None/empty list: returns empty list
-            debug: Enable debug output showing loading process for each slit
-        
-        Returns:
-            list[CoolingSlit]: List of CoolingSlit objects (empty if data is None/empty)
-        
-        Notes:
-            - Each cooling slit defines a radial position with specific geometry
-            - Slits are typically ordered from inner to outer radius
-            - Uses utils.loadObject for file-based loading
-            - Delegates to CoolingSlit.from_dict for dictionary parsing
-        
-        Example:
-            >>> slits_data = [
-            ...     "slit1",  # Load from file
-            ...     {"name": "slit2", "r": 135, "angle": 4.5, ...}  # Inline
-            ... ]
-            >>> slits = Bitter._load_nested_coolingslits(slits_data)
-        """
-        if coolingslits_data is None:
-            return []
-        
-        if not isinstance(coolingslits_data, list):
-            raise TypeError(f"coolingslits must be a list, got {type(coolingslits_data)}")
-        
-        objects = []
-        references = []
-        for i, slit_data in enumerate(coolingslits_data):
-            if isinstance(slit_data, str):
-                # String reference → load from "slit_data.yaml" and track reference
-                if debug:
-                    print(f"Loading CoolingSlit[{i}] from file: {slit_data}")
-                from .utils import loadObject
-                obj = loadObject("coolingslit", slit_data, CoolingSlit, CoolingSlit.from_yaml)
-                objects.append(obj)
-            elif isinstance(slit_data, dict):
-                # Inline object → create from dict, no reference to track
-                if debug:
-                    print(f"Creating CoolingSlit[{i}] from inline dict: {slit_data.get('name', 'unnamed')}")
-                obj = CoolingSlit.from_dict(slit_data)
-                objects.append(obj)
-            else:
-                # Already instantiated or None
-                objects.append(slit_data)
-                references.append(None)  # No string reference
-        
-        return objects
-
-    @classmethod  
-    def _load_nested_tierod(cls, tierod_data, debug=False):
-        """
-        Load Tierod object from various input formats.
-        
-        Internal method handling flexible loading of tie rod hole definition.
-        
-        Args:
-            tierod_data: Tierod specification in any format:
-                - String: loads from "{string}.yaml" file
-                - Dict: creates Tierod inline from dictionary
-                - Tierod object: uses as-is
-                - None: returns None (no tie rods)
-            debug: Enable debug output showing loading process
-        
-        Returns:
-            Tierod or None: Tierod object defining mechanical reinforcement holes, or None
-        
-        Notes:
-            - Tie rods provide mechanical support for the Bitter stack
-            - Defined by radial position, number of holes, and geometry
-            - Uses utils.loadObject for file-based loading
-            - Delegates to Tierod.from_dict for dictionary parsing
-        
-        Example:
-            >>> # Load from file
-            >>> tierod = Bitter._load_nested_tierod("tierod1")
-            >>> 
-            >>> # Create from dict
-            >>> tierod = Bitter._load_nested_tierod({
-            ...     "name": "tierod", "r": 95, "n": 6, ...
-            ... })
-        """
-        if isinstance(tierod_data, str):
-            # String reference → load from "modelaxi_data.yaml"
-            from .utils import loadObject
-            return loadObject("modelaxi", tierod_data, Tierod, Tierod.from_yaml)
-        elif isinstance(tierod_data, dict):
-            # Inline object → create from dict
-            return Tierod.from_dict(tierod_data)
-        else:
-            # None or already instantiated
-            return tierod_data
 
 
     def equivalent_eps(self, i: int):

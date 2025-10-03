@@ -5,9 +5,11 @@
 Provides definiton for CoolingSlits:
 """
 
-from typing import List
+from typing import List, Union
 from .base import YAMLObjectBase
 from .validation import GeometryValidator, ValidationError
+
+from .Contour2D import Contour2D
 
 class CoolingSlit(YAMLObjectBase):
     """
@@ -22,7 +24,7 @@ class CoolingSlit(YAMLObjectBase):
     yaml_tag = "CoolingSlit"
 
     def __init__(
-        self, name: str, r: float, angle: float, n: int, dh: float, sh: float, contour2d
+        self, name: str, r: float, angle: float, n: int, dh: float, sh: float, contour2d: Union[str, Contour2D]
     ) -> None:
         """
         Initialize a cooling slit channel for Bitter disk magnets.
@@ -228,7 +230,7 @@ class CoolingSlit(YAMLObjectBase):
             >>> slit3 = CoolingSlit.from_dict(data3)
         """
         # Smart nested object handling
-        contour2d = cls._load_nested_contour2d(values.get('contour2d'), debug=debug)
+        contour2d = cls._load_nested_single(values.get('contour2d'), Contour2D, debug=debug)
         return cls(
             name=values.get("name", ""),
             r=values["r"],
@@ -239,54 +241,3 @@ class CoolingSlit(YAMLObjectBase):
             contour2d=contour2d
         )
     
-    @classmethod  
-    def _load_nested_contour2d(cls, contour2d_data, debug=False):
-        """
-        Load Contour2D object from various input formats.
-        
-        Internal method handling flexible loading of the channel cross-section
-        geometry definition.
-        
-        Args:
-            contour2d_data: Contour2D specification in any format:
-                - String: loads from "{string}.yaml" file
-                - Dict: creates Contour2D inline from dictionary
-                - Contour2D object: uses as-is
-                - None: returns None (no detailed geometry)
-            debug: Enable debug output showing loading process
-        
-        Returns:
-            Contour2D or None: Contour2D object defining channel geometry, or None
-        
-        Notes:
-            - Uses utils.loadObject for file-based loading
-            - Delegates to Contour2D.from_dict for dictionary parsing
-            - None is valid for simplified models without detailed geometry
-            - Contour2D defines the actual shape of each cooling channel
-        
-        Example:
-            >>> # Load from file
-            >>> contour = CoolingSlit._load_nested_contour2d("channel_profile")
-            >>> 
-            >>> # Create from dict
-            >>> contour = CoolingSlit._load_nested_contour2d({
-            ...     "name": "profile",
-            ...     "points": [[0, 0], [2, 0], [2, 1], [0, 1]]
-            ... })
-            >>> 
-            >>> # Use None for simplified model
-            >>> contour = CoolingSlit._load_nested_contour2d(None)
-            >>> assert contour is None
-        """
-        if isinstance(contour2d_data, str):
-            # String reference → load from "contour2d_data.yaml"
-            from .utils import loadObject
-            from .Contour2D import Contour2D
-            return loadObject("contour2d", contour2d_data, Contour2D, Contour2D.from_yaml)
-        elif isinstance(contour2d_data, dict):
-            # Inline object → create from dict
-            from .Contour2D import Contour2D
-            return Contour2D.from_dict(contour2d_data)
-        else:
-            # None or already instantiated
-            return contour2d_data

@@ -55,7 +55,7 @@ class Helix(YAMLObjectBase):
         cutwidth: float,
         odd: bool,
         dble: bool,
-        modelaxi: ModelAxi,
+        modelaxi: ModelAxi = None,
         model3d: Model3D = None,
         shape: Shape = None,
         chamfers: list = None,
@@ -260,11 +260,11 @@ class Helix(YAMLObjectBase):
             Handles nested objects (modelaxi, model3d, shape, chamfers, grooves)
             by loading from files or instantiating from dicts
         """
-        modelaxi = cls._load_nested_modelaxi(values.get('modelaxi'), debug=debug)
-        model3d = cls._load_nested_model3d(values.get('model3d'), debug=debug)
-        shape = cls._load_nested_shape(values.get('shape'), debug=debug)
-        chamfers = cls._load_nested_chamfers(values.get('chamfers'), debug=debug)
-        grooves = cls._load_nested_groove(values.get('grooves'), debug=debug)
+        modelaxi = cls._load_nested_single(values.get('modelaxi'), ModelAxi, debug=debug)
+        model3d = cls._load_nested_single(values.get('model3d'), Model3D, debug=debug)
+        shape = cls._load_nested_single(values.get('shape'), Shape, debug=debug)
+        chamfers = cls._load_nested_list(values.get('chamfers'), Chamfer, debug=debug)
+        grooves = cls._load_nested_single(values.get('grooves'), Groove, debug=debug)
         
         name = values["name"]
         r = values["r"]
@@ -279,145 +279,6 @@ class Helix(YAMLObjectBase):
         # object.update()
         return object
     
-    @classmethod  
-    def _load_nested_modelaxi(cls, modelaxi_data, debug=False):
-        """
-        Load ModelAxi object from string reference, dict, or existing instance.
-        
-        Args:
-            modelaxi_data: String filename, dict, or ModelAxi instance
-            debug: Enable debug output
-        
-        Returns:
-            ModelAxi: Loaded or instantiated ModelAxi object, or None
-        """
-        if isinstance(modelaxi_data, str):
-            # String reference → load from "modelaxi_data.yaml"
-            from .utils import loadObject
-            return loadObject("modelaxi", modelaxi_data, ModelAxi, ModelAxi.from_yaml)
-        elif isinstance(modelaxi_data, dict):
-            # Inline object → create from dict
-            return ModelAxi.from_dict(modelaxi_data)
-        else:
-            # None or already instantiated
-            return modelaxi_data
-
-    @classmethod  
-    def _load_nested_model3d(cls, model3d_data, debug=False):
-        """
-        Load Model3D object from string reference, dict, or existing instance.
-        
-        Args:
-            model3d_data: String filename, dict, or Model3D instance
-            debug: Enable debug output
-        
-        Returns:
-            Model3D: Loaded or instantiated Model3D object, or None
-        """
-        if isinstance(model3d_data, str):
-            # String reference → load from "modelaxi_data.yaml"
-            from .utils import loadObject
-            return loadObject("model3d", model3d_data, Model3D, Model3D.from_yaml)
-        elif isinstance(model3d_data, dict):
-            # Inline object → create from dict
-            return Model3D.from_dict(model3d_data)
-        else:
-            # None or already instantiated
-            return model3d_data
-
-    @classmethod  
-    def _load_nested_shape(cls, shape_data, debug=False):
-        """
-        Load Shape object from string reference, dict, or existing instance.
-        
-        Args:
-            shape_data: String filename, dict, or Shape instance
-            debug: Enable debug output
-        
-        Returns:
-            Shape: Loaded or instantiated Shape object, or None
-        """
-        if isinstance(shape_data, str):
-            # String reference → load from "modelaxi_data.yaml"
-            from .utils import loadObject
-            return loadObject("shape", shape_data, Shape, Shape.from_yaml)
-        elif isinstance(shape_data, dict):
-            # Inline object → create from dict
-            return Shape.from_dict(shape_data)
-        else:
-            # None or already instantiated
-            return shape_data
-
-    @classmethod  
-    def _load_nested_groove(cls, groove_data, debug=False):
-        """
-        Load Groove object from string reference, dict, or existing instance.
-        
-        Args:
-            groove_data: String filename, dict, or Groove instance
-            debug: Enable debug output
-        
-        Returns:
-            Groove: Loaded or instantiated Groove object, or default Groove()
-        """
-        if groove_data is None:
-            return Groove()
-        
-        if isinstance(groove_data, str):
-            # String reference → load from "groove_data.yaml"
-            from .utils import loadObject
-            return loadObject("groove", groove_data, Groove, Groove.from_yaml)
-        elif isinstance(groove_data, dict):
-            # Inline object → create from dict
-            return Groove.from_dict(groove_data)
-        else:
-            # None or already instantiated
-            return groove_data
-
-    @classmethod  
-    def _load_nested_chamfers(cls, chamfers_data, debug=False):
-        """
-        Load list of Chamfer objects from various input formats.
-        
-        Args:
-            chamfers_data: List of string filenames, dicts, or Chamfer instances
-            debug: Enable debug output with detailed loading information
-        
-        Returns:
-            list: List of Chamfer objects
-        
-        Raises:
-            TypeError: If chamfers_data is not a list
-        """
-        if chamfers_data is None:
-            return []
-        
-        if not isinstance(chamfers_data, list):
-            raise TypeError(f"chamfers must be a list, got {type(chamfers_data)}")
-        
-        objects = []
-        references = []
-        for i, chamfer_data in enumerate(chamfers_data):
-            if isinstance(chamfer_data, str):
-                # String reference → load from "chamfer_data.yaml" and track reference
-                if debug:
-                    print(f"Loading Chamfer[{i}] from file: {chamfer_data}")
-                from .utils import loadObject
-                obj = loadObject("chamfer", chamfer_data, Chamfer, Chamfer.from_yaml)
-                objects.append(obj)
-            elif isinstance(chamfer_data, dict):
-                # Inline object → create from dict, no reference to track
-                if debug:
-                    print(f"Creating Chamfer[{i}] from inline dict: {chamfer_data.get('name', 'unnamed')}")
-                obj = Chamfer.from_dict(chamfer_data)
-                objects.append(obj)
-            else:
-                # Already instantiated or None
-                objects.append(chamfer_data)
-                references.append(None)  # No string reference
-        
-        return objects
-
     def getModelAxi(self):
         """
         Get the axisymmetric model definition.

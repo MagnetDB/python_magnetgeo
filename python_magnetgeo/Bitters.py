@@ -337,8 +337,8 @@ class Bitters(YAMLObjectBase):
             ... }
             >>> bitters = Bitters.from_dict(data)
         """
-        magnets = cls._load_nested_magnets(values.get('magnets'), debug=debug)
-        probes = cls._load_nested_probes(values.get('probes'), debug=debug)  # NEW: Load probes
+        magnets = cls._load_nested_list(values.get('magnets'), Bitter, debug=debug)
+        probes = cls._load_nested_list(values.get('probes'), Probe, debug=debug)  # NEW: Load probes
 
         name = values["name"]
         # magnets = values["magnets"]
@@ -349,123 +349,6 @@ class Bitters(YAMLObjectBase):
         object = cls(name, magnets, innerbore, outerbore, probes)
         return object
     
-    @classmethod
-    def _load_nested_magnets(cls, magnets_data: List, debug: bool = False) -> List:
-        """
-        Load list of Bitter magnet objects from various input formats.
-        
-        This internal method handles flexible loading of Bitter magnets,
-        supporting multiple input formats for maximum flexibility.
-        
-        Args:
-            magnets_data: List of Bitter magnet specifications in any format:
-                - String: loads from "{string}.yaml" file
-                - Dict: creates Bitter inline from dictionary
-                - Bitter object: uses pre-instantiated object as-is
-                - None entries are skipped
-            debug: Enable debug output showing loading process for each magnet
-        
-        Returns:
-            list[Bitter]: List of Bitter objects (empty list if magnets_data is None/empty)
-        
-        Raises:
-            ValidationError: If list item is not string/dict/Bitter/None
-        
-        Notes:
-            - Uses utils.loadObject for file-based loading
-            - Delegates to Bitter.from_dict for dictionary parsing
-            - Accepts already-instantiated Bitter objects directly
-            - Skips None values in the list
-        
-        Example:
-            >>> magnets_data = [
-            ...     "B1",  # Load from file
-            ...     {"name": "B2", "r": [...], ...},  # Inline
-            ...     existing_bitter_object,  # Pre-created
-            ...     None  # Skipped
-            ... ]
-            >>> magnets = Bitters._load_nested_magnets(magnets_data)
-            >>> len(magnets)  # 3 (None was skipped)
-        """
-        objects = []
-        if not magnets_data:
-            return objects
-
-        for i, magnet_data in enumerate(magnets_data):
-            if isinstance(magnet_data, str):
-                # Reference to external file → load from file
-                if debug:
-                    print(f"Loading Magnet[{i}] from file: {magnet_data}", flush=True)
-                from .utils import loadObject
-                obj = loadObject("ring", magnet_data, Bitter, Bitter.from_yaml)
-                objects.append(obj)
-            elif isinstance(magnet_data, dict):
-                # Inline object → create from dict, no reference to track
-                if debug:
-                    print(f"Creating Magnet[{i}] from inline dict: {magnet_data.get('name', 'unnamed')}", flush=True)
-                obj = Bitter.from_dict(magnet_data)
-                objects.append(obj)
-            elif isinstance(magnet_data, Bitter):
-                # None or already instantiated
-                objects.append(magnet_data)
-            else:
-                raise ValidationError(f"Invalid magnet data at index {i}: {magnet_data}")            
-        return objects
-    
-    @classmethod
-    def _load_nested_probes(cls, probes_data: List, debug: bool = False) -> List:
-        """
-        Load list of Probe objects from various input formats.
-        
-        This internal method handles flexible loading of measurement probes
-        that may be embedded in the Bitter magnet assembly.
-        
-        Args:
-            probes_data: List of probe specifications in any format:
-                - String: loads from "{string}.yaml" file
-                - Dict: creates Probe inline from dictionary
-                - None/empty list: returns empty list
-            debug: Enable debug output showing loading process for each probe
-        
-        Returns:
-            list[Probe]: List of Probe objects (empty list if probes_data is None/empty)
-        
-        Raises:
-            ValidationError: If list item is not string/dict
-        
-        Notes:
-            - Uses utils.loadObject for file-based loading
-            - Delegates to Probe.from_dict for dictionary parsing
-            - Does not accept pre-instantiated Probe objects (unlike magnets)
-        
-        Example:
-            >>> probes_data = [
-            ...     "temp_probe",  # Load from file
-            ...     {"name": "voltage_probe", "type": "voltage", ...}  # Inline
-            ... ]
-            >>> probes = Bitters._load_nested_probes(probes_data)
-        """
-        objects = []
-        if not probes_data:
-            return objects
-
-        for i, probe_data in enumerate(probes_data):
-            if isinstance(probe_data, str):
-                # Reference to external file → load from file
-                if debug:
-                    print(f"Loading Probe[{i}] from file: {probe_data}")
-                from .utils import loadObject
-                obj = loadObject("probe", probe_data, Probe, Probe.from_yaml)
-                objects.append(obj)
-            elif isinstance(probe_data, dict):
-                # Inline object → create from dict, no reference to track
-                if debug:
-                    print(f"Creating Probe[{i}] from inline dict: {probe_data.get('name', 'unnamed')}")
-                obj = Probe.from_dict(probe_data)
-                objects.append(obj)
-            else:
-                raise ValidationError(f"Invalid probe data at index {i}: {probe_data}")
-        return objects
     
     ###################################################################
     #

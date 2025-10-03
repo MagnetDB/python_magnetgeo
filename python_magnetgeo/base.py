@@ -298,7 +298,9 @@ class YAMLObjectBase(SerializableMixin):
         - Consistent from_yaml() and from_json() aliases
         - Consistent YAML representation via custom representer
     """
-    
+    # Class registry - shared across all subclasses
+    _class_registry = {}
+
     def __init_subclass__(cls, **kwargs):
         """
         Automatically register YAML constructors for all subclasses.
@@ -307,6 +309,14 @@ class YAMLObjectBase(SerializableMixin):
         """
         super().__init_subclass__(**kwargs)
         
+        # Register the class by its name
+        class_name = cls.__name__
+        cls._class_registry[class_name] = cls
+        
+        # Also register by yaml_tag if it exists
+        if hasattr(cls, 'yaml_tag') and cls.yaml_tag:
+            cls._class_registry[cls.yaml_tag] = cls
+            
         # Ensure the class has a yaml_tag
         if not hasattr(cls, 'yaml_tag') or not cls.yaml_tag:
             raise ValueError(f"Class {cls.__name__} must define a yaml_tag")
@@ -352,6 +362,33 @@ class YAMLObjectBase(SerializableMixin):
         print(f"Auto-registered YAML constructor and representer for {cls.__name__}")
 
     @classmethod
+    def get_class(cls, name: str):
+        """
+        Get a registered class by name.
+        
+        Args:
+            name: Class name or yaml_tag
+            
+        Returns:
+            The class object, or None if not found
+            
+        Example:
+            >>> Ring_class = YAMLObjectBase.get_class('Ring')
+            >>> ring = Ring_class.from_dict(data)
+        """
+        return cls._class_registry.get(name)
+    
+    @classmethod
+    def get_all_classes(cls):
+        """
+        Get all registered classes.
+        
+        Returns:
+            Dictionary of {name: class} for all registered classes
+        """
+        return cls._class_registry.copy()
+
+    @classmethod
     def from_yaml(cls: Type[T], filename: str, debug: bool = False) -> T:
         """
         Create object from YAML file.
@@ -384,3 +421,125 @@ class YAMLObjectBase(SerializableMixin):
         """
         return cls.load_from_json(filename, debug)
 
+    @classmethod
+    def _load_nested_list(cls, data, object_class, debug=False):
+        """
+        Generic loader for lists of nested objects.
+        
+        Handles three input formats:
+        1. String: loads from file "{string}.yaml"
+        2. Dict: creates object from dictionary
+        3. Object: returns as-is (already instantiated)
+        
+        Args:
+            data: List of strings/dicts/objects, or None
+            object_class: The class to instantiate (e.g., Helix, Ring)
+            debug: Enable debug output
+            
+        Returns:
+            List of instantiated objects
+            
+        Example:
+            helices = cls._load_nested_list(data, Helix, debug)
+        """
+        if data is None:
+            return []
+        
+        if not isinstance(data, list):
+            raise TypeError(
+                f"Expected list for nested objects, got {type(data).__name__}"
+            )
+        
+        objects = []
+        class_name = object_class.__name__.lower()
+        
+        for i, item in enumerate(data):
+            if isinstance(item, str):
+                # String reference → load from file
+                if debug:
+                    print(f"Loading {object_class.__name__}[{i}] from file: {item}")
+                from .utils import loadObject
+                obj = loadObject(
+                    class_name, 
+                    item, 
+                    object_class, 
+                    object_class.from_yaml
+                )
+                objects.append(obj)
+                
+            elif isinstance(item, dict):
+                # Inline dictionary → create from dict
+                if debug:
+                    print(f"Creating {object_class.__name__}[{i}] from inline dict")
+                obj = object_class.from_dict(item, debug=debug)
+                objects.append(obj)
+                
+            elif item is None:
+                # Skip None values
+                if debug:
+                    print(f"Skipping None value at index {i}")
+                continue
+                
+            else:
+                # Already instantiated object
+                if not isinstance(item, object_class):
+                    raise TypeError(
+                        f"Expected {object_class.__name__}, str, or dict, "
+                        f"got {type(item).__name__} at index {i}"
+                    )
+                objects.append(item)
+        
+        return objects
+    
+    @classmethod
+    def _load_nested_single(cls, data, object_class, debug=False):
+        """
+        Generic loader for single nested object.
+        
+        Handles three input formats:
+        1. String: loads from file "{string}.yaml"
+        2. Dict: creates object from dictionary
+        3. Object: returns as-is (already instantiated)
+        4. None: returns None
+        
+        Args:
+            data: String/dict/object, or None
+            object_class: The class to instantiate
+            debug: Enable debug output
+            
+        Returns:
+            Instantiated object or None
+            
+        Example:
+            modelaxi = cls._load_nested_single(data, ModelAxi, debug)
+        """
+        if data is None:
+            return None
+        
+        if isinstance(data, str):
+            # String reference → load from file
+            if debug:
+                print(f"Loading {object_class.__name__} from file: {data}")
+            from .utils import loadObject
+            return loadObject(
+                object_class.__name__.lower(),
+                data,
+                object_class,
+                object_class.from_yaml
+            )
+            
+        elif isinstance(data, dict):
+            # Inline dictionary → create from dict
+            if debug:
+                print(f"Creating {object_class.__name__} from inline dict")
+            return object_class.from_dict(data, debug=debug)
+            
+        elif isinstance(data, object_class):
+            # Already instantiated
+            return data
+            
+        else:
+            raise TypeError(
+                f"Expected {object_class.__name__}, str, dict, or None, "
+                f"got {type(data).__name__}"
+            )
