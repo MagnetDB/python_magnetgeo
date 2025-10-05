@@ -134,7 +134,6 @@ class TestRing:
         assert parsed["r"] == [12.0, 12.1, 27.9, 28.0]
         assert parsed["z"] == [45.0, 55.0]
 
-
 class TestSupra:
     """Test Supra class - superconducting magnet"""
 

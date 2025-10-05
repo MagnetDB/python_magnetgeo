@@ -98,10 +98,10 @@ class TestSerialization:
             "__classname__": "Insert",
             "name": "dict_insert",
             "helices": [helix_dict],              # Use inline dict
-            "rings": [ring_dict],                 # Use inline dict
-            "currentleads": [inner_lead_dict, outer_lead_dict],  # Use inline dicts for both leads
+            "rings": [],                 # Use inline dict
+            "currentleads": [inner_lead_dict],  # Use inline dicts for both leads
             "hangles": [180.0],
-            "rangles": [90.0],
+            "rangles": [],
             "innerbore": 8.0,
             "outerbore": 35.0,
             "probes": [probe_dict]                # Use inline dict
@@ -112,11 +112,8 @@ class TestSerialization:
         assert insert.name == "dict_insert"
         assert len(insert.helices) == 1
         assert insert.helices[0].name == "helix1"
-        assert len(insert.rings) == 1
-        assert insert.rings[0].name == "ring1"
-        assert len(insert.currentleads) == 2
+        assert len(insert.currentleads) == 1
         assert insert.currentleads[0].name == "inner"
-        assert insert.currentleads[1].name == "outer"
         assert len(insert.probes) == 1
         assert insert.probes[0].name == "probe1"
         assert insert.innerbore == 8.0

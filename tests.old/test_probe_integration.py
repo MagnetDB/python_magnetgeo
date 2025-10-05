@@ -57,7 +57,7 @@ class TestProbeIntegration:
         insert = Insert(
             name="string_probe_insert",
             helices=["helix1"],
-            rings=["ring1"],
+            rings=[],
             currentleads=[],
             hangles=[],
             rangles=[],

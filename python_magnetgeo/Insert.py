@@ -15,7 +15,7 @@ from .OuterCurrentLead import OuterCurrentLead
 from .Probe import Probe
 from .utils import getObject, flatten
 
-from typing import List
+from typing import List, Union
 from .base import YAMLObjectBase
 from .validation import GeometryValidator, ValidationError
 
@@ -35,17 +35,41 @@ def filter(data: list[float], tol: float = 1.0e-6) -> list[float]:
 
 class Insert(YAMLObjectBase):
     """
-    name :
-    helices :
-    rings :
-    currentleads :
-
-    hangles :
-    rangles :
-
-    innerbore:
-    outerbore:
-    probes :           # NEW ATTRIBUTE
+    Complete magnet insert assembly.
+    
+    An Insert combines multiple helices (coils) with optional rings connecting them.
+    
+    Geometric Rules:
+        - Rings connect adjacent helices: len(rings) = len(helices) - 1
+        - Minimum 2 helices required when rings are present
+        - Each helix can have one angle specification (hangles)
+        - Each ring can have one angle specification (rangles)
+        - innerbore < first helix inner radius
+        - outerbore > last helix outer radius
+    
+    Args:
+        name: Insert identifier
+        helices: List of Helix objects or filenames (required)
+        rings: List of Ring objects or filenames connecting helices (optional)
+        currentleads: List of current lead objects or filenames (optional)
+        hangles: Angular positions for each helix in degrees (optional)
+        rangles: Angular positions for each ring in degrees (optional)
+        innerbore: Inner bore diameter in mm (optional, default=0)
+        outerbore: Outer bore diameter in mm (optional, default=0)
+        probes: List of Probe objects for measurements (optional)
+    
+    Raises:
+        ValidationError: If geometric constraints are violated
+    
+    Examples:
+        >>> # Insert with 3 helices and 2 connecting rings
+        >>> insert = Insert(
+        ...     name="HL-31",
+        ...     helices=["H1", "H2", "H3"],
+        ...     rings=["R1", "R2"],  # R1 connects H1-H2, R2 connects H2-H3
+        ...     innerbore=18.54,
+        ...     outerbore=186.25
+        ... )
     """
 
     yaml_tag = "Insert"
@@ -53,17 +77,52 @@ class Insert(YAMLObjectBase):
     def __init__(
         self,
         name: str,
-        helices: list[Helix],
-        rings: list[Ring],
-        currentleads: list,
+        helices: List[Union[str, Helix]],
+        rings: List[Union[str, Ring]],
+        currentleads: List[Union[str, InnerCurrentLead, OuterCurrentLead]],
         hangles: list[float],
         rangles: list[float],
         innerbore: float = 0,
         outerbore: float = 0,
-        probes: list = None,  # NEW PARAMETER
+        probes: List[Union[str, Probe]] = None,  # NEW PARAMETER
     ):
         """
-        constructor
+        Initialize an Insert magnet assembly.
+        
+        An Insert represents a complete resistive magnet insert assembly containing
+        helical coils, reinforcement rings, current leads, and optional probes.
+        
+        Args:
+            name: Unique identifier for the insert assembly
+            helices: List of Helix objects or string references to helix YAML files
+            rings: List of Ring objects or string references to ring YAML files
+            currentleads: List of CurrentLead objects (InnerCurrentLead or OuterCurrentLead)
+                        or string references to current lead YAML files
+            hangles: List of angular positions (degrees) for helices placement
+            rangles: List of angular positions (degrees) for rings placement
+            innerbore: Inner bore radius in mm (0 means unspecified)
+            outerbore: Outer bore radius in mm (0 means unspecified)
+            probes: Optional list of Probe objects or string references to probe YAML files
+        
+        Raises:
+            ValidationError: If name is invalid or if innerbore >= outerbore (when both non-zero)
+            ValidationError: If helices list is empty
+            ValidationError: If rings list length doesn't match helices (when rings present)
+            ValidationError: If inner/outer current leads have inconsistent zinf values
+        
+        Example:
+            >>> helix1 = Helix("H1", r=[10.0, 20.0], z=[0.0, 100.0], ...)
+            >>> ring1 = Ring("R1", r=[8.0, 22.0], z=[40.0, 60.0])
+            >>> insert = Insert(
+            ...     name="HL-31",
+            ...     helices=[helix1],
+            ...     rings=[ring1],
+            ...     currentleads=[],
+            ...     hangles=[0.0],
+            ...     rangles=[0.0],
+            ...     innerbore=5.0,
+            ...     outerbore=25.0
+            ... )
         """
         # Validate inputs
         GeometryValidator.validate_name(name)
@@ -75,22 +134,25 @@ class Insert(YAMLObjectBase):
                     f"innerbore ({innerbore}) must be less than outerbore ({outerbore})"
                 )
         
-        if len(rings) > 0 and len(helices) == len(rings) -1:
-            raise ValidationError(
-                f"Number of rings ({len(rings)}) must be equal to number of helices ({len(helices)}) or one less"
-            )
+        if rings and len(rings) > 0:
+            if len(rings) != len(helices) -1:
+                raise ValidationError(
+                    f"Number of rings ({len(rings)}) must be equal to number of helices ({len(helices)}) minus one"
+                )
         
-        if len(hangles) > 0:
-            if len(hangles) != len(helices):
-                raise ValidationError(
-                    f"Number of hangles ({len(hangles)}) must match number of helices ({len(helices)})"
-                )
+        if hangles and len(hangles) > 0:
+            if len(hangles) > 0:
+                if len(hangles) != len(helices):
+                    raise ValidationError(
+                        f"Number of hangles ({len(hangles)}) must match number of helices ({len(helices)})"
+                    )
             
-        if len(rangles) > 0:
-            if len(rangles) != len(rings):
-                raise ValidationError(
-                    f"Number of rangles ({len(rangles)}) must match number of rings ({len(rings)})"
-                )
+        if rangles and len(rangles) > 0:
+            if len(rangles) > 0:
+                if len(rangles) != len(rings):
+                    raise ValidationError(
+                        f"Number of rangles ({len(rangles)}) must match number of rings ({len(rings)})"
+                    )
         
             
         self.name = name
@@ -180,7 +242,7 @@ class Insert(YAMLObjectBase):
 
             if self.rings[i].r != flatten(helices_radius):
                 raise ValidationError(
-                    f"Ring {i} radius {self.rings[i].r} does not match with adjacent helices radii {helices_radius}"
+                    f"Ring {i} radius {self.rings[i].r} does not match with adjacent helices radii {flatten(helices_radius)}"
                 )
 
         for helix in self.helices:
@@ -216,7 +278,36 @@ class Insert(YAMLObjectBase):
         self, mname: str, hideIsolant: bool = True, debug: bool = False
     ) -> list[list]:
         """
-        return channels
+        Retrieve cooling channel definitions for the insert.
+        
+        Generates lists of channel markers for each cooling channel between helices,
+        including optional isolant and kapton layers. Channels are numbered based
+        on the spaces between helices.
+        
+        Args:
+            mname: Magnet name prefix for channel markers (e.g., "HL31")
+            hideIsolant: If True, exclude isolant and kapton layer markers from output
+            debug: Enable debug output showing channel generation process
+        
+        Returns:
+            list[list[str]]: List of channels, where each channel is a list of
+                            marker names. Number of channels = n_helices + 1
+        
+        Notes:
+            - Channel numbering: Channel[i] is between Helix[i] and Helix[i+1]
+            - Marker naming convention:
+            * H{i}_rExt: Outer radius of helix i
+            * H{i}_rInt: Inner radius of helix i
+            * R{i}_rInt/rExt: Ring inner/outer radius
+            * IrExt/IrInt: Isolant layers (if hideIsolant=False)
+            * kaptonsIrExt/IrInt: Kapton layers for HR type (if hideIsolant=False)
+        
+        Example:
+            >>> insert = Insert("HL31", helices=[h1, h2, h3], ...)
+            >>> channels = insert.get_channels("HL31", hideIsolant=True)
+            >>> # Returns 4 channels for 3 helices
+            >>> for i, channel in enumerate(channels):
+            ...     print(f"Channel {i}: {channel}")
         """
 
         prefix = ""
@@ -267,7 +358,26 @@ class Insert(YAMLObjectBase):
 
     def get_isolants(self, mname: str, debug: bool = False):
         """
-        return isolants
+        Retrieve electrical isolant definitions for the insert.
+        
+        Returns list of isolant regions that electrically insulate components
+        within the insert assembly.
+        
+        Args:
+            mname: Magnet name prefix for isolant markers
+            debug: Enable debug output
+        
+        Returns:
+            list: List of isolant region identifiers (currently returns empty list)
+        
+        Notes:
+            This is a placeholder method for future isolant tracking functionality.
+            Current implementation returns an empty list.
+        
+        Example:
+            >>> insert = Insert(...)
+            >>> isolants = insert.get_isolants("HL31")
+            >>> # Currently returns []
         """
 
         # if HL or HL
@@ -277,7 +387,36 @@ class Insert(YAMLObjectBase):
         self, mname: str, is2D: bool = False, verbose: bool = False
     ) -> list[str]:
         """
-        return names for Markers
+        Generate marker names for all geometric entities in the insert.
+        
+        Creates a complete list of identifiers for all solid components,
+        used for mesh generation, visualization, and post-processing.
+        
+        Args:
+            mname: Magnet name prefix (e.g., "HL31")
+            is2D: If True, generate detailed 2D marker names from helices
+                If False, use simplified 3D naming convention
+            verbose: Enable verbose output showing name generation process
+        
+        Returns:
+            list[str]: Ordered list of marker names for all components:
+                - Helix markers: "H{i+1}" (3D) or detailed names (2D)
+                - Ring markers: "{prefix}R{i+1}"
+                - Current lead markers: "iL{i+1}" (inner) or "oL{i+1}" (outer)
+        
+        Notes:
+            - 2D mode: Generates detailed sector names from each helix
+            - 3D mode: Uses simplified naming for whole components
+            - Naming convention ensures unique identifiers for each component
+            - Order is consistent: helices, then rings, then current leads
+        
+        Example:
+            >>> insert = Insert("HL31", helices=[h1, h2], rings=[r1], ...)
+            >>> names_3d = insert.get_names("HL31", is2D=False)
+            >>> print(names_3d)  # ['H1', 'H2', 'HL31_R1', 'iL1']
+            >>>
+            >>> names_2d = insert.get_names("HL31", is2D=True)
+            >>> # Returns detailed sector names from each helix
         """
         prefix = ""
         if mname:
@@ -316,13 +455,35 @@ class Insert(YAMLObjectBase):
 
     def get_nhelices(self):
         """
-        return names for Markers
+        Get the number of helices in the insert.
+        
+        Returns:
+            int: Total count of Helix objects in the insert assembly
+        
+        Example:
+            >>> insert = Insert(..., helices=[h1, h2, h3], ...)
+            >>> n = insert.get_nhelices()
+            >>> print(f"Insert has {n} helices")  # Insert has 3 helices
         """
 
         return len(self.helices)
 
     def __repr__(self):
-        """representation"""
+        """
+        Return string representation of Insert instance.
+        
+        Provides a detailed string showing all attributes and their values,
+        useful for debugging and logging.
+        
+        Returns:
+            str: String representation in constructor-like format showing
+                all instance attributes
+        
+        Example:
+            >>> insert = Insert("HL-31", helices=[h1], rings=[], ...)
+            >>> print(repr(insert))
+            Insert(name='HL-31', helices=[...], rings=[], ...)
+        """
         return (
             "%s(name=%r, helices=%r, rings=%r, currentleads=%r, hangles=%r, rangles=%r, innerbore=%r, outerbore=%r, probes=%r)"
             % (
@@ -342,12 +503,65 @@ class Insert(YAMLObjectBase):
     @classmethod
     def from_dict(cls, data: dict, debug: bool = False):
         """
-        create from dict
+        Create Insert instance from dictionary representation.
+        
+        Supports multiple input formats for nested objects:
+        - String: loads object from "{string}.yaml" file
+        - Dict: creates object inline from dictionary
+        - Object: uses already instantiated object
+        
+        Args:
+            data: Dictionary containing insert configuration with keys:
+                - name (str): Insert name
+                - helices (list): List of helices (strings/dicts/objects)
+                - rings (list): List of rings (strings/dicts/objects)
+                - currentleads (list, optional): List of current leads
+                - hangles (list[float]): Helix angular positions
+                - rangles (list[float]): Ring angular positions
+                - innerbore (float): Inner bore radius
+                - outerbore (float): Outer bore radius
+                - probes (list, optional): List of probes
+            debug: Enable debug output showing object loading process
+        
+        Returns:
+            Insert: New Insert instance created from dictionary
+        
+        Raises:
+            KeyError: If required keys are missing from dictionary
+            TypeError: If nested object lists contain invalid types
+            ValidationError: If any validation rules are violated
+        
+        Example:
+            >>> data = {
+            ...     "name": "HL-31",
+            ...     "helices": ["H1", "H2"],  # Load from files
+            ...     "rings": [{"name": "R1", "r": [8, 22], "z": [40, 60]}],  # Inline
+            ...     "currentleads": [],
+            ...     "hangles": [0.0, 180.0],
+            ...     "rangles": [0.0],
+            ...     "innerbore": 5.0,
+            ...     "outerbore": 25.0
+            ... }
+            >>> insert = Insert.from_dict(data)
         """
-        helices = cls._load_nested_helices(data.get('helices'), debug=debug)
-        rings = cls._load_nested_rings(data.get('rings'), debug=debug)
-        currentleads = cls._load_nested_currentleads(data.get('currentleads'), debug=debug)
-        probes = cls._load_nested_probes(data.get('probes'), debug=debug)
+        helices = cls._load_nested_list(
+            data.get('helices'), 
+            Helix, 
+            debug=debug
+        )
+        
+        rings = cls._load_nested_list(
+            data.get('rings'), 
+            Ring, 
+            debug=debug
+        )
+    
+        currentleads = cls._load_nested_list(data.get('currentleads'), (InnerCurrentLead, OuterCurrentLead), debug=debug)
+        probes = cls._load_nested_list(
+            data.get('probes'), 
+            Probe, 
+            debug=debug
+        )
 
         name = data["name"]
 
@@ -365,133 +579,6 @@ class Insert(YAMLObjectBase):
         )
         return object
 
-    @classmethod  
-    def _load_nested_helices(cls, data, debug=False):
-        """Load list of Helices objects from various input formats and track references"""
-        if data is None:
-            return []
-        
-        if not isinstance(data, list):
-            raise TypeError(f"helices must be a list, got {type(data)}")
-        
-        objects = []
-        for i, _data in enumerate(data):
-            if isinstance(_data, str):
-                # String reference → load from "_data.yaml" and track reference
-                if debug:
-                    print(f"Loading Helix[{i}] from file: {_data}")
-                from .utils import loadObject
-                obj = loadObject("helix", _data, Helix, Helix.from_yaml)
-                objects.append(obj)
-            elif isinstance(_data, dict):
-                # Inline object → create from dict, no reference to track
-                if debug:
-                    print(f"Creating Helix[{i}] from inline dict: {_data.get('name', 'unnamed')}")
-                obj = Helix.from_dict(_data)
-                objects.append(obj)
-            else:
-                # Already instantiated or None
-                objects.append(_data)
-        
-        return objects
-
-    @classmethod  
-    def _load_nested_rings(cls, data, debug=False):
-        """Load list of Rings objects from various input formats and track references"""
-        if data is None:
-            return []
-        
-        if not isinstance(data, list):
-            raise TypeError(f"rings must be a list, got {type(data)}")
-        
-        objects = []
-        for i, _data in enumerate(data):
-            if isinstance(_data, str):
-                # String reference → load from "_data.yaml" and track reference
-                if debug:
-                    print(f"Loading Ring[{i}] from file: {_data}")
-                from .utils import loadObject
-                obj = loadObject("ring", _data, Ring, Ring.from_yaml)
-                objects.append(obj)
-            elif isinstance(_data, dict):
-                # Inline object → create from dict, no reference to track
-                if debug:
-                    print(f"Creating Ring[{i}] from inline dict: {_data.get('name', 'unnamed')}")
-                obj = Ring.from_dict(_data)
-                objects.append(obj)
-            else:
-                # Already instantiated or None
-                objects.append(_data)
-        
-        return objects
-    
-
-    @classmethod  
-    def _load_nested_currentleads(cls, data, debug=False):
-        """Load list of CurrentLeads objects from various input formats and track references"""
-        if data is None:
-            return []
-        
-        if not isinstance(data, list):
-            raise TypeError(f"currentleads must be a list, got {type(data)}")
-        
-        objects = []
-        for i, _data in enumerate(data):
-            if isinstance(_data, str):
-                # String reference → load from "_data.yaml" and track reference
-                if debug:
-                    print(f"Loading Lead[{i}] from file: {_data}")
-                from .utils import loadObject
-                obj = loadObject("lead", _data, (InnerCurrentLead, OuterCurrentLead), None)
-                objects.append(obj)
-            elif isinstance(_data, dict):
-                # Inline object → create from dict, no reference to track
-                if debug:
-                    print(f"Creating Lead[{i}] from inline dict: {_data.get('name', 'unnamed')}")
-                try:
-                    obj = InnerCurrentLead.from_dict(_data)
-                except Exception:
-                    try:
-                        obj = OuterCurrentLead.from_dict(_data)
-                    except Exception as e:
-                        raise ValueError(f"Could not parse current lead (neither Inner or OuterLead) from dict: {_data}") from e    
-                objects.append(obj)
-            else:
-                # Already instantiated or None
-                objects.append(_data)
-        
-        return objects
-
-    @classmethod  
-    def _load_nested_probes(cls, data, debug=False):
-        """Load list of Probes objects from various input formats and track references"""
-        if data is None:
-            return []
-        
-        if not isinstance(data, list):
-            raise TypeError(f"probes must be a list, got {type(data)}")
-        
-        objects = []
-        for i, _data in enumerate(data):
-            if isinstance(_data, str):
-                # String reference → load from "_data.yaml" and track reference
-                if debug:
-                    print(f"Loading Probe[{i}] from file: {_data}")
-                from .utils import loadObject
-                obj = loadObject("probe", _data, Probe, Probe.from_yaml)
-                objects.append(obj)
-            elif isinstance(_data, dict):
-                # Inline object → create from dict, no reference to track
-                if debug:
-                    print(f"Creating Probe[{i}] from inline dict: {_data.get('name', 'unnamed')}")
-                obj = Probe.from_dict(_data)
-                objects.append(obj)
-            else:
-                # Already instantiated or None
-                objects.append(_data)
-        
-        return objects
-
     ###################################################################
     #
     #
@@ -499,9 +586,28 @@ class Insert(YAMLObjectBase):
 
     def boundingBox(self) -> tuple:
         """
-        return Bounding as r[], z[]
-
-        so far exclude Leads
+        Calculate the bounding box of the insert assembly.
+        
+        Computes the minimum and maximum radial (r) and axial (z) extents
+        of the entire insert, including all helices and rings.
+        Current leads are excluded from the bounding box calculation.
+        
+        Returns:
+            tuple: (rb, zb) where:
+                - rb: [r_min, r_max] - radial bounds in mm
+                - zb: [z_min, z_max] - axial bounds in mm
+                Returns ([0, 0], [0, 0]) if no helices present
+        
+        Notes:
+            - Bounding box encompasses all helices
+            - If rings are present, z-bounds are extended by maximum ring height
+            - Current leads are intentionally excluded from bounds calculation
+        
+        Example:
+            >>> insert = Insert(...)
+            >>> rb, zb = insert.boundingBox()
+            >>> print(f"Radial: {rb[0]:.1f} to {rb[1]:.1f} mm")
+            >>> print(f"Axial: {zb[0]:.1f} to {zb[1]:.1f} mm")
         """
 
         if not self.helices:
@@ -534,11 +640,31 @@ class Insert(YAMLObjectBase):
 
     def intersect(self, r, z):
         """
-        Check if intersection with rectangle defined by r,z is empty or not
-
-        return False if empty, True otherwise
+        Check if insert intersects with a rectangular region.
+        
+        Tests whether the insert's bounding box overlaps with a given
+        rectangular region defined by radial and axial bounds.
+        
+        Args:
+            r: [r_min, r_max] - radial bounds of test rectangle in mm
+            z: [z_min, z_max] - axial bounds of test rectangle in mm
+        
+        Returns:
+            bool: True if rectangles overlap (intersection non-empty),
+                False if no intersection
+        
+        Notes:
+            Uses axis-aligned bounding box (AABB) intersection algorithm.
+            Rectangles intersect if they overlap in both r and z dimensions.
+        
+        Example:
+            >>> insert = Insert(...)
+            >>> # Check if insert intersects region r=[15,25], z=[50,100]
+            >>> if insert.intersect([15, 25], [50, 100]):
+            ...     print("Insert overlaps with region")
+            ... else:
+            ...     print("No intersection")
         """
-
         (r_i, z_i) = self.boundingBox()
 
         # Check if rectangles overlap in r-dimension
@@ -552,20 +678,29 @@ class Insert(YAMLObjectBase):
 
     def get_params(self, workingDir: str = ".") -> tuple:
         """
-        get params
-
-        Nhelices,
-        Nrings,
-        NChannels,
-        Nsections
-
-        R1
-        R2
-        Z1
-        Z2
-        Dh,
-        Sh,
-        Zh
+        Extract and return physical parameters of the insert assembly.
+        
+        Retrieves comprehensive geometric and physical properties including
+        dimensions, materials, and configuration details for all components.
+        
+        Args:
+            workingDir: Working directory path for file operations (default: ".")
+        
+        Returns:
+            Detailed parameter dictionary containing insert properties
+            (exact structure depends on implementation)
+        
+        Notes:
+            This method aggregates parameters from all constituent objects:
+            - Helix parameters (dimensions, turns, materials)
+            - Ring parameters (dimensions, properties)
+            - Current lead parameters
+            - Overall assembly dimensions
+        
+        Example:
+            >>> insert = Insert(...)
+            >>> params = insert.get_params()
+            >>> # Access specific parameters from returned dictionary
         """
 
         Nhelices = len(self.helices)

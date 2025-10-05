@@ -5,6 +5,11 @@
 Provides tools to un/serialize data from json
 """
 
+from .base import YAMLObjectBase
+
+# Import all classes to ensure they're registered
+# (importing triggers __init_subclass__ which registers them)
+ 
 from .Probe import Probe
 from .Shape import Shape
 from .ModelAxi import ModelAxi
@@ -30,6 +35,7 @@ from .coolingslit import CoolingSlit
 # From : http://chimera.labs.oreilly.com/books/1230000000393/ch06.html#_discussion_95
 # Dictionary mapping names to known classes
 
+"""
 classes = {
     "Probe": Probe,
     "Shape": Shape,
@@ -52,6 +58,10 @@ classes = {
     "Tierod": Tierod,
     "CoolingSlit": CoolingSlit,
 }
+"""
+# Get class registry from base class
+# This is automatically populated by __init_subclass__
+classes = YAMLObjectBase.get_all_classes()
 
 
 def serialize_instance(obj):
@@ -88,7 +98,15 @@ def unserialize_object(d, debug: bool = True):
     if debug:
         print(f"clsname: {clsname}", flush=True)
     if clsname:
-        cls = classes[clsname]
+        # Use auto-registered class
+        cls = YAMLObjectBase.get_class(clsname)
+        
+        if cls is None:
+            raise ValueError(
+                f"Unknown class '{clsname}'. "
+                f"Available classes: {list(classes.keys())}"
+            )
+        
         obj = cls.__new__(cls)  # Make instance without calling __init__
         for key, value in d.items():
             if debug:

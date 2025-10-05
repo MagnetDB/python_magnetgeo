@@ -60,7 +60,6 @@ tar \
     --exclude=*.new \
     --exclude=*~ \
     --exclude=#*# \
-    --exclude=pyproject.toml \
     --exclude=poetry.lock \
     --exclude=.pytest_cache \
     --exclude=.github \

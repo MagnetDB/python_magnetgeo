@@ -28,17 +28,21 @@ from .validation import GeometryValidator, ValidationError
 
 class Helix(YAMLObjectBase):
     """
-    name :
-    r :
-    z :
-    cutwidth:
-    dble :
-    odd :
-
-    modelaxi :
-    model3d :
-    shape :
-    chamfer
+    Helix geometry class representing a helical magnet coil.
+    
+    Attributes:
+        name (str): Unique identifier for the helix
+        r (list[float]): Radial bounds [r_inner, r_outer] in mm
+        z (list[float]): Axial bounds [z_bottom, z_top] in mm
+        cutwidth (float): Width of helical cut in mm
+        odd (bool): Odd layer indicator
+        dble (bool): Double layer indicator
+        modelaxi (ModelAxi): Axisymmetric model definition
+        model3d (Model3D): 3D CAD model configuration
+        shape (Shape): Cross-sectional shape definition
+        chamfers (list): List of Chamfer objects for edge modifications
+        grooves (Groove): Groove configuration for cooling channels
+    
     """
 
     yaml_tag = "Helix"
@@ -51,14 +55,30 @@ class Helix(YAMLObjectBase):
         cutwidth: float,
         odd: bool,
         dble: bool,
-        modelaxi: ModelAxi,
-        model3d: Model3D,
-        shape: Shape,
+        modelaxi: ModelAxi = None,
+        model3d: Model3D = None,
+        shape: Shape = None,
         chamfers: list = None,
         grooves: Groove = None,
     ) -> None:
         """
-        initialize object
+        Initialize a Helix object with validation.
+        
+        Args:
+            name: Unique identifier for the helix
+            r: Radial bounds [r_inner, r_outer] in mm, must be ascending
+            z: Axial bounds [z_bottom, z_top] in mm, must be ascending
+            cutwidth: Width of helical cut in mm
+            odd: True if odd layer, False otherwise
+            dble: True if double layer, False otherwise
+            modelaxi: Axisymmetric model definition for helical cut
+            model3d: 3D CAD model configuration
+            shape: Cross-sectional shape definition
+            chamfers: Optional list of Chamfer objects for edge modifications
+            grooves: Optional Groove object for cooling channel definition
+        
+        Raises:
+            ValidationError: If validation fails for name, r, z, or modelaxi.h constraint
         """
         # General validation
         GeometryValidator.validate_name(name)
@@ -113,16 +133,48 @@ class Helix(YAMLObjectBase):
             )
         
     def get_type(self) -> str:
+        """
+        Determine the helix type based on 3D model configuration.
+        
+        Returns:
+            str: "HR" if model has both shapes and channels, "HL" otherwise
+        
+        Notes:
+            - HR (Helix with Reinforcement): Includes shaped channels
+            - HL (Helix Layer): Standard helical layer
+        """
         if self.model3d.with_shapes and self.model3d.with_channels:
             return "HR"
         return "HL"
 
     def get_lc(self) -> float:
+        """
+        Calculate characteristic length for mesh generation.
+        
+        Returns:
+            float: Characteristic length computed as radial thickness / 10
+        
+        Notes:
+            Used by mesh generators to determine appropriate element size
+        """
         return (self.r[1] - self.r[0]) / 10.0
 
     def get_names(self, mname: str, is2D: bool, verbose: bool = False) -> list[str]:
         """
-        return names for Markers
+        Generate marker names for mesh identification.
+        
+        Args:
+            mname: Prefix for marker names (typically parent magnet name)
+            is2D: True for 2D axisymmetric mesh, False for 3D mesh
+            verbose: Enable verbose output for debugging
+        
+        Returns:
+            list[str]: List of marker names for conductor and insulator regions
+        
+        Notes:
+            - 2D mesh: Returns section-wise names (Cu0, Cu1, ..., CuN)
+            - 3D mesh: Returns single Cu conductor and insulator names
+            - Insulator type depends on helix type (Glue for HL, Kapton for HR)
         """
         solid_names = []
 
@@ -175,7 +227,10 @@ class Helix(YAMLObjectBase):
 
     def __repr__(self):
         """
-        representation of object
+        Generate string representation of Helix object.
+        
+        Returns:
+            str: String representation including all parameters
         """
         msg = f"{self.__class__.__name__}(name={self.name},odd={self.odd},dble={self.dble},r={self.r},z={self.z},cutwidth={self.cutwidth},modelaxi={self.modelaxi},model3d={self.model3d},shape={self.shape}"
         if hasattr(self, 'chamfers'):
@@ -192,13 +247,24 @@ class Helix(YAMLObjectBase):
     @classmethod
     def from_dict(cls, values: dict, debug: bool = False):
         """
-        create from dict
+        Create Helix instance from dictionary representation.
+        
+        Args:
+            values: Dictionary containing helix parameters
+            debug: Enable debug output during deserialization
+        
+        Returns:
+            Helix: New Helix instance
+        
+        Notes:
+            Handles nested objects (modelaxi, model3d, shape, chamfers, grooves)
+            by loading from files or instantiating from dicts
         """
-        modelaxi = cls._load_nested_modelaxi(values.get('modelaxi'), debug=debug)
-        model3d = cls._load_nested_model3d(values.get('model3d'), debug=debug)
-        shape = cls._load_nested_shape(values.get('shape'), debug=debug)
-        chamfers = cls._load_nested_chamfers(values.get('chamfers'), debug=debug)
-        grooves = cls._load_nested_groove(values.get('grooves'), debug=debug)
+        modelaxi = cls._load_nested_single(values.get('modelaxi'), ModelAxi, debug=debug)
+        model3d = cls._load_nested_single(values.get('model3d'), Model3D, debug=debug)
+        shape = cls._load_nested_single(values.get('shape'), Shape, debug=debug)
+        chamfers = cls._load_nested_list(values.get('chamfers'), Chamfer, debug=debug)
+        grooves = cls._load_nested_single(values.get('grooves'), Groove, debug=debug)
         
         name = values["name"]
         r = values["r"]
@@ -206,13 +272,6 @@ class Helix(YAMLObjectBase):
         odd = values["odd"]
         dble = values["dble"]
         cutwidth = values["cutwidth"]
-        # modelaxi = values["modelaxi"]
-        # model3d = values["model3d"]
-        # shape = values["shape"]
-
-        # Make chamfers and grooves optional
-        # chamfers = values.get("chamfers", [])
-        # grooves = values.get("grooves", Groove())
 
         object = cls(
             name, r, z, cutwidth, odd, dble, modelaxi, model3d, shape, chamfers, grooves
@@ -220,108 +279,46 @@ class Helix(YAMLObjectBase):
         # object.update()
         return object
     
-    @classmethod  
-    def _load_nested_modelaxi(cls, modelaxi_data, debug=False):
-        if isinstance(modelaxi_data, str):
-            # String reference → load from "modelaxi_data.yaml"
-            from .utils import loadObject
-            return loadObject("modelaxi", modelaxi_data, ModelAxi, ModelAxi.from_yaml)
-        elif isinstance(modelaxi_data, dict):
-            # Inline object → create from dict
-            return ModelAxi.from_dict(modelaxi_data)
-        else:
-            # None or already instantiated
-            return modelaxi_data
-
-    @classmethod  
-    def _load_nested_model3d(cls, model3d_data, debug=False):
-        if isinstance(model3d_data, str):
-            # String reference → load from "modelaxi_data.yaml"
-            from .utils import loadObject
-            return loadObject("model3d", model3d_data, Model3D, Model3D.from_yaml)
-        elif isinstance(model3d_data, dict):
-            # Inline object → create from dict
-            return Model3D.from_dict(model3d_data)
-        else:
-            # None or already instantiated
-            return model3d_data
-
-    @classmethod  
-    def _load_nested_shape(cls, shape_data, debug=False):
-        if isinstance(shape_data, str):
-            # String reference → load from "modelaxi_data.yaml"
-            from .utils import loadObject
-            return loadObject("shape", shape_data, Shape, Shape.from_yaml)
-        elif isinstance(shape_data, dict):
-            # Inline object → create from dict
-            return Shape.from_dict(shape_data)
-        else:
-            # None or already instantiated
-            return shape_data
-
-    @classmethod  
-    def _load_nested_groove(cls, groove_data, debug=False):
-        if groove_data is None:
-            return Groove()
-        
-        if isinstance(groove_data, str):
-            # String reference → load from "groove_data.yaml"
-            from .utils import loadObject
-            return loadObject("groove", groove_data, Groove, Groove.from_yaml)
-        elif isinstance(groove_data, dict):
-            # Inline object → create from dict
-            return Groove.from_dict(groove_data)
-        else:
-            # None or already instantiated
-            return groove_data
-
-    @classmethod  
-    def _load_nested_chamfers(cls, chamfers_data, debug=False):
-        """Load list of Chamfer objects from various input formats and track references"""
-        if chamfers_data is None:
-            return []
-        
-        if not isinstance(chamfers_data, list):
-            raise TypeError(f"chamfers must be a list, got {type(chamfers_data)}")
-        
-        objects = []
-        references = []
-        for i, chamfer_data in enumerate(chamfers_data):
-            if isinstance(chamfer_data, str):
-                # String reference → load from "chamfer_data.yaml" and track reference
-                if debug:
-                    print(f"Loading Chamfer[{i}] from file: {chamfer_data}")
-                from .utils import loadObject
-                obj = loadObject("chamfer", chamfer_data, Chamfer, Chamfer.from_yaml)
-                objects.append(obj)
-            elif isinstance(chamfer_data, dict):
-                # Inline object → create from dict, no reference to track
-                if debug:
-                    print(f"Creating Chamfer[{i}] from inline dict: {chamfer_data.get('name', 'unnamed')}")
-                obj = Chamfer.from_dict(chamfer_data)
-                objects.append(obj)
-            else:
-                # Already instantiated or None
-                objects.append(chamfer_data)
-                references.append(None)  # No string reference
-        
-        return objects
-
     def getModelAxi(self):
+        """
+        Get the axisymmetric model definition.
+        
+        Returns:
+            ModelAxi: Axisymmetric model object
+        """
         return self.modelaxi
 
     def getModel3D(self):
+        """
+        Get the 3D CAD model configuration.
+        
+        Returns:
+            Model3D: 3D model configuration object
+        """
         return self.model3d
 
     def get_Nturns(self) -> float:
         """
-        returns the number of turn
+        Get the number of turns in the helix.
+        
+        Returns:
+            float: Number of turns from the axisymmetric model
+        
+        Notes:
+            Delegates to modelaxi.get_Nturns() method
         """
         return self.modelaxi.get_Nturns()
 
     def generate_cut(self, format: str = "SALOME"):
         """
-        create cut files
+        Generate helical cut geometry file for CAD system.
+        
+        Args:
+            format: Target CAD format (default: "SALOME")
+        
+        Notes:
+            Creates helical cut definition file and optionally adds shapes
+            if model3d.with_shapes is enabled. Uses external MagnetTools utilities.
         """
         from .hcuts import create_cut
 
@@ -337,8 +334,17 @@ class Helix(YAMLObjectBase):
 
     def intersect(self, r: list[float], z: list[float]) -> bool:
         """
-        Check if intersection with rectangle defined by r,z is empty or not
-        return False if empty, True otherwise
+        Check if this helix intersects with a given rectangular region.
+        
+        Args:
+            r: Radial bounds [r_min, r_max] of test region
+            z: Axial bounds [z_min, z_max] of test region
+        
+        Returns:
+            bool: True if regions overlap, False if no intersection
+        
+        Notes:
+            Uses axis-aligned bounding box intersection test
         """
         
         r_overlap = max(self.r[0], r[0]) < min(self.r[1], r[1])
@@ -348,17 +354,30 @@ class Helix(YAMLObjectBase):
 
     def boundingBox(self) -> tuple:
         """
-        return Bounding as r[], z[]
-
-        so far exclude Leads
+        Get the bounding box of the helix geometry.
+        
+        Returns:
+            tuple: (r_bounds, z_bounds) where each is [min, max]
+        
+        Notes:
+            Currently excludes current leads from bounding box calculation
         """
         return (self.r, self.z)
 
     def insulators(self):
         """
-        return name and number of insulators depending on htype
+        Determine insulator material and count based on helix type.
+        
+        Returns:
+            tuple: (insulator_name, count) where:
+                - insulator_name: "Glue" for HL type, "Kapton" for HR type
+                - count: Number of insulator regions
+        
+        Notes:
+            - HL type: 1 or 2 insulators depending on dble flag
+            - HR type: Calculated based on shape angular coverage and turns
         """
-
+        
         sInsulator = "Glue"
         nInsulators = 0
         htype = self.get_type()

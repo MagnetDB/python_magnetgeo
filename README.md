@@ -344,7 +344,6 @@ python -m python_magnetgeo.xao HL-31-Axi.xao mesh --group CoolingChannels --geo 
 
 - Python >= 3.11
 - PyYAML >= 6.0
-- chevron >= 0.13.1
 - pytest >= 8.2.0 (for development)
 
 ## API Breaking Changes
