@@ -33,7 +33,7 @@ Package: python-magnetgeo-doc
 Architecture: all
 Section: doc
 Depends: ${sphinxdoc:Depends}, ${misc:Depends}
-Description: <insert up to 60 chars description> (common documentation)
+Description: Magnet Geometry Python module (common documentation)
  This module enable to perform the following operations
  * Define Magnet geometry as yaml file
  * Load/Create CA and Mesh with Salome (see hifimanget.salome)
