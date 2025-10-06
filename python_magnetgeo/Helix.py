@@ -324,14 +324,21 @@ class Helix(YAMLObjectBase):
 
         create_cut(self, format, self.name)
         if self.model3d.with_shapes:
-            angles = " ".join(f"{t:4.2f}" for t in self.shape.angle if t != 0)
-            cmd = f'add_shape --angle="{angles}" --shape_angular_length={self.shape.length} --shape={self.shape.profile}.dat --format={format} --position="{self.shape.position} {self.name}"'
-            print(f"create_cut: with_shapes not implemented - shall run {cmd}")
+            if self.get_type() == "HL":
+                angles = " ".join(f"{t:4.2f}" for t in self.shape.angle if t != 0)
+                cmd = f'add_shape --angle="{angles}" --shape_angular_length={self.shape.length} --shape={self.shape.profile}.dat --format={format} --position="{self.shape.position} {self.name}"'
+                print(f"create_cut: with_shapes not implemented - shall run {cmd}")
+            else:
+                cmd = f'add_shape --angle="{angles[0]}" --shape_angular_length={self.shape.length[0]} --shape={self.shape.profile}.dat --format={format} --position="{self.shape.position} {self.name}"'
+                print(f"create_cut: with_shapes not implemented - shall run {cmd}")
+            
+            try:
+                import subprocess
 
-            import subprocess
-
-            subprocess.run(cmd, shell=True, check=True)
-
+                subprocess.run(cmd, shell=True, check=True)
+            except RuntimeError as e:
+                raise Exception(f"cannot run add_shape properly: {e}")
+            
     def intersect(self, r: list[float], z: list[float]) -> bool:
         """
         Check if this helix intersects with a given rectangular region.
