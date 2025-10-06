@@ -13,6 +13,7 @@ import tempfile
 from python_magnetgeo.Supras import Supras
 from python_magnetgeo.Supra import Supra
 from python_magnetgeo.Probe import Probe
+from python_magnetgeo.Supra import DetailLevel
 from python_magnetgeo.validation import ValidationError
 
 
@@ -139,7 +140,7 @@ def test_supras_from_dict_basic():
                 'z': [5.0, 45.0],
                 'n': 3,
                 'struct': '',
-                'detail': 'None'
+                'detail': DetailLevel.NONE
             },
             {
                 '__classname__': 'Supra',
@@ -148,7 +149,7 @@ def test_supras_from_dict_basic():
                 'z': [55.0, 95.0],
                 'n': 5,
                 'struct': '',
-                'detail': 'None'
+                'detail': DetailLevel.NONE
             }
         ],
         'innerbore': 13.0,
@@ -192,7 +193,7 @@ def test_supras_from_dict_with_probes():
                 'z': [10.0, 50.0],
                 'n': 4,
                 'struct': '',
-                'detail': 'None'
+                'detail': DetailLevel.NONE
             }
         ],
         'innerbore': 18.0,
@@ -241,7 +242,7 @@ def test_supras_default_values():
                 'z': [10.0, 50.0],
                 'n': 4,
                 'struct': '',
-                'detail': 'None',
+                'detail': DetailLevel.NONE,
             }
         ],
         'innerbore': 19,
