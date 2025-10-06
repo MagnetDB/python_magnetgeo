@@ -76,7 +76,7 @@ def test_supra_basic_functionality():
     
     minimal_supra = Supra.from_dict(minimal_dict)
     assert minimal_supra.n == 0, "Default n should be 0"
-    assert minimal_supra.struct == "", "Default struct should be empty"
+    assert minimal_supra.struct == None, "Default struct should be empty"
     
     print("✓ Default values work correctly")
     

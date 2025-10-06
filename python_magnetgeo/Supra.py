@@ -13,7 +13,7 @@ from typing import Optional, Union
 from enum import Enum
 
 
-from .hts.hts_insert import HTSInsert
+from .SupraStructure import HTSInsert
 
 from typing import List
 from .base import YAMLObjectBase
@@ -65,7 +65,7 @@ class Supra(YAMLObjectBase):
     yaml_tag = "Supra"
 
     def __init__(
-        self, name: str, r: list[float], z: list[float], n: int = 0, struct: Union[str, HTSInsert] = None, detail: DetailLevel = DetailLevel.NONE
+        self, name: str, r: list[float], z: list[float], n: int = 0, struct:str = None, detail: DetailLevel = DetailLevel.NONE
     ) -> None:
         """
         Initialize Supra object with validation.
@@ -104,15 +104,27 @@ class Supra(YAMLObjectBase):
         self.z = z
         self.n = n
 
-        if isinstance(struct, str):
-            self.struc = HTSInsert.from_yaml(f"{struct}.yaml")
-        else:
-            self.struct = struct
-            if struct is not None:
-                self.check_dimensions()
-            
-            
+        self.struct = struct
         self.detail = detail
+
+    def get_magnet_struct(self, directory: Optional[str] = None) -> HTSInsert:
+        """
+        Load HTS structure definition from configuration file.
+       
+        Args:
+            directory: Optional directory path for structure files (default: None)
+       
+        Returns:
+            HTSinsert: High-temperature superconductor insert structure object
+       
+        Notes:
+            - Uses self.struct as the configuration file path
+            - Returns HTSinsert object with detailed pancake/tape geometry
+        """
+
+        hts = HTSInsert.fromcfg(self.struct, directory)
+        self.check_dimensions(hts)
+        return hts
 
     def check_dimensions(self, magnet: HTSInsert):
         """
@@ -131,10 +143,10 @@ class Supra(YAMLObjectBase):
             - n is computed from sum of tape counts across pancakes
         
         Example:
-            >>> supra = Supra("test", [10, 20], [0, 50], struct="hts_config.yaml")
+            >>> supra = Supra("test", [10, 20], [0, 50], struct="hts_config.json")
             >>> hts = supra.get_magnet_struct()
             >>> supra.check_dimensions(hts)
-            Supra/check_dimensions: override dimensions for test from hts_config.yaml
+            Supra/check_dimensions: override dimensions for test from hts_config.json
         """
         # TODO: if struct load r,z and n from struct data
         if self.struct:
@@ -179,7 +191,8 @@ class Supra(YAMLObjectBase):
         if self.detail == DetailLevel.NONE:
             return (self.r[1] - self.r[0]) / 5.0
         else:
-            return self.hts.get_lc()
+            hts = self.get_magnet_struct()
+            return hts.get_lc()
 
     def get_channels(
         self, mname: str, hideIsolant: bool = True, debug: bool = False
@@ -261,6 +274,8 @@ class Supra(YAMLObjectBase):
                 prefix = f"{mname}_"
             return [f"{prefix}{self.name}"]
         else:
+            hts = self.get_magnet_struct()
+            self.check_dimensions(hts)
             return hts.get_names(mname=mname, detail=self.detail, verbose=verbose)
 
     def __repr__(self):
@@ -317,7 +332,7 @@ class Supra(YAMLObjectBase):
         z = values["z"]
         n = values.get("n", 0)
 
-        struct = cls._load_nested_single(values.get("struct"), HTSInsert, debug)
+        struct = values.get("struct", None)
         
         # Handle detail field: convert string to enum
         detail_value = values.get("detail", "NONE")
