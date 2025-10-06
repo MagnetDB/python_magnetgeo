@@ -32,6 +32,7 @@ classifiers = [
 keywords = ["magnet", "geometry", "cad", "mesh", "simulation", "hifimagnet"]
 dependencies = [
     "pyyaml>=6.0",
+    "pandas>=1.5.3"
 ]
 
 [project.optional-dependencies]
