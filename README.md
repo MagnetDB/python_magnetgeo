@@ -1,10 +1,10 @@
 # Python Magnet Geometry
 
-[![PyPI version](https://img.shields.io/pypi/v/python_magnetgeo.svg)](https://pypi.python.org/pypi/python_magnetgeo)
+<!-- [![PyPI version](https://img.shields.io/pypi/v/python_magnetgeo.svg)](https://pypi.python.org/pypi/python_magnetgeo)
 [![Build Status](https://img.shields.io/travis/Trophime/python_magnetgeo.svg)](https://travis-ci.com/Trophime/python_magnetgeo)
 [![Documentation Status](https://readthedocs.org/projects/python-magnetgeo/badge/?version=latest)](https://python-magnetgeo.readthedocs.io/en/latest/?version=latest)
 [![Updates](https://pyup.io/repos/github/Trophime/python_magnetgeo/shield.svg)](https://pyup.io/repos/github/Trophime/python_magnetgeo/)
-
+ -->
 Python Magnet Geometry contains magnet geometrical models for high-field magnet design and simulation.
 
 ## Version 1.0.0 Release
