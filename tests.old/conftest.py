@@ -127,7 +127,7 @@ def sample_supra():
         r=[20.0, 40.0],
         z=[10.0, 90.0],
         n=5,
-        struct=""  # Empty struct to avoid file loading
+        struct=None  # Empty struct to avoid file loading
     )
 
 

@@ -23,7 +23,7 @@ def test_supra_basic_functionality():
         name="test_supra",
         r=[20.0, 30.0],
         z=[10.0, 80.0],
-        struct=""
+        struct=None
     )
     
     print(f"✓ Supra created: {supra.name}")
@@ -171,8 +171,8 @@ def test_supras_basic_functionality():
     print("=" * 60)
     
     # Create individual Supra objects
-    supra1 = Supra(name="supra1", r=[20.0, 30.0], z=[10.0, 50.0], n=4, struct="")
-    supra2 = Supra(name="supra2", r=[20.0, 30.0], z=[60.0, 100.0], n=6, struct="")
+    supra1 = Supra(name="supra1", r=[20.0, 30.0], z=[10.0, 50.0], n=4, struct=None)
+    supra2 = Supra(name="supra2", r=[20.0, 30.0], z=[60.0, 100.0], n=6, struct=None)
     
     # Create Supras container
     supras = Supras(
@@ -223,7 +223,7 @@ def test_supras_from_dict():
                 'r': [15.0, 25.0],
                 'z': [5.0, 45.0],
                 'n': 3,
-                'struct': ''
+                'struct': None
             },
             {
                 '__classname__': 'Supra',
@@ -231,7 +231,7 @@ def test_supras_from_dict():
                 'r': [15.0, 25.0],
                 'z': [55.0, 95.0],
                 'n': 5,
-                'struct': ''
+                'struct': None
             }
         ],
         'innerbore': 13.0,
@@ -261,7 +261,7 @@ def test_supras_validation():
     print("Testing Supras validation...")
     print("=" * 60)
     
-    supra = Supra(name="test", r=[20.0, 30.0], z=[10.0, 50.0], n=4, struct="")
+    supra = Supra(name="test", r=[20.0, 30.0], z=[10.0, 50.0], n=4, struct=None)
     
     # Test empty name
     try:
@@ -280,8 +280,8 @@ def test_supras_yaml_roundtrip():
     print("=" * 60)
     
     # Create Supras with nested Supra objects
-    supra1 = Supra(name="yaml_supra1", r=[20.0, 30.0], z=[10.0, 50.0], n=4, struct="")
-    supra2 = Supra(name="yaml_supra2", r=[20.0, 30.0], z=[60.0, 100.0], n=6, struct="")
+    supra1 = Supra(name="yaml_supra1", r=[20.0, 30.0], z=[10.0, 50.0], n=4, struct=None)
+    supra2 = Supra(name="yaml_supra2", r=[20.0, 30.0], z=[60.0, 100.0], n=6, struct=None)
     
     supras = Supras(
         name="yaml_supras",

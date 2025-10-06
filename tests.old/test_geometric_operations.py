@@ -102,7 +102,7 @@ class TestGeometricOperations:
 
     def test_characteristic_length_calculations(self):
         """Test get_lc method provides reasonable values"""
-        supra = Supra("lc_supra", [10.0, 30.0], [0.0, 80.0], 5, "")  # Empty struct
+        supra = Supra("lc_supra", [10.0, 30.0], [0.0, 80.0], 5, None)  # Empty struct
         screen = Screen("lc_screen", [5.0, 25.0], [0.0, 60.0])
         
         supra_lc = supra.get_lc()

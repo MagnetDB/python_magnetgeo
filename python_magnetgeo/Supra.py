@@ -13,7 +13,7 @@ from typing import Optional, Union
 from enum import Enum
 
 
-from .SupraStructure import HTSinsert
+from .hts.hts_insert import HTSInsert
 
 from typing import List
 from .base import YAMLObjectBase
@@ -48,8 +48,8 @@ class Supra(YAMLObjectBase):
     
     Attributes:
         name (str): Unique identifier for the Supra component
-        r (list[float]): Radial bounds [r_inner, r_outer] in meters
-        z (list[float]): Axial bounds [z_bottom, z_top] in meters
+        r (list[float]): Radial bounds [r_inner, r_outer] in mm
+        z (list[float]): Axial bounds [z_bottom, z_top] in mm
         n (int): Number of turns or sections (default 0 if using struct)
         struct (str): Path to external structure definition file (optional)
         detail (DetailLevel): Level of detail for modeling
@@ -65,15 +65,15 @@ class Supra(YAMLObjectBase):
     yaml_tag = "Supra"
 
     def __init__(
-        self, name: str, r: list[float], z: list[float], n: int = 0, struct: str = "", detail: DetailLevel = DetailLevel.NONE
+        self, name: str, r: list[float], z: list[float], n: int = 0, struct: Union[str, HTSInsert] = None, detail: DetailLevel = DetailLevel.NONE
     ) -> None:
         """
         Initialize Supra object with validation.
         
         Args:
             name: Unique identifier for the Supra component
-            r: Radial bounds [r_inner, r_outer] in meters, must be ascending
-            z: Axial bounds [z_bottom, z_top] in meters, must be ascending
+            r: Radial bounds [r_inner, r_outer] in mm, must be ascending
+            z: Axial bounds [z_bottom, z_top] in mm, must be ascending
             n: Number of turns or sections (default 0, can be set from struct)
             struct: Path to external HTS structure definition file (optional)
             detail: Level of detail for modeling (default DetailLevel.NONE)
@@ -103,34 +103,26 @@ class Supra(YAMLObjectBase):
         self.r = r
         self.z = z
         self.n = n
-        self.struct = struct
+
+        if isinstance(struct, str):
+            self.struc = HTSInsert.from_yaml(f"{struct}.yaml")
+        else:
+            self.struct = struct
+            if struct is not None:
+                self.check_dimensions()
+            
+            
         self.detail = detail
 
-    def get_magnet_struct(self, directory: Optional[str] = None) -> HTSinsert:
-        """
-        Load HTS structure definition from configuration file.
-        
-        Args:
-            directory: Optional directory path for structure files (default: None)
-        
-        Returns:
-            HTSinsert: High-temperature superconductor insert structure object
-        
-        Notes:
-            - Uses self.struct as the configuration file path
-            - Returns HTSinsert object with detailed pancake/tape geometry
-        """
-        return HTSinsert.fromcfg(self.struct, directory)
-
-    def check_dimensions(self, magnet: HTSinsert):
+    def check_dimensions(self, magnet: HTSInsert):
         """
         Synchronize geometric dimensions with HTS structure definition.
         
         Updates r, z, and n attributes if they differ from the values defined
-        in the provided HTSinsert structure. Prints notification if changes occur.
+        in the provided HTSInsert structure. Prints notification if changes occur.
         
         Args:
-            magnet: HTSinsert structure object to check against
+            magnet: HTSInsert structure object to check against
         
         Notes:
             - Only updates if self.struct is non-empty
@@ -178,7 +170,7 @@ class Supra(YAMLObjectBase):
         
         Algorithm:
             - If detail is "None": (r_outer - r_inner) / 5.0
-            - Otherwise: delegates to HTSinsert.get_lc() for detailed mesh
+            - Otherwise: delegates to HTSInsert.get_lc() for detailed mesh
         
         Notes:
             Used by mesh generators to determine appropriate element size.
@@ -187,8 +179,7 @@ class Supra(YAMLObjectBase):
         if self.detail == DetailLevel.NONE:
             return (self.r[1] - self.r[0]) / 5.0
         else:
-            hts = self.get_magnet_struct()
-            return hts.get_lc()
+            return self.hts.get_lc()
 
     def get_channels(
         self, mname: str, hideIsolant: bool = True, debug: bool = False
@@ -222,7 +213,7 @@ class Supra(YAMLObjectBase):
             list: Empty list (placeholder - isolants handled at detail level)
         
         Notes:
-            Insulation is typically modeled in detailed structure (HTSinsert)
+            Insulation is typically modeled in detailed structure (HTSInsert)
             rather than at the Supra component level.
         """
         return []
@@ -270,9 +261,6 @@ class Supra(YAMLObjectBase):
                 prefix = f"{mname}_"
             return [f"{prefix}{self.name}"]
         else:
-            hts = self.get_magnet_struct()
-            self.check_dimensions(hts)
-
             return hts.get_names(mname=mname, detail=self.detail, verbose=verbose)
 
     def __repr__(self):
@@ -329,14 +317,7 @@ class Supra(YAMLObjectBase):
         z = values["z"]
         n = values.get("n", 0)
 
-        """
-        # TODO: if struct load r,z and n from struct data
-        # or at least check that values are valid
-        if self.struct:
-            magnet = self.get_magnet_struct()
-            self.check_dimensions(magnet)
-        """
-        struct = values.get("struct", '')
+        struct = cls._load_nested_single(values.get("struct"), HTSInsert, debug)
         
         # Handle detail field: convert string to enum
         detail_value = values.get("detail", "NONE")
@@ -357,7 +338,7 @@ class Supra(YAMLObjectBase):
         Notes:
             - If struct is not set: returns self.n
             - If struct is set but not loaded: returns -1 (error indicator)
-            - If struct is loaded: would return sum from HTSinsert (not implemented)
+            - If struct is loaded: would return sum from HTSInsert (not implemented)
         
         Example:
             >>> supra = Supra("test", [10, 20], [0, 50], n=5)
@@ -423,8 +404,8 @@ class Supra(YAMLObjectBase):
         
         Returns:
             tuple: (r_bounds, z_bounds) where:
-                - r_bounds: [r_inner, r_outer] radial extent in meters
-                - z_bounds: [z_bottom, z_top] axial extent in meters
+                - r_bounds: [r_inner, r_outer] radial extent in mm
+                - z_bounds: [z_bottom, z_top] axial extent in mm
         
         Notes:
             - Currently returns the basic r, z attributes
@@ -448,8 +429,8 @@ class Supra(YAMLObjectBase):
         axis-aligned rectangular region in cylindrical coordinates.
         
         Args:
-            r: Radial bounds [r_min, r_max] of test region in meters
-            z: Axial bounds [z_min, z_max] of test region in meters
+            r: Radial bounds [r_min, r_max] of test region in mm
+            z: Axial bounds [z_min, z_max] of test region in mm
         
         Returns:
             bool: True if bounding boxes overlap, False if separated
@@ -488,7 +469,7 @@ class Supra(YAMLObjectBase):
     #     if self.detail == "None":
     #         return 1/self.get_Nturns()
     #     # else:
-    #     #     # load HTSinsert
+    #     #     # load HTSInsert
     #     #     # return fillingfactor according to self.detail:
     #     #     # aka tape.getFillingFactor() with tape = HTSinsert.tape when detail == "tape"
 
