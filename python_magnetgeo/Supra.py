@@ -8,17 +8,35 @@ Provides definition for Supra:
 * Model Axi: definition of helical cut (provided from MagnetTools)
 * Model 3D: actual 3D CAD
 """
-from typing import Optional
+from typing import Optional, Union
 
-import json
-import yaml
+from enum import Enum
+
 
 from .SupraStructure import HTSinsert
 
 from typing import List
 from .base import YAMLObjectBase
-from .validation import GeometryValidator, ValidationError
+from .validation import GeometryValidator
 
+class DetailLevel(str, Enum):
+    """
+    Level of detail for structural modeling of Supra components.
+    
+    Attributes:
+        NONE: Simplified single-region model
+        DBLPANCAKE: Model at double-pancake level
+        PANCAKE: Model individual pancakes
+        TAPE: Model individual tape windings
+    
+    Notes:
+        Inherits from str to maintain YAML serialization compatibility.
+        Higher detail levels increase mesh complexity and solve time.
+    """
+    NONE = "NONE"
+    DBLPANCAKE = "DBLPANCAKE"
+    PANCAKE = "PANCAKE"
+    TAPE = "TAPE"
 
 class Supra(YAMLObjectBase):
     """
@@ -34,7 +52,7 @@ class Supra(YAMLObjectBase):
         z (list[float]): Axial bounds [z_bottom, z_top] in meters
         n (int): Number of turns or sections (default 0 if using struct)
         struct (str): Path to external structure definition file (optional)
-        detail (str): Level of detail for modeling: "None", "dblpancake", "pancake", or "tape"
+        detail (DetailLevel): Level of detail for modeling
     
     yaml_tag: "Supra"
     
@@ -47,7 +65,7 @@ class Supra(YAMLObjectBase):
     yaml_tag = "Supra"
 
     def __init__(
-        self, name: str, r: list[float], z: list[float], n: int = 0, struct: str = ""
+        self, name: str, r: list[float], z: list[float], n: int = 0, struct: str = "", detail: DetailLevel = DetailLevel.NONE
     ) -> None:
         """
         Initialize Supra object with validation.
@@ -58,6 +76,7 @@ class Supra(YAMLObjectBase):
             z: Axial bounds [z_bottom, z_top] in meters, must be ascending
             n: Number of turns or sections (default 0, can be set from struct)
             struct: Path to external HTS structure definition file (optional)
+            detail: Level of detail for modeling (default DetailLevel.NONE)
         
         Raises:
             ValidationError: If validation fails for:
@@ -85,7 +104,7 @@ class Supra(YAMLObjectBase):
         self.z = z
         self.n = n
         self.struct = struct
-        self.detail = "None"  # ['None', 'dblpancake', 'pancake', 'tape']
+        self.detail = detail
 
     def get_magnet_struct(self, directory: Optional[str] = None) -> HTSinsert:
         """
@@ -165,7 +184,7 @@ class Supra(YAMLObjectBase):
             Used by mesh generators to determine appropriate element size.
             Finer detail levels produce smaller characteristic lengths.
         """
-        if self.detail == "None":
+        if self.detail == DetailLevel.NONE:
             return (self.r[1] - self.r[0]) / 5.0
         else:
             hts = self.get_magnet_struct()
@@ -245,7 +264,7 @@ class Supra(YAMLObjectBase):
             ['system_DblPancake0', 'system_DblPancake1', ...]
         """
 
-        if self.detail == "None":
+        if self.detail == DetailLevel.NONE:
             prefix = ""
             if mname:
                 prefix = f"{mname}_"
@@ -309,8 +328,7 @@ class Supra(YAMLObjectBase):
         r = values["r"]
         z = values["z"]
         n = values.get("n", 0)
-        struct = values.get("struct", '')
-        object = cls(name, r, z, n, struct)
+
         """
         # TODO: if struct load r,z and n from struct data
         # or at least check that values are valid
@@ -318,7 +336,16 @@ class Supra(YAMLObjectBase):
             magnet = self.get_magnet_struct()
             self.check_dimensions(magnet)
         """
-        return object
+        struct = values.get("struct", '')
+        
+        # Handle detail field: convert string to enum
+        detail_value = values.get("detail", "NONE")
+        if isinstance(detail_value, str):
+            detail = DetailLevel(detail_value)
+        else:
+            detail = detail_valueobject = cls(name, r, z, n, struct)
+
+        return cls(name, r, z, n, struct, detail)
 
     def get_Nturns(self) -> int:
         """
@@ -343,36 +370,51 @@ class Supra(YAMLObjectBase):
             print("shall get nturns from %s" % self.struct)
             return -1
 
-    def set_Detail(self, detail: str) -> None:
+    def set_Detail(self, detail: Union[str, DetailLevel ]) -> None:
         """
         Set the level of detail for structural modeling.
         
         Args:
-            detail: Detail level string, must be one of:
-                - "None": Simplified single-region model
-                - "dblpancake": Model at double-pancake level
-                - "pancake": Model individual pancakes
-                - "tape": Model individual tape windings
+            detail: Detail level, can be either:
+                - DetailLevel enum value (DetailLevel.PANCAKE, etc.)
+                - String that will be converted to enum ("PANCAKE", "pancake", etc.)
         
         Raises:
-            Exception: If detail value is not one of the valid options
+            ValueError: If detail value cannot be converted to valid DetailLevel
         
         Notes:
+            - Accepts both enum values and strings for flexibility
+            - String values are case-insensitive and mapped to enum
             - Higher detail levels increase mesh complexity and solve time
-            - Requires struct to be set for detail levels other than "None"
-            - Affects output of get_names() and get_lc() methods
+            - Requires struct to be set for detail levels other than NONE
         
         Example:
             >>> supra = Supra("test", [10, 20], [0, 50], struct="config.yaml")
-            >>> supra.set_Detail("pancake")
-            >>> supra.detail
-            'pancake'
+            >>> supra.set_Detail(DetailLevel.PANCAKE)
+            >>> supra.set_Detail("PANCAKE")  # Also works
+            >>> supra.set_Detail("pancake")  # Case-insensitive
         """
-        if detail in ["None", "dblpancake", "pancake", "tape"]:
+        if isinstance(detail, DetailLevel):
             self.detail = detail
+        elif isinstance(detail, str):
+            # Map old string values to new enum
+            detail_map = {
+                "NONE": DetailLevel.NONE,
+                "DBLPANCAKE": DetailLevel.DBLPANCAKE,
+                "PANCAKE": DetailLevel.PANCAKE,
+                "TAPE": DetailLevel.TAPE
+            }
+            
+            if detail.upper() in detail_map:
+                self.detail = detail_map[detail.upper()]
+            else:
+                raise ValueError(
+                    f"Supra/set_Detail: unexpected detail value (detail={detail}). "
+                    f"Valid values are: {list(detail_map.keys())} or DetailLevel enum members"
+                )
         else:
-            raise Exception(
-                f"Supra/set_Detail: unexpected detail value (detail={detail}) : valid values are: {['None', 'dblpancake', 'pancake', 'tape']}"
+            raise TypeError(
+                f"Supra/set_Detail: detail must be DetailLevel enum or string, got {type(detail)}"
             )
 
     def boundingBox(self) -> tuple:

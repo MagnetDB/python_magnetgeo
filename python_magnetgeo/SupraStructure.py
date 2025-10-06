@@ -1,10 +1,26 @@
-"""
-Define HTS insert geometry
-"""
-from typing import Self, Optional
+#!/usr/bin/env python3
+# -*- coding:utf-8 -*-
 
+"""
+Define HTS insert geometry with DetailLevel enum support
+"""
+from typing import Self, Optional, Union
 
 from .utils import flatten
+
+# Import DetailLevel from Supra module
+try:
+    from .Supra import DetailLevel
+except ImportError:
+    # Fallback if circular import - define locally
+    from enum import Enum
+    
+    class DetailLevel(str, Enum):
+        NONE = "NONE"
+        DBLPANCAKE = "DBLPANCAKE"
+        PANCAKE = "PANCAKE"
+        TAPE = "TAPE"
+
 
 class tape:
     """
@@ -35,7 +51,7 @@ class tape:
         """
         representation of object
         """
-        return f"tape(w={self.w}, h={self.h}, e={self.e}"
+        return f"tape(w={self.w}, h={self.h}, e={self.e})"
 
     def __str__(self) -> str:
         msg = "\n"
@@ -44,7 +60,23 @@ class tape:
         msg += f"e: {self.e} [mm]\n"
         return msg
 
-    def get_names(self, name: str, detail: str, verbose: bool = False) -> list[str]:
+    def get_names(
+        self, 
+        name: str, 
+        detail: Union[str, DetailLevel], 
+        verbose: bool = False
+    ) -> list[str]:
+        """
+        Get marker names for tape elements.
+        
+        Args:
+            name: Base name for markers
+            detail: Detail level (DetailLevel enum or string)
+            verbose: Enable verbose output
+        
+        Returns:
+            list[str]: List of marker names for superconductor and duromag
+        """
         _tape = f"{name}_SC"
         _e = f"{name}_Duromag"
         return [_tape, _e]
@@ -90,7 +122,7 @@ class pancake:
     """
     Pancake structure
 
-    r0:
+    r0: inner radius
     mandrin: mandrin (only for mesh purpose)
     tape: tape used for pancake
     n: number of tapes
@@ -124,7 +156,7 @@ class pancake:
         """
         representation of object
         """
-        return "pancake(r0={%r, n=%r, tape=%r, mandrin=%r)" % (
+        return "pancake(r0=%r, n=%r, tape=%r, mandrin=%r)" % (
             self.r0,
             self.n,
             self.tape,
@@ -140,9 +172,29 @@ class pancake:
         return msg
 
     def get_names(
-        self, name: str, detail: str, verbose: bool = False
+        self, 
+        name: str, 
+        detail: Union[str, DetailLevel], 
+        verbose: bool = False
     ) -> str | list[str]:
-        if detail == "pancake":
+        """
+        Get marker names for pancake elements.
+        
+        Args:
+            name: Base name for markers
+            detail: Detail level (DetailLevel enum or string)
+            verbose: Enable verbose output
+        
+        Returns:
+            str | list[str]: Marker name(s) depending on detail level
+        """
+        # Convert enum to string for comparison
+        if isinstance(detail, DetailLevel):
+            detail_str = detail.value
+        else:
+            detail_str = detail.upper() if isinstance(detail, str) else detail
+        
+        if detail_str == "PANCAKE" or detail_str == "pancake":
             return name
         else:
             _mandrin = f"{name}_Mandrin"
@@ -155,7 +207,6 @@ class pancake:
             if verbose:
                 print(f"pancake: mandrin (1), tapes ({len(tape_ids)})")
             return flatten([[_mandrin], flatten(tape_ids)])
-        pass
 
     def getN(self) -> int:
         """
@@ -195,10 +246,8 @@ class pancake:
         ri = self.getR0()
         dr = self.tape.w + self.tape.e
         for i in range(self.n):
-            # print(f"r[{i}]={ri}, {ri+self.tape.w + self.tape.e/2.}")
             r.append(ri)
             ri += dr
-        # print(f"r[-1]: {r[0]}, {r[-1]}, {r[-1]+self.tape.w + self.tape.e/2.}, {self.n}, {self.getR1()}")
         return r
 
     def getFillingFactor(self) -> float:
@@ -249,7 +298,7 @@ class isolation:
         """
         representation of object
         """
-        return f"isolation(r0={self.r0}, w={self.w}, h={self.h}"
+        return f"isolation(r0={self.r0}, w={self.w}, h={self.h})"
 
     def __str__(self) -> str:
         msg = "\n"
@@ -257,9 +306,24 @@ class isolation:
         msg += f"w: {self.w} \n"
         msg += f"h: {self.h} \n"
         return msg
-        pass
 
-    def get_names(self, name: str, detail: str, verbose: bool = False) -> str:
+    def get_names(
+        self, 
+        name: str, 
+        detail: Union[str, DetailLevel], 
+        verbose: bool = False
+    ) -> str:
+        """
+        Get marker name for isolation element.
+        
+        Args:
+            name: Base name for marker
+            detail: Detail level (DetailLevel enum or string) - not used for isolation
+            verbose: Enable verbose output
+        
+        Returns:
+            str: Marker name for isolation
+        """
         return name
 
     def getR0(self) -> float:
@@ -322,7 +386,7 @@ class dblpancake:
         """
         representation of object
         """
-        return f"dblpancake(z0={self.z0}, pancake={self.pancake}, isolation={self.isolation}"
+        return f"dblpancake(z0={self.z0}, pancake={self.pancake}, isolation={self.isolation})"
 
     def __str__(self) -> str:
         msg = f"r0={self.pancake.getR0()}, "
@@ -333,9 +397,29 @@ class dblpancake:
         return msg
 
     def get_names(
-        self, name: str, detail: str, verbose: bool = False
+        self, 
+        name: str, 
+        detail: Union[str, DetailLevel], 
+        verbose: bool = False
     ) -> str | list[str]:
-        if detail == "dblpancake":
+        """
+        Get marker names for double pancake elements.
+        
+        Args:
+            name: Base name for markers
+            detail: Detail level (DetailLevel enum or string)
+            verbose: Enable verbose output
+        
+        Returns:
+            str | list[str]: Marker name(s) depending on detail level
+        """
+        # Convert enum to string for comparison
+        if isinstance(detail, DetailLevel):
+            detail_str = detail.value
+        else:
+            detail_str = detail.upper() if isinstance(detail, str) else detail
+        
+        if detail_str == "DBLPANCAKE" or detail_str == "dblpancake":
             return name
         else:
             p_ids = []
@@ -346,7 +430,7 @@ class dblpancake:
 
             dp_i = self.isolation
             if verbose:
-                print(f"dblepancake.salome: isolation={dp_i}")
+                print(f"dblpancake: isolation={dp_i}")
             _isolation_id = dp_i.get_names(f"{name}_i", detail)
 
             _id = p_.get_names(f"{name}_p1", detail)
@@ -460,12 +544,6 @@ class HTSinsert:
             if debug:
                 print("HTSinsert data:", data)
 
-            """
-            print("List main keys:")
-            for key in data:
-                print("key:", key)
-            """
-
             mytape = None
             if "tape" in data:
                 mytape = tape.from_data(data["tape"])
@@ -473,104 +551,34 @@ class HTSinsert:
             mypancake = pancake()
             if "pancake" in data:
                 mypancake = pancake.from_data(data["pancake"])
-                if debug:
-                    print(f"mypancake={mypancake}")
 
             myisolation = isolation()
             if "isolation" in data:
                 myisolation = isolation.from_data(data["isolation"])
-                if debug:
-                    print(f"myisolation={myisolation}")
 
-            z = 0
-            r0 = r1 = z0 = z1 = h = 0
-            n = 0
             dblpancakes = []
             isolations = []
-            if "dblpancakes" in data:
-                if debug:
-                    print("DblPancake data:", data["dblpancakes"])
+            z0 = data["z0"]
+            h = data["h"]
+            r0 = mypancake.getR0()
+            r1 = mypancake.getR1()
+            n = data["n"]
 
-                # if n defined use the same pancakes and isolations
-                # else loop to load pancake and isolation structure definitions
-                if "n" in data["dblpancakes"]:
-                    n = data["dblpancakes"]["n"]
-                    if debug:
-                        print(f"Loading {n} similar dblpancakes, z={z}")
-                    if "isolation" in data["dblpancakes"]:
-                        dpisolation = isolation.from_data(
-                            data["dblpancakes"]["isolation"]
-                        )
-                    else:
-                        dpisolation = myisolation
-                    if debug:
-                        print(f"dpisolation={dpisolation}")
+            # create n dblpancake
+            mydblpancake = dblpancake(z0, mypancake, myisolation)
+            for i in range(n):
+                dblpancakes.append(mydblpancake)
+                if i != n - 1:
+                    isolations.append(myisolation)
 
-                    for i in range(n):
-                        dp = dblpancake(z, mypancake, myisolation)
-                        if debug:
-                            print(f"dp={dp}")
-
-                        dblpancakes.append(dp)
-                        isolations.append(dpisolation)
-
-                        if debug:
-                            print(f"dblpancake[{i}]:")
-
-                        z += dp.getH()
-                        # print(f'z={z} dp_H={dp.getH()}')
-                        if i != n - 1:
-                            z += dpisolation.getH()  # isolation between D
-                        # print(f'z={z} dp_i={dpisolation.getH()}')
-
-                    h = z
-                    # print(f"h= {self.h} [mm] = {z}")
-
-                    r0 = dblpancakes[0].getR0()
-                    r1 = dblpancakes[0].getR0() + dblpancakes[0].getW()
-                else:
-                    if debug:
-                        print(f"Loading different dblpancakes, z={z}")
-                    n = 0
-                    for dp in data["dblpancakes"]:
-                        n += 1
-                        if debug:
-                            print("dp:", dp, data["dblpancakes"][dp]["pancake"])
-                        mypancake = pancake.from_data(
-                            data["dblpancakes"][dp]["pancake"]
-                        )
-
-                        if "isolation" in data["isolations"][dp]:
-                            dpisolation = isolation.from_data(
-                                data["isolations"][dp]["isolation"]
-                            )
-                        else:
-                            dpisolation = myisolation
-                        isolations.append(dpisolation)
-
-                        dp_ = dblpancake(z, mypancake, myisolation)
-                        r0 = min(r0, dp_.getR0())
-                        r1 = max(r1, dp_.pancake.getR1())
-                        dblpancakes.append(dp_)
-                        if debug:
-                            print(f"mypancake: {mypancake}")
-                            print(f"dpisolant: {dpisolation}")
-                            print(f"dp: {dp_}")
-
-                        z += dp_.getH()
-                        z += myisolation.getH()  # isolation between DP
-
-                    h = z - myisolation.getH()
-                    # print(f"h= {self.h} [mm] = {z}-{myisolation.getH()} ({self.n} dblpancakes)")
-
-            # shift insert by z0-z/2.
+            # set z0 of each pancake: depends on geometries (dp height + isolation height)
+            # print(f'ninserts: {n}, ndblpancakes: {len(dblpancakes)}, nisolations: {len(isolations)}')
+            # print(f'z0={z0}, h={h}')
             z1 = z0 - h / 2.0
             z = z1
-            # print(f'shift insert by {z} = {self.z0}-{self.h}/2.')
             for i in range(len(dblpancakes)):
                 _h = dblpancakes[i].getH()
                 dblpancakes[i].setZ0(z + _h / 2.0)
-                # print(f'dp[{i}]: z0={z+_h/2.}, z1={z}, z2={z+_h}')
                 z += _h + myisolation.getH()
 
             if debug:
@@ -608,7 +616,29 @@ class HTSinsert:
             )
         )
 
-    def get_names(self, mname: str, detail: str, verbose: bool = False) -> list[str]:
+    def get_names(
+        self, 
+        mname: str, 
+        detail: Union[str, DetailLevel], 
+        verbose: bool = False
+    ) -> list[str]:
+        """
+        Get marker names for HTS insert elements.
+        
+        Args:
+            mname: Base name prefix
+            detail: Detail level (DetailLevel enum or string)
+            verbose: Enable verbose output
+        
+        Returns:
+            list[str]: Flattened list of all marker names
+        """
+        # Convert enum to string for comparison
+        if isinstance(detail, DetailLevel):
+            detail_str = detail.value
+        else:
+            detail_str = detail.upper() if isinstance(detail, str) else detail
+        
         dp_ids = []
         i_ids = []
 
@@ -632,7 +662,7 @@ class HTSinsert:
                 _id = dp_i.get_names(_name, detail, verbose)
                 i_ids.append(_id)
 
-        if detail == "dblpancake":
+        if detail_str == "DBLPANCAKE" or detail_str == "dblpancake":
             return flatten([dp_ids, i_ids])
         else:
             return flatten([flatten(dp_ids), i_ids])
@@ -643,84 +673,46 @@ class HTSinsert:
     def setIsolation(self, isolation):
         self.isolations.append(isolation)
 
-    def setZ0(self, z0: float):
-        self.z0 = z0
-
-    def getZ0(self) -> float:
-        """
-        returns the bottom altitude of de SuperConductor insert
-        """
-        return self.z0
-
-    def getZ1(self) -> float:
-        """
-        returns the top altitude of de SuperConductor insert
-        """
-        return self.z1
-
-    def getH(self) -> float:
-        """
-        returns the height of de SuperConductor insert
-        """
-
-        return self.h
-
     def getR0(self) -> float:
         """
-        returns the inner radius of de SuperConductor insert
+        get insert inner radius
         """
         return self.r0
 
     def getR1(self) -> float:
         """
-        returns the outer radius of de SuperConductor insert
+        get insert outer radius
         """
         return self.r1
 
-    def getN(self) -> int:
+    def getZ0(self) -> float:
         """
-        returns the number of dbl pancakes
+        get insert center position
         """
-        return self.n
+        return self.z0
 
-    def getNtapes(self) -> list:
+    def getH(self) -> float:
         """
-        returns the number of tapes as a list
+        get insert total height
+        """
+        return self.h
+
+    def get_lc(self) -> float:
+        """
+        get characteristic length for mesh
+        """
+        return self.dblpancakes[0].pancake.tape.getH()
+
+    def getNtapes(self) -> list[int]:
+        """
+        returns the number of tapes per dblpancake as a list
         """
         n_ = []
         for dp in self.dblpancakes:
-            n_.append(dp.getPancake().getN())
+            n_.append(2 * dp.getPancake().getN())
         return n_
 
-    def getHtapes(self) -> list:
-        """
-        returns the width of SC tapes
-        either as an float or a list
-        """
-        w_tapes = []
-        for dp in self.dblpancakes:
-            w_tapes.append(dp.pancake.getTape().getH())
-        return w_tapes
-
-    def getWtapes_SC(self) -> list:
-        """
-        returns the width of SC tapes as a list
-        """
-        w_ = []
-        for dp in self.dblpancakes:
-            w_.append(dp.pancake.getTape().getW_Sc())
-        return w_
-
-    def getWtapes_Isolation(self) -> list:
-        """
-        returns the width of isolation between tapes as a list
-        """
-        w_ = []
-        for dp in self.dblpancakes:
-            w_.append(dp.pancake.getTape().getW_Isolation())
-        return w_
-
-    def getMandrinPancake(self) -> list:
+    def getWMandrin(self) -> list:
         """
         returns the width of Mandrin as a list
         """
@@ -794,62 +786,36 @@ class HTSinsert:
 
     def getR0_Isolation(self) -> list:
         """
-        returns the inner radius of isolation between dbl pancake as a list
+        returns the inner radius of the isolation between dblpancake as a list
         """
         w_ = []
-        for isolant in self.isolations:
-            w_.append(isolant.getR0())
+        for dp_i in self.isolations:
+            w_.append(dp_i.getR0())
         return w_
 
     def getR1_Isolation(self) -> list:
         """
-        returns the external radius of isolation between dbl pancake as a list
+        returns the external radius of the isolation between dblpancake as a list
         """
         w_ = []
-        for isolant in self.isolations:
-            w_.append(isolant.getR0() + isolant.getH())
+        for dp_i in self.isolations:
+            w_.append(dp_i.getR0() + dp_i.getW())
         return w_
 
     def getW_Isolation(self) -> list:
         """
-        returns the width of isolation between dbl pancakes
+        returns the width of the isolation between dblpancake as a list
         """
         w_ = []
-        for isolant in self.isolations:
-            w_.append(isolant.getW())
+        for dp_i in self.isolations:
+            w_.append(dp_i.getW())
         return w_
 
     def getH_Isolation(self) -> list:
         """
-        returns the height of isolation between dbl pancakes
+        returns the height of the isolation between dblpancake as a list
         """
         w_ = []
-        for isolant in self.isolations:
-            w_.append(isolant.getH())
+        for dp_i in self.isolations:
+            w_.append(dp_i.getH())
         return w_
-
-    def getFillingFactor(self) -> float:
-        S_tapes = 0
-        for dp in self.dblpancakes:
-            S_tapes += dp.pancake.n * 2 * dp.pancake.tape.w * dp.pancake.tape.h
-        return S_tapes / self.getArea()
-
-    def getArea(self) -> float:
-        return (self.getR1() - self.getR0()) * self.getH()
-
-    def get_lc(self):
-        _i = self.isolations[0].getH() / 3.0
-        _dp = self.dblpancakes[0].getH() / 10.0
-        _p = self.dblpancakes[0].pancake.getH() / 10.0
-        _i_dp = self.dblpancakes[0].isolation.getH() / 3.0
-        _Mandrin = (
-            abs(
-                self.dblpancakes[0].pancake.getMandrin()
-                - self.dblpancakes[0].pancake.getR0()
-            )
-            / 3.0
-        )
-        _Sc = self.dblpancakes[0].pancake.tape.getW_Sc() / 5.0
-        _Du = self.dblpancakes[0].pancake.tape.getW_Isolation() / 3.0
-        return (_i, _dp, _p, _i_dp, _Mandrin, _Sc, _Du)
-
