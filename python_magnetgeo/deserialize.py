@@ -35,30 +35,6 @@ from .coolingslit import CoolingSlit
 # From : http://chimera.labs.oreilly.com/books/1230000000393/ch06.html#_discussion_95
 # Dictionary mapping names to known classes
 
-"""
-classes = {
-    "Probe": Probe,
-    "Shape": Shape,
-    "ModelAxi": ModelAxi,
-    "Model3D": Model3D,
-    "Helix": Helix,
-    "Ring": Ring,
-    "InnerCurrentLead": InnerCurrentLead,
-    "OuterCurrentLead": OuterCurrentLead,
-    "Insert": Insert,
-    "Bitter": Bitter,
-    "Supra": Supra,
-    "Screen": Screen,
-    "Bitters": Bitters,
-    "Supras": Supras,
-    "MSite": MSite,
-    "Contour2D": Contour2D,
-    "Chamfer": Chamfer,
-    "Groove": Groove,
-    "Tierod": Tierod,
-    "CoolingSlit": CoolingSlit,
-}
-"""
 # Get class registry from base class
 # This is automatically populated by __init_subclass__
 classes = YAMLObjectBase.get_all_classes()
@@ -66,9 +42,17 @@ classes = YAMLObjectBase.get_all_classes()
 
 def serialize_instance(obj):
     """
-    serialize_instance of an obj
+    Serialize instance of an object to dictionary for JSON.
     
-    Handles Enum values by converting them to their string values.
+    Handles:
+    - Enum values: converts to their string values
+    - Private attributes: filters out attributes starting with _ (like _basedir)
+    
+    Args:
+        obj: Object to serialize
+        
+    Returns:
+        dict: Dictionary representation with __classname__ and public attributes
     """
     from enum import Enum
     
@@ -77,8 +61,13 @@ def serialize_instance(obj):
     # Get object attributes
     obj_dict = vars(obj)
     
-    # Convert any Enum values to their string representation
+    # Filter and convert attributes
     for key, value in obj_dict.items():
+        # Skip private attributes (starting with _)
+        if key.startswith('_'):
+            continue
+        
+        # Convert Enum values to their string representation
         if isinstance(value, Enum):
             d[key] = value.value
         else:
@@ -86,17 +75,29 @@ def serialize_instance(obj):
     
     return d
 
-def unserialize_object(d, debug: bool = True):
+
+def unserialize_object(d, debug: bool = False):
     """
-    unserialize_instance of an obj
+    Unserialize object from dictionary.
+    
+    Args:
+        d: Dictionary with __classname__ and object attributes
+        debug: Enable debug output
+        
+    Returns:
+        Reconstructed object instance
+        
+    Raises:
+        ValueError: If __classname__ refers to unknown class
     """
     if debug:
         print(f"unserialize_object: d={d}", flush=True)
 
-    # remove all __classname__ keys
+    # Remove __classname__ key
     clsname = d.pop("__classname__", None)
     if debug:
         print(f"clsname: {clsname}", flush=True)
+    
     if clsname:
         # Use auto-registered class
         cls = YAMLObjectBase.get_class(clsname)
@@ -107,13 +108,18 @@ def unserialize_object(d, debug: bool = True):
                 f"Available classes: {list(classes.keys())}"
             )
         
-        obj = cls.__new__(cls)  # Make instance without calling __init__
+        # Create instance without calling __init__
+        obj = cls.__new__(cls)
+        
+        # Set attributes (lowercase keys for compatibility)
         for key, value in d.items():
             if debug:
                 print(f"key={key}, value={value} type={type(value)}", flush=True)
             setattr(obj, key.lower(), value)
+        
         if debug:
             print(f"obj={obj}", flush=True)
+        
         return obj
     else:
         if debug:
