@@ -109,7 +109,10 @@ class Supra(YAMLObjectBase):
         
         # Store the directory context for resolving struct paths
         # This will be set when loading from YAML
-        # self._basedir = None
+        # if not hasattr(self, '_basedir'):
+        #     import os, Path
+        #     self._basedir = os.get()
+
 
     def get_magnet_struct(self) -> HTSInsert:
         """

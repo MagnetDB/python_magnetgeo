@@ -72,7 +72,7 @@ class HTSInsert:
         filename = inputcfg
         if directory is not None:
             filename = f"{directory}/{filename}"
-        print(f"SupraStructure:fromcfg({filename})")
+        print(f"SupraStructure:fromcfg({filename}, directory={directory})", flush=True)
 
         with open(filename) as f:
             data = json.load(f)

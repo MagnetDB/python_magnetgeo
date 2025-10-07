@@ -98,8 +98,7 @@ def loadYaml(comment: str, filename: str, supported_type: Type = None, debug: bo
     basedir, basename = os.path.split(filename)
     
     if debug:
-        print(f"utils.loadYaml: comment={comment}, filename={filename}")
-        # print(f"  basedir={basedir}, basename={basename}, cwd={cwd}")
+        print(f"utils.loadYaml: comment={comment}, filename={filename}, basedir={basedir}, basename={basename}, cwd={cwd}", flush=True)
 
     # Change to target directory if needed
     if basedir and basedir != ".":
@@ -111,7 +110,10 @@ def loadYaml(comment: str, filename: str, supported_type: Type = None, debug: bo
         # Load YAML file
         with open(basename, "r") as istream:
             obj = yaml.load(stream=istream, Loader=yaml.FullLoader)
-        
+            obj._basedir = cwd
+            if basedir and basedir != ".":
+                obj._basedir = os.getcwd()
+
         if debug:
             print(f"  Loaded object type: {type(obj)}")
             if hasattr(obj, 'name'):
@@ -185,7 +187,10 @@ def loadJson(comment: str, filename: str, debug: bool = False) -> Any:
                 istream.read(), 
                 object_hook=deserialize.unserialize_object
             )
-            
+            obj._basedir = cwd
+            if basedir and basedir != ".":
+                obj._basedir = os.getcwd()
+
         if debug:
             print(f"  loadJson: {comment} from {filename} completed successfully")
             
