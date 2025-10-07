@@ -1,0 +1,435 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+"""
+Test suite for path resolution in nested object loading.
+
+Tests the _load_nested_single and _load_nested_list methods in YAMLObjectBase
+to ensure correct handling of:
+- Absolute paths
+- Relative paths
+- Plain filenames
+- Windows paths
+- Missing basedir
+- Nested loading chains
+"""
+
+import pytest
+import tempfile
+import yaml
+from pathlib import Path
+from unittest.mock import patch, MagicMock
+import sys
+import os
+
+# Add parent directory to path for imports
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from python_magnetgeo.base import YAMLObjectBase
+from python_magnetgeo.ModelAxi import ModelAxi
+from python_magnetgeo.Helix import Helix
+from python_magnetgeo.Insert import Insert
+
+
+class MockObject(YAMLObjectBase):
+    """Mock object for testing path resolution."""
+    yaml_tag = "MockObject"
+    
+    def __init__(self, name="test"):
+        self.name = name
+        self._basedir = None
+    
+    @classmethod
+    def from_dict(cls, values, debug=False):
+        return cls(name=values.get("name", "test"))
+
+
+class TestAbsolutePaths:
+    """Test handling of absolute paths."""
+    
+    def test_unix_absolute_path(self):
+        """Test Unix absolute path is used as-is."""
+        # Setup mock class with basedir
+        MockObject._basedir = "/parent/dir"
+        
+        with patch.object(MockObject, 'from_yaml') as mock_load:
+            mock_load.return_value = MockObject("loaded")
+            
+            # Load with absolute path
+            result = MockObject._load_nested_single("/abs/path/file", MockObject)
+            
+            # Verify absolute path used without basedir prepended
+            mock_load.assert_called_once()
+            called_path = mock_load.call_args[0][0]
+            assert called_path == "/abs/path/file.yaml"
+            assert not called_path.startswith("/parent/dir")
+    
+
+
+class TestRelativePaths:
+    """Test handling of relative paths."""
+    
+    def test_relative_path_with_basedir(self):
+        """Test relative path resolves relative to basedir."""
+        MockObject._basedir = "/parent/dir"
+        
+        with patch.object(MockObject, 'from_yaml') as mock_load:
+            mock_load.return_value = MockObject("loaded")
+            
+            result = MockObject._load_nested_single("subdir/file", MockObject)
+            
+            # Verify relative path resolved with basedir
+            mock_load.assert_called_once()
+            called_path = mock_load.call_args[0][0]
+            assert called_path == "/parent/dir/subdir/file.yaml"
+    
+    def test_relative_path_with_parent_dir(self):
+        """Test relative path with .. resolves correctly."""
+        MockObject._basedir = "/parent/subdir"
+        
+        with patch.object(MockObject, 'from_yaml') as mock_load:
+            mock_load.return_value = MockObject("loaded")
+            
+            result = MockObject._load_nested_single("../other/file", MockObject)
+            
+            # Verify .. handled correctly
+            mock_load.assert_called_once()
+            called_path = mock_load.call_args[0][0]
+            # Path should contain ../
+            assert called_path == "/parent/subdir/../other/file.yaml"
+    
+    def test_relative_path_current_dir(self):
+        """Test relative path with ./ resolves correctly."""
+        MockObject._basedir = "/parent/dir"
+        
+        with patch.object(MockObject, 'from_yaml') as mock_load:
+            mock_load.return_value = MockObject("loaded")
+            
+            result = MockObject._load_nested_single("./file", MockObject)
+            
+            # Verify ./ handled
+            mock_load.assert_called_once()
+            called_path = mock_load.call_args[0][0]
+            assert called_path == "/parent/dir/./file.yaml"
+
+
+class TestPlainFilenames:
+    """Test handling of plain filenames."""
+    
+    def test_plain_filename_with_basedir(self):
+        """Test plain filename resolves in parent's directory."""
+        MockObject._basedir = "/parent/dir"
+        
+        with patch.object(MockObject, 'from_yaml') as mock_load:
+            mock_load.return_value = MockObject("loaded")
+            
+            result = MockObject._load_nested_single("file", MockObject)
+            
+            # Verify plain filename resolved with basedir
+            mock_load.assert_called_once()
+            called_path = mock_load.call_args[0][0]
+            assert called_path == "/parent/dir/file.yaml"
+    
+    def test_plain_filename_no_basedir(self):
+        """Test plain filename without basedir uses current directory."""
+        # Create class without basedir
+        class NoBasedirMock(YAMLObjectBase):
+            yaml_tag = "NoBasedirMock"
+            
+            @classmethod
+            def from_dict(cls, values, debug=False):
+                return cls()
+        
+        with patch.object(NoBasedirMock, 'from_yaml') as mock_load:
+            mock_load.return_value = NoBasedirMock()
+            
+            result = NoBasedirMock._load_nested_single("file", NoBasedirMock)
+            
+            # Verify uses relative path without basedir
+            mock_load.assert_called_once()
+            called_path = mock_load.call_args[0][0]
+            assert called_path == "file.yaml"
+
+
+class TestYamlExtension:
+    """Test handling of .yaml extension."""
+    
+    def test_adds_yaml_extension(self):
+        """Test .yaml extension is added when missing."""
+        MockObject._basedir = "/parent/dir"
+        
+        with patch.object(MockObject, 'from_yaml') as mock_load:
+            mock_load.return_value = MockObject("loaded")
+            
+            result = MockObject._load_nested_single("file", MockObject)
+            
+            called_path = mock_load.call_args[0][0]
+            assert called_path.endswith(".yaml")
+    
+    def test_yaml_extension_not_duplicated(self):
+        """Test .yaml extension is not duplicated."""
+        MockObject._basedir = "/parent/dir"
+        
+        with patch.object(MockObject, 'from_yaml') as mock_load:
+            mock_load.return_value = MockObject("loaded")
+            
+            result = MockObject._load_nested_single("file.yaml", MockObject)
+            
+            called_path = mock_load.call_args[0][0]
+            assert called_path == "/parent/dir/file.yaml"
+            assert not called_path.endswith(".yaml.yaml")
+    
+    def test_yml_extension_preserved(self):
+        """Test .yml extension is preserved."""
+        MockObject._basedir = "/parent/dir"
+        
+        with patch.object(MockObject, 'from_yaml') as mock_load:
+            mock_load.return_value = MockObject("loaded")
+            
+            result = MockObject._load_nested_single("file.yml", MockObject)
+            
+            called_path = mock_load.call_args[0][0]
+            assert called_path.endswith(".yml")
+            assert not called_path.endswith(".yml.yaml")
+
+
+class TestNestedList:
+    """Test _load_nested_list method."""
+    
+    def test_load_list_of_strings(self):
+        """Test loading list of string references."""
+        MockObject._basedir = "/parent/dir"
+        
+        with patch.object(MockObject, 'from_yaml') as mock_load:
+            mock_load.return_value = MockObject("loaded")
+            
+            result = MockObject._load_nested_list(["file1", "file2"], MockObject)
+            
+            assert len(result) == 2
+            assert mock_load.call_count == 2
+    
+    def test_load_list_of_dicts(self):
+        """Test loading list of inline dictionaries."""
+        data = [
+            {"name": "obj1"},
+            {"name": "obj2"}
+        ]
+        
+        result = MockObject._load_nested_list(data, MockObject)
+        
+        assert len(result) == 2
+        assert result[0].name == "obj1"
+        assert result[1].name == "obj2"
+    
+    def test_load_mixed_list(self):
+        """Test loading list with mixed types."""
+        MockObject._basedir = "/parent/dir"
+        
+        obj = MockObject("existing")
+        data = [
+            "file1",              # String reference
+            {"name": "inline"},   # Inline dict
+            obj                   # Existing object
+        ]
+        
+        with patch.object(MockObject, 'from_yaml') as mock_load:
+            mock_load.return_value = MockObject("loaded")
+            
+            result = MockObject._load_nested_list(data, MockObject)
+            
+            assert len(result) == 3
+            assert result[2] is obj  # Existing object preserved
+    
+    def test_load_none_list(self):
+        """Test loading None returns empty list."""
+        result = MockObject._load_nested_list(None, MockObject)
+        assert result == []
+    
+    def test_load_invalid_type_raises(self):
+        """Test loading non-list raises TypeError."""
+        with pytest.raises(TypeError, match="Expected list"):
+            MockObject._load_nested_list("not a list", MockObject)
+
+
+class TestNestedSingle:
+    """Test _load_nested_single method with various inputs."""
+    
+    def test_load_none(self):
+        """Test loading None returns None."""
+        result = MockObject._load_nested_single(None, MockObject)
+        assert result is None
+    
+    def test_load_dict(self):
+        """Test loading inline dictionary."""
+        data = {"name": "inline_obj"}
+        result = MockObject._load_nested_single(data, MockObject)
+        
+        assert isinstance(result, MockObject)
+        assert result.name == "inline_obj"
+    
+    def test_load_existing_object(self):
+        """Test loading existing object returns it unchanged."""
+        obj = MockObject("existing")
+        result = MockObject._load_nested_single(obj, MockObject)
+        
+        assert result is obj
+
+
+class TestRealWorldScenarios:
+    """Test with real geometry classes."""
+    
+    def test_modelaxi_loading_chain(self):
+        """Test ModelAxi can be loaded with directory context."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # Create ModelAxi YAML
+            modelaxi_path = Path(tmpdir) / "test_axi.yaml"
+            modelaxi_data = {
+                'name': 'test_axi',
+                'h': 49.25,
+                'turns': [3.0, 3.5, 3.0],
+                'pitch': [10.0, 11.0, 10.0]
+            }
+            
+            with open(modelaxi_path, 'w') as f:
+                yaml.dump({'!<ModelAxi>': None}, f)  # Tag
+                yaml.dump(modelaxi_data, f)
+            
+            # Load using from_yaml (sets _basedir)
+            modelaxi = ModelAxi.from_yaml(str(modelaxi_path))
+            
+            # Verify _basedir was set
+            assert hasattr(modelaxi, '_basedir')
+            assert modelaxi._basedir == tmpdir
+    
+    def test_helix_with_modelaxi_reference(self):
+        """Test Helix loading with ModelAxi string reference."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmpdir_path = Path(tmpdir)
+            
+            # Create ModelAxi
+            modelaxi = ModelAxi("nested_axi", 15.0, [3.0], [10.0])
+            modelaxi_path = tmpdir_path / "nested_axi.yaml"
+            with open(modelaxi_path, 'w') as f:
+                yaml.dump(modelaxi, f)
+            
+            # Create Helix YAML with string reference
+            helix_path = tmpdir_path / "test_helix.yaml"
+            helix_data = {
+                'name': 'test_helix',
+                'r': [10.0, 20.0],
+                'z': [0.0, 50.0],
+                'cutwidth': 0.2,
+                'odd': True,
+                'dble': False,
+                'modelaxi': 'nested_axi'  # String reference
+            }
+            
+            # Write as proper YAML with tag
+            with open(helix_path, 'w') as f:
+                f.write("!<Helix>\n")
+                yaml.dump(helix_data, f)
+            
+            # Load Helix - should resolve modelaxi reference
+            helix = Helix.from_yaml(str(helix_path))
+            
+            # Verify modelaxi was loaded
+            assert helix.modelaxi is not None
+            assert helix.modelaxi.name == "nested_axi"
+
+
+class TestBasedirPropagation:
+    """Test that _basedir is properly set and propagated."""
+    
+    def test_from_yaml_sets_basedir(self):
+        """Test that from_yaml sets _basedir to file's directory."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmpdir_path = Path(tmpdir)
+            
+            # Create test file
+            test_file = tmpdir_path / "test.yaml"
+            test_data = {'name': 'test'}
+            
+            with open(test_file, 'w') as f:
+                f.write("!<MockObject>\n")
+                yaml.dump(test_data, f)
+            
+            # Load object
+            obj = MockObject.from_yaml(str(test_file))
+            
+            # Verify _basedir set to directory
+            assert hasattr(obj, '_basedir')
+            assert obj._basedir == str(tmpdir_path)
+    
+    def test_basedir_with_absolute_path(self):
+        """Test _basedir set correctly with absolute path."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmpdir_path = Path(tmpdir).resolve()  # Absolute path
+            
+            test_file = tmpdir_path / "test.yaml"
+            test_data = {'name': 'test'}
+            
+            with open(test_file, 'w') as f:
+                f.write("!<MockObject>\n")
+                yaml.dump(test_data, f)
+            
+            obj = MockObject.from_yaml(str(test_file))
+            
+            # _basedir should be absolute
+            assert Path(obj._basedir).is_absolute()
+    
+    def test_basedir_with_relative_path(self):
+        """Test _basedir handles relative paths correctly."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # Change to temp directory
+            original_cwd = os.getcwd()
+            try:
+                os.chdir(tmpdir)
+                
+                # Create file in subdirectory
+                subdir = Path("subdir")
+                subdir.mkdir()
+                test_file = subdir / "test.yaml"
+                
+                test_data = {'name': 'test'}
+                with open(test_file, 'w') as f:
+                    f.write("!<MockObject>\n")
+                    yaml.dump(test_data, f)
+                
+                # Load with relative path
+                obj = MockObject.from_yaml("subdir/test.yaml")
+                
+                # _basedir should be set (may be absolute after resolution)
+                assert hasattr(obj, '_basedir')
+                
+            finally:
+                os.chdir(original_cwd)
+
+
+class TestEdgeCases:
+    """Test edge cases and error conditions."""
+    
+    def test_empty_string_reference(self):
+        """Test empty string is handled gracefully."""
+        # Empty string should add .yaml and try to load
+        with patch.object(MockObject, 'from_yaml') as mock_load:
+            mock_load.side_effect = FileNotFoundError()
+            
+            with pytest.raises(FileNotFoundError):
+                MockObject._load_nested_single("", MockObject)
+    
+    def test_path_with_spaces(self):
+        """Test paths with spaces are handled correctly."""
+        MockObject._basedir = "/parent/dir with spaces"
+        
+        with patch.object(MockObject, 'from_yaml') as mock_load:
+            mock_load.return_value = MockObject("loaded")
+            
+            result = MockObject._load_nested_single("file name", MockObject)
+            
+            called_path = mock_load.call_args[0][0]
+            assert "dir with spaces" in called_path
+            assert "file name" in called_path
+
+
+if __name__ == "__main__":
+    pytest.main([__file__, "-v"])

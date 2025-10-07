@@ -106,8 +106,12 @@ class Supra(YAMLObjectBase):
 
         self.struct = struct
         self.detail = detail
+        
+        # Store the directory context for resolving struct paths
+        # This will be set when loading from YAML
+        # self._basedir = None
 
-    def get_magnet_struct(self, directory: Optional[str] = None) -> HTSInsert:
+    def get_magnet_struct(self) -> HTSInsert:
         """
         Load HTS structure definition from configuration file.
        
@@ -122,7 +126,7 @@ class Supra(YAMLObjectBase):
             - Returns HTSinsert object with detailed pancake/tape geometry
         """
 
-        hts = HTSInsert.fromcfg(self.struct, directory)
+        hts = HTSInsert.fromcfg(self.struct, directory=self._basedir)
         self.check_dimensions(hts)
         return hts
 
@@ -337,7 +341,7 @@ class Supra(YAMLObjectBase):
         # Handle detail field: convert string to enum
         detail_value = values.get("detail", "NONE")
         if isinstance(detail_value, str):
-            detail = DetailLevel(detail_value)
+            detail = DetailLevel(detail_value.upper())
         else:
             detail = detail_valueobject = cls(name, r, z, n, struct)
 
