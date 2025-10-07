@@ -200,23 +200,9 @@ class SerializableMixin:
             - Returns to original directory after loading
         """
         from .utils import loadYaml
-        # Get absolute path
-        yaml_path = Path(filename).resolve()
-        
         if debug:
-            print(f"{cls.__name__}.from_yaml: Loading from {yaml_path}")
-        
-        # Load using standard mechanism
-        instance = loadYaml(cls.__name__, str(yaml_path), cls, debug)
-        
-        # Store directory for nested file resolution
-        # This is used by _load_nested_* methods
-        instance._basedir = str(yaml_path.parent)
-        
-        if debug:
-            print(f"SerializableMixin.load_from_yaml: Loading {cls.__name__} from {filename}: Set _basedir to {instance._basedir}", flush=True)
-        
-        return instance
+            print(f"SerializableMixin.load_from_yaml: Loading {cls.__name__} from {filename}", flush=True)
+        return loadYaml(cls.__name__, filename, cls, debug)
 
     @classmethod  
     def load_from_json(cls: Type[T], filename: str, debug: bool = False) -> T:
@@ -479,26 +465,7 @@ class YAMLObjectBase(SerializableMixin):
                 if debug:
                     print(f"Loading object[{i}] from file: {item}")
                 from .utils import getObject
-                filename = f"{data}.yaml"
-                
-                # Check if path is absolute
-                path_obj = Path(filename)
-                
-                if path_obj.is_absolute():
-                    # Absolute path - use as-is
-                    resolved_path = filename
-                else:
-                    # Relative path - resolve relative to parent's basedir
-                    basedir = getattr(cls, '_basedir', None) if hasattr(cls, '_basedir') else None
-                    
-                    if basedir:
-                        resolved_path = str(Path(basedir) / filename)
-                    else:
-                        # No basedir - use relative to current directory
-                        resolved_path = filename
-                
-                if debug:
-                    print(f"  Loading nested {object_class.__name__} from {resolved_path}")
+                filename = f"{item}.yaml"
                 obj = getObject(filename)
                 objects.append(obj)
                 
@@ -581,24 +548,8 @@ class YAMLObjectBase(SerializableMixin):
             from .utils import getObject
             
             filename = f"{data}.yaml"
-            # Check if path is absolute
-            path_obj = Path(filename)
-            
-            if path_obj.is_absolute():
-                # Absolute path - use as-is
-                resolved_path = filename
-            else:
-                # Relative path - resolve relative to parent's basedir
-                basedir = getattr(cls, '_basedir', None) if hasattr(cls, '_basedir') else None
-                
-                if basedir:
-                    resolved_path = str(Path(basedir) / filename)
-                else:
-                    # No basedir - use relative to current directory
-                    resolved_path = filename
-            
             if debug:
-                print(f"  Loading nested {object_class.__name__} from {resolved_path}")
+                print(f"  Loading nested {object_class.__name__} from {filename}")
             return getObject(filename)
             
         elif isinstance(data, dict):
