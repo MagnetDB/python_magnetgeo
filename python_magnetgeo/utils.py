@@ -9,7 +9,7 @@ Fixed version compatible with both original and refactored classes
 import os
 import yaml
 import json
-from typing import Union, List, Dict, Callable, Any, Type, Optional
+from typing import Any, Type
 from pathlib import Path
 
 class ObjectLoadError(Exception):
