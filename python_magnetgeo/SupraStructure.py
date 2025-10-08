@@ -9,17 +9,7 @@ from typing import Self, Optional, Union
 from .utils import flatten
 
 # Import DetailLevel from Supra module
-try:
-    from .Supra import DetailLevel
-except ImportError:
-    # Fallback if circular import - define locally
-    from enum import Enum
-    
-    class DetailLevel(str, Enum):
-        NONE = "NONE"
-        DBLPANCAKE = "DBLPANCAKE"
-        PANCAKE = "PANCAKE"
-        TAPE = "TAPE"
+from .enums import DetailLevel
 
 
 from .hts.tape import tape
