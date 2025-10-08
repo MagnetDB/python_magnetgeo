@@ -69,12 +69,10 @@ class dblpancake:
             str | list[str]: Marker name(s) depending on detail level
         """
         # Convert enum to string for comparison
-        if isinstance(detail, DetailLevel):
-            detail_str = detail.value
-        else:
-            detail_str = detail.upper() if isinstance(detail, str) else detail
+        if isinstance(detail, str):
+            detail = DetailLevel[detail.upper()]
         
-        if detail_str == "DBLPANCAKE" or detail_str == "dblpancake":
+        if detail == DetailLevel.DBLPANCAKE:
             return name
         else:
             p_ids = []

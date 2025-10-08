@@ -3,6 +3,8 @@
 
 """defines Supra Insert structure"""
 
+import os
+
 from typing import List
 from .base import YAMLObjectBase
 from .validation import GeometryValidator, ValidationError
@@ -111,6 +113,8 @@ class Supras(YAMLObjectBase):
                         f"magnets intersect: magnet[{i}] intersect magnet[{i-1}]: /n{self.magnets[i]} /n{self.magnets[i-1]}"
                     )   
                 
+        # Store the directory context for resolving struct paths
+        self._basedir = os.getcwd()        
 
     def __repr__(self):
         """

@@ -235,10 +235,8 @@ class HTSInsert:
             list[str]: Flattened list of all marker names
         """
         # Convert enum to string for comparison
-        if isinstance(detail, DetailLevel):
-            detail_str = detail.value
-        else:
-            detail_str = detail.upper() if isinstance(detail, str) else detail
+        if isinstance(detail, str):
+            detail = DetailLevel[detail.upper()]
         
         dp_ids = []
         i_ids = []
@@ -263,7 +261,7 @@ class HTSInsert:
                 _id = dp_i.get_names(_name, detail, verbose)
                 i_ids.append(_id)
 
-        if detail_str == "DBLPANCAKE" or detail_str == "dblpancake":
+        if detail == DetailLevel.DBLPANCAKE:
             return flatten([dp_ids, i_ids])
         else:
             return flatten([flatten(dp_ids), i_ids])

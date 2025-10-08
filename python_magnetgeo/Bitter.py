@@ -7,8 +7,9 @@ Provides definition for Bitter:
 * Geom data: r, z
 * Model Axi: definition of helical cut (provided from MagnetTools)
 * Model 3D: actual 3D CAD
-"""
 
+"""
+import os 
 
 from .ModelAxi import ModelAxi
 from .tierod import Tierod
@@ -76,7 +77,7 @@ class Bitter(YAMLObjectBase):
             ValidationError: If z is not length 2 or not in ascending order  
             ValidationError: If r[0] < 0 (negative inner radius)
         
-        Notes:
+        Note:
             - Bitter magnets are typically stacked axially to create high fields
             - The helical cut is used to mimic insulators distribution in between Bitter disks
             - Multiple cooling slits improve heat removal at different radii
@@ -148,6 +149,9 @@ class Bitter(YAMLObjectBase):
             self.tireod = Tierod.from_yaml(f"{tierod}.yaml")
         else:
             self.tierod = tierod
+
+        # Store the directory context for resolving struct paths
+        self._basedir = os.getcwd()
 
     def __repr__(self):
         """

@@ -4,9 +4,7 @@
 """defines Insert structure"""
 
 import math
-import datetime
-import json
-import yaml
+import os
 
 from .Helix import Helix
 from .Ring import Ring
@@ -273,6 +271,8 @@ class Insert(YAMLObjectBase):
                     if zinf_inner is not None and zinf_inner != zinf_outer:
                         raise ValidationError(f"Insert: zinf_inner ({zinf_inner}) and zinf_outer ({zinf_outer}) must be egal")
                 
+        # Store the directory context for resolving struct paths
+        self._basedir = os.getcwd()
 
     def get_channels(
         self, mname: str, hideIsolant: bool = True, debug: bool = False

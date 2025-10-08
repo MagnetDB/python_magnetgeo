@@ -2,6 +2,7 @@
 # encoding: UTF-8
 
 """defines Bitter Insert structure"""
+import os
 
 # Add import at the top
 from .Bitter import Bitter
@@ -122,7 +123,9 @@ class Bitters(YAMLObjectBase):
                     raise ValidationError(
                         f"magnets intersect: magnet[{i}] intersect magnet[{i-1}]: /n{self.magnets[i]} /n{self.magnets[i-1]}"
                     )   
-        
+                
+        # Store the directory context for resolving struct paths
+        self._basedir = os.getcwd()
 
     def __repr__(self):
         """

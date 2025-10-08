@@ -4,6 +4,7 @@
 """
 Provides definition for Shape with Position enum
 """
+import os
 
 from enum import Enum
 from typing import List, Union
@@ -163,6 +164,9 @@ class Shape(YAMLObjectBase):
             raise ValidationError(
                 f"Position must be string or ShapePosition enum, got {type(position)}"
             )
+        
+        # Store the directory context for resolving struct paths
+        self._basedir = os.getcwd()
 
     def __repr__(self):
         """

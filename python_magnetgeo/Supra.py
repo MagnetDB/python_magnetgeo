@@ -19,6 +19,8 @@ from typing import List
 from .base import YAMLObjectBase
 from .validation import GeometryValidator
 
+import os
+
 class DetailLevel(str, Enum):
     """
     Level of detail for structural modeling of Supra components.
@@ -108,10 +110,7 @@ class Supra(YAMLObjectBase):
         self.detail = detail
         
         # Store the directory context for resolving struct paths
-        # This will be set when loading from YAML
-        # if not hasattr(self, '_basedir'):
-        #     import os, Path
-        #     self._basedir = os.get()
+        self._basedir = os.getcwd()
 
 
     def get_magnet_struct(self) -> HTSInsert:

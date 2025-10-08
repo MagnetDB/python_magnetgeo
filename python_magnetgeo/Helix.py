@@ -13,6 +13,7 @@ Provides definition for Helix:
 """
 
 import math
+import os
 
 from python_magnetgeo.hcuts import create_cut
 
@@ -132,6 +133,9 @@ class Helix(YAMLObjectBase):
                 f"modelaxi.h ({self.modelaxi.h}) must be less than half the helix height ({(z[1]-z[0])/2.0})"
             )
         
+        # Store the directory context for resolving struct paths
+        self._basedir = os.getcwd()
+
     def get_type(self) -> str:
         """
         Determine the helix type based on 3D model configuration.
@@ -320,16 +324,22 @@ class Helix(YAMLObjectBase):
             Creates helical cut definition file and optionally adds shapes
             if model3d.with_shapes is enabled. Uses external MagnetTools utilities.
         """
-        from .hcuts import create_cut
+        
 
         create_cut(self, format, self.name)
         if self.model3d.with_shapes:
+
+            # if Profile class is used: self.shape.profile.generate_dat_file()
+            shape_profile = f"{self._basedir}/Shape_{self.shape.profile}.dat"
+            if not os.path.exists(shape_profile):
+                raise RuntimeError(f"Helix.generate_cut: {str(shape_profile)} no such file")
+             
             if self.get_type() == "HL":
                 angles = " ".join(f"{t:4.2f}" for t in self.shape.angle if t != 0)
-                cmd = f'add_shape --angle="{angles}" --shape_angular_length={self.shape.length} --shape={self.shape.profile}.dat --format={format} --position="{self.shape.position} {self.name}"'
+                cmd = f'add_shape --angle="{angles}" --shape_angular_length={self.shape.length} --shape={shape_profile} --format={format} --position="{self.shape.position} {self.name}"'
                 print(f"create_cut: with_shapes not implemented - shall run {cmd}")
             else:
-                cmd = f'add_shape --angle="{angles[0]}" --shape_angular_length={self.shape.length[0]} --shape={self.shape.profile}.dat --format={format} --position="{self.shape.position} {self.name}"'
+                cmd = f'add_shape --angle="{angles[0]}" --shape_angular_length={self.shape.length[0]} --shape={shape_profile} --format={format} --position="{self.shape.position} {self.name}"'
                 print(f"create_cut: with_shapes not implemented - shall run {cmd}")
             
             try:

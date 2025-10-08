@@ -255,7 +255,7 @@ class ModelAxi(YAMLObjectBase):
         
         Args:
             tol: Relative tolerance for pitch comparison. Two pitch values p1 and p2
-                are considered similar if |1 - p1/p2| <= tol. Default: 1e-6
+                are considered similar if :math: ``|1 - p1/p2|`` <= tol. Default: 1e-6
         
         Returns:
             tuple: (new_turns, new_pitch) where:

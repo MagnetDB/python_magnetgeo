@@ -87,12 +87,10 @@ class pancake:
             str | list[str]: Marker name(s) depending on detail level
         """
         # Convert enum to string for comparison
-        if isinstance(detail, DetailLevel):
-            detail_str = detail.value
-        else:
-            detail_str = detail.upper() if isinstance(detail, str) else detail
+        if isinstance(detail, str):
+            detail = DetailLevel[detail.upper()]
         
-        if detail_str == "PANCAKE" or detail_str == "pancake":
+        if detail == DetailLevel.PANCAKE:
             return name
         else:
             _mandrin = f"{name}_Mandrin"
