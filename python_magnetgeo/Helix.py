@@ -119,7 +119,7 @@ class Helix(YAMLObjectBase):
                 else:
                     self.chamfers.append(chamfer)
                 
-        if grooves is not None:
+        if grooves is not None and isinstance(grooves, str):
             if isinstance(grooves, str):
                 self.grooves = Groove.from_yaml(f"{grooves}.yaml")
         else:
