@@ -122,10 +122,18 @@ class Helix(YAMLObjectBase):
         if grooves is not None:
             if isinstance(grooves, str):
                 self.grooves = Groove.from_yaml(f"{grooves}.yaml")
-            else:
-                self.grooves = grooves
         else:
-            self.grooves = Groove()
+            self.grooves = grooves
+
+        # validation for groove
+        if self.grooves is not None:
+            if self.grooves.gtype == "rint":
+                if self.grooves.n * self.grooves.eps > 2*math.pi*self.r[0]:
+                    raise ValidationError(f"Groove: {self.grooves.n} of eps={self.grooves.eps} exceed circumference on rint")
+            if self.grooves.gtype == "rext":
+                if self.grooves.n * self.grooves.eps > 2*math.pi*self.r[1]:
+                    raise ValidationError(f"Groove: {self.grooves.n} of eps={self.grooves.eps} exceed circumference on rext")
+
 
         # add check for self.modelaxi.h must be less than (z[1]-z[0])/2.
         if self.modelaxi is not None and self.modelaxi.h > (z[1] - z[0]) / 2.0:
@@ -190,7 +198,7 @@ class Helix(YAMLObjectBase):
         nInsulators = 0
         nturns = self.get_Nturns()
         htype = self.get_type()
-        if self.model3d.with_shapes and self.model3d.with_channels:
+        if htype == "HR":
             sInsulator = "Kapton"
             angle = self.shape.angle
             nshapes = nturns * (360 / float(angle[0]))  # only one angle to be checked
