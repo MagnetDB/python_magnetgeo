@@ -238,9 +238,15 @@ class Insert(YAMLObjectBase):
                     else:
                         helices_radius[2] -= chamfer.getDr()
 
-            if self.rings[i].r != flatten(helices_radius):
+            import numpy as np
+            r_rings = np.array(self.rings[i].r)
+            r_helices = np.array(flatten(helices_radius))
+            norm = np.linalg.norm(r_rings - r_helices)
+            bound = 1.e-5 *max(abs(np.max(r_rings)),abs(np.max(r_helices)))
+            # print("norm:", norm, type(norm), "bound: ", bound, type(bound))
+            if norm > bound:
                 raise ValidationError(
-                    f"Ring {i} radius {self.rings[i].r} does not match with adjacent helices radii {flatten(helices_radius)}"
+                    f"Ring {i} radius {r_rings} does not match with adjacent helices radii {r_helices}"
                 )
 
         for helix in self.helices:
