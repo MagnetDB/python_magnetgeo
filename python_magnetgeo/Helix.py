@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding:utf-8 -*-
 
 """
 Provides definition for Helix:
@@ -15,22 +14,23 @@ Provides definition for Helix:
 import math
 import os
 
-from python_magnetgeo.hcuts import create_cut
+from .base import YAMLObjectBase
+from .validation import GeometryValidator, ValidationError
+
+from .ModelAxi import ModelAxi
+from .Model3D import Model3D
+from .Shape import Shape
 
 from .Groove import Groove
 from .Chamfer import Chamfer
-from .Shape import Shape
-from .ModelAxi import ModelAxi
-from .Model3D import Model3D
 
-from typing import List
-from .base import YAMLObjectBase
-from .validation import GeometryValidator, ValidationError
+from .hcuts import create_cut
+
 
 class Helix(YAMLObjectBase):
     """
     Helix geometry class representing a helical magnet coil.
-    
+
     Attributes:
         name (str): Unique identifier for the helix
         r (list[float]): Radial bounds [r_inner, r_outer] in mm
@@ -43,11 +43,11 @@ class Helix(YAMLObjectBase):
         shape (Shape): Cross-sectional shape definition
         chamfers (list): List of Chamfer objects for edge modifications
         grooves (Groove): Groove configuration for cooling channels
-    
+
     """
 
     yaml_tag = "Helix"
-    
+
     def __init__(
         self,
         name: str,
@@ -61,10 +61,11 @@ class Helix(YAMLObjectBase):
         shape: Shape = None,
         chamfers: list = None,
         grooves: Groove = None,
+        start_hole_diameter: float = 0.0,
     ) -> None:
         """
         Initialize a Helix object with validation.
-        
+
         Args:
             name: Unique identifier for the helix
             r: Radial bounds [r_inner, r_outer] in mm, must be ascending
@@ -77,7 +78,7 @@ class Helix(YAMLObjectBase):
             shape: Cross-sectional shape definition
             chamfers: Optional list of Chamfer objects for edge modifications
             grooves: Optional Groove object for cooling channel definition
-        
+
         Raises:
             ValidationError: If validation fails for name, r, z, or modelaxi.h constraint
         """
@@ -85,17 +86,18 @@ class Helix(YAMLObjectBase):
         GeometryValidator.validate_name(name)
         GeometryValidator.validate_numeric_list(r, "r", expected_length=2)
         GeometryValidator.validate_ascending_order(r, "r")
-        
-        GeometryValidator.validate_numeric_list(z, "z", expected_length=2) 
+
+        GeometryValidator.validate_numeric_list(z, "z", expected_length=2)
         GeometryValidator.validate_ascending_order(z, "z")
-        
+
         self.name = name
         self.dble = dble
         self.odd = odd
         self.r = r
         self.z = z
         self.cutwidth = cutwidth
-        
+        self.start_diameter_hole = start_hole_diameter
+
         if modelaxi is not None and isinstance(modelaxi, str):
             self.modelaxi = ModelAxi.from_yaml(f"{modelaxi}.yaml")
         else:
@@ -110,7 +112,7 @@ class Helix(YAMLObjectBase):
             self.shape = Shape.from_yaml(f"{shape}.yaml")
         else:
             self.shape = shape
-        
+
         self.chamfers = []
         if chamfers is not None:
             for chamfer in chamfers:
@@ -118,7 +120,7 @@ class Helix(YAMLObjectBase):
                     self.chamfers.append(Chamfer.from_yaml(f"{chamfer}.yaml"))
                 else:
                     self.chamfers.append(chamfer)
-                
+
         if grooves is not None and isinstance(grooves, str):
             if isinstance(grooves, str):
                 self.grooves = Groove.from_yaml(f"{grooves}.yaml")
@@ -128,29 +130,32 @@ class Helix(YAMLObjectBase):
         # validation for groove
         if self.grooves is not None:
             if self.grooves.gtype == "rint":
-                if self.grooves.n * self.grooves.eps > 2*math.pi*self.r[0]:
-                    raise ValidationError(f"Groove: {self.grooves.n} of eps={self.grooves.eps} exceed circumference on rint")
+                if self.grooves.n * self.grooves.eps > 2 * math.pi * self.r[0]:
+                    raise ValidationError(
+                        f"Groove: {self.grooves.n} of eps={self.grooves.eps} exceed circumference on rint"
+                    )
             if self.grooves.gtype == "rext":
-                if self.grooves.n * self.grooves.eps > 2*math.pi*self.r[1]:
-                    raise ValidationError(f"Groove: {self.grooves.n} of eps={self.grooves.eps} exceed circumference on rext")
-
+                if self.grooves.n * self.grooves.eps > 2 * math.pi * self.r[1]:
+                    raise ValidationError(
+                        f"Groove: {self.grooves.n} of eps={self.grooves.eps} exceed circumference on rext"
+                    )
 
         # add check for self.modelaxi.h must be less than (z[1]-z[0])/2.
         if self.modelaxi is not None and self.modelaxi.h > (z[1] - z[0]) / 2.0:
             raise ValidationError(
                 f"modelaxi.h ({self.modelaxi.h}) must be less than half the helix height ({(z[1]-z[0])/2.0})"
             )
-        
+
         # Store the directory context for resolving struct paths
         self._basedir = os.getcwd()
 
     def get_type(self) -> str:
         """
         Determine the helix type based on 3D model configuration.
-        
+
         Returns:
             str: "HR" if model has both shapes and channels, "HL" otherwise
-        
+
         Notes:
             - HR (Helix with Reinforcement): Includes shaped channels
             - HL (Helix Layer): Standard helical layer
@@ -162,10 +167,10 @@ class Helix(YAMLObjectBase):
     def get_lc(self) -> float:
         """
         Calculate characteristic length for mesh generation.
-        
+
         Returns:
             float: Characteristic length computed as radial thickness / 10
-        
+
         Notes:
             Used by mesh generators to determine appropriate element size
         """
@@ -174,15 +179,15 @@ class Helix(YAMLObjectBase):
     def get_names(self, mname: str, is2D: bool, verbose: bool = False) -> list[str]:
         """
         Generate marker names for mesh identification.
-        
+
         Args:
             mname: Prefix for marker names (typically parent magnet name)
             is2D: True for 2D axisymmetric mesh, False for 3D mesh
             verbose: Enable verbose output for debugging
-        
+
         Returns:
             list[str]: List of marker names for conductor and insulator regions
-        
+
         Notes:
             - 2D mesh: Returns section-wise names (Cu0, Cu1, ..., CuN)
             - 3D mesh: Returns single Cu conductor and insulator names
@@ -206,11 +211,7 @@ class Helix(YAMLObjectBase):
                 print("shapes: ", nshapes, math.floor(nshapes), math.ceil(nshapes))
 
             nshapes = (
-                lambda x: (
-                    math.ceil(x)
-                    if math.ceil(x) - x < x - math.floor(x)
-                    else math.floor(x)
-                )
+                lambda x: (math.ceil(x) if math.ceil(x) - x < x - math.floor(x) else math.floor(x))
             )(nshapes)
             nInsulators = int(nshapes)
             print("nKaptons=", nInsulators)
@@ -240,16 +241,16 @@ class Helix(YAMLObjectBase):
     def __repr__(self):
         """
         Generate string representation of Helix object.
-        
+
         Returns:
             str: String representation including all parameters
         """
         msg = f"{self.__class__.__name__}(name={self.name},odd={self.odd},dble={self.dble},r={self.r},z={self.z},cutwidth={self.cutwidth},modelaxi={self.modelaxi},model3d={self.model3d},shape={self.shape}"
-        if hasattr(self, 'chamfers'):
+        if hasattr(self, "chamfers"):
             msg += f",chamfers={self.chamfers}"
         else:
             msg += ",chamfers=None"
-        if hasattr(self, 'grooves'):
+        if hasattr(self, "grooves"):
             msg += f",grooves={self.grooves}"
         else:
             msg += ",grooves=None"
@@ -260,41 +261,53 @@ class Helix(YAMLObjectBase):
     def from_dict(cls, values: dict, debug: bool = False):
         """
         Create Helix instance from dictionary representation.
-        
+
         Args:
             values: Dictionary containing helix parameters
             debug: Enable debug output during deserialization
-        
+
         Returns:
             Helix: New Helix instance
-        
+
         Notes:
             Handles nested objects (modelaxi, model3d, shape, chamfers, grooves)
             by loading from files or instantiating from dicts
         """
-        modelaxi = cls._load_nested_single(values.get('modelaxi'), ModelAxi, debug=debug)
-        model3d = cls._load_nested_single(values.get('model3d'), Model3D, debug=debug)
-        shape = cls._load_nested_single(values.get('shape'), Shape, debug=debug)
-        chamfers = cls._load_nested_list(values.get('chamfers'), Chamfer, debug=debug)
-        grooves = cls._load_nested_single(values.get('grooves'), Groove, debug=debug)
-        
+        modelaxi = cls._load_nested_single(values.get("modelaxi"), ModelAxi, debug=debug)
+        model3d = cls._load_nested_single(values.get("model3d"), Model3D, debug=debug)
+        shape = cls._load_nested_single(values.get("shape"), Shape, debug=debug)
+        chamfers = cls._load_nested_list(values.get("chamfers"), Chamfer, debug=debug)
+        grooves = cls._load_nested_single(values.get("grooves"), Groove, debug=debug)
+
         name = values["name"]
         r = values["r"]
         z = values["z"]
         odd = values["odd"]
         dble = values["dble"]
         cutwidth = values["cutwidth"]
+        start_diameter_hole = values.get("start_hole_diameter", 0.0)
 
         object = cls(
-            name, r, z, cutwidth, odd, dble, modelaxi, model3d, shape, chamfers, grooves
+            name,
+            r,
+            z,
+            cutwidth,
+            odd,
+            dble,
+            modelaxi,
+            model3d,
+            shape,
+            chamfers,
+            grooves,
+            start_diameter_hole,
         )
         # object.update()
         return object
-    
+
     def getModelAxi(self):
         """
         Get the axisymmetric model definition.
-        
+
         Returns:
             ModelAxi: Axisymmetric model object
         """
@@ -303,7 +316,7 @@ class Helix(YAMLObjectBase):
     def getModel3D(self):
         """
         Get the 3D CAD model configuration.
-        
+
         Returns:
             Model3D: 3D model configuration object
         """
@@ -312,10 +325,10 @@ class Helix(YAMLObjectBase):
     def get_Nturns(self) -> float:
         """
         Get the number of turns in the helix.
-        
+
         Returns:
             float: Number of turns from the axisymmetric model
-        
+
         Notes:
             Delegates to modelaxi.get_Nturns() method
         """
@@ -324,15 +337,14 @@ class Helix(YAMLObjectBase):
     def generate_cut(self, format: str = "SALOME"):
         """
         Generate helical cut geometry file for CAD system.
-        
+
         Args:
             format: Target CAD format (default: "SALOME")
-        
+
         Notes:
             Creates helical cut definition file and optionally adds shapes
             if model3d.with_shapes is enabled. Uses external MagnetTools utilities.
         """
-        
 
         create_cut(self, format, self.name)
         if self.model3d.with_shapes:
@@ -341,49 +353,50 @@ class Helix(YAMLObjectBase):
             shape_profile = f"{self._basedir}/Shape_{self.shape.profile}.dat"
             if not os.path.exists(shape_profile):
                 raise RuntimeError(f"Helix.generate_cut: {str(shape_profile)} no such file")
-             
+
             if self.get_type() == "HL":
                 angles = " ".join(f"{t:4.2f}" for t in self.shape.angle if t != 0)
                 cmd = f'add_shape --angle="{angles}" --shape_angular_length={self.shape.length} --shape={shape_profile} --format={format} --position="{self.shape.position} {self.name}"'
                 print(f"create_cut: with_shapes not implemented - shall run {cmd}")
             else:
+                angles = " ".join(f"{t:4.2f}" for t in self.shape.angle if t != 0)
                 cmd = f'add_shape --angle="{angles[0]}" --shape_angular_length={self.shape.length[0]} --shape={shape_profile} --format={format} --position="{self.shape.position} {self.name}"'
                 print(f"create_cut: with_shapes not implemented - shall run {cmd}")
-            
+
             try:
                 import subprocess
 
                 subprocess.run(cmd, shell=True, check=True)
             except RuntimeError as e:
                 raise Exception(f"cannot run add_shape properly: {e}")
-            
+
     def intersect(self, r: list[float], z: list[float]) -> bool:
         """
         Check if this helix intersects with a given rectangular region.
-        
+
         Args:
             r: Radial bounds [r_min, r_max] of test region
             z: Axial bounds [z_min, z_max] of test region
-        
+
         Returns:
             bool: True if regions overlap, False if no intersection
-        
+
         Notes:
             Uses axis-aligned bounding box intersection test
         """
-        
+
         r_overlap = max(self.r[0], r[0]) < min(self.r[1], r[1])
         z_overlap = max(self.z[0], z[0]) < min(self.z[1], z[1])
-        
+
         return r_overlap and z_overlap
 
     def boundingBox(self) -> tuple:
         """
         Get the bounding box of the helix geometry.
-        
+
         Returns:
             tuple: (r_bounds, z_bounds) where each is [min, max]
-        
+
         Notes:
             Currently excludes current leads from bounding box calculation
         """
@@ -392,17 +405,17 @@ class Helix(YAMLObjectBase):
     def insulators(self):
         """
         Determine insulator material and count based on helix type.
-        
+
         Returns:
             tuple: (insulator_name, count) where:
                 - insulator_name: "Glue" for HL type, "Kapton" for HR type
                 - count: Number of insulator regions
-        
+
         Notes:
             - HL type: 1 or 2 insulators depending on dble flag
             - HR type: Calculated based on shape angular coverage and turns
         """
-        
+
         sInsulator = "Glue"
         nInsulators = 0
         htype = self.get_type()
@@ -415,14 +428,9 @@ class Helix(YAMLObjectBase):
             # print("shapes: ", nshapes, math.floor(nshapes), math.ceil(nshapes))
 
             nshapes = (
-                lambda x: (
-                    math.ceil(x)
-                    if math.ceil(x) - x < x - math.floor(x)
-                    else math.floor(x)
-                )
+                lambda x: (math.ceil(x) if math.ceil(x) - x < x - math.floor(x) else math.floor(x))
             )(nshapes)
             nInsulators = int(nshapes)
             # print("nKaptons=", nInsulators)
 
         return (sInsulator, nInsulators)
-
