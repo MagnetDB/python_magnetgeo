@@ -1144,6 +1144,15 @@ If you use python_magnetgeo in your research, please cite:
 }
 ```
 
+## TODOs
+
+- [ ] Replace str profile by Profile object in Shape.py
+- [ ] Add method to convert dat file for profile into yaml profile file
+- [ ] Change gtype to type into Groove (breaking change)
+- [ ] Make type an enum in Groove
+- [ ] Make side and rside enum objects in Chamfer
+- [ ] All field that can be either Object/str make str=filename to be loaded (breaking change)
+
 ## Related Projects
 
 - **hifimagnet.salome**: Salome integration for CAD/mesh generation
