@@ -1,3 +1,4 @@
+import os
 
 from typing import List, Union
 from .base import YAMLObjectBase
@@ -103,6 +104,8 @@ class Tierod(YAMLObjectBase):
         self.sh: float = sh
         self.contour2d = contour2d
         
+        # Store the directory context for resolving struct paths
+        self._basedir = os.getcwd()
 
     def __repr__(self):
         """

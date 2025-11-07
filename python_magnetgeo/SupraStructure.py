@@ -1,414 +1,23 @@
-"""
-Define HTS insert geometry
-"""
-from typing import Self, Optional
+#!/usr/bin/env python3
+# -*- coding:utf-8 -*-
 
+"""
+Define HTS insert geometry with DetailLevel enum support
+"""
+from typing import Self, Optional, Union
 
 from .utils import flatten
 
-class tape:
-    """
-    HTS tape
+# Import DetailLevel from Supra module
+from .enums import DetailLevel
 
-    w: width
-    h: height
-    e: thickness of co-wound durnomag
-    """
 
-    def __init__(self, w: float = 0, h: float = 0, e: float = 0) -> None:
-        self.w: float = w
-        self.h: float = h
-        self.e: float = e
+from .hts.tape import tape
+from .hts.pancake import pancake
+from .hts.isolation import isolation
+from .hts.dblpancake import dblpancake
 
-    @classmethod
-    def from_data(cls, data: dict) -> Self:
-        w = h = e = 0
-        if "w" in data:
-            w: float = data["w"]
-        if "h" in data:
-            h: float = data["h"]
-        if "e" in data:
-            e: float = data["e"]
-        return cls(w, h, e)
-
-    def __repr__(self) -> str:
-        """
-        representation of object
-        """
-        return f"tape(w={self.w}, h={self.h}, e={self.e}"
-
-    def __str__(self) -> str:
-        msg = "\n"
-        msg += f"width: {self.w} [mm]\n"
-        msg += f"height: {self.h} [mm]\n"
-        msg += f"e: {self.e} [mm]\n"
-        return msg
-
-    def get_names(self, name: str, detail: str, verbose: bool = False) -> list[str]:
-        _tape = f"{name}_SC"
-        _e = f"{name}_Duromag"
-        return [_tape, _e]
-
-    def getH(self) -> float:
-        """
-        get tape height
-        """
-        return self.h
-
-    def getW(self) -> float:
-        """
-        get total width
-        """
-        return self.w + self.e
-
-    def getW_Sc(self) -> float:
-        """
-        get Sc width
-        """
-        return self.w
-
-    def getW_Isolation(self) -> float:
-        """
-        get Isolation width
-        """
-        return self.e
-
-    def getArea(self) -> float:
-        """
-        get tape cross section surface
-        """
-        return (self.w + self.e) * self.h
-
-    def getFillingFactor(self) -> float:
-        """
-        get tape filling factor (aka ratio of superconductor over tape section)
-        """
-        return (self.w * self.h) / self.getArea()
-
-
-class pancake:
-    """
-    Pancake structure
-
-    r0:
-    mandrin: mandrin (only for mesh purpose)
-    tape: tape used for pancake
-    n: number of tapes
-    """
-
-    def __init__(
-        self, r0: float = 0, tape: tape = tape(), n: int = 0, mandrin: int = 0
-    ) -> None:
-        self.mandrin = mandrin
-        self.tape = tape
-        self.n = n
-        self.r0 = r0
-
-    @classmethod
-    def from_data(cls, data={}) -> Self:
-        r0 = 0
-        n = 0
-        t_ = tape()
-        mandrin = 0
-        if "r0" in data:
-            r0 = data["r0"]
-        if "mandrin" in data:
-            mandrin = data["mandrin"]
-        if "tape" in data:
-            t_ = tape.from_data(data["tape"])
-        if "ntapes" in data:
-            n = data["ntapes"]
-        return cls(r0, t_, n, mandrin)
-
-    def __repr__(self) -> str:
-        """
-        representation of object
-        """
-        return "pancake(r0={%r, n=%r, tape=%r, mandrin=%r)" % (
-            self.r0,
-            self.n,
-            self.tape,
-            self.mandrin,
-        )
-
-    def __str__(self) -> str:
-        msg = "\n"
-        msg += f"r0: {self.r0} [m]\n"
-        msg += f"mandrin: {self.mandrin} [m]\n"
-        msg += f"ntapes: {self.n} \n"
-        msg += f"tape: {self.tape}***\n"
-        return msg
-
-    def get_names(
-        self, name: str, detail: str, verbose: bool = False
-    ) -> str | list[str]:
-        if detail == "pancake":
-            return name
-        else:
-            _mandrin = f"{name}_Mandrin"
-            tape_ = self.tape
-            tape_ids = []
-            for i in range(self.n):
-                tape_id = tape_.get_names(f"{name}_t{i}", detail)
-                tape_ids.append(tape_id)
-
-            if verbose:
-                print(f"pancake: mandrin (1), tapes ({len(tape_ids)})")
-            return flatten([[_mandrin], flatten(tape_ids)])
-        pass
-
-    def getN(self) -> int:
-        """
-        get number of tapes
-        """
-        return self.n
-
-    def getTape(self) -> tape:
-        """
-        return tape object
-        """
-        return self.tape
-
-    def getR0(self) -> float:
-        """
-        get pancake inner radius
-        """
-        return self.r0
-
-    def getMandrin(self) -> float:
-        """
-        get pancake mandrin inner radius
-        """
-        return self.mandrin
-
-    def getR1(self) -> float:
-        """
-        get pancake outer radius
-        """
-        return self.n * (self.tape.w + self.tape.e) + self.r0
-
-    def getR(self) -> list[float]:
-        """
-        get list of tapes inner radius
-        """
-        r = []
-        ri = self.getR0()
-        dr = self.tape.w + self.tape.e
-        for i in range(self.n):
-            # print(f"r[{i}]={ri}, {ri+self.tape.w + self.tape.e/2.}")
-            r.append(ri)
-            ri += dr
-        # print(f"r[-1]: {r[0]}, {r[-1]}, {r[-1]+self.tape.w + self.tape.e/2.}, {self.n}, {self.getR1()}")
-        return r
-
-    def getFillingFactor(self) -> float:
-        """
-        ratio of the surface occupied by the tapes / total surface
-        """
-        S_tapes = self.n * self.tape.w * self.tape.h
-        return S_tapes / self.getArea()
-
-    def getW(self) -> float:
-        return self.getR1() - self.getR0()
-
-    def getH(self) -> float:
-        return self.tape.getH()
-
-    def getArea(self) -> float:
-        return (self.getR1() - self.getR0()) * self.getH()
-
-
-class isolation:
-    """
-    Isolation
-
-    r0: inner radius of isolation structure
-    w: widths of the different layers
-    h: heights of the different layers
-    """
-
-    def __init__(self, r0: float = 0, w: list = [], h: list = []):
-        self.r0 = r0
-        self.w = w
-        self.h = h
-
-    @classmethod
-    def from_data(cls, data: dict) -> Self:
-        r0 = 0
-        w = []
-        h = []
-        if "r0" in data:
-            r0 = data["r0"]
-        if "w" in data:
-            w = data["w"]
-        if "h" in data:
-            h = data["h"]
-        return cls(r0, w, h)
-
-    def __repr__(self) -> str:
-        """
-        representation of object
-        """
-        return f"isolation(r0={self.r0}, w={self.w}, h={self.h}"
-
-    def __str__(self) -> str:
-        msg = "\n"
-        msg += f"r0: {self.r0} [mm]\n"
-        msg += f"w: {self.w} \n"
-        msg += f"h: {self.h} \n"
-        return msg
-        pass
-
-    def get_names(self, name: str, detail: str, verbose: bool = False) -> str:
-        return name
-
-    def getR0(self) -> float:
-        """
-        return the inner radius of isolation
-        """
-        return self.r0
-
-    def getW(self) -> float:
-        """
-        return the width of isolation
-        """
-        return max(self.w)
-
-    def getH_Layer(self, i: int) -> float:
-        """
-        return the height of isolation layer i
-        """
-        return self.h[i]
-
-    def getW_Layer(self, i: int) -> float:
-        """
-        return the width of isolation layer i
-        """
-        return self.w[i]
-
-    def getH(self) -> float:
-        """
-        return the total heigth of isolation
-        """
-        return sum(self.h)
-
-    def getLayer(self) -> int:
-        """
-        return the number of layer
-        """
-        return len(self.w)
-
-
-class dblpancake:
-    """
-    Double Pancake structure
-
-    z0: position of the double pancake (centered on isolation)
-    pancake: pancake structure (assume that both pancakes have the same structure)
-    isolation: isolation between pancakes
-    """
-
-    def __init__(
-        self,
-        z0: float,
-        pancake: pancake = pancake(),
-        isolation: isolation = isolation(),
-    ):
-        self.z0 = z0
-        self.pancake = pancake
-        self.isolation = isolation
-
-    def __repr__(self) -> str:
-        """
-        representation of object
-        """
-        return f"dblpancake(z0={self.z0}, pancake={self.pancake}, isolation={self.isolation}"
-
-    def __str__(self) -> str:
-        msg = f"r0={self.pancake.getR0()}, "
-        msg += f"r1={self.pancake.getR1()}, "
-        msg += f"z1={self.getZ0() - self.getH()/2.}, "
-        msg += f"z2={self.getZ0() + self.getH()/2.}"
-        msg += f"(z0={self.getZ0()}, h={self.getH()})"
-        return msg
-
-    def get_names(
-        self, name: str, detail: str, verbose: bool = False
-    ) -> str | list[str]:
-        if detail == "dblpancake":
-            return name
-        else:
-            p_ids = []
-
-            p_ = self.pancake
-            _id = p_.get_names(f"{name}_p0", detail)
-            p_ids.append(_id)
-
-            dp_i = self.isolation
-            if verbose:
-                print(f"dblepancake.salome: isolation={dp_i}")
-            _isolation_id = dp_i.get_names(f"{name}_i", detail)
-
-            _id = p_.get_names(f"{name}_p1", detail)
-            p_ids.append(_id)
-
-            if verbose:
-                print(
-                    f"dblpancake: pancakes ({len(p_ids)}, {type(p_ids[0])}), isolations (1)"
-                )
-            if isinstance(p_ids[0], list):
-                return flatten([flatten(p_ids), [_isolation_id]])
-            else:
-                return flatten([p_ids, [_isolation_id]])
-
-    def getPancake(self):
-        """
-        return pancake object
-        """
-        return self.pancake
-
-    def getIsolation(self):
-        """
-        return isolation object
-        """
-        return self.isolation
-
-    def setZ0(self, z0) -> None:
-        self.z0 = z0
-
-    def setPancake(self, pancake) -> None:
-        self.pancake = pancake
-
-    def setIsolation(self, isolation) -> None:
-        self.isolation = isolation
-
-    def getFillingFactor(self) -> float:
-        """
-        ratio of the surface occupied by the tapes / total surface
-        """
-        S_tapes = 2.0 * self.pancake.n * self.pancake.tape.w * self.pancake.tape.h
-        return S_tapes / self.getArea()
-
-    def getR0(self) -> float:
-        return self.pancake.getR0()
-
-    def getR1(self) -> float:
-        return self.pancake.getR1()
-
-    def getZ0(self) -> float:
-        return self.z0
-
-    def getW(self) -> float:
-        return self.pancake.getW()
-
-    def getH(self) -> float:
-        return 2.0 * self.pancake.getH() + self.isolation.getH()
-
-    def getArea(self) -> float:
-        return (self.pancake.getR1() - self.pancake.getR0()) * self.getH()
-
-
-class HTSinsert:
+class HTSInsert:
     """
     HTS insert
 
@@ -453,18 +62,12 @@ class HTSinsert:
         filename = inputcfg
         if directory is not None:
             filename = f"{directory}/{filename}"
-        print(f"SupraStructure:fromcfg({filename})")
+        print(f"SupraStructure:fromcfg({filename}, directory={directory})", flush=True)
 
         with open(filename) as f:
             data = json.load(f)
             if debug:
                 print("HTSinsert data:", data)
-
-            """
-            print("List main keys:")
-            for key in data:
-                print("key:", key)
-            """
 
             mytape = None
             if "tape" in data:
@@ -473,14 +76,10 @@ class HTSinsert:
             mypancake = pancake()
             if "pancake" in data:
                 mypancake = pancake.from_data(data["pancake"])
-                if debug:
-                    print(f"mypancake={mypancake}")
 
             myisolation = isolation()
             if "isolation" in data:
                 myisolation = isolation.from_data(data["isolation"])
-                if debug:
-                    print(f"myisolation={myisolation}")
 
             z = 0
             r0 = r1 = z0 = z1 = h = 0
@@ -608,7 +207,27 @@ class HTSinsert:
             )
         )
 
-    def get_names(self, mname: str, detail: str, verbose: bool = False) -> list[str]:
+    def get_names(
+        self, 
+        mname: str, 
+        detail: Union[str, DetailLevel], 
+        verbose: bool = False
+    ) -> list[str]:
+        """
+        Get marker names for HTS insert elements.
+        
+        Args:
+            mname: Base name prefix
+            detail: Detail level (DetailLevel enum or string)
+            verbose: Enable verbose output
+        
+        Returns:
+            list[str]: Flattened list of all marker names
+        """
+        # Convert enum to string for comparison
+        if isinstance(detail, str):
+            detail = DetailLevel[detail.upper()]
+        
         dp_ids = []
         i_ids = []
 
@@ -632,7 +251,7 @@ class HTSinsert:
                 _id = dp_i.get_names(_name, detail, verbose)
                 i_ids.append(_id)
 
-        if detail == "dblpancake":
+        if detail == DetailLevel.DBLPANCAKE:
             return flatten([dp_ids, i_ids])
         else:
             return flatten([flatten(dp_ids), i_ids])
@@ -643,84 +262,46 @@ class HTSinsert:
     def setIsolation(self, isolation):
         self.isolations.append(isolation)
 
-    def setZ0(self, z0: float):
-        self.z0 = z0
-
-    def getZ0(self) -> float:
-        """
-        returns the bottom altitude of de SuperConductor insert
-        """
-        return self.z0
-
-    def getZ1(self) -> float:
-        """
-        returns the top altitude of de SuperConductor insert
-        """
-        return self.z1
-
-    def getH(self) -> float:
-        """
-        returns the height of de SuperConductor insert
-        """
-
-        return self.h
-
     def getR0(self) -> float:
         """
-        returns the inner radius of de SuperConductor insert
+        get insert inner radius
         """
         return self.r0
 
     def getR1(self) -> float:
         """
-        returns the outer radius of de SuperConductor insert
+        get insert outer radius
         """
         return self.r1
 
-    def getN(self) -> int:
+    def getZ0(self) -> float:
         """
-        returns the number of dbl pancakes
+        get insert center position
         """
-        return self.n
+        return self.z0
 
-    def getNtapes(self) -> list:
+    def getH(self) -> float:
         """
-        returns the number of tapes as a list
+        get insert total height
+        """
+        return self.h
+
+    def get_lc(self) -> float:
+        """
+        get characteristic length for mesh
+        """
+        return self.dblpancakes[0].pancake.tape.getH()
+
+    def getNtapes(self) -> list[int]:
+        """
+        returns the number of tapes per dblpancake as a list
         """
         n_ = []
         for dp in self.dblpancakes:
-            n_.append(dp.getPancake().getN())
+            n_.append(2 * dp.getPancake().getN())
         return n_
 
-    def getHtapes(self) -> list:
-        """
-        returns the width of SC tapes
-        either as an float or a list
-        """
-        w_tapes = []
-        for dp in self.dblpancakes:
-            w_tapes.append(dp.pancake.getTape().getH())
-        return w_tapes
-
-    def getWtapes_SC(self) -> list:
-        """
-        returns the width of SC tapes as a list
-        """
-        w_ = []
-        for dp in self.dblpancakes:
-            w_.append(dp.pancake.getTape().getW_Sc())
-        return w_
-
-    def getWtapes_Isolation(self) -> list:
-        """
-        returns the width of isolation between tapes as a list
-        """
-        w_ = []
-        for dp in self.dblpancakes:
-            w_.append(dp.pancake.getTape().getW_Isolation())
-        return w_
-
-    def getMandrinPancake(self) -> list:
+    def getWMandrin(self) -> list:
         """
         returns the width of Mandrin as a list
         """
@@ -794,62 +375,36 @@ class HTSinsert:
 
     def getR0_Isolation(self) -> list:
         """
-        returns the inner radius of isolation between dbl pancake as a list
+        returns the inner radius of the isolation between dblpancake as a list
         """
         w_ = []
-        for isolant in self.isolations:
-            w_.append(isolant.getR0())
+        for dp_i in self.isolations:
+            w_.append(dp_i.getR0())
         return w_
 
     def getR1_Isolation(self) -> list:
         """
-        returns the external radius of isolation between dbl pancake as a list
+        returns the external radius of the isolation between dblpancake as a list
         """
         w_ = []
-        for isolant in self.isolations:
-            w_.append(isolant.getR0() + isolant.getH())
+        for dp_i in self.isolations:
+            w_.append(dp_i.getR0() + dp_i.getW())
         return w_
 
     def getW_Isolation(self) -> list:
         """
-        returns the width of isolation between dbl pancakes
+        returns the width of the isolation between dblpancake as a list
         """
         w_ = []
-        for isolant in self.isolations:
-            w_.append(isolant.getW())
+        for dp_i in self.isolations:
+            w_.append(dp_i.getW())
         return w_
 
     def getH_Isolation(self) -> list:
         """
-        returns the height of isolation between dbl pancakes
+        returns the height of the isolation between dblpancake as a list
         """
         w_ = []
-        for isolant in self.isolations:
-            w_.append(isolant.getH())
+        for dp_i in self.isolations:
+            w_.append(dp_i.getH())
         return w_
-
-    def getFillingFactor(self) -> float:
-        S_tapes = 0
-        for dp in self.dblpancakes:
-            S_tapes += dp.pancake.n * 2 * dp.pancake.tape.w * dp.pancake.tape.h
-        return S_tapes / self.getArea()
-
-    def getArea(self) -> float:
-        return (self.getR1() - self.getR0()) * self.getH()
-
-    def get_lc(self):
-        _i = self.isolations[0].getH() / 3.0
-        _dp = self.dblpancakes[0].getH() / 10.0
-        _p = self.dblpancakes[0].pancake.getH() / 10.0
-        _i_dp = self.dblpancakes[0].isolation.getH() / 3.0
-        _Mandrin = (
-            abs(
-                self.dblpancakes[0].pancake.getMandrin()
-                - self.dblpancakes[0].pancake.getR0()
-            )
-            / 3.0
-        )
-        _Sc = self.dblpancakes[0].pancake.tape.getW_Sc() / 5.0
-        _Du = self.dblpancakes[0].pancake.tape.getW_Isolation() / 3.0
-        return (_i, _dp, _p, _i_dp, _Mandrin, _Sc, _Du)
-

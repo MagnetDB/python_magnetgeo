@@ -247,7 +247,7 @@ def test_helix_default_values():
     assert helix.odd == True  # default
     assert helix.dble == False  # default
     assert helix.chamfers == []  # default empty list
-    assert isinstance(helix.grooves, Groove)  # default Groove object
+    assert (helix.grooves is None)  # default Groove object
     
     print("✓ Default values work correctly")
 

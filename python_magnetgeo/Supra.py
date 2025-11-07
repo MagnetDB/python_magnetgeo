@@ -8,16 +8,18 @@ Provides definition for Supra:
 * Model Axi: definition of helical cut (provided from MagnetTools)
 * Model 3D: actual 3D CAD
 """
-from typing import Optional
+from typing import Optional, Union
 
-import json
-import yaml
 
-from .SupraStructure import HTSinsert
+
+from .SupraStructure import HTSInsert
+from .enums import DetailLevel
 
 from typing import List
 from .base import YAMLObjectBase
-from .validation import GeometryValidator, ValidationError
+from .validation import GeometryValidator
+
+import os
 
 
 class Supra(YAMLObjectBase):
@@ -30,11 +32,11 @@ class Supra(YAMLObjectBase):
     
     Attributes:
         name (str): Unique identifier for the Supra component
-        r (list[float]): Radial bounds [r_inner, r_outer] in meters
-        z (list[float]): Axial bounds [z_bottom, z_top] in meters
+        r (list[float]): Radial bounds [r_inner, r_outer] in mm
+        z (list[float]): Axial bounds [z_bottom, z_top] in mm
         n (int): Number of turns or sections (default 0 if using struct)
         struct (str): Path to external structure definition file (optional)
-        detail (str): Level of detail for modeling: "None", "dblpancake", "pancake", or "tape"
+        detail (DetailLevel): Level of detail for modeling
     
     yaml_tag: "Supra"
     
@@ -47,17 +49,18 @@ class Supra(YAMLObjectBase):
     yaml_tag = "Supra"
 
     def __init__(
-        self, name: str, r: list[float], z: list[float], n: int = 0, struct: str = ""
+        self, name: str, r: list[float], z: list[float], n: int = 0, struct:str = None, detail: DetailLevel = DetailLevel.NONE
     ) -> None:
         """
         Initialize Supra object with validation.
         
         Args:
             name: Unique identifier for the Supra component
-            r: Radial bounds [r_inner, r_outer] in meters, must be ascending
-            z: Axial bounds [z_bottom, z_top] in meters, must be ascending
+            r: Radial bounds [r_inner, r_outer] in mm, must be ascending
+            z: Axial bounds [z_bottom, z_top] in mm, must be ascending
             n: Number of turns or sections (default 0, can be set from struct)
             struct: Path to external HTS structure definition file (optional)
+            detail: Level of detail for modeling (default DetailLevel.NONE)
         
         Raises:
             ValidationError: If validation fails for:
@@ -84,34 +87,42 @@ class Supra(YAMLObjectBase):
         self.r = r
         self.z = z
         self.n = n
-        self.struct = struct
-        self.detail = "None"  # ['None', 'dblpancake', 'pancake', 'tape']
 
-    def get_magnet_struct(self, directory: Optional[str] = None) -> HTSinsert:
+        self.struct = struct
+        self.detail = detail
+        
+        # Store the directory context for resolving struct paths
+        self._basedir = os.getcwd()
+
+
+    def get_magnet_struct(self) -> HTSInsert:
         """
         Load HTS structure definition from configuration file.
-        
+       
         Args:
             directory: Optional directory path for structure files (default: None)
-        
+       
         Returns:
             HTSinsert: High-temperature superconductor insert structure object
-        
+       
         Notes:
             - Uses self.struct as the configuration file path
             - Returns HTSinsert object with detailed pancake/tape geometry
         """
-        return HTSinsert.fromcfg(self.struct, directory)
 
-    def check_dimensions(self, magnet: HTSinsert):
+        hts = HTSInsert.fromcfg(self.struct, directory=self._basedir)
+        self.check_dimensions(hts)
+        return hts
+
+    def check_dimensions(self, magnet: HTSInsert):
         """
         Synchronize geometric dimensions with HTS structure definition.
         
         Updates r, z, and n attributes if they differ from the values defined
-        in the provided HTSinsert structure. Prints notification if changes occur.
+        in the provided HTSInsert structure. Prints notification if changes occur.
         
         Args:
-            magnet: HTSinsert structure object to check against
+            magnet: HTSInsert structure object to check against
         
         Notes:
             - Only updates if self.struct is non-empty
@@ -120,10 +131,10 @@ class Supra(YAMLObjectBase):
             - n is computed from sum of tape counts across pancakes
         
         Example:
-            >>> supra = Supra("test", [10, 20], [0, 50], struct="hts_config.yaml")
+            >>> supra = Supra("test", [10, 20], [0, 50], struct="hts_config.json")
             >>> hts = supra.get_magnet_struct()
             >>> supra.check_dimensions(hts)
-            Supra/check_dimensions: override dimensions for test from hts_config.yaml
+            Supra/check_dimensions: override dimensions for test from hts_config.json
         """
         # TODO: if struct load r,z and n from struct data
         if self.struct:
@@ -159,13 +170,13 @@ class Supra(YAMLObjectBase):
         
         Algorithm:
             - If detail is "None": (r_outer - r_inner) / 5.0
-            - Otherwise: delegates to HTSinsert.get_lc() for detailed mesh
+            - Otherwise: delegates to HTSInsert.get_lc() for detailed mesh
         
         Notes:
             Used by mesh generators to determine appropriate element size.
             Finer detail levels produce smaller characteristic lengths.
         """
-        if self.detail == "None":
+        if self.detail == DetailLevel.NONE:
             return (self.r[1] - self.r[0]) / 5.0
         else:
             hts = self.get_magnet_struct()
@@ -203,7 +214,7 @@ class Supra(YAMLObjectBase):
             list: Empty list (placeholder - isolants handled at detail level)
         
         Notes:
-            Insulation is typically modeled in detailed structure (HTSinsert)
+            Insulation is typically modeled in detailed structure (HTSInsert)
             rather than at the Supra component level.
         """
         return []
@@ -245,7 +256,7 @@ class Supra(YAMLObjectBase):
             ['system_DblPancake0', 'system_DblPancake1', ...]
         """
 
-        if self.detail == "None":
+        if self.detail == DetailLevel.NONE:
             prefix = ""
             if mname:
                 prefix = f"{mname}_"
@@ -253,7 +264,6 @@ class Supra(YAMLObjectBase):
         else:
             hts = self.get_magnet_struct()
             self.check_dimensions(hts)
-
             return hts.get_names(mname=mname, detail=self.detail, verbose=verbose)
 
     def __repr__(self):
@@ -309,16 +319,17 @@ class Supra(YAMLObjectBase):
         r = values["r"]
         z = values["z"]
         n = values.get("n", 0)
-        struct = values.get("struct", '')
-        object = cls(name, r, z, n, struct)
-        """
-        # TODO: if struct load r,z and n from struct data
-        # or at least check that values are valid
-        if self.struct:
-            magnet = self.get_magnet_struct()
-            self.check_dimensions(magnet)
-        """
-        return object
+
+        struct = values.get("struct", None)
+        
+        # Handle detail field: convert string to enum
+        detail_value = values.get("detail", "NONE")
+        if isinstance(detail_value, str):
+            detail = DetailLevel(detail_value.upper())
+        else:
+            detail = detail_valueobject = cls(name, r, z, n, struct)
+
+        return cls(name, r, z, n, struct, detail)
 
     def get_Nturns(self) -> int:
         """
@@ -330,7 +341,7 @@ class Supra(YAMLObjectBase):
         Notes:
             - If struct is not set: returns self.n
             - If struct is set but not loaded: returns -1 (error indicator)
-            - If struct is loaded: would return sum from HTSinsert (not implemented)
+            - If struct is loaded: would return sum from HTSInsert (not implemented)
         
         Example:
             >>> supra = Supra("test", [10, 20], [0, 50], n=5)
@@ -343,36 +354,51 @@ class Supra(YAMLObjectBase):
             print("shall get nturns from %s" % self.struct)
             return -1
 
-    def set_Detail(self, detail: str) -> None:
+    def set_Detail(self, detail: Union[str, DetailLevel ]) -> None:
         """
         Set the level of detail for structural modeling.
         
         Args:
-            detail: Detail level string, must be one of:
-                - "None": Simplified single-region model
-                - "dblpancake": Model at double-pancake level
-                - "pancake": Model individual pancakes
-                - "tape": Model individual tape windings
+            detail: Detail level, can be either:
+                - DetailLevel enum value (DetailLevel.PANCAKE, etc.)
+                - String that will be converted to enum ("PANCAKE", "pancake", etc.)
         
         Raises:
-            Exception: If detail value is not one of the valid options
+            ValueError: If detail value cannot be converted to valid DetailLevel
         
         Notes:
+            - Accepts both enum values and strings for flexibility
+            - String values are case-insensitive and mapped to enum
             - Higher detail levels increase mesh complexity and solve time
-            - Requires struct to be set for detail levels other than "None"
-            - Affects output of get_names() and get_lc() methods
+            - Requires struct to be set for detail levels other than NONE
         
         Example:
             >>> supra = Supra("test", [10, 20], [0, 50], struct="config.yaml")
-            >>> supra.set_Detail("pancake")
-            >>> supra.detail
-            'pancake'
+            >>> supra.set_Detail(DetailLevel.PANCAKE)
+            >>> supra.set_Detail("PANCAKE")  # Also works
+            >>> supra.set_Detail("pancake")  # Case-insensitive
         """
-        if detail in ["None", "dblpancake", "pancake", "tape"]:
+        if isinstance(detail, DetailLevel):
             self.detail = detail
+        elif isinstance(detail, str):
+            # Map old string values to new enum
+            detail_map = {
+                "NONE": DetailLevel.NONE,
+                "DBLPANCAKE": DetailLevel.DBLPANCAKE,
+                "PANCAKE": DetailLevel.PANCAKE,
+                "TAPE": DetailLevel.TAPE
+            }
+            
+            if detail.upper() in detail_map:
+                self.detail = detail_map[detail.upper()]
+            else:
+                raise ValueError(
+                    f"Supra/set_Detail: unexpected detail value (detail={detail}). "
+                    f"Valid values are: {list(detail_map.keys())} or DetailLevel enum members"
+                )
         else:
-            raise Exception(
-                f"Supra/set_Detail: unexpected detail value (detail={detail}) : valid values are: {['None', 'dblpancake', 'pancake', 'tape']}"
+            raise TypeError(
+                f"Supra/set_Detail: detail must be DetailLevel enum or string, got {type(detail)}"
             )
 
     def boundingBox(self) -> tuple:
@@ -381,8 +407,8 @@ class Supra(YAMLObjectBase):
         
         Returns:
             tuple: (r_bounds, z_bounds) where:
-                - r_bounds: [r_inner, r_outer] radial extent in meters
-                - z_bounds: [z_bottom, z_top] axial extent in meters
+                - r_bounds: [r_inner, r_outer] radial extent in mm
+                - z_bounds: [z_bottom, z_top] axial extent in mm
         
         Notes:
             - Currently returns the basic r, z attributes
@@ -406,8 +432,8 @@ class Supra(YAMLObjectBase):
         axis-aligned rectangular region in cylindrical coordinates.
         
         Args:
-            r: Radial bounds [r_min, r_max] of test region in meters
-            z: Axial bounds [z_min, z_max] of test region in meters
+            r: Radial bounds [r_min, r_max] of test region in mm
+            z: Axial bounds [z_min, z_max] of test region in mm
         
         Returns:
             bool: True if bounding boxes overlap, False if separated
@@ -446,7 +472,7 @@ class Supra(YAMLObjectBase):
     #     if self.detail == "None":
     #         return 1/self.get_Nturns()
     #     # else:
-    #     #     # load HTSinsert
+    #     #     # load HTSInsert
     #     #     # return fillingfactor according to self.detail:
     #     #     # aka tape.getFillingFactor() with tape = HTSinsert.tape when detail == "tape"
 

@@ -56,13 +56,13 @@ def lncmi_cut(object, filename: str, append: bool = False, z0: float = 0):
         - Origin coordinates (X, W) in mm and degrees
         - G-code setup commands
         - Sequence of move commands (N1, N2, ...) with X (axial) and 
-          W (angular) coordinates
+        - W (angular) coordinates
         - Footer with M-codes for machine control
         
     Notes:
         - Units: millimeters for distance, degrees for angles
         - Coordinate system: X is axial position (multiplied by 1000 for μm),
-          W is angular position
+        - W is angular position
         - Sign convention depends on helix handedness (odd parameter)
         - The last move uses G01 (linear interpolation) while others use G0 (rapid)
         

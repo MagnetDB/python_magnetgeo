@@ -127,7 +127,7 @@ class TestSerialization:
             "r": [30.0, 50.0],
             "z": [20.0, 80.0],
             "n": 6,
-            "struct": ""  # Empty to avoid file loading
+            "struct": None  # Empty to avoid file loading
         }
         
         supra = Supra.from_dict(data)
@@ -136,7 +136,7 @@ class TestSerialization:
         assert supra.r == [30.0, 50.0]
         assert supra.z == [20.0, 80.0]
         assert supra.n == 6
-        assert supra.struct == ""
+        assert supra.struct == None
 
     def test_probe_from_dict(self):
         """Test Probe creation from dictionary"""

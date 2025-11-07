@@ -7,8 +7,9 @@ Provides definition for Bitter:
 * Geom data: r, z
 * Model Axi: definition of helical cut (provided from MagnetTools)
 * Model 3D: actual 3D CAD
-"""
 
+"""
+import os 
 
 from .ModelAxi import ModelAxi
 from .tierod import Tierod
@@ -76,7 +77,7 @@ class Bitter(YAMLObjectBase):
             ValidationError: If z is not length 2 or not in ascending order  
             ValidationError: If r[0] < 0 (negative inner radius)
         
-        Notes:
+        Note:
             - Bitter magnets are typically stacked axially to create high fields
             - The helical cut is used to mimic insulators distribution in between Bitter disks
             - Multiple cooling slits improve heat removal at different radii
@@ -148,6 +149,9 @@ class Bitter(YAMLObjectBase):
             self.tireod = Tierod.from_yaml(f"{tierod}.yaml")
         else:
             self.tierod = tierod
+
+        # Store the directory context for resolving struct paths
+        self._basedir = os.getcwd()
 
     def __repr__(self):
         """
@@ -395,7 +399,7 @@ class Bitter(YAMLObjectBase):
         
         Returns:
             list[str]: List of marker names:
-                - 2D mode: Detailed sector names like "{prefix}B{j}_Slit{i}" for
+                - 2D mode: Detailed sector names like "{prefix}B{j}_S{i}" for
                 each helical turn section and cooling slit combination
                 - 3D mode: Simple names ["{prefix}B", "{prefix}Kapton"]
         
@@ -419,8 +423,8 @@ class Bitter(YAMLObjectBase):
             >>> # 2D naming (detailed sectors)
             >>> names_2d = bitter.get_names("M10_B1", is2D=True)
             >>> # Returns many sector names like:
-            >>> # ['M10_B1_B0_Slit0', 'M10_B1_B0_Slit1', 'M10_B1_B0_Slit2',
-            >>> #  'M10_B1_B1_Slit0', 'M10_B1_B1_Slit1', ...]
+            >>> # ['M10_B1_B0_S0', 'M10_B1_B0_S1', 'M10_B1_B0_S2',
+            >>> #  'M10_B1_B1_S0', 'M10_B1_B1_S1', ...]
         """
         tol = 1.0e-10
         solid_names = []
@@ -437,15 +441,15 @@ class Bitter(YAMLObjectBase):
             nsection = len(self.modelaxi.turns)
             if self.z[0] < -self.modelaxi.h and abs(self.z[0] + self.modelaxi.h) >= tol:
                 for i in range(Nslits + 1):
-                    solid_names.append(f"{prefix}B0_Slit{i}")
+                    solid_names.append(f"{prefix}B0_S{i}")
 
             for j in range(nsection):
                 for i in range(Nslits + 1):
-                    solid_names.append(f"{prefix}B{j+1}_Slit{i}")
+                    solid_names.append(f"{prefix}B{j+1}_S{i}")
 
             if self.z[1] > self.modelaxi.h and abs(self.z[1] - self.modelaxi.h) >= tol:
                 for i in range(Nslits + 1):
-                    solid_names.append(f"{prefix}B{nsection+1}_Slit{i}")
+                    solid_names.append(f"{prefix}B{nsection+1}_S{i}")
         else:
             solid_names.append(f"{prefix}B")
             solid_names.append(f"{prefix}Kapton")

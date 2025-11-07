@@ -27,6 +27,7 @@ class OuterCurrentLead(YAMLObjectBase):
             [1] DX: Rectangle width in mm (positive)
             [2] DY: Rectangle height in mm (positive)
             [3] L: Extrusion length along Z axis in mm (positive)
+
         support (list): Support structure with 4 parameters (optional):
             [0] DX0: Support width in mm (positive)
             [1] DZ: Vertical offset in mm (positive)

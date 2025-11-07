@@ -28,9 +28,11 @@ class InnerCurrentLead(YAMLObjectBase):
             [3] Angle: Angular span per hole in degrees (0, 360]
             [4] Angular_Position: Angular position offset in degrees [0, 360)
             [5] N_Holes: Number of holes (positive integer)
+
         support (list): Support structure with 2 parameters (optional):
             [0] R2: Support radius in mm (positive)
             [1] DZ: Vertical offset in mm (can be negative)
+
         fillet (bool): Apply edge filleting for smooth transitions (default: False)
     
     Validation Rules:
@@ -85,6 +87,7 @@ class InnerCurrentLead(YAMLObjectBase):
             h: Height/length of current lead in mm (default: 0.0)
             holes: Optional hole pattern with 6 parameters:
                    [H_Holes, Shift_from_Top, Angle_Zero, Angle, Angular_Position, N_Holes]
+
             support: Optional support structure with 2 parameters: [R2, DZ]
             fillet: Apply edge filleting (default: False)
         
@@ -100,6 +103,7 @@ class InnerCurrentLead(YAMLObjectBase):
                   * Angle not in (0, 360]
                   * Angular_Position not in [0, 360)
                   * N_Holes <= 0 or not an integer
+                  
                 - support not exactly 2 elements or R2 negative
         
         Example:

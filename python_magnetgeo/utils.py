@@ -9,7 +9,7 @@ Fixed version compatible with both original and refactored classes
 import os
 import yaml
 import json
-from typing import Union, List, Dict, Callable, Any, Type, Optional
+from typing import Any, Type
 from pathlib import Path
 
 class ObjectLoadError(Exception):
@@ -98,8 +98,7 @@ def loadYaml(comment: str, filename: str, supported_type: Type = None, debug: bo
     basedir, basename = os.path.split(filename)
     
     if debug:
-        print(f"utils.loadYaml: comment={comment}, filename={filename}")
-        # print(f"  basedir={basedir}, basename={basename}, cwd={cwd}")
+        print(f"utils.loadYaml: comment={comment}, filename={filename}, basedir={basedir}, basename={basename}, cwd={cwd}", flush=True)
 
     # Change to target directory if needed
     if basedir and basedir != ".":
@@ -109,9 +108,12 @@ def loadYaml(comment: str, filename: str, supported_type: Type = None, debug: bo
 
     try:
         # Load YAML file
-        with open(basename, "r") as istream:
+        with open(basename, "r") as istream: # Potential FileNotFoundError happens here
             obj = yaml.load(stream=istream, Loader=yaml.FullLoader)
-        
+            obj._basedir = cwd
+            if basedir and basedir != ".":
+                obj._basedir = os.getcwd()
+
         if debug:
             print(f"  Loaded object type: {type(obj)}")
             if hasattr(obj, 'name'):
@@ -119,6 +121,7 @@ def loadYaml(comment: str, filename: str, supported_type: Type = None, debug: bo
         
         # Type validation if expected_type provided
         if supported_type and not isinstance(obj, supported_type):
+            # This logic remains correct for UnsupportedTypeError
             raise UnsupportedTypeError(
                 f"{comment}: expected {supported_type.__name__}, got {type(obj).__name__}"
             )
@@ -134,12 +137,15 @@ def loadYaml(comment: str, filename: str, supported_type: Type = None, debug: bo
             
         return obj
         
-    except FileNotFoundError:
-        raise ObjectLoadError(f"YAML file not found: {filename}")
-    except yaml.YAMLError as e:
-        raise ObjectLoadError(f"Failed to parse YAML in {filename}: {e}")
+    # Combine YAML parsing and File not found into a single handler
+    except (FileNotFoundError, yaml.YAMLError) as e:
+        # Now raise ObjectLoadError with a message that includes the specific failure reason
+        error_type = "YAML file not found" if isinstance(e, FileNotFoundError) else "Failed to parse YAML"
+        raise ObjectLoadError(f"{error_type}: {filename}. Details: {e}")
+    
     except Exception as e:
-        raise ObjectLoadError(f"Failed to load {comment} data from {filename}: {e}")
+        # Catch all others, but now the file not found is handled above.
+        raise ObjectLoadError(f"Failed to load {comment} data from {filename} due to an unexpected error: {e}")
     finally:
         # Always restore original directory
         if basedir and basedir != ".":
@@ -185,18 +191,19 @@ def loadJson(comment: str, filename: str, debug: bool = False) -> Any:
                 istream.read(), 
                 object_hook=deserialize.unserialize_object
             )
-            
+            obj._basedir = cwd
+            if basedir and basedir != ".":
+                obj._basedir = os.getcwd()
+
         if debug:
             print(f"  loadJson: {comment} from {filename} completed successfully")
             
         return obj
         
-    except FileNotFoundError:
-        raise ObjectLoadError(f"JSON file not found: {filename}")
-    except json.JSONDecodeError as e:
-        raise ObjectLoadError(f"Failed to parse JSON in {filename}: {e}")
-    except Exception as e:
-        raise ObjectLoadError(f"Failed to load {comment} data from {filename}: {e}")
+    # Combine JSON decoding and File not found into a single handler
+    except (FileNotFoundError, json.JSONDecodeError) as e:
+        error_type = "JSON file not found" if isinstance(e, FileNotFoundError) else "Failed to decode JSON"
+        raise ObjectLoadError(f"{error_type}: {filename}. Details: {e}")
     finally:
         if basedir and basedir != ".":
             os.chdir(cwd)

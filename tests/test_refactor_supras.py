@@ -13,6 +13,7 @@ import tempfile
 from python_magnetgeo.Supras import Supras
 from python_magnetgeo.Supra import Supra
 from python_magnetgeo.Probe import Probe
+from python_magnetgeo.Supra import DetailLevel
 from python_magnetgeo.validation import ValidationError
 
 
@@ -23,8 +24,8 @@ def test_supras_basic_creation():
     print("=" * 70)
     
     # Create some Supra objects
-    supra1 = Supra(name="supra1", r=[20.0, 30.0], z=[10.0, 50.0], n=4, struct="")
-    supra2 = Supra(name="supra2", r=[20.0, 30.0], z=[60.0, 100.0], n=6, struct="")
+    supra1 = Supra(name="supra1", r=[20.0, 30.0], z=[10.0, 50.0], n=4, struct=None)
+    supra2 = Supra(name="supra2", r=[20.0, 30.0], z=[60.0, 100.0], n=6, struct=None)
     
     # Create Supras container
     supras = Supras(
@@ -56,7 +57,7 @@ def test_supras_inherited_methods():
     print("TEST: Supras Inherited Methods")
     print("=" * 70)
     
-    supra = Supra(name="test", r=[20.0, 30.0], z=[10.0, 50.0], n=4, struct="")
+    supra = Supra(name="test", r=[20.0, 30.0], z=[10.0, 50.0], n=4, struct=None)
     supras = Supras(
         name="method_test",
         magnets=[supra],
@@ -84,8 +85,8 @@ def test_supras_json_serialization():
     print("TEST: Supras JSON Serialization")
     print("=" * 70)
     
-    supra1 = Supra(name="json_supra1", r=[15.0, 25.0], z=[5.0, 45.0], n=3, struct="")
-    supra2 = Supra(name="json_supra2", r=[15.0, 25.0], z=[55.0, 95.0], n=5, struct="")
+    supra1 = Supra(name="json_supra1", r=[15.0, 25.0], z=[5.0, 45.0], n=3, struct=None)
+    supra2 = Supra(name="json_supra2", r=[15.0, 25.0], z=[55.0, 95.0], n=5, struct=None)
     
     supras = Supras(
         name="json_supras",
@@ -138,8 +139,8 @@ def test_supras_from_dict_basic():
                 'r': [15.0, 25.0],
                 'z': [5.0, 45.0],
                 'n': 3,
-                'struct': '',
-                'detail': 'None'
+                'struct': None,
+                'detail': DetailLevel.NONE
             },
             {
                 '__classname__': 'Supra',
@@ -147,8 +148,8 @@ def test_supras_from_dict_basic():
                 'r': [15.0, 25.0],
                 'z': [55.0, 95.0],
                 'n': 5,
-                'struct': '',
-                'detail': 'None'
+                'struct': None,
+                'detail': DetailLevel.NONE
             }
         ],
         'innerbore': 13.0,
@@ -191,8 +192,8 @@ def test_supras_from_dict_with_probes():
                 'r': [20.0, 30.0],
                 'z': [10.0, 50.0],
                 'n': 4,
-                'struct': '',
-                'detail': 'None'
+                'struct': None,
+                'detail': DetailLevel.NONE
             }
         ],
         'innerbore': 18.0,
@@ -240,8 +241,8 @@ def test_supras_default_values():
                 'r': [20.0, 30.0],
                 'z': [10.0, 50.0],
                 'n': 4,
-                'struct': '',
-                'detail': 'None',
+                'struct': None,
+                'detail': DetailLevel.NONE,
             }
         ],
         'innerbore': 19,
@@ -269,7 +270,7 @@ def test_supras_validation():
     print("TEST: Supras Validation")
     print("=" * 70)
     
-    supra = Supra(name="test", r=[20.0, 30.0], z=[10.0, 50.0], n=4, struct="")
+    supra = Supra(name="test", r=[20.0, 30.0], z=[10.0, 50.0], n=4, struct=None)
     
     # Test 1: Empty name
     try:
@@ -302,8 +303,8 @@ def test_supras_yaml_roundtrip():
     print("=" * 70)
     
     # Create Supras with nested Supra objects
-    supra1 = Supra(name="yaml_supra1", r=[20.0, 30.0], z=[10.0, 50.0], n=4, struct="")
-    supra2 = Supra(name="yaml_supra2", r=[20.0, 30.0], z=[60.0, 100.0], n=6, struct="")
+    supra1 = Supra(name="yaml_supra1", r=[20.0, 30.0], z=[10.0, 50.0], n=4, struct=None)
+    supra2 = Supra(name="yaml_supra2", r=[20.0, 30.0], z=[60.0, 100.0], n=6, struct=None)
     
     supras = Supras(
         name="yaml_supras",
@@ -344,9 +345,9 @@ def test_supras_bounding_box():
     print("TEST: Supras Bounding Box")
     print("=" * 70)
     
-    supra1 = Supra(name="bbox1", r=[10.0, 15.0], z=[0.0, 50.0], n=2, struct="")
-    supra2 = Supra(name="bbox2", r=[20.0, 30.0], z=[10.0, 40.0], n=4, struct="")
-    supra3 = Supra(name="bbox3", r=[35.0, 40.0], z=[30.0, 80.0], n=3, struct="")
+    supra1 = Supra(name="bbox1", r=[10.0, 15.0], z=[0.0, 50.0], n=2, struct=None)
+    supra2 = Supra(name="bbox2", r=[20.0, 30.0], z=[10.0, 40.0], n=4, struct=None)
+    supra3 = Supra(name="bbox3", r=[35.0, 40.0], z=[30.0, 80.0], n=3, struct=None)
     
     supras = Supras(
         name="bbox_supras",
@@ -381,7 +382,7 @@ def test_supras_intersect():
     print("TEST: Supras Intersect")
     print("=" * 70)
     
-    supra = Supra(name="intersect_test", r=[20.0, 30.0], z=[10.0, 50.0], n=4, struct="")
+    supra = Supra(name="intersect_test", r=[20.0, 30.0], z=[10.0, 50.0], n=4, struct=None)
     supras = Supras(name="intersect_supras", magnets=[supra], innerbore=18.0, outerbore=32.0)
     
     # Test 1: Overlapping rectangle (should intersect)
@@ -411,8 +412,8 @@ def test_supras_get_names():
     print("TEST: Supras get_names")
     print("=" * 70)
     
-    supra1 = Supra(name="name_test1", r=[20.0, 30.0], z=[10.0, 50.0], n=4, struct="")
-    supra2 = Supra(name="name_test2", r=[20.0, 30.0], z=[60.0, 100.0], n=6, struct="")
+    supra1 = Supra(name="name_test1", r=[20.0, 30.0], z=[10.0, 50.0], n=4, struct=None)
+    supra2 = Supra(name="name_test2", r=[20.0, 30.0], z=[60.0, 100.0], n=6, struct=None)
     
     supras = Supras(
         name="names_supras",

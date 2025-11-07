@@ -32,7 +32,7 @@ classifiers = [
 keywords = ["magnet", "geometry", "cad", "mesh", "simulation", "hifimagnet"]
 dependencies = [
     "pyyaml>=6.0",
-    "chevron>=0.13.1",
+    "pandas>=1.5.3"
 ]
 
 [project.optional-dependencies]
@@ -73,51 +73,6 @@ exclude = ["tests*", "docs*"]
 
 [tool.setuptools.package-data]
 python_magnetgeo = ["py.typed"]
-
-# Poetry compatibility section
-[tool.poetry]
-name = "python-magnetgeo"
-version = "1.0.0"
-description = "Python helpers to create HiFiMagnet cads and meshes"
-authors = [
-    "Christophe Trophime <christophe.trophime@lncmi.cnrs.fr>",
-    "Romain Vallet <romain.vallet@lncmi.cnrs.fr>",
-    "Jeremie Muzet <jeremie.muzet@lncmi.cnrs.fr>"
-]
-readme = "README.rst"
-license = "MIT"
-homepage = "https://github.com/Trophime/python_magnetgeo"
-repository = "https://github.com/Trophime/python_magnetgeo"
-documentation = "https://python-magnetgeo.readthedocs.io"
-keywords = ["magnet", "geometry", "cad", "mesh", "simulation"]
-classifiers = [
-    "Development Status :: 4 - Beta",
-    "Intended Audience :: Developers",
-    "Intended Audience :: Science/Research",
-    "License :: OSI Approved :: MIT License",
-    "Programming Language :: Python :: 3.11",
-    "Programming Language :: Python :: 3.12",
-    "Topic :: Scientific/Engineering :: Physics",
-]
-packages = [{include = "python_magnetgeo"}]
-
-[tool.poetry.dependencies]
-python = "^3.11"
-PyYAML = "^6.0"
-chevron = "^0.13.1"
-
-[tool.poetry.group.dev.dependencies]
-pytest = "^8.2.0"
-pytest-cov = "^4.0.0"
-flake8 = "^6.0.0"
-black = "^23.0.0"
-isort = "^5.12.0"
-mypy = "^1.0.0"
-tox = "^4.0.0"
-
-[tool.poetry.group.docs.dependencies]
-sphinx = "^6.0.0"
-sphinx-rtd-theme = "^1.2.0"
 
 # Pytest configuration
 [tool.pytest.ini_options]

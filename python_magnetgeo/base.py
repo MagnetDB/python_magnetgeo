@@ -47,6 +47,7 @@ import json
 import yaml
 from abc import ABC, abstractmethod
 from typing import Dict, Any, Optional, Type, TypeVar
+from pathlib import Path
 
 # Type variable for proper type hinting in return types
 T = TypeVar('T', bound='SerializableMixin')
@@ -359,7 +360,9 @@ class YAMLObjectBase(SerializableMixin):
         yaml.add_representer(cls, representer)
         
         # Optional: print confirmation (remove in production)
-        print(f"Auto-registered YAML constructor and representer for {cls.__name__}")
+        import os
+        if os.getenv('SPHINX_BUILD') != '1':
+            print(f"Auto-registered YAML constructor and representer for {cls.__name__}")
 
     @classmethod
     def get_class(cls, name: str):
@@ -462,7 +465,8 @@ class YAMLObjectBase(SerializableMixin):
                 if debug:
                     print(f"Loading object[{i}] from file: {item}")
                 from .utils import getObject
-                obj = getObject(f"{item}.yaml")
+                filename = f"{item}.yaml"
+                obj = getObject(filename)
                 objects.append(obj)
                 
             elif isinstance(item, dict):
@@ -542,7 +546,11 @@ class YAMLObjectBase(SerializableMixin):
             if debug:
                 print(f"Loading object from file: {data}")
             from .utils import getObject
-            return getObject(f"{data}.yaml")
+            
+            filename = f"{data}.yaml"
+            if debug:
+                print(f"  Loading nested {object_class.__name__} from {filename}")
+            return getObject(filename)
             
         elif isinstance(data, dict):
             # Inline dictionary → try each class until one works

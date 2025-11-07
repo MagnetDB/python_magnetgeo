@@ -90,7 +90,7 @@ class TestIntegration:
         helix = Helix("site_helix", [10.0, 20.0], [0.0, 50.0], 2.0, True, False, axi, model3d, shape)
         insert = Insert("site_insert", [helix], [], [], [], [], 8.0, 25.0, [])
         
-        supra = Supra("site_supra", [30.0, 45.0], [60.0, 120.0], 4, "")  # Empty struct
+        supra = Supra("site_supra", [30.0, 45.0], [60.0, 120.0], 4, None)  # Empty struct
         supras = Supras("site_supras", [supra], 28.0, 50.0, [])
         
         screen = Screen("site_screen", [0.0, 60.0], [0.0, 150.0])

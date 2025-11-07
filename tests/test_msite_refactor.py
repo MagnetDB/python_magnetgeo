@@ -69,7 +69,7 @@ def create_sample_insert():
 
 def create_sample_supras():
     """Create sample supras magnet"""
-    supra = Supra("test_supra", [30.0, 40.0], [60.0, 100.0], 4, "")
+    supra = Supra("test_supra", [30.0, 40.0], [60.0, 100.0], 4, None)
     supras = Supras("test_supras", [supra], 28.0, 65.0, [])
     return supras
 

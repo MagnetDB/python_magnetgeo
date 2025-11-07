@@ -92,13 +92,17 @@ class Chamfer(YAMLObjectBase):
             side: Axial position of the chamfer:
                   - "BP": Bottom/low-pressure side
                   - "HP": Top/high-pressure side
+
             rside: Radial position of the chamfer:
                    - "rint": Inner radius
                    - "rext": Outer radius
+
             alpha: Chamfer angle in degrees (optional). Must be in range (0, 90).
                    This defines the slope of the beveled edge.
+
             dr: Radial offset in millimeters (optional). This is the horizontal
                 extent of the chamfer. Must be positive if specified.
+                
             l: Axial height of the chamfer in millimeters. Must be positive.
             
         Raises:

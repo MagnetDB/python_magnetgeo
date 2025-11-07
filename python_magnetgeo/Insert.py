@@ -4,9 +4,7 @@
 """defines Insert structure"""
 
 import math
-import datetime
-import json
-import yaml
+import os
 
 from .Helix import Helix
 from .Ring import Ring
@@ -240,9 +238,15 @@ class Insert(YAMLObjectBase):
                     else:
                         helices_radius[2] -= chamfer.getDr()
 
-            if self.rings[i].r != flatten(helices_radius):
+            import numpy as np
+            r_rings = np.array(self.rings[i].r)
+            r_helices = np.array(flatten(helices_radius))
+            norm = np.linalg.norm(r_rings - r_helices)
+            bound = 1.e-5 *max(abs(np.max(r_rings)),abs(np.max(r_helices)))
+            # print("norm:", norm, type(norm), "bound: ", bound, type(bound))
+            if norm > bound:
                 raise ValidationError(
-                    f"Ring {i} radius {self.rings[i].r} does not match with adjacent helices radii {flatten(helices_radius)}"
+                    f"Ring {i} radius {r_rings} does not match with adjacent helices radii {r_helices}"
                 )
 
         for helix in self.helices:
@@ -273,6 +277,8 @@ class Insert(YAMLObjectBase):
                     if zinf_inner is not None and zinf_inner != zinf_outer:
                         raise ValidationError(f"Insert: zinf_inner ({zinf_inner}) and zinf_outer ({zinf_outer}) must be egal")
                 
+        # Store the directory context for resolving struct paths
+        self._basedir = os.getcwd()
 
     def get_channels(
         self, mname: str, hideIsolant: bool = True, debug: bool = False

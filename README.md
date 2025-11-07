@@ -1,10 +1,10 @@
 # Python Magnet Geometry
 
-[![PyPI version](https://img.shields.io/pypi/v/python_magnetgeo.svg)](https://pypi.python.org/pypi/python_magnetgeo)
+<!-- [![PyPI version](https://img.shields.io/pypi/v/python_magnetgeo.svg)](https://pypi.python.org/pypi/python_magnetgeo)
 [![Build Status](https://img.shields.io/travis/Trophime/python_magnetgeo.svg)](https://travis-ci.com/Trophime/python_magnetgeo)
 [![Documentation Status](https://readthedocs.org/projects/python-magnetgeo/badge/?version=latest)](https://python-magnetgeo.readthedocs.io/en/latest/?version=latest)
 [![Updates](https://pyup.io/repos/github/Trophime/python_magnetgeo/shield.svg)](https://pyup.io/repos/github/Trophime/python_magnetgeo/)
-
+ -->
 Python Magnet Geometry contains magnet geometrical models for high-field magnet design and simulation.
 
 ## Version 1.0.0 Release
@@ -344,7 +344,6 @@ python -m python_magnetgeo.xao HL-31-Axi.xao mesh --group CoolingChannels --geo 
 
 - Python >= 3.11
 - PyYAML >= 6.0
-- chevron >= 0.13.1
 - pytest >= 8.2.0 (for development)
 
 ## API Breaking Changes
@@ -1144,6 +1143,15 @@ If you use python_magnetgeo in your research, please cite:
   url = {https://github.com/Trophime/python_magnetgeo}
 }
 ```
+
+## TODOs
+
+- [ ] Replace str profile by Profile object in Shape.py
+- [ ] Add method to convert dat file for profile into yaml profile file
+- [ ] Change gtype to type into Groove (breaking change)
+- [ ] Make type an enum in Groove
+- [ ] Make side and rside enum objects in Chamfer
+- [ ] All field that can be either Object/str make str=filename to be loaded (breaking change)
 
 ## Related Projects
 
