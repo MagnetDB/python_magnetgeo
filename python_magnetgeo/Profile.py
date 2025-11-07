@@ -20,11 +20,10 @@ from .validation import GeometryValidator, ValidationError
 
 class Profile(YAMLObjectBase):
     """
-    Represents an aerodynamic profile defined by 2D points and labels.
+    Represents a profile defined by 2D points and labels.
     
     A Profile object defines a shape as a sequence of (X, F) coordinate pairs
-    with associated integer labels. This is typically used for defining 
-    aerodynamic cross-sectional profiles.
+    with associated integer labels.
     
     Attributes:
         cad (str): CAD identifier for the profile
@@ -83,7 +82,7 @@ class Profile(YAMLObjectBase):
             ... )
         """
         # Validate CAD identifier
-        GeometryValidator.validate_name(cad)
+        #GeometryValidator.validate_name(cad)
         
         # Validate labels length if provided
         if labels is not None and len(labels) != len(points):
