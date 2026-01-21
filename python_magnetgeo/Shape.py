@@ -141,8 +141,8 @@ class Shape(YAMLObjectBase):
             ...     # position defaults to ABOVE
             ... )
         """
-        GeometryValidator.validate_name(name)
-
+        # GeometryValidator.validate_name(name)
+        
         self.name = name
         self.profile = profile
         self.length = length if length is not None else [0.0]
