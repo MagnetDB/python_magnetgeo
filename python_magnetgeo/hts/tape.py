@@ -1,7 +1,8 @@
 # Import DetailLevel from Supra module
-from typing import Self, Optional, Union
+from typing import Self
 
 from ..enums import DetailLevel
+
 
 class tape:
     """
@@ -41,20 +42,15 @@ class tape:
         msg += f"e: {self.e} [mm]\n"
         return msg
 
-    def get_names(
-        self, 
-        name: str, 
-        detail: Union[str, DetailLevel], 
-        verbose: bool = False
-    ) -> list[str]:
+    def get_names(self, name: str, detail: str | DetailLevel, verbose: bool = False) -> list[str]:
         """
         Get marker names for tape elements.
-        
+
         Args:
             name: Base name for markers
             detail: Detail level (DetailLevel enum or string)
             verbose: Enable verbose output
-        
+
         Returns:
             list[str]: List of marker names for superconductor and duromag
         """
@@ -97,5 +93,3 @@ class tape:
         get tape filling factor (aka ratio of superconductor over tape section)
         """
         return (self.w * self.h) / self.getArea()
-
-

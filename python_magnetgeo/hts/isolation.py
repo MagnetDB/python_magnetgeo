@@ -1,7 +1,8 @@
-from typing import Self, Optional, Union
+from typing import Self
 
 # Import DetailLevel from Supra module
 from ..enums import DetailLevel
+
 
 class isolation:
     """
@@ -43,20 +44,15 @@ class isolation:
         msg += f"h: {self.h} \n"
         return msg
 
-    def get_names(
-        self, 
-        name: str, 
-        detail: Union[str, DetailLevel], 
-        verbose: bool = False
-    ) -> str:
+    def get_names(self, name: str, detail: str | DetailLevel, verbose: bool = False) -> str:
         """
         Get marker name for isolation element.
-        
+
         Args:
             name: Base name for marker
             detail: Detail level (DetailLevel enum or string) - not used for isolation
             verbose: Enable verbose output
-        
+
         Returns:
             str: Marker name for isolation
         """
@@ -97,4 +93,3 @@ class isolation:
         return the number of layer
         """
         return len(self.w)
-
