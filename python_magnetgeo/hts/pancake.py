@@ -1,10 +1,10 @@
-from typing import Self, Optional, Union
+from typing import Self
 
 # Import DetailLevel from Supra module
 from ..enums import DetailLevel
-
-from .tape import tape
 from ..utils import flatten
+from .tape import tape
+
 
 class pancake:
     """
@@ -16,9 +16,7 @@ class pancake:
     n: number of tapes
     """
 
-    def __init__(
-        self, r0: float = 0, tape: tape = tape(), n: int = 0, mandrin: int = 0
-    ) -> None:
+    def __init__(self, r0: float = 0, tape: tape = tape(), n: int = 0, mandrin: int = 0) -> None:
         self.mandrin = mandrin
         self.tape = tape
         self.n = n
@@ -60,26 +58,23 @@ class pancake:
         return msg
 
     def get_names(
-        self, 
-        name: str, 
-        detail: Union[str, DetailLevel], 
-        verbose: bool = False
+        self, name: str, detail: str | DetailLevel, verbose: bool = False
     ) -> str | list[str]:
         """
         Get marker names for pancake elements.
-        
+
         Args:
             name: Base name for markers
             detail: Detail level (DetailLevel enum or string)
             verbose: Enable verbose output
-        
+
         Returns:
             str | list[str]: Marker name(s) depending on detail level
         """
         # Convert enum to string for comparison
         if isinstance(detail, str):
             detail = DetailLevel[detail.upper()]
-        
+
         if detail == DetailLevel.PANCAKE:
             return name
         else:
@@ -151,4 +146,3 @@ class pancake:
 
     def getArea(self) -> float:
         return (self.getR1() - self.getR0()) * self.getH()
-

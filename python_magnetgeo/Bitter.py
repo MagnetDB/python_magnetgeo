@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# -*- coding:utf-8 -*-
+# encoding: UTF-8
 
 """
 Provides definition for Bitter:
@@ -9,15 +9,14 @@ Provides definition for Bitter:
 * Model 3D: actual 3D CAD
 
 """
-import os 
+import os
 
+from .base import YAMLObjectBase
+from .coolingslit import CoolingSlit
 from .ModelAxi import ModelAxi
 from .tierod import Tierod
-from .coolingslit import CoolingSlit
-
-from typing import List
-from .base import YAMLObjectBase
 from .validation import GeometryValidator, ValidationError
+
 
 class Bitter(YAMLObjectBase):
     """
@@ -39,18 +38,18 @@ class Bitter(YAMLObjectBase):
         z: list[float],
         odd: bool,
         modelaxi: ModelAxi,
-        coolingslits: List[CoolingSlit] = None,
+        coolingslits: list[CoolingSlit] = None,
         tierod: Tierod = None,
         innerbore: float = 0,
         outerbore: float = 0,
     ) -> None:
         """
         Initialize a Bitter disk magnet with cooling channels.
-        
+
         A Bitter magnet is a stack of resistive disk-shaped plates with a helical cut
         pattern that represent the insulators distribution. Multiple cooling
         slits can be integrated at different radii for enhanced cooling performance.
-        
+
         Args:
             name: Unique identifier for the Bitter
             r: [r_inner, r_outer] - radial extent in mm. Inner and outer radii
@@ -70,20 +69,20 @@ class Bitter(YAMLObjectBase):
                 holes for mechanical reinforcement. Default: None.
             innerbore: Inner bore radius in mm (experimental volume). Default: 0
             outerbore: Outer bore radius in mm (outer magnet boundary). Default: 0
-        
+
         Raises:
             ValidationError: If name is invalid
             ValidationError: If r is not length 2 or not in ascending order
-            ValidationError: If z is not length 2 or not in ascending order  
+            ValidationError: If z is not length 2 or not in ascending order
             ValidationError: If r[0] < 0 (negative inner radius)
-        
+
         Note:
             - Bitter magnets are typically stacked axially to create high fields
             - The helical cut is used to mimic insulators distribution in between Bitter disks
             - Multiple cooling slits improve heat removal at different radii
             - ModelAxi defines the geometry of the helical cut pattern
             - String references to nested objects are automatically loaded from YAML files
-        
+
         Example:
             >>> # Simple Bitter disk without cooling slits
             >>> modelaxi = ModelAxi("helix", h=48, turns=[5, 7], pitch=[8, 8])
@@ -98,7 +97,7 @@ class Bitter(YAMLObjectBase):
             ...     innerbore=80,
             ...     outerbore=160
             ... )
-            
+
             >>> # Bitter disk with cooling slits
             >>> slit1 = CoolingSlit(name="s1", r=120, angle=4.5, n=10, ...)
             >>> slit2 = CoolingSlit(name="s2", r=135, angle=4.5, n=12, ...)
@@ -112,19 +111,19 @@ class Bitter(YAMLObjectBase):
             ...     tierod=None
             ... )
         """
-        
+
         # Validate inputs
         GeometryValidator.validate_name(name)
-        GeometryValidator.validate_numeric_list(r, 'r', expected_length=2)
+        GeometryValidator.validate_numeric_list(r, "r", expected_length=2)
         GeometryValidator.validate_ascending_order(r, "r")
-        
-        GeometryValidator.validate_numeric_list(z, 'z', expected_length=2)
+
+        GeometryValidator.validate_numeric_list(z, "z", expected_length=2)
         GeometryValidator.validate_ascending_order(z, "z")
-        
+
         # Additional Ring-specific checks
         if r[0] < 0:
-            raise ValidationError("Inner radius cannot be negative") 
-        
+            raise ValidationError("Inner radius cannot be negative")
+
         self.name = name
         self.r = r
         self.z = z
@@ -133,7 +132,7 @@ class Bitter(YAMLObjectBase):
             self.modelaxi = ModelAxi.from_yaml(f"{modelaxi}.yaml")
         else:
             self.modelaxi = modelaxi
-        
+
         self.innerbore = innerbore
         self.outerbore = outerbore
 
@@ -144,8 +143,8 @@ class Bitter(YAMLObjectBase):
                     self.coolingslits.append(CoolingSlit.from_yaml(f"{coolingslit}.yaml"))
                 else:
                     self.coolingslits.append(coolingslit)
-                
-        if tierod is not None and  isinstance(tierod, str):
+
+        if tierod is not None and isinstance(tierod, str):
             self.tireod = Tierod.from_yaml(f"{tierod}.yaml")
         else:
             self.tierod = tierod
@@ -158,29 +157,19 @@ class Bitter(YAMLObjectBase):
         representation of object
         """
         return (
-            "%s(name=%r, r=%r, z=%r, odd=%r, axi=%r, coolingslits=%r, tierod=%r, innerbore=%r, outerbore=%r)"
-            % (
-                self.__class__.__name__,
-                self.name,
-                self.r,
-                self.z,
-                self.odd,
-                self.modelaxi,
-                self.coolingslits,
-                self.tierod,
-                self.innerbore,
-                self.outerbore,
-            )
+            f"{self.__class__.__name__}(name={self.name!r}, r={self.r!r}, z={self.z!r}, odd={self.odd!r}, "
+            f"axi={self.modelaxi!r}, coolingslits={self.coolingslits!r}, tierod={self.tierod!r}, "
+            f"innerbore={self.innerbore!r}, outerbore={self.outerbore!r})"
         )
 
     @classmethod
     def from_dict(cls, values: dict, debug: bool = False):
         """
         Create Bitter instance from dictionary representation.
-        
+
         Supports flexible input formats for nested objects (modelaxi, cooling slits,
         tierod), allowing mixed specifications of inline definitions and file references.
-        
+
         Args:
             values: Dictionary containing Bitter configuration with keys:
                 - name (str): Bitter disk name
@@ -193,14 +182,14 @@ class Bitter(YAMLObjectBase):
                 - innerbore (float, optional): Inner bore radius (default: 0)
                 - outerbore (float, optional): Outer bore radius (default: 0)
             debug: Enable debug output showing object loading process
-        
+
         Returns:
             Bitter: New Bitter instance created from dictionary
-        
+
         Raises:
             KeyError: If required keys are missing from dictionary
             ValidationError: If any nested object data is malformed
-        
+
         Example:
             >>> data = {
             ...     "name": "B1",
@@ -217,9 +206,9 @@ class Bitter(YAMLObjectBase):
             ... }
             >>> bitter = Bitter.from_dict(data)
         """
-        modelaxi = cls._load_nested_single(values.get('modelaxi'), ModelAxi, debug=debug)
-        coolingslits = cls._load_nested_list(values.get('coolingslits'), CoolingSlit, debug=debug)
-        tierod = cls._load_nested_single(values.get('tierod'), Tierod, debug=debug)
+        modelaxi = cls._load_nested_single(values.get("modelaxi"), ModelAxi, debug=debug)
+        coolingslits = cls._load_nested_list(values.get("coolingslits"), CoolingSlit, debug=debug)
+        tierod = cls._load_nested_single(values.get("tierod"), Tierod, debug=debug)
 
         name = values["name"]
         r = values["r"]
@@ -234,27 +223,26 @@ class Bitter(YAMLObjectBase):
         object = cls(name, r, z, odd, modelaxi, coolingslits, tierod, innerbore, outerbore)
         return object
 
-
     def equivalent_eps(self, i: int):
         """
         Calculate equivalent annular ring thickness for a cooling slit.
-        
+
         Computes the thickness (eps) of an equivalent solid annular ring that
         has the same cross-sectional area as n discrete cooling slit channels
         at the given radial position.
-        
+
         Args:
             i: Index of cooling slit in self.coolingslits list (0-based)
-        
+
         Returns:
             float: Equivalent thickness in mm
-        
+
         Notes:
             - Formula: eps = n * sh / (2 * π * r)
             - Where: n = number of slits, sh = slit height, r = radial position
             - Used for hydraulic diameter and heat transfer calculations
             - Converts discrete slit geometry to continuous approximation
-        
+
         Example:
             >>> bitter = Bitter(..., coolingslits=[slit1, slit2], ...)
             >>> eps0 = bitter.equivalent_eps(0)  # Equivalent thickness for first slit
@@ -267,33 +255,31 @@ class Bitter(YAMLObjectBase):
         eps = slit.n * slit.sh / (2 * pi * x)
         return eps
 
-    def get_channels(
-        self, mname: str, hideIsolant: bool = True, debug: bool = False
-    ) -> list[str]:
+    def get_channels(self, mname: str, hideIsolant: bool = True, debug: bool = False) -> list[str]:
         """
         Retrieve cooling channel identifiers for the Bitter disk.
-        
+
         Generates list of channel markers based on the number of cooling slits.
         Channels are numbered sequentially from 0 to n_slits+1, where n_slits
         is the number of CoolingSlit objects in the disk.
-        
+
         Args:
             mname: Magnet name prefix for channel identifiers
             hideIsolant: Ignored for Bitter (included for API consistency).
                         Bitter disks do not have isolant layers.
             debug: Enable debug output (currently unused)
-        
+
         Returns:
             list[str]: List of channel identifier strings:
                 - ["{prefix}Slit0", "{prefix}Slit1", ..., "{prefix}Slit{n+1}"]
                 - Where n is the number of cooling slits
-        
+
         Notes:
             - Channel numbering: Slit0 is innermost, Slit{n+1} is outermost
             - Number of channels = number of slits + 2 (inner and outer regions)
             - Debug output shows number of cooling slits and channel list
             - Channels used for flow analysis and thermal modeling
-        
+
         Example:
             >>> bitter = Bitter("B1", ..., coolingslits=[slit1, slit2], ...)
             >>> channels = bitter.get_channels("M10_B1")
@@ -319,13 +305,13 @@ class Bitter(YAMLObjectBase):
     def get_lc(self) -> float:
         """
         Calculate characteristic mesh length for the Bitter disk.
-        
+
         Computes an appropriate mesh element size based on disk geometry and
         cooling slit spacing. Used for automatic mesh size determination.
-        
+
         Returns:
             float: Characteristic length in mm
-        
+
         Notes:
             - Without cooling slits: lc = (r_outer - r_inner) / 10
             - With cooling slits: lc = min(dr) / 5, where dr is the minimum
@@ -333,14 +319,14 @@ class Bitter(YAMLObjectBase):
             outer radius)
             - Ensures adequate mesh resolution near cooling channels
             - Smaller lc produces finer mesh with better accuracy but more elements
-        
+
         Example:
             >>> # Simple disk without slits
             >>> bitter1 = Bitter("B1", r=[100, 150], ..., coolingslits=[], ...)
             >>> lc1 = bitter1.get_lc()  # Returns (150-100)/10 = 5.0 mm
-            >>> 
+            >>>
             >>> # Disk with cooling slits
-            >>> bitter2 = Bitter("B2", r=[100, 150], ..., 
+            >>> bitter2 = Bitter("B2", r=[100, 150], ...,
             ...                  coolingslits=[slit_at_120, slit_at_135], ...)
             >>> lc2 = bitter2.get_lc()  # Returns min spacing / 5
         """
@@ -361,18 +347,18 @@ class Bitter(YAMLObjectBase):
     def get_isolants(self, mname: str, debug: bool = False) -> list[str]:
         """
         Retrieve electrical isolant identifiers for the Bitter disk.
-        
+
         Args:
             mname: Magnet name prefix for isolant identifiers
             debug: Enable debug output
-        
+
         Returns:
             list[str]: Empty list (Bitter disks currently have no isolant tracking)
-        
+
         Notes:
             This is a placeholder method for API consistency.
             Future implementation may track kapton or other insulation layers.
-        
+
         Example:
             >>> bitter = Bitter("B1", ...)
             >>> isolants = bitter.get_isolants("M10")
@@ -380,46 +366,44 @@ class Bitter(YAMLObjectBase):
         """
         return []
 
-    def get_names(
-        self, mname: str, is2D: bool = False, verbose: bool = False
-    ) -> list[str]:
+    def get_names(self, mname: str, is2D: bool = False, verbose: bool = False) -> list[str]:
         """
         Generate marker names for geometric entities in the Bitter disk.
-        
+
         Creates list of identifiers for solid components used in mesh generation,
         visualization, and post-processing. Naming convention differs significantly
         between 2D (sector-based) and 3D (whole disk) representations.
-        
+
         Args:
             mname: Magnet name prefix (e.g., "M10_B1")
             is2D: If True, generate detailed 2D sector names for each helical section.
                 Each section is subdivided by cooling slits.
                 If False, use simplified 3D naming for whole disk components.
             verbose: Enable verbose output showing total marker count
-        
+
         Returns:
             list[str]: List of marker names:
                 - 2D mode: Detailed sector names like "{prefix}B{j}_S{i}" for
                 each helical turn section and cooling slit combination
                 - 3D mode: Simple names ["{prefix}B", "{prefix}Kapton"]
-        
+
         Notes:
             - 2D naming accounts for helical turn sections from modelaxi
             - Tolerance tol = 1e-10 used for floating-point comparisons
             - 2D includes extra sections if disk extends beyond helical pattern
             - Kapton represents insulation/isolation layer between disks
             - Verbose mode prints: "Bitter/get_names: solid_names {count}"
-        
+
         Example:
-            >>> bitter = Bitter("B1", r=[100, 150], z=[-50, 50], 
-            ...                 modelaxi=ModelAxi(..., turns=[5, 7]), 
+            >>> bitter = Bitter("B1", r=[100, 150], z=[-50, 50],
+            ...                 modelaxi=ModelAxi(..., turns=[5, 7]),
             ...                 coolingslits=[slit1, slit2], ...)
-            >>> 
+            >>>
             >>> # 3D naming (simple)
             >>> names_3d = bitter.get_names("M10_B1", is2D=False)
             >>> print(names_3d)
             >>> # ['M10_B1_B', 'M10_B1_Kapton']
-            >>> 
+            >>>
             >>> # 2D naming (detailed sectors)
             >>> names_2d = bitter.get_names("M10_B1", is2D=True)
             >>> # Returns many sector names like:
@@ -460,18 +444,18 @@ class Bitter(YAMLObjectBase):
     def get_Nturns(self) -> float:
         """
         Get the total number of helical turns in the Bitter disk.
-        
+
         Delegates to the modelaxi object to compute total turns from
         the helical cut pattern definition.
-        
+
         Returns:
             float: Total number of turns (sum of all turn sections)
-        
+
         Notes:
             - Returns 0 if modelaxi is None
             - Typically returns sum of modelaxi.turns list
             - Used for electrical resistance and inductance calculations
-        
+
         Example:
             >>> modelaxi = ModelAxi("helix", h=48, turns=[5, 7, 3], ...)
             >>> bitter = Bitter("B1", ..., modelaxi=modelaxi, ...)
@@ -483,19 +467,19 @@ class Bitter(YAMLObjectBase):
     def boundingBox(self) -> tuple:
         """
         Calculate the bounding box of the Bitter disk.
-        
+
         Returns the radial and axial extents of the disk geometry.
-        
+
         Returns:
             tuple: (rb, zb) where:
                 - rb: [r_inner, r_outer] - radial bounds in mm
                 - zb: [z_bottom, z_top] - axial bounds in mm
-        
+
         Notes:
             - Simply returns the r and z attributes (disk extents)
             - Does not include tierods or other auxiliary features
             - Used for collision detection and assembly validation
-        
+
         Example:
             >>> bitter = Bitter("B1", r=[100, 150], z=[0, 50], ...)
             >>> rb, zb = bitter.boundingBox()
@@ -508,30 +492,30 @@ class Bitter(YAMLObjectBase):
     def intersect(self, r: list[float], z: list[float]) -> bool:
         """
         Check if Bitter disk intersects with a rectangular region.
-        
+
         Tests whether the disk's bounding box overlaps with a given
         rectangular region defined by radial and axial bounds.
-        
+
         Args:
             r: [r_min, r_max] - radial bounds of test rectangle in mm
             z: [z_min, z_max] - axial bounds of test rectangle in mm
-        
+
         Returns:
             bool: True if rectangles overlap (intersection non-empty),
                 False if no intersection
-        
+
         Notes:
             - Uses axis-aligned bounding box (AABB) intersection algorithm
             - Rectangles intersect if they overlap in BOTH r and z dimensions
             - Efficient for collision detection in magnet stack assembly
-        
+
         Example:
             >>> bitter = Bitter("B1", r=[100, 150], z=[0, 50], ...)
-            >>> 
+            >>>
             >>> # Check overlap with another component
             >>> if bitter.intersect([140, 160], [30, 70]):
             ...     print("Collision detected!")
-            >>> 
+            >>>
             >>> # Check clearance
             >>> other_rb, other_zb = other_magnet.boundingBox()
             >>> if bitter.intersect(other_rb, other_zb):
@@ -540,21 +524,20 @@ class Bitter(YAMLObjectBase):
 
         r_overlap = max(self.r[0], r[0]) < min(self.r[1], r[1])
         z_overlap = max(self.z[0], z[0]) < min(self.z[1], z[1])
-        
-        return r_overlap and z_overlap
 
+        return r_overlap and z_overlap
 
     def get_params(self, workingDir: str = ".") -> tuple:
         """
         Extract physical and geometric parameters for thermal/hydraulic analysis.
-        
+
         Computes hydraulic diameters (Dh), cross-sectional areas (Sh), axial
         positions (Zh), and filling factors for all cooling channels, accounting
         for the helical turn pattern and cooling slit configuration.
-        
+
         Args:
             workingDir: Working directory path for file operations (currently unused)
-        
+
         Returns:
             tuple: (nslits, Dh, Sh, Zh, filling_factor) where:
                 - nslits (int): Number of cooling slits
@@ -562,7 +545,7 @@ class Bitter(YAMLObjectBase):
                 - Sh (list[float]): Cross-sectional areas for each channel [mm²]
                 - Zh (list[float]): Axial positions defining channel boundaries [mm]
                 - filling_factor (list[float]): Geometric filling factors for each channel
-        
+
         Notes:
             - Channel 0: Inner bore to first conductor (r_inner to innerbore)
             - Channels 1 to n: Cooling slits (using CoolingSlit properties)
@@ -571,13 +554,13 @@ class Bitter(YAMLObjectBase):
             - filling_factor relates wetted perimeter to circumference
             - Tolerance tol = 1e-10 used for floating-point comparisons
             - Debug output shows Zh positions and filling factors
-        
+
         Example:
             >>> bitter = Bitter("B1", r=[100, 150], z=[-50, 50],
             ...                 modelaxi=ModelAxi(...),
             ...                 coolingslits=[slit1, slit2],
             ...                 innerbore=80, outerbore=160)
-            >>> 
+            >>>
             >>> nslits, Dh, Sh, Zh, ff = bitter.get_params()
             >>> print(f"Number of slits: {nslits}")
             >>> print(f"Hydraulic diameters: {Dh}")  # [inner, slit1, slit2, outer]
@@ -603,8 +586,7 @@ class Bitter(YAMLObjectBase):
             # wetted perimeter for annular ring: 2*pi*(slit.r-eps) + 2*pi*(slit.r+eps)
             # with eps = self.equivalent_eps(n)
             filling_factor += [
-                slit.n * ((4 * slit.sh) / slit.dh) / (4 * pi * slit.r)
-                for slit in self.coolingslits
+                slit.n * ((4 * slit.sh) / slit.dh) / (4 * pi * slit.r) for slit in self.coolingslits
             ]
         Dh += [2 * (self.outerbore - self.r[1])]
         Sh += [pi * (self.outerbore - self.r[1]) * (self.outerbore + self.r[1])]
@@ -613,7 +595,7 @@ class Bitter(YAMLObjectBase):
         z = -self.modelaxi.h
         if abs(self.z[0] - z) >= tol:
             Zh.append(z)
-        for n, p in zip(self.modelaxi.turns, self.modelaxi.pitch):
+        for n, p in zip(self.modelaxi.turns, self.modelaxi.pitch, strict=True):
             z += n * p
             Zh.append(z)
         if abs(self.z[1] - z) >= tol:
@@ -629,35 +611,34 @@ class Bitter(YAMLObjectBase):
     def create_cut(self, format: str):
         """
         Generate helical cut definition file for manufacturing or CAD.
-        
+
         Creates a file describing the helical cut pattern in the specified format,
         used for CAM (Computer-Aided Manufacturing) or CAD import.
-        
+
         Args:
             format: Output format specification. Supported formats:
                 - "lncmi": Format for LNCMI CAM machines
                 - "salome": Format for Salome CAD software import
-        
+
         Raises:
             RuntimeError: If format is not supported
-        
+
         Notes:
             - Delegates to hcuts.create_cut function for actual file generation
             - Output filename: "{self.name}_lncmi.iso" or "{self.name}_cut_salome.dat"
             - File contains theta (angle) and z (axial) coordinates for cut path
             - Helical path computed from modelaxi turns and pitch
             - Handedness determined by self.odd attribute
-        
+
         Example:
             >>> bitter = Bitter("B1", ..., modelaxi=ModelAxi(...), odd=True, ...)
-            >>> 
+            >>>
             >>> # Create CAM file for manufacturing
             >>> bitter.create_cut("lncmi")  # Creates B1_lncmi.iso
-            >>> 
+            >>>
             >>> # Create Salome import file
             >>> bitter.create_cut("salome")  # Creates B1_cut_salome.dat
         """
         from .hcuts import create_cut
 
         create_cut(self, format, self.name)
-

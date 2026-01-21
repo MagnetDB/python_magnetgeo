@@ -1,12 +1,9 @@
-from typing import Self, Optional, Union
-
-from .pancake import pancake
-from .isolation import isolation
-
 # Import DetailLevel from Supra module
 from ..enums import DetailLevel
-
 from ..utils import flatten
+from .isolation import isolation
+from .pancake import pancake
+
 
 class dblpancake:
     """
@@ -42,26 +39,23 @@ class dblpancake:
         return msg
 
     def get_names(
-        self, 
-        name: str, 
-        detail: Union[str, DetailLevel], 
-        verbose: bool = False
+        self, name: str, detail: str | DetailLevel, verbose: bool = False
     ) -> str | list[str]:
         """
         Get marker names for double pancake elements.
-        
+
         Args:
             name: Base name for markers
             detail: Detail level (DetailLevel enum or string)
             verbose: Enable verbose output
-        
+
         Returns:
             str | list[str]: Marker name(s) depending on detail level
         """
         # Convert enum to string for comparison
         if isinstance(detail, str):
             detail = DetailLevel[detail.upper()]
-        
+
         if detail == DetailLevel.DBLPANCAKE:
             return name
         else:
@@ -80,9 +74,7 @@ class dblpancake:
             p_ids.append(_id)
 
             if verbose:
-                print(
-                    f"dblpancake: pancakes ({len(p_ids)}, {type(p_ids[0])}), isolations (1)"
-                )
+                print(f"dblpancake: pancakes ({len(p_ids)}, {type(p_ids[0])}), isolations (1)")
             if isinstance(p_ids[0], list):
                 return flatten([flatten(p_ids), [_isolation_id]])
             else:
@@ -133,4 +125,3 @@ class dblpancake:
 
     def getArea(self) -> float:
         return (self.pancake.getR1() - self.pancake.getR0()) * self.getH()
-
