@@ -1,0 +1,19 @@
+# configs/bscco_300mm.yaml
+!<HTSInsert>
+tape: !<Tape>
+  w: 4.0      # 4mm width
+  h: 0.2      # 0.2mm thickness
+  e: 0.05     # 0.05mm insulation
+
+dblpancakes:
+  - !<DoublePancake>
+    name: "DP1"
+    ntapes: 60
+    r: [150.0, 154.0]
+    z: [0.0, 24.0]
+  - !<DoublePancake>
+    name: "DP2"
+    ntapes: 60
+    r: [150.0, 154.0]
+    z: [26.0, 50.0]
+
