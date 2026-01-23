@@ -87,8 +87,8 @@ class Tierod(YAMLObjectBase):
             ... )
         """
         # General validation
-        GeometryValidator.validate_name(name)
-
+        # GeometryValidator.validate_name(name)
+        
         # Ring-specific validation
         GeometryValidator.validate_integer(n, "n")
         GeometryValidator.validate_positive(n, "n")

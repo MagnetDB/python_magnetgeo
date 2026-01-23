@@ -8,6 +8,7 @@ import os
 from enum import Enum
 
 from .base import YAMLObjectBase
+from .Profile import Profile
 from .validation import GeometryValidator, ValidationError
 
 
@@ -67,7 +68,7 @@ class Shape(YAMLObjectBase):
     def __init__(
         self,
         name: str,
-        profile: str,
+        profile: Profile | str,
         length: list[float] = None,
         angle: list[float] = None,
         onturns: list[int] = None,
@@ -141,10 +142,14 @@ class Shape(YAMLObjectBase):
             ...     # position defaults to ABOVE
             ... )
         """
-        GeometryValidator.validate_name(name)
-
+        # GeometryValidator.validate_name(name)
+        
         self.name = name
-        self.profile = profile
+        if profile is not None and isinstance(profile, str):
+            self.profile = Profile.from_yaml(f"{profile}.yaml")
+        else:
+            self.profile = profile
+
         self.length = length if length is not None else [0.0]
         self.angle = angle if angle is not None else [0.0]
         self.onturns = onturns if onturns is not None else [1]
@@ -289,9 +294,11 @@ class Shape(YAMLObjectBase):
             ... }
             >>> shape3 = Shape.from_dict(data3)
         """
+        profile = cls._load_nested_single(values.get("profile"), Profile, debug=debug)
+
         return cls(
             name=values["name"],
-            profile=values["profile"],
+            profile=profile,
             length=values.get("length", [0.0]),
             angle=values.get("angle", [0.0]),
             onturns=values.get("onturns", [1]),
