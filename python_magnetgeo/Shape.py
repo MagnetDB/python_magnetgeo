@@ -143,9 +143,11 @@ class Shape(YAMLObjectBase):
             ... )
         """
         # GeometryValidator.validate_name(name)
-        
+
         self.name = name
         if profile is not None and isinstance(profile, str):
+            if not profile.strip():
+                raise ValidationError("Profile name cannot be an empty string")
             self.profile = Profile.from_yaml(f"{profile}.yaml")
         else:
             self.profile = profile

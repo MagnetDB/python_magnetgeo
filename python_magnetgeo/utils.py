@@ -12,6 +12,11 @@ import json
 from typing import Any, Type
 from pathlib import Path
 
+from .logging_config import get_logger
+
+# Get logger for this module
+logger = get_logger(__name__)
+
 class ObjectLoadError(Exception):
     """Raised when object loading fails"""
     pass
@@ -37,13 +42,16 @@ def writeYaml(comment: str, obj: Any, obj_class: Type = None, debug: bool = True
         filename = f"{comment}.yaml"
 
     try:
+        logger.debug(f"Writing {comment} to {filename}")
         with open(filename, "w") as ostream:
             yaml.dump(obj, stream=ostream, default_flow_style=False)
         
+        logger.info(f"Successfully wrote {comment} to {filename}")
         if debug:
             print(f"Written {comment} to {filename}")
             
     except Exception as e:
+        logger.error(f"Failed to write {comment} to {filename}: {e}", exc_info=True)
         raise Exception(f"Failed to {comment} dump - {filename} - {e}")
 
 def writeJson(comment: str, obj: Any, debug: bool = True):
@@ -62,17 +70,20 @@ def writeJson(comment: str, obj: Any, debug: bool = True):
         filename = f"{comment}.json"
 
     try:
+        logger.debug(f"Writing {comment} to {filename}")
         with open(filename, "w") as ostream:
             if hasattr(obj, 'to_json'):
                 jsondata = obj.to_json()
             else:
                 jsondata = json.dumps(obj, indent=4)
             ostream.write(str(jsondata))
-            
+        
+        logger.info(f"Successfully wrote {comment} to {filename}")
         if debug:
             print(f"Written {comment} to {filename}")
             
     except Exception as e:
+        logger.error(f"Failed to write {comment} to {filename}: {e}", exc_info=True)
         raise Exception(f"Failed to {comment} dump - {filename} - {e}")
 
 def loadYaml(comment: str, filename: str, supported_type: Type = None, debug: bool = False) -> Any:
@@ -97,12 +108,14 @@ def loadYaml(comment: str, filename: str, supported_type: Type = None, debug: bo
     # Handle path splitting
     basedir, basename = os.path.split(filename)
     
+    logger.debug(f"Loading YAML: comment={comment}, filename={filename}, basedir={basedir}, cwd={cwd}")
     if debug:
         print(f"utils.loadYaml: comment={comment}, filename={filename}, basedir={basedir}, basename={basename}, cwd={cwd}", flush=True)
 
     # Change to target directory if needed
     if basedir and basedir != ".":
         os.chdir(basedir)
+        logger.debug(f"Changed directory: {cwd} -> {basedir}")
         if debug:
             print(f"  Changed directory: {cwd} -> {basedir}")
 
@@ -114,6 +127,7 @@ def loadYaml(comment: str, filename: str, supported_type: Type = None, debug: bo
             if basedir and basedir != ".":
                 obj._basedir = os.getcwd()
 
+        logger.debug(f"Loaded object type: {type(obj).__name__}")
         if debug:
             print(f"  Loaded object type: {type(obj)}")
             if hasattr(obj, 'name'):
@@ -122,16 +136,18 @@ def loadYaml(comment: str, filename: str, supported_type: Type = None, debug: bo
         # Type validation if expected_type provided
         if supported_type and not isinstance(obj, supported_type):
             # This logic remains correct for UnsupportedTypeError
-            raise UnsupportedTypeError(
-                f"{comment}: expected {supported_type.__name__}, got {type(obj).__name__}"
-            )
+            error_msg = f"{comment}: expected {supported_type.__name__}, got {type(obj).__name__}"
+            logger.error(error_msg)
+            raise UnsupportedTypeError(error_msg)
         
         # Auto-update if object supports it
         if hasattr(obj, 'update'):
+            logger.debug(f"Calling update() on {type(obj).__name__}")
             if debug:
                 print(f"  Calling update() on {type(obj).__name__}")
             obj.update()
-            
+        
+        logger.info(f"Successfully loaded {comment} from {filename}")
         if debug:
             print(f"  loadYaml: {comment} from {filename} completed successfully")
             
@@ -141,15 +157,20 @@ def loadYaml(comment: str, filename: str, supported_type: Type = None, debug: bo
     except (FileNotFoundError, yaml.YAMLError) as e:
         # Now raise ObjectLoadError with a message that includes the specific failure reason
         error_type = "YAML file not found" if isinstance(e, FileNotFoundError) else "Failed to parse YAML"
-        raise ObjectLoadError(f"{error_type}: {filename}. Details: {e}")
+        error_msg = f"{error_type}: {filename}. Details: {e}"
+        logger.error(error_msg)
+        raise ObjectLoadError(error_msg)
     
     except Exception as e:
         # Catch all others, but now the file not found is handled above.
-        raise ObjectLoadError(f"Failed to load {comment} data from {filename} due to an unexpected error: {e}")
+        error_msg = f"Failed to load {comment} data from {filename} due to an unexpected error: {e}"
+        logger.error(error_msg, exc_info=True)
+        raise ObjectLoadError(error_msg)
     finally:
         # Always restore original directory
         if basedir and basedir != ".":
             os.chdir(cwd)
+            logger.debug(f"Restored directory: {basedir} -> {cwd}")
             if debug:
                 print(f"  Restored directory: {basedir} -> {cwd}")
 
@@ -173,16 +194,19 @@ def loadJson(comment: str, filename: str, debug: bool = False) -> Any:
     cwd = os.getcwd()
     basedir, basename = os.path.split(filename)
     
+    logger.debug(f"Loading JSON: comment={comment}, filename={filename}, basedir={basedir}, cwd={cwd}")
     if debug:
         print(f"loadJson: comment={comment}, filename={filename}")
         print(f"  basedir={basedir}, basename={basename}, cwd={cwd}")
 
     if basedir and basedir != ".":
         os.chdir(basedir)
+        logger.debug(f"Changed directory: {cwd} -> {basedir}")
         if debug:
             print(f"  Changed directory: {cwd} -> {basedir}")
 
     try:
+        logger.debug(f"Loading JSON from: {basename}")
         if debug:
             print(f"  Loading JSON from: {basename}")
             
@@ -195,6 +219,7 @@ def loadJson(comment: str, filename: str, debug: bool = False) -> Any:
             if basedir and basedir != ".":
                 obj._basedir = os.getcwd()
 
+        logger.info(f"Successfully loaded {comment} from {filename}")
         if debug:
             print(f"  loadJson: {comment} from {filename} completed successfully")
             
@@ -203,10 +228,13 @@ def loadJson(comment: str, filename: str, debug: bool = False) -> Any:
     # Combine JSON decoding and File not found into a single handler
     except (FileNotFoundError, json.JSONDecodeError) as e:
         error_type = "JSON file not found" if isinstance(e, FileNotFoundError) else "Failed to decode JSON"
-        raise ObjectLoadError(f"{error_type}: {filename}. Details: {e}")
+        error_msg = f"{error_type}: {filename}. Details: {e}"
+        logger.error(error_msg)
+        raise ObjectLoadError(error_msg)
     finally:
         if basedir and basedir != ".":
             os.chdir(cwd)
+            logger.debug(f"Restored directory: {basedir} -> {cwd}")
 
 def check_objects(objects, supported_type):
     """

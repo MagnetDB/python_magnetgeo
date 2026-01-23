@@ -35,7 +35,7 @@ class TestProbeIntegration:
         """Test Insert serialization includes probes"""
         json_str = sample_insert.to_json()
         parsed = json.loads(json_str)
-        
+
         assert "probes" in parsed
         assert len(parsed["probes"]) == 1
 
@@ -48,15 +48,18 @@ class TestProbeIntegration:
             outerbore=50.0,
             probes=[sample_probe]
         )
-        
+
         assert len(supras.probes) == 1
         assert supras.probes[0].type == "voltage_taps"
 
     def test_probe_string_references(self):
         """Test probe collections can handle string references"""
+        # Load helix1 from YAML file
+        helix1 = Helix.from_yaml("helix1.yaml")
+
         insert = Insert(
             name="string_probe_insert",
-            helices=["helix1"],
+            helices=[helix1],
             rings=[],
             currentleads=[],
             hangles=[],
@@ -65,7 +68,7 @@ class TestProbeIntegration:
             outerbore=25.0,
             probes=["probe_ref1", "probe_ref2"]  # String references
         )
-        
+
         assert [probe.name for probe in insert.probes] == ["probe_ref1", "probe_ref2"]
 
     def test_empty_probe_collections(self):
@@ -81,7 +84,7 @@ class TestProbeIntegration:
             outerbore=10.0,
             probes=[]
         )
-        
+
         assert insert.probes == []
         assert len(insert.probes) == 0
 

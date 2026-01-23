@@ -9,14 +9,67 @@ the new YAMLObjectBase and validation framework.
 
 import os
 import json
+import yaml
 import tempfile
+import pytest
 from python_magnetgeo.Helix import Helix
 from python_magnetgeo.ModelAxi import ModelAxi
 from python_magnetgeo.Model3D import Model3D
 from python_magnetgeo.Shape import Shape
 from python_magnetgeo.Groove import Groove
 from python_magnetgeo.Chamfer import Chamfer
+from python_magnetgeo.Profile import Profile
 from python_magnetgeo.validation import ValidationError
+
+
+@pytest.fixture(scope="module", autouse=True)
+def create_rectangular_profile():
+    """Create Profile YAML files needed by tests"""
+    import yaml
+    
+    # Define all profiles needed by tests
+    profiles = {
+        "rectangular": Profile(
+            cad="rectangular",
+            points=[[-5.0, 0.0], [-5.0, 10.0], [5.0, 10.0], [5.0, 0.0], [-5.0, 0.0]],
+            labels=[0, 1, 1, 1, 0]
+        ),
+        "test": Profile(
+            cad="test",
+            points=[[-3.0, 0.0], [-3.0, 6.0], [3.0, 6.0], [3.0, 0.0], [-3.0, 0.0]],
+            labels=[0, 1, 1, 1, 0]
+        ),
+        "hexagonal": Profile(
+            cad="hexagonal",
+            points=[[-4.0, 0.0], [-2.0, 3.5], [2.0, 3.5], [4.0, 0.0], [2.0, -3.5], [-2.0, -3.5], [-4.0, 0.0]],
+            labels=[0, 1, 1, 1, 1, 1, 0]
+        )
+    }
+    
+    # Save to current working directory (where pytest runs from - project root)
+    # AND to tests directory (for tests that change directory)
+    test_dir = os.path.dirname(os.path.abspath(__file__))
+    created_files = []
+    
+    for name, profile in profiles.items():
+        # Save to CWD
+        cwd_file = f"{name}.yaml"
+        with open(cwd_file, 'w') as f:
+            yaml.dump(profile, f, default_flow_style=False)
+        created_files.append(cwd_file)
+        
+        # Save to tests directory
+        test_file = os.path.join(test_dir, f"{name}.yaml")
+        with open(test_file, 'w') as f:
+            yaml.dump(profile, f, default_flow_style=False)
+        created_files.append(test_file)
+    
+    yield
+    
+    # Cleanup after all tests
+    for filepath in created_files:
+        if os.path.exists(filepath):
+            os.remove(filepath)
 
 
 def test_refactored_helix_basic_functionality():

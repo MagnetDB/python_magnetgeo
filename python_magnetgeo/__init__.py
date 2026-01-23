@@ -33,6 +33,20 @@ except PackageNotFoundError:
     # This is expected during development before running `pip install -e .`
     __version__ = "0.0.0+unknown"
 
+# Import logging configuration
+from .logging_config import (
+    configure_logging,
+    get_logger,
+    set_level,
+    disable_logging,
+    enable_logging,
+    DEBUG,
+    INFO,
+    WARNING,
+    ERROR,
+    CRITICAL,
+)
+
 # Import core utilities and base classes immediately
 from .base import YAMLObjectBase, SerializableMixin
 from .validation import ValidationError, ValidationWarning, GeometryValidator
@@ -45,6 +59,18 @@ __all__ = [
     'loadObject',
     'list_registered_classes',
     'verify_class_registration',
+    
+    # Logging
+    'configure_logging',
+    'get_logger',
+    'set_level',
+    'disable_logging',
+    'enable_logging',
+    'DEBUG',
+    'INFO',
+    'WARNING',
+    'ERROR',
+    'CRITICAL',
     
     # Base classes and validation
     'YAMLObjectBase',

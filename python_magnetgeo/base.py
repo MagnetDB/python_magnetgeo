@@ -48,6 +48,11 @@ from typing import Any, Type, TypeVar
 
 import yaml
 
+from .logging_config import get_logger
+
+# Get logger for this module
+logger = get_logger(__name__)
+
 # Type variable for proper type hinting in return types
 T = TypeVar("T", bound="SerializableMixin")
 

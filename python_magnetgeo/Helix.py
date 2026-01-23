@@ -105,8 +105,10 @@ class Helix(YAMLObjectBase):
         else:
             self.model3d = model3d
 
-        if shape is not None and isinstance(shape, str):
+        if shape is not None and isinstance(shape, str) and shape.strip():
             self.shape = Shape.from_yaml(f"{shape}.yaml")
+        elif isinstance(shape, str) and not shape.strip():
+            self.shape = None
         else:
             self.shape = shape
 

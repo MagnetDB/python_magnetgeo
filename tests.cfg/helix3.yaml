@@ -62,7 +62,7 @@ model3d: !<Model3D>
 shape: !<Shape>
   name: "noshape"
   length: 0
-  profile: ""
+  profile: null
   angle: 0
   onturns: 0
   position: ABOVE
