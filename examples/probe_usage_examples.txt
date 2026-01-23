@@ -1,0 +1,88 @@
+# Example 1: Insert with embedded probes
+name: M9_Insert
+helices:
+  - H1
+  - H2
+rings:
+  - R1
+currentleads:
+  - inner_lead
+hangles: [0.0, 180.0]
+rangles: [0.0, 90.0, 180.0, 270.0]
+innerbore: 12.5
+outerbore: 45.2
+probes:
+  - name: H1_voltage_taps
+    probe_type: voltage_taps
+    index: ["V1", "V2", "V3", "V4"]
+    locations:
+      - [15.2, 0.0, 10.5]
+      - [18.7, 0.0, 12.3]
+      - [22.1, 0.0, 14.1]
+      - [25.6, 0.0, 15.9]
+  - name: H1_temperature
+    probe_type: temperature
+    index: [1, 2, 3]
+    locations:
+      - [16.5, 5.2, 11.0]
+      - [20.0, -3.1, 13.5]
+      - [24.8, 2.7, 16.2]
+
+---
+# Example 2: Insert with probes loaded from external files
+name: M9_Insert_External
+helices: ["H1", "H2"]
+rings: ["R1"]
+currentleads: ["inner_lead"]
+hangles: [0.0, 180.0]
+rangles: [0.0, 90.0, 180.0, 270.0]
+innerbore: 12.5
+outerbore: 45.2
+probes: ["voltage_probes", "temp_probes", "field_probes"]
+
+---
+# Example 3: Bitters with probes
+name: Bitter_Stack
+magnets: ["B1", "B2", "B3"]
+innerbore: 8.0
+outerbore: 35.0
+probes:
+  - name: bitter_monitoring
+    probe_type: voltage_taps
+    index: ["BV1", "BV2"]
+    locations:
+      - [20.0, 0.0, 5.0]
+      - [30.0, 0.0, -5.0]
+
+---
+# Example 4: Supras with probes
+name: HTS_Stack
+magnets: ["S1", "S2"]
+innerbore: 15.0
+outerbore: 25.0
+probes:
+  - name: quench_detection
+    probe_type: voltage_taps
+    index: ["Q1", "Q2", "Q3"]
+    locations:
+      - [18.0, 0.0, 10.0]
+      - [20.0, 0.0, 0.0]
+      - [22.0, 0.0, -10.0]
+  - name: hts_temperature
+    probe_type: temperature
+    index: ["T_HTS1", "T_HTS2"]
+    locations:
+      - [19.0, 2.0, 5.0]
+      - [21.0, -2.0, -5.0]
+
+---
+# External probe file example: voltage_probes.yaml
+name: voltage_probes
+probe_type: voltage_taps
+index: ["V1", "V2", "V3", "V4", "V5"]
+locations:
+  - [10.5, 0.0, 15.2]
+  - [12.3, 0.0, 18.7]
+  - [14.1, 0.0, 22.1]
+  - [15.9, 0.0, 25.6]
+  - [17.8, 0.0, 29.1]
