@@ -1,0 +1,76 @@
+!<MSite>
+name: "MSite_Test"
+magnets:
+  - !<Insert>
+    name: "Insert_Test"
+    innerbore: 5.0
+    outerbore: 120.0
+    helices:
+      - !<Helix>
+        name: "helix1"
+        r: [10.0, 15.0]
+        z: [-60.0, 60.0]
+        modelaxi: !<ModelAxi>
+            name: "HL-31.d"
+            turns: [5.0, 5.0]
+            pitch: [10.0, 10.0]
+            h: 50.
+        odd: true
+        dble: true
+        cutwidth: 0.22
+        model3d: !<Model3D>
+            name: "HL-31-202MC"
+            cad: "HL-31-202MC"
+            with_shapes: False
+            with_channels: False
+        shape: !<Shape>
+            name: "noshape"
+            profile: ""
+            length: 0
+            angle: 0
+            onturns: 0
+            position: ABOVE
+      - !<Helix>
+        name: "helix2"
+        r: [20.0, 30.0]
+        z: [-60.0, 60.0]
+        modelaxi: !<ModelAxi>
+            name: "HL-31.d"
+            turns: [5.0, 5.0]
+            pitch: [10.0, 10.0]
+            h: 50.
+        odd: false
+        dble: true
+        cutwidth: 0.22
+        model3d: !<Model3D>
+            name: "HL-31-202MC"
+            cad: "HL-31-202MC"
+            with_shapes: False
+            with_channels: False
+        shape: !<Shape>
+            name: "noshape"
+            profile: ""
+            length: 0
+            angle: 0
+            onturns: 0
+            position: ABOVE
+    rings:
+      - !<Ring>
+        name: "ring1"
+        r: [10, 15, 20.0, 30.0]
+        z: [0, 10.0]
+        bpside: true
+    currentleads:
+      - !<InnerCurrentLead>
+        name: "lead1"
+        r: [10.0, 15.0]
+        h: 65.0
+        holes: []
+        support: []
+        fillet: false
+    hangles: [0.0, 0.0]
+    rangles: [0.0]
+screens: null
+z_offset: [0.0]
+r_offset: [0.0]
+paralax: [0.0]

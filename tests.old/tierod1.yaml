@@ -1,0 +1,13 @@
+!<Tierod>
+name: "tierod_test"
+r: 90.0
+n: 12
+dh: 8.0
+sh: 50.0
+contour2d: !<Contour2D>
+  name: "tierod_contour"
+  points:
+    - [0.0, 0.0]
+    - [8.0, 0.0]
+    - [8.0, 8.0]
+    - [0.0, 8.0]

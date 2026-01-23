@@ -1,0 +1,17 @@
+!<Bitters>
+name: "Bitters_Assembly"
+innerbore: 30.0
+outerbore: 120.0
+magnets:
+  - !<Bitter>
+    name: "Bitter_Test"
+    r: [50.0, 100.0]
+    z: [0.0, 10.0]
+    odd: true
+    innerbore: 40.0
+    outerbore: 110.0
+    modelaxi: !<ModelAxi>
+      name: "bitter_axi"
+      h: 5.0
+      turns: [0.5, 0.5]
+      pitch: [10.0, 10.0]

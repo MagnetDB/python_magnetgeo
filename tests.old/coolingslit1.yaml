@@ -1,0 +1,14 @@
+!<CoolingSlit>
+name: "cooling_slit_test"
+r: 75.0
+angle: 15.0
+n: 8
+dh: 5.0
+sh: 20.0
+contour2d: !<Contour2D>
+  name: "slit_contour"
+  points:
+    - [0.0, 0.0]
+    - [5.0, 0.0]
+    - [5.0, 4.0]
+    - [0.0, 4.0]
