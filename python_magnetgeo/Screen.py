@@ -13,7 +13,6 @@ Classes:
 """
 
 from .base import YAMLObjectBase
-from .Probe import Probe
 
 
 class Screen(YAMLObjectBase):
@@ -34,7 +33,6 @@ class Screen(YAMLObjectBase):
         name (str): Unique identifier for the screen
         r (list[float]): Radial bounds [r_inner, r_outer] in millimeters
         z (list[float]): Axial bounds [z_bottom, z_top] in millimeters
-        probes: List of Probe objects for measurements (optional)
 
     Example:
         >>> # Create a simple screen
@@ -61,7 +59,6 @@ class Screen(YAMLObjectBase):
         name: str,
         r: list[float],
         z: list[float],
-        probes: list[str | Probe] = None,
     ):
         """
         Initialize a Screen object.
@@ -86,7 +83,6 @@ class Screen(YAMLObjectBase):
         self.name = name
         self.r = r
         self.z = z
-        self.probes = probes if probes is not None else []
 
     def get_lc(self):
         """
@@ -211,7 +207,7 @@ class Screen(YAMLObjectBase):
         """
         representation of object
         """
-        return f"{self.__class__.__name__}(name={self.name!r}, r={self.r!r}, z={self.z!r}, probes={self.probes!r})"
+        return f"{self.__class__.__name__}(name={self.name!r}, r={self.r!r}, z={self.z!r})"
 
     @classmethod
     def from_dict(cls, values: dict, debug: bool = False):
@@ -222,8 +218,7 @@ class Screen(YAMLObjectBase):
         r = values["r"]
         z = values["z"]
 
-        probes = cls._load_nested_list(values.get("probes"), Probe, debug=debug)
-        return cls(name, r, z, probes=probes)
+        return cls(name, r, z)
 
     def boundingBox(self) -> tuple:
         """

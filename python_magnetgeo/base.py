@@ -583,3 +583,148 @@ class YAMLObjectBase(SerializableMixin):
                     f"got {type(data).__name__}"
                 )
             return data
+
+    @classmethod
+    def get_required_files(cls: Type[T], values: dict, debug: bool = False) -> set[str]:
+        """
+        Perform a dry run analysis to identify all files required to create an object.
+
+        This method analyzes a dictionary (as would be passed to from_dict) and
+        recursively identifies all YAML files that would need to be loaded to
+        construct the complete object hierarchy, without actually loading them.
+
+        Args:
+            values: Dictionary containing object parameters (as from from_dict)
+            debug: Enable debug output showing analysis progress
+
+        Returns:
+            set[str]: Set of file paths that would be loaded (e.g., {"modelaxi.yaml", "shape.yaml"})
+
+        Example:
+            >>> data = {
+            ...     "name": "H1",
+            ...     "r": [10.0, 20.0],
+            ...     "z": [0.0, 100.0],
+            ...     "modelaxi": "H1_modelaxi",  # Would load H1_modelaxi.yaml
+            ...     "shape": {"name": "rect", "width": 5.0}  # Inline, no file
+            ... }
+            >>> files = Helix.get_required_files(data)
+            >>> print(files)
+            {'H1_modelaxi.yaml'}
+
+        Notes:
+            - Recursively analyzes nested dictionaries to find all file references
+            - Only identifies string references that would trigger file loads
+            - Inline dictionaries (nested objects) are analyzed recursively
+            - Returns empty set if no files would be loaded
+            - Subclasses can override _analyze_nested_dependencies to customize analysis
+        """
+        required_files = set()
+
+        if debug:
+            print(f"Analyzing required files for {cls.__name__}")
+
+        # Call the subclass-specific analysis method
+        # Each geometry class should implement this to handle its specific nested objects
+        cls._analyze_nested_dependencies(values, required_files, debug)
+
+        return required_files
+
+    @classmethod
+    def _analyze_nested_dependencies(cls, values: dict, required_files: set, debug: bool = False):
+        """
+        Analyze nested dependencies for this specific class.
+
+        This method should be overridden by subclasses to identify which fields
+        contain nested objects that might reference external files.
+
+        Args:
+            values: Dictionary containing object parameters
+            required_files: Set to populate with file paths (modified in place)
+            debug: Enable debug output
+
+        Notes:
+            - Default implementation does nothing
+            - Subclasses should override to handle their specific nested objects
+            - Use _analyze_single_dependency and _analyze_list_dependency helpers
+        """
+        # Default implementation - subclasses should override
+        pass
+
+    @classmethod
+    def _analyze_single_dependency(
+        cls, data, object_class, required_files: set, debug: bool = False
+    ):
+        """
+        Analyze a single nested object dependency for required files.
+
+        Helper method for analyzing one nested object field (like modelaxi, shape, etc.)
+        to identify if it references an external file.
+
+        Args:
+            data: The nested object data (string, dict, object, or None)
+            object_class: The class of the nested object OR tuple/list of classes
+            required_files: Set to populate with file paths (modified in place)
+            debug: Enable debug output
+        """
+        if data is None:
+            return
+
+        # Normalize object_class to tuple
+        classes_to_try = (
+            (object_class,) if not isinstance(object_class, (list, tuple)) else tuple(object_class)
+        )
+
+        if isinstance(data, str):
+            # String reference → would load file
+            filename = f"{data}.yaml"
+            required_files.add(filename)
+            if debug:
+                print(f"  Found file dependency: {filename}")
+
+            # Try to recursively analyze the referenced file
+            # (This would require loading the file to see its contents,
+            #  which defeats the dry-run purpose, so we skip it)
+
+        elif isinstance(data, dict):
+            # Inline dictionary → try to recursively analyze it
+            if debug:
+                print("  Found inline dict, analyzing recursively...")
+
+            for candidate_class in classes_to_try:
+                try:
+                    # Attempt recursive analysis if the class has this method
+                    if hasattr(candidate_class, "get_required_files"):
+                        nested_files = candidate_class.get_required_files(data, debug=debug)
+                        required_files.update(nested_files)
+                        break
+                except Exception:
+                    # If analysis fails for this class, try next one
+                    continue
+
+    @classmethod
+    def _analyze_list_dependency(
+        cls, data, object_class, required_files: set, debug: bool = False
+    ):
+        """
+        Analyze a list of nested object dependencies for required files.
+
+        Helper method for analyzing list fields (like chamfers, grooves, etc.)
+        to identify which reference external files.
+
+        Args:
+            data: List of nested object data (strings, dicts, objects, or None)
+            object_class: The class of the nested objects OR tuple/list of classes
+            required_files: Set to populate with file paths (modified in place)
+            debug: Enable debug output
+        """
+        if data is None:
+            return
+
+        if not isinstance(data, list):
+            return
+
+        for i, item in enumerate(data):
+            if debug:
+                print(f"  Analyzing list item {i}...")
+            cls._analyze_single_dependency(item, object_class, required_files, debug)
