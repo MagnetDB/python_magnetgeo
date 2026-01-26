@@ -13,6 +13,9 @@ from .hts.pancake import pancake
 from .hts.tape import tape
 from .utils import flatten
 
+# Module logger
+from .logging_config import get_logger
+logger = get_logger(__name__)
 
 class HTSInsert:
     """
@@ -63,8 +66,7 @@ class HTSInsert:
 
         with open(filename) as f:
             data = json.load(f)
-            if debug:
-                print("HTSinsert data:", data)
+            logger.debug(f"HTSinsert data: {data}")
 
             mytape = None
             if "tape" in data:
@@ -84,32 +86,26 @@ class HTSInsert:
             dblpancakes = []
             isolations = []
             if "dblpancakes" in data:
-                if debug:
-                    print("DblPancake data:", data["dblpancakes"])
+                logger.debug(f"DblPancake data: {data['dblpancakes']}")
 
                 # if n defined use the same pancakes and isolations
                 # else loop to load pancake and isolation structure definitions
                 if "n" in data["dblpancakes"]:
                     n = data["dblpancakes"]["n"]
-                    if debug:
-                        print(f"Loading {n} similar dblpancakes, z={z}")
+                    logger.debug(f"Loading {n} similar dblpancakes, z={z}")
                     if "isolation" in data["dblpancakes"]:
                         dpisolation = isolation.from_data(data["dblpancakes"]["isolation"])
                     else:
                         dpisolation = myisolation
-                    if debug:
-                        print(f"dpisolation={dpisolation}")
+                    logger.debug(f"dpisolation={dpisolation}")
 
                     for i in range(n):
                         dp = dblpancake(z, mypancake, myisolation)
-                        if debug:
-                            print(f"dp={dp}")
-
+                        logger.debug(f"dp={dp}")
                         dblpancakes.append(dp)
                         isolations.append(dpisolation)
 
-                        if debug:
-                            print(f"dblpancake[{i}]:")
+                        logger.debug(f"dblpancake[{i}]: {dp}")
 
                         z += dp.getH()
                         # print(f'z={z} dp_H={dp.getH()}')
@@ -123,13 +119,11 @@ class HTSInsert:
                     r0 = dblpancakes[0].getR0()
                     r1 = dblpancakes[0].getR0() + dblpancakes[0].getW()
                 else:
-                    if debug:
-                        print(f"Loading different dblpancakes, z={z}")
+                    logger.debug(f"Loading different dblpancakes, z={z}")
                     n = 0
                     for dp in data["dblpancakes"]:
                         n += 1
-                        if debug:
-                            print("dp:", dp, data["dblpancakes"][dp]["pancake"])
+                        logger.debug(f"dp: {dp}, pancake: {data['dblpancakes'][dp]['pancake']}")
                         mypancake = pancake.from_data(data["dblpancakes"][dp]["pancake"])
 
                         if "isolation" in data["isolations"][dp]:
@@ -142,10 +136,9 @@ class HTSInsert:
                         r0 = min(r0, dp_.getR0())
                         r1 = max(r1, dp_.pancake.getR1())
                         dblpancakes.append(dp_)
-                        if debug:
-                            print(f"mypancake: {mypancake}")
-                            print(f"dpisolant: {dpisolation}")
-                            print(f"dp: {dp_}")
+                        logger.debug(f"mypancake: {mypancake}")
+                        logger.debug(f"dpisolation: {dpisolation}")
+                        logger.debug(f"dp: {dp_}")
 
                         z += dp_.getH()
                         z += myisolation.getH()  # isolation between DP
@@ -163,19 +156,18 @@ class HTSInsert:
                 # print(f'dp[{i}]: z0={z+_h/2.}, z1={z}, z2={z+_h}')
                 z += _h + myisolation.getH()
 
-            if debug:
-                print("=== Load cfg:")
-                print(f"r0= {r0} [mm]")
-                print(f"r1= {r1} [mm]")
-                print(f"z1= {z0-h/2.} [mm]")
-                print(f"z2= {z0+h/2.} [mm]")
-                print(f"z0= {z0} [mm]")
-                print(f"h= {h} [mm]")
-                print(f"n= {len(dblpancakes)}")
+            logger.debug("=== Load cfg:")
+            logger.debug(f"r0= {r0} [mm]")
+            logger.debug(f"r1= {r1} [mm]")
+            logger.debug(f"z1= {z0-h/2.} [mm]")
+            logger.debug(f"z2= {z0+h/2.} [mm]")
+            logger.debug(f"z0= {z0} [mm]")
+            logger.debug(f"h= {h} [mm]")
+            logger.debug(f"n= {len(dblpancakes)}")
 
-                for i, dp in enumerate(dblpancakes):
-                    print(f"dblpancakes[{i}]: {dp}")
-                print("===")
+            for i, dp in enumerate(dblpancakes):
+                logger.debug(f"dblpancakes[{i}]: {dp}")
+            logger.debug("===")
 
             name = inputcfg.replace(".json", "")
             return cls(name, z0, h, r0, r1, z1, n, dblpancakes, isolations)

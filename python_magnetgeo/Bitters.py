@@ -12,6 +12,9 @@ from .Probe import Probe
 from .utils import getObject
 from .validation import GeometryValidator, ValidationError
 
+# Module logger
+from .logging_config import get_logger
+logger = get_logger(__name__)
 
 class Bitters(YAMLObjectBase):
     """
@@ -208,10 +211,9 @@ class Bitters(YAMLObjectBase):
             oname = f"{prefix}{magnet.name}"
             Channels[oname] = magnet.get_channels(oname, hideIsolant, debug)
 
-        if debug:
-            print("Channels:")
-            for key, value in Channels:
-                print(f"\t{key}: {value}")
+        logger.debug("Channels:")
+        for key, value in Channels:
+            logger.debug(f"\t{key}: {value}")
         return Channels  # flatten list?
 
     def get_isolants(self, mname: str, debug: bool = False) -> dict:

@@ -28,7 +28,7 @@ class UnsupportedTypeError(Exception):
 def writeYaml(comment: str, obj: Any, obj_class: Type = None, debug: bool = True):
     """
     Write object to YAML file.
-    
+
     Args:
         comment: Comment/description for the operation
         obj: Object to write
@@ -38,6 +38,8 @@ def writeYaml(comment: str, obj: Any, obj_class: Type = None, debug: bool = True
     # Determine filename
     if hasattr(obj, "name") and obj.name:
         filename = f"{obj.name}.yaml"
+    elif hasattr(obj, "cad") and obj.cad:
+        filename = f"{obj.cad}.yaml"
     else:
         filename = f"{comment}.yaml"
 
@@ -45,11 +47,9 @@ def writeYaml(comment: str, obj: Any, obj_class: Type = None, debug: bool = True
         logger.debug(f"Writing {comment} to {filename}")
         with open(filename, "w") as ostream:
             yaml.dump(obj, stream=ostream, default_flow_style=False)
-        
+
         logger.info(f"Successfully wrote {comment} to {filename}")
-        if debug:
-            print(f"Written {comment} to {filename}")
-            
+
     except Exception as e:
         logger.error(f"Failed to write {comment} to {filename}: {e}", exc_info=True)
         raise Exception(f"Failed to {comment} dump - {filename} - {e}")
@@ -57,9 +57,9 @@ def writeYaml(comment: str, obj: Any, obj_class: Type = None, debug: bool = True
 def writeJson(comment: str, obj: Any, debug: bool = True):
     """
     Write object to JSON file.
-    
+
     Args:
-        comment: Comment/description for the operation  
+        comment: Comment/description for the operation
         obj: Object to write
         debug: Enable debug output
     """
@@ -77,11 +77,9 @@ def writeJson(comment: str, obj: Any, debug: bool = True):
             else:
                 jsondata = json.dumps(obj, indent=4)
             ostream.write(str(jsondata))
-        
+
         logger.info(f"Successfully wrote {comment} to {filename}")
-        if debug:
-            print(f"Written {comment} to {filename}")
-            
+
     except Exception as e:
         logger.error(f"Failed to write {comment} to {filename}: {e}", exc_info=True)
         raise Exception(f"Failed to {comment} dump - {filename} - {e}")
@@ -89,35 +87,31 @@ def writeJson(comment: str, obj: Any, debug: bool = True):
 def loadYaml(comment: str, filename: str, supported_type: Type = None, debug: bool = False) -> Any:
     """
     Load object from YAML file.
-    
+
     Args:
         comment: Comment/description for the operation
         filename: Path to YAML file
         supported_type: Expected object type for validation
         debug: Enable debug output
-        
+
     Returns:
         Loaded object
-        
+
     Raises:
         ObjectLoadError: When file loading fails
         UnsupportedTypeError: When object type is not supported
     """
     cwd = os.getcwd()
-    
+
     # Handle path splitting
     basedir, basename = os.path.split(filename)
-    
+
     logger.debug(f"Loading YAML: comment={comment}, filename={filename}, basedir={basedir}, cwd={cwd}")
-    if debug:
-        print(f"utils.loadYaml: comment={comment}, filename={filename}, basedir={basedir}, basename={basename}, cwd={cwd}", flush=True)
 
     # Change to target directory if needed
     if basedir and basedir != ".":
         os.chdir(basedir)
         logger.debug(f"Changed directory: {cwd} -> {basedir}")
-        if debug:
-            print(f"  Changed directory: {cwd} -> {basedir}")
 
     try:
         # Load YAML file
@@ -128,31 +122,26 @@ def loadYaml(comment: str, filename: str, supported_type: Type = None, debug: bo
                 obj._basedir = os.getcwd()
 
         logger.debug(f"Loaded object type: {type(obj).__name__}")
-        if debug:
-            print(f"  Loaded object type: {type(obj)}")
-            if hasattr(obj, 'name'):
-                print(f"  Object name: {obj.name}")
-        
+        if hasattr(obj, 'name'):
+            logger.debug(f"  Object name: {obj.name}")
+
         # Type validation if expected_type provided
         if supported_type and not isinstance(obj, supported_type):
             # This logic remains correct for UnsupportedTypeError
             error_msg = f"{comment}: expected {supported_type.__name__}, got {type(obj).__name__}"
             logger.error(error_msg)
             raise UnsupportedTypeError(error_msg)
-        
+
         # Auto-update if object supports it
         if hasattr(obj, 'update'):
             logger.debug(f"Calling update() on {type(obj).__name__}")
-            if debug:
-                print(f"  Calling update() on {type(obj).__name__}")
             obj.update()
-        
+
         logger.info(f"Successfully loaded {comment} from {filename}")
-        if debug:
-            print(f"  loadYaml: {comment} from {filename} completed successfully")
-            
+        logger.debug(f"  loadYaml: {comment} from {filename} completed successfully")
+
         return obj
-        
+
     # Combine YAML parsing and File not found into a single handler
     except (FileNotFoundError, yaml.YAMLError) as e:
         # Now raise ObjectLoadError with a message that includes the specific failure reason
@@ -160,7 +149,7 @@ def loadYaml(comment: str, filename: str, supported_type: Type = None, debug: bo
         error_msg = f"{error_type}: {filename}. Details: {e}"
         logger.error(error_msg)
         raise ObjectLoadError(error_msg)
-    
+
     except Exception as e:
         # Catch all others, but now the file not found is handled above.
         error_msg = f"Failed to load {comment} data from {filename} due to an unexpected error: {e}"
@@ -171,48 +160,39 @@ def loadYaml(comment: str, filename: str, supported_type: Type = None, debug: bo
         if basedir and basedir != ".":
             os.chdir(cwd)
             logger.debug(f"Restored directory: {basedir} -> {cwd}")
-            if debug:
-                print(f"  Restored directory: {basedir} -> {cwd}")
 
 def loadJson(comment: str, filename: str, debug: bool = False) -> Any:
     """
     Load object from JSON file.
-    
+
     Args:
         comment: Comment/description for the operation
         filename: Path to JSON file
         debug: Enable debug output
-        
+
     Returns:
         Loaded object
-        
+
     Raises:
         ObjectLoadError: When file loading fails
     """
     from . import deserialize
-    
+
     cwd = os.getcwd()
     basedir, basename = os.path.split(filename)
-    
+
     logger.debug(f"Loading JSON: comment={comment}, filename={filename}, basedir={basedir}, cwd={cwd}")
-    if debug:
-        print(f"loadJson: comment={comment}, filename={filename}")
-        print(f"  basedir={basedir}, basename={basename}, cwd={cwd}")
 
     if basedir and basedir != ".":
         os.chdir(basedir)
         logger.debug(f"Changed directory: {cwd} -> {basedir}")
-        if debug:
-            print(f"  Changed directory: {cwd} -> {basedir}")
 
     try:
         logger.debug(f"Loading JSON from: {basename}")
-        if debug:
-            print(f"  Loading JSON from: {basename}")
-            
+
         with open(basename, "r") as istream:
             obj = json.loads(
-                istream.read(), 
+                istream.read(),
                 object_hook=deserialize.unserialize_object
             )
             obj._basedir = cwd
@@ -220,11 +200,9 @@ def loadJson(comment: str, filename: str, debug: bool = False) -> Any:
                 obj._basedir = os.getcwd()
 
         logger.info(f"Successfully loaded {comment} from {filename}")
-        if debug:
-            print(f"  loadJson: {comment} from {filename} completed successfully")
-            
+
         return obj
-        
+
     # Combine JSON decoding and File not found into a single handler
     except (FileNotFoundError, json.JSONDecodeError) as e:
         error_type = "JSON file not found" if isinstance(e, FileNotFoundError) else "Failed to decode JSON"
@@ -240,11 +218,11 @@ def check_objects(objects, supported_type):
     """
     Check if objects are of supported type.
     Handle None and empty cases gracefully.
-    
+
     Args:
         objects: Object(s) to check
         supported_type: Expected type
-        
+
     Returns:
         True if any object matches the supported type
     """
@@ -252,7 +230,7 @@ def check_objects(objects, supported_type):
         return False
     if not objects:  # Empty list/dict/string
         return False
-    
+
     if isinstance(objects, list):
         return any(isinstance(item, supported_type) for item in objects)
     elif isinstance(objects, dict):
@@ -263,11 +241,11 @@ def check_objects(objects, supported_type):
 def check_type(obj, types_list):
     """
     Check if object is one of the types in the list.
-    
+
     Args:
         obj: Object to check
         types_list: List of allowed types
-        
+
     Returns:
         True if object matches any type in the list
     """
@@ -279,16 +257,16 @@ def check_type(obj, types_list):
 def loadObject(comment: str, data, supported_type, constructor):
     """
     Load object from string filename or return existing object.
-    
+
     Args:
         comment: Description for error messages
         data: String filename or existing object
         supported_type: Expected object type
         constructor: Constructor function (for compatibility)
-        
+
     Returns:
         Loaded or validated object
-        
+
     Raises:
         ObjectLoadError: When loading fails
         UnsupportedTypeError: When object type is wrong
@@ -298,11 +276,11 @@ def loadObject(comment: str, data, supported_type, constructor):
         yaml_file = f"{data}.yaml"
         obj = loadYaml(comment, yaml_file, supported_type)
         return obj
-        
+
     elif isinstance(data, supported_type):
         # Already the right type
         return data
-        
+
     else:
         raise UnsupportedTypeError(f"{comment}: unsupported type {type(data)}")
 
@@ -310,33 +288,33 @@ def loadList(comment: str, objects, supported_types: list, dict_objects: dict):
     """
     Load list of objects from mixed string/object input.
     Maintains backward compatibility with original loadList.
-    
+
     Args:
         comment: Description for error messages
         objects: String filename, list of strings/objects, or dict
         supported_types: List of supported types (first element is typically None)
         dict_objects: Dict mapping class names to their from_dict constructors
-        
+
     Returns:
         List of loaded objects or single object for string input
     """
     # Extract actual supported types (skip None if present)
     actual_types = [t for t in supported_types if t is not None]
-    
+
     if isinstance(objects, str):
         # Single file case - load and return object directly
         yaml_file = f"{objects}.yaml"
         obj = loadYaml(comment, yaml_file)
-        
+
         # Validate type if we have supported types
         if actual_types and not any(isinstance(obj, t) for t in actual_types):
             type_names = [t.__name__ for t in actual_types]
             raise UnsupportedTypeError(
                 f"{comment}: expected one of {type_names}, got {type(obj).__name__}"
             )
-        
+
         return obj  # Return single object, not list
-    
+
     elif isinstance(objects, list):
         # List case - mix of strings (filenames) and objects
         results = []
@@ -354,7 +332,7 @@ def loadList(comment: str, objects, supported_types: list, dict_objects: dict):
                     )
                 results.append(item)
         return results
-    
+
     elif isinstance(objects, dict):
         # Dict case - values are filenames or nested structures
         results = []
@@ -374,17 +352,17 @@ def loadList(comment: str, objects, supported_types: list, dict_objects: dict):
                 # Already an object
                 results.append(value)
         return results
-    
+
     else:
         raise UnsupportedTypeError(f"{comment}: unsupported objects type: {type(objects)}")
 
 def getObject(filename: str):
     """
     Load an object from a YAML file and update it if necessary.
-    
+
     Args:
         filename: Path to YAML file
-        
+
     Returns:
         Loaded and updated object
     """

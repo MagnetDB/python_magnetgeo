@@ -351,9 +351,11 @@ class Helix(YAMLObjectBase):
         if self.model3d.with_shapes:
 
             # if Profile class is used: self.shape.profile.generate_dat_file()
-            shape_profile = f"{self._basedir}/Shape_{self.shape.profile}.dat"
-            if not os.path.exists(shape_profile):
-                raise RuntimeError(f"Helix.generate_cut: {str(shape_profile)} no such file")
+            if self.shape is not None and self.shape.profile is not None:
+                    self.shape.profile.generate_dat_file(self._basedir)
+                    shape_profile = f"{self._basedir}/Shape_{self.shape.cad}.dat"
+            else:
+                return
 
             if self.get_type() == "HL":
                 angles = " ".join(f"{t:4.2f}" for t in self.shape.angle if t != 0)
