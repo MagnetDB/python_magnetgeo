@@ -167,7 +167,7 @@ class TestProfileSerialization:
     def test_yaml_round_trip(self):
         """Test YAML serialization round trip"""
         original = Profile(
-            cad="YAML-TEST",
+            cad="Profile0",
             points=[[0, 0], [5, 2], [10, 0]],
             labels=[0, 1, 0]
         )
@@ -181,10 +181,10 @@ class TestProfileSerialization:
             try:
                 # Dump to YAML (creates Profile.yaml)
                 original.dump()
-                assert os.path.exists("Profile.yaml")
+                assert os.path.exists("Profile0.yaml")
 
                 # Load it back
-                loaded = Profile.from_yaml("Profile.yaml")
+                loaded = Profile.from_yaml("Profile0.yaml")
 
                 assert loaded.cad == original.cad
                 assert loaded.points == original.points
