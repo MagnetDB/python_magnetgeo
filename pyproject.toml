@@ -8,7 +8,7 @@ version = "1.0.0"
 description = "Python helpers to create HiFiMagnet cads and meshes"
 readme = "README.rst"
 requires-python = ">=3.11"
-license = {text = "MIT"}
+license = "MIT"
 authors = [
     {name = "Christophe Trophime", email = "christophe.trophime@lncmi.cnrs.fr"},
     {name = "Romain Vallet", email = "romain.vallet@lncmi.cnrs.fr"},
@@ -21,7 +21,6 @@ classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
     "Intended Audience :: Science/Research",
-    "License :: OSI Approved :: MIT License",
     "Natural Language :: English",
     "Operating System :: POSIX :: Linux",
     "Programming Language :: Python :: 3",
@@ -31,7 +30,7 @@ classifiers = [
 ]
 keywords = ["magnet", "geometry", "cad", "mesh", "simulation", "hifimagnet"]
 dependencies = [
-    "pyyaml>=6.0",
+    "pyyaml>=6.0.2,<7.0.0",
     "pandas>=1.5.3"
 ]
 
@@ -209,23 +208,6 @@ deps =
 changedir = docs
 commands = sphinx-build -W -b html -d {envtmpdir}/doctrees . {envtmpdir}/html
 """
-
-# NOTE: Debian packaging is configured via debian/ directory files
-# (debian/control, debian/rules, debian/changelog)
-# There is no [tool.debian] section - that doesn't exist!
-
-# UV package manager compatibility
-[tool.uv]
-dev-dependencies = [
-    "pytest>=8.2.0",
-    "pytest-cov>=4.0.0",
-    "flake8>=6.0.0",
-    "black>=23.0.0",
-    "isort>=5.12.0",
-    "mypy>=1.0.0",
-]
-
-[tool.uv.sources]
 
 # Ruff linter (alternative to flake8)
 [tool.ruff]
