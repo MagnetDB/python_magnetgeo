@@ -303,6 +303,33 @@ class Helix(YAMLObjectBase):
         # object.update()
         return object
 
+    @classmethod
+    def _analyze_nested_dependencies(cls, values: dict, required_files: set, debug: bool = False):
+        """
+        Analyze nested dependencies specific to Helix class.
+
+        Identifies files that would be loaded for modelaxi, model3d, shape,
+        chamfers, and grooves nested objects.
+
+        Args:
+            values: Dictionary containing helix parameters
+            required_files: Set to populate with file paths (modified in place)
+            debug: Enable debug output
+        """
+        if debug:
+            print("  Analyzing Helix nested dependencies...")
+
+        # Analyze single nested objects
+        cls._analyze_single_dependency(
+            values.get("modelaxi"), ModelAxi, required_files, debug=debug
+        )
+        cls._analyze_single_dependency(values.get("model3d"), Model3D, required_files, debug=debug)
+        cls._analyze_single_dependency(values.get("shape"), Shape, required_files, debug=debug)
+        cls._analyze_single_dependency(values.get("grooves"), Groove, required_files, debug=debug)
+
+        # Analyze list of nested objects
+        cls._analyze_list_dependency(values.get("chamfers"), Chamfer, required_files, debug=debug)
+
     def getModelAxi(self):
         """
         Get the axisymmetric model definition.
