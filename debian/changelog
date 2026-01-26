@@ -1,4 +1,11 @@
-python-magnetgeo (1.0.0-5) UNRELEASED; urgency=medium
+python-magnetgeo (1.0.0-6) UNRELEASED; urgency=medium
+
+  * add logging support
+  * fix helper to create Profile from Shape_profile.dat
+
+ -- Christophe Trophime <christophe.trophime@lncmi.cnrs.fr>  Mon, 26 Jan 2026 16:07:38 +0100
+
+python-magnetgeo (1.0.0-5) unstable; urgency=medium
 
   * New upstream release
   * Switch to pyproject.toml build system
