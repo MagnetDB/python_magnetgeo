@@ -58,11 +58,15 @@ tar \
     --exclude=*.log \
     --exclude=*.old \
     --exclude=*.new \
+    --exclude=*.sif \
+    --exclude=*.simg \
     --exclude=*~ \
     --exclude=#*# \
     --exclude=poetry.lock \
     --exclude=.pytest_cache \
     --exclude=.github \
+    --exclude=_build \
+    --exclude=_static \
     -zcvf ${PACKAGE}_${VERSION}.orig.tar.gz ${SRCDIR}
 
 # build package
