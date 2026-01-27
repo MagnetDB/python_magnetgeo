@@ -52,7 +52,7 @@ pip install -e .
 
 ### Command-line Scripts
 
-The package installs the following command-line scripts:
+The package installs the following command-line scripts for use in MagnetDB context:
 
 - `load-profile-from-dat` - Load and convert DAT profile files
 - `split-helix-yaml` - Split helix YAML configuration files
