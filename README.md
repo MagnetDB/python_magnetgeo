@@ -50,6 +50,20 @@ pip install -r requirements.txt
 pip install -e .
 ```
 
+### Command-line Scripts
+
+The package installs the following command-line scripts:
+
+- `load-profile-from-dat` - Load and convert DAT profile files
+- `split-helix-yaml` - Split helix YAML configuration files
+
+These commands are available globally after installation and can be run from any directory:
+
+```bash
+load-profile-from-dat <profile.dat>
+split-helix-yaml <helix.yaml>
+```
+
 ## Quick Start
 
 ### Loading Methods Quick Reference
@@ -110,7 +124,6 @@ labels: [0, 0, 1, 0, 0]
 
 ```yaml
 !<Shape>
-name: "cooling_slot"
 profile: "HR-54-116"  # References Profile by name
 length: [15.0]        # Angular length in degrees
 angle: [60, 90, 120]  # Angles between consecutive shapes
@@ -231,7 +244,7 @@ from pathlib import Path
 def load_all_geometries(directory: str):
     """Load all YAML files with automatic type detection"""
     geometries = []
-    
+
     for yaml_file in Path(directory).glob("*.yaml"):
         try:
             obj = getObject(str(yaml_file))
@@ -239,7 +252,7 @@ def load_all_geometries(directory: str):
             print(f"✓ Loaded {type(obj).__name__}: {obj.name}")
         except Exception as e:
             print(f"✗ Failed to load {yaml_file.name}: {e}")
-    
+
     return geometries
 
 # Usage
@@ -272,7 +285,6 @@ axi = ModelAxi(
 
 # Create a Shape
 shape = Shape(
-    name="NewShape",
     profile="02_10_2014_H1",
     length=15,
     angle=[60, 90, 120, 120],
@@ -399,7 +411,7 @@ python -m python_magnetgeo.xao HL-31-Axi.xao mesh --group CoolingChannels --geo 
 2. **Validation System**
    - New `ValidationError` exceptions for invalid data
    - Descriptive error messages
-   
+
 3. **Enhanced Type Safety**
    - Stricter type checking
    - Comprehensive type hints
@@ -415,7 +427,7 @@ python -m python_magnetgeo.xao HL-31-Axi.xao mesh --group CoolingChannels --geo 
 1. **YAML Format Changes**
    - Type annotations now required: `!<Insert>`, `!<Helix>`, etc.
    - Field names lowercase: `helices` (not `Helices`)
-   
+
 2. **Constructor Changes**
    - All parameters now type-annotated
    - Required vs optional parameters clarified
@@ -463,7 +475,7 @@ python -m python_magnetgeo.xao HL-31-Axi.xao mesh --group CoolingChannels --geo 
 
 #### Version 0.4.0
 - Breaking changes in Helix definition
-- Rewritten test suite  
+- Rewritten test suite
 - Updated serialization methods
 
 #### Version 0.3.x
@@ -554,7 +566,7 @@ from python_magnetgeo.base import YAMLObjectBase, SerializableMixin
 class MyGeometry(YAMLObjectBase):
     """All geometry classes inherit from YAMLObjectBase"""
     yaml_tag = "MyGeometry"
-    
+
     @classmethod
     def from_dict(cls, values, debug=False):
         """Required implementation"""
@@ -669,18 +681,18 @@ def test_configuration(yaml_file):
     try:
         insert = Insert.from_yaml(yaml_file)
         print(f"✓ Successfully loaded: {insert.name}")
-        
+
         # Test bounding box
         rb, zb = insert.boundingBox()
         print(f"  Radial bounds: {rb[0]:.2f} - {rb[1]:.2f} mm")
         print(f"  Axial bounds: {zb[0]:.2f} - {zb[1]:.2f} mm")
-        
+
         # Test serialization
         json_str = insert.to_json()
         print(f"  JSON serialization: OK ({len(json_str)} bytes)")
-        
+
         return True
-        
+
     except ValidationError as e:
         print(f"✗ Validation error: {e}")
         return False
@@ -693,7 +705,7 @@ if __name__ == "__main__":
     if len(sys.argv) != 2:
         print("Usage: python test_config.py <yaml_file>")
         sys.exit(1)
-    
+
     success = test_configuration(sys.argv[1])
     sys.exit(0 if success else 1)
 ```
@@ -870,11 +882,11 @@ def display_geometry_info(filename: str):
     try:
         # Load without knowing the type
         obj = getObject(filename)
-        
+
         print(f"File: {filename}")
         print(f"Type: {type(obj).__name__}")
         print(f"Name: {obj.name}")
-        
+
         # Check for common attributes
         if hasattr(obj, 'r'):
             print(f"Radial range: {obj.r}")
@@ -887,9 +899,9 @@ def display_geometry_info(filename: str):
             print(f"Number of helices: {len(obj.helices)}")
         if hasattr(obj, 'rings'):
             print(f"Number of rings: {len(obj.rings)}")
-        
+
         return obj
-        
+
     except ValidationError as e:
         print(f"Validation error: {e}", file=sys.stderr)
         return None
@@ -901,7 +913,7 @@ if __name__ == "__main__":
     if len(sys.argv) != 2:
         print("Usage: python view_geometry.py <yaml_file>")
         sys.exit(1)
-    
+
     obj = display_geometry_info(sys.argv[1])
     sys.exit(0 if obj else 1)
 ```
@@ -915,34 +927,34 @@ from python_magnetgeo import Insert, Helix, Ring, Bitter
 def process_geometry(filename: str):
     """Process geometry with type-specific logic"""
     obj = getObject(filename)
-    
+
     # Type-specific processing
     if isinstance(obj, Insert):
         print(f"Processing insert with {len(obj.helices)} helices")
         for helix_name in obj.helices:
             print(f"  - {helix_name}")
-            
+
     elif isinstance(obj, Helix):
         print(f"Processing helix: {obj.name}")
         print(f"  Radial: {obj.r[0]:.2f} - {obj.r[1]:.2f} mm")
         print(f"  Axial: {obj.z[0]:.2f} - {obj.z[1]:.2f} mm")
         print(f"  Double: {obj.dble}, Odd: {obj.odd}")
-        
+
     elif isinstance(obj, Ring):
         print(f"Processing ring: {obj.name}")
         print(f"  Inner/Outer radius: {obj.r}")
         print(f"  Height: {obj.z[1] - obj.z[0]:.2f} mm")
-        
+
     elif isinstance(obj, Bitter):
         print(f"Processing Bitter: {obj.name}")
         if obj.coolingslits:
             print(f"  Cooling slits: {len(obj.coolingslits)}")
         if obj.tierod:
             print(f"  Tie rods: present")
-    
+
     else:
         print(f"Processing {type(obj).__name__}: {obj.name}")
-    
+
     return obj
 
 # Usage
@@ -963,16 +975,16 @@ from python_magnetgeo.validation import ValidationError
 
 def validate_configs(directory: str, verbose: bool = False):
     """Validate all YAML files using lazy loading"""
-    
+
     yaml_files = list(Path(directory).glob("*.yaml"))
     results = {
         'valid': [],
         'invalid': [],
         'errors': []
     }
-    
+
     print(f"Validating {len(yaml_files)} YAML files in {directory}...")
-    
+
     for yaml_file in yaml_files:
         try:
             obj = getObject(str(yaml_file))
@@ -983,44 +995,44 @@ def validate_configs(directory: str, verbose: bool = False):
             })
             if verbose:
                 print(f"✓ {yaml_file.name}: {type(obj).__name__} '{obj.name}'")
-        
+
         except ValidationError as e:
             results['invalid'].append({
                 'file': yaml_file.name,
                 'error': str(e)
             })
             print(f"✗ {yaml_file.name}: Validation error - {e}")
-        
+
         except Exception as e:
             results['errors'].append({
                 'file': yaml_file.name,
                 'error': str(e)
             })
             print(f"✗ {yaml_file.name}: Error - {e}")
-    
+
     # Summary
     print(f"\n{'='*60}")
     print(f"Validation Summary:")
     print(f"  Valid:   {len(results['valid'])} files")
     print(f"  Invalid: {len(results['invalid'])} files")
     print(f"  Errors:  {len(results['errors'])} files")
-    
+
     if results['valid']:
         print(f"\nValid configurations by type:")
         from collections import Counter
         type_counts = Counter(item['type'] for item in results['valid'])
         for obj_type, count in type_counts.items():
             print(f"  {obj_type}: {count}")
-    
+
     return results
 
 if __name__ == "__main__":
     import sys
     directory = sys.argv[1] if len(sys.argv) > 1 else "."
     verbose = "--verbose" in sys.argv or "-v" in sys.argv
-    
+
     results = validate_configs(directory, verbose)
-    
+
     # Exit with error if any invalid or errors
     sys.exit(0 if not (results['invalid'] or results['errors']) else 1)
 ```
@@ -1035,20 +1047,20 @@ from typing import List, Optional
 class CustomCoil(YAMLObjectBase):
     """Custom coil geometry"""
     yaml_tag = "CustomCoil"
-    
+
     def __init__(self, name: str, r: List[float], z: List[float],
                  turns: int, current: float):
         # Validate inputs
         GeometryValidator.validate_name(name)
         GeometryValidator.validate_numeric_list(r, 'r', expected_length=2)
         GeometryValidator.validate_ascending_order(r, 'r')
-        
+
         self.name = name
         self.r = r
         self.z = z
         self.turns = turns
         self.current = current
-    
+
     @classmethod
     def from_dict(cls, values, debug=False):
         """Create from dictionary"""
@@ -1059,7 +1071,7 @@ class CustomCoil(YAMLObjectBase):
             turns=values.get('turns', 1),
             current=values.get('current', 0.0)
         )
-    
+
     def compute_inductance(self) -> float:
         """Custom method"""
         # Your computation here
@@ -1085,7 +1097,7 @@ from python_magnetgeo import Insert, Helix
 def process_yaml_directory(directory: str):
     """Process all YAML files in directory"""
     results = []
-    
+
     for yaml_file in Path(directory).glob("*.yaml"):
         try:
             # Try loading as Insert
@@ -1100,7 +1112,7 @@ def process_yaml_directory(directory: str):
                 results.append((yaml_file.name, "Helix", obj))
             except Exception as e:
                 print(f"✗ Failed to load {yaml_file.name}: {e}")
-    
+
     return results
 
 # Usage
