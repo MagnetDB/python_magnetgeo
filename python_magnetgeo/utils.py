@@ -115,6 +115,7 @@ def loadYaml(comment: str, filename: str, supported_type: Type = None, debug: bo
 
     try:
         # Load YAML file
+        logger.debug(f"looking for file: {basename}, supported_type={supported_type}")
         with open(basename, "r") as istream: # Potential FileNotFoundError happens here
             obj = yaml.load(stream=istream, Loader=yaml.FullLoader)
             obj._basedir = cwd

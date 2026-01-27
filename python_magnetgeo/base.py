@@ -368,7 +368,7 @@ class YAMLObjectBase(SerializableMixin):
         import os
 
         if os.getenv("SPHINX_BUILD") != "1":
-            print(f"Auto-registered YAML constructor and representer for {cls.__name__}")
+            logger.info(f"Auto-registered YAML constructor and representer for {cls.__name__}")
 
     @classmethod
     def get_class(cls, name: str):
