@@ -14,7 +14,7 @@ pmg.configure_logging(level='INFO')
 
 # Use the package normally - logs will be output to console
 helix = pmg.Helix(name="H1", r=[10, 20], z=[0, 50])
-helix.dump()  # Will log: "Successfully wrote Helix to H1.yaml"
+helix.write_to_yaml()  # Will log: "Successfully wrote Helix to H1.yaml"
 ```
 
 ### Logging Levels

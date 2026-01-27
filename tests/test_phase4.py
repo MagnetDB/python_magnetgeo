@@ -37,7 +37,7 @@ def test_refactored_chamfer():
     print(f"✓ Chamfer (dr) created: {chamfer_dr}")
 
     # Test that all inherited methods exist
-    assert hasattr(chamfer_alpha, "dump")
+    assert hasattr(chamfer_alpha, "write_to_yaml")
     assert hasattr(chamfer_alpha, "to_json")
     assert hasattr(chamfer_alpha, "write_to_json")
     assert hasattr(Chamfer, "from_yaml")
@@ -97,7 +97,7 @@ def test_refactored_chamfer():
     print(f"✓ getAngle() works: {angle_calculated:.6f} (expected: {expected_angle:.6f})")
 
     # Test YAML round-trip
-    chamfer_alpha.dump()
+    chamfer_alpha.write_to_yaml()
     print("✓ YAML dump works")
 
     loaded_chamfer = Chamfer.from_yaml("test_chamfer_alpha.yaml", debug=True)
@@ -134,9 +134,9 @@ def test_refactored_groove():
     print("✓ Default Groove created successfully")
 
     # Test that all inherited methods exist
-    assert hasattr(groove, "dump")
+    assert hasattr(groove, "write_to_yaml")
     assert hasattr(groove, "to_json")
-    assert hasattr(groove, "write_to_json")
+    assert hasattr(groove, "write_to_yaml")
     assert hasattr(Groove, "from_yaml")
     assert hasattr(Groove, "from_json")
     assert hasattr(Groove, "from_dict")
@@ -175,7 +175,7 @@ def test_refactored_groove():
     print("✓ from_dict works (optional name)")
 
     # Test YAML round-trip
-    groove.dump()
+    groove.write_to_yaml()
     print("✓ YAML dump works")
 
     loaded_groove = Groove.from_yaml("test_groove.yaml", debug=True)
@@ -214,7 +214,7 @@ def test_refactored_modelaxi():
         print(f"✓ Empty name validation: {e}")
 
     # Test that all inherited methods exist
-    assert hasattr(modelaxi, "dump")
+    assert hasattr(modelaxi, "write_to_yaml")
     assert hasattr(modelaxi, "to_json")
     assert hasattr(modelaxi, "write_to_json")
     assert hasattr(ModelAxi, "from_yaml")
@@ -270,7 +270,7 @@ def test_refactored_modelaxi():
     print(f"✓ compact() works: {test_turns} -> {new_turns}")
 
     # Test YAML round-trip
-    modelaxi.dump()
+    modelaxi.write_to_yaml()
     print("✓ YAML dump works")
 
     loaded_modelaxi = ModelAxi.from_yaml("test_modelaxi.yaml", debug=True)

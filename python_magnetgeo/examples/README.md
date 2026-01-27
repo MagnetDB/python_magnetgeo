@@ -326,7 +326,7 @@ with open("output.yaml", 'w') as f:
     yaml.dump(obj, stream=f, default_flow_style=False)
 
 # Or use the dump() method if available
-obj.dump()  # Creates {obj.name}.yaml
+obj.write_to_yaml()  # Creates {obj.name}.yaml
 ```
 
 ### Working with Probes

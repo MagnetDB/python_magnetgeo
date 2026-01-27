@@ -412,10 +412,10 @@ from python_magnetgeo.base import YAMLObjectBase
 
 class MyGeometry(YAMLObjectBase):
     yaml_tag = "MyGeometry"
-    
+
     def __init__(self, ...):
         ...
-    
+
     @classmethod
     def from_dict(cls, values, debug=False):
         ...
@@ -499,7 +499,7 @@ output = profile.generate_dat_file("./data")
 print(f"Created: {output}")  # data/Shape_aerodynamic_profile.dat
 
 # Serialize
-profile.dump()  # Saves to aerodynamic_profile.yaml
+profile.write_to_yaml()  # Saves to aerodynamic_profile.yaml
 json_data = profile.to_json()
 ```
 
@@ -685,22 +685,22 @@ from pathlib import Path
 def migrate_yaml_v7_to_v10(old_file: str, new_file: str):
     """
     Migrate YAML from v0.7.0 to v1.0.0 format.
-    
+
     v0.7.0 already uses type annotations and lowercase fields,
     so this mainly validates compatibility and updates any
     remaining legacy patterns.
     """
-    
+
     with open(old_file, 'r') as f:
         content = f.read()
-    
+
     # v0.7.0 should already have type annotations
     if not content.strip().startswith('!<'):
         print(f"⚠ Warning: {old_file} missing type annotation")
         print("  Adding type annotation based on content analysis...")
-        
+
         data = yaml.safe_load(content)
-        
+
         # Detect type
         if 'helices' in data:
             content = f"!<Insert>\n{content}"
@@ -708,11 +708,11 @@ def migrate_yaml_v7_to_v10(old_file: str, new_file: str):
             content = f"!<Helix>\n{content}"
         elif 'r' in data and 'z' in data:
             content = f"!<Ring>\n{content}"
-    
+
     # Write validated content
     with open(new_file, 'w') as f:
         f.write(content)
-    
+
     # Validate it loads correctly
     try:
         with open(new_file, 'r') as f:
@@ -727,7 +727,7 @@ if __name__ == "__main__":
     if len(sys.argv) != 3:
         print("Usage: python migrate_v7_to_v10.py <old_yaml> <new_yaml>")
         sys.exit(1)
-    
+
     success = migrate_yaml_v7_to_v10(sys.argv[1], sys.argv[2])
     sys.exit(0 if success else 1)
 ```
@@ -744,13 +744,13 @@ from pathlib import Path
 
 def migrate_yaml_v5_to_v10(old_file: str, new_file: str):
     """Migrate YAML from v0.5.x to v1.0.0 format"""
-    
+
     with open(old_file, 'r') as f:
         data = yaml.safe_load(f)
-    
+
     if not data:
         return
-    
+
     # Field name migrations
     field_mapping = {
         'Helices': 'helices',
@@ -761,12 +761,12 @@ def migrate_yaml_v5_to_v10(old_file: str, new_file: str):
         'Supras': 'supras',
         'Bitters': 'bitters'
     }
-    
+
     # Apply field name changes
     for old_key, new_key in field_mapping.items():
         if old_key in data:
             data[new_key] = data.pop(old_key)
-    
+
     # Detect and add type annotation
     type_annotation = None
     if 'helices' in data or 'Helices' in data:
@@ -775,20 +775,20 @@ def migrate_yaml_v5_to_v10(old_file: str, new_file: str):
         type_annotation = '!<Helix>'
     elif 'r' in data and 'z' in data:
         type_annotation = '!<Ring>'
-    
+
     # Write with type annotation
     with open(new_file, 'w') as f:
         if type_annotation:
             f.write(f"{type_annotation}\n")
         yaml.dump(data, f, default_flow_style=False, sort_keys=False)
-    
+
     print(f"✓ Migrated: {old_file} → {new_file}")
 
 if __name__ == "__main__":
     if len(sys.argv) != 3:
         print("Usage: python migrate_v5_to_v10.py <old_yaml> <new_yaml>")
         sys.exit(1)
-    
+
     migrate_yaml_v5_to_v10(sys.argv[1], sys.argv[2])
 ```
 
@@ -804,15 +804,15 @@ from pathlib import Path
 
 def migrate_directory(input_dir: str, output_dir: str):
     """Migrate all YAML files in directory"""
-    
+
     input_path = Path(input_dir)
     output_path = Path(output_dir)
     output_path.mkdir(exist_ok=True)
-    
+
     yaml_files = list(input_path.glob("*.yaml")) + list(input_path.glob("*.yml"))
-    
+
     print(f"Found {len(yaml_files)} YAML files to migrate")
-    
+
     for yaml_file in yaml_files:
         try:
             old_file = str(yaml_file)
@@ -820,14 +820,14 @@ def migrate_directory(input_dir: str, output_dir: str):
             migrate_yaml_v5_to_v10(old_file, new_file)
         except Exception as e:
             print(f"✗ Failed to migrate {yaml_file.name}: {e}")
-    
+
     print(f"\n✓ Migration complete. Files saved to: {output_dir}")
 
 if __name__ == "__main__":
     if len(sys.argv) != 3:
         print("Usage: python bulk_migrate.py <input_dir> <output_dir>")
         sys.exit(1)
-    
+
     migrate_directory(sys.argv[1], sys.argv[2])
 ```
 
@@ -907,12 +907,12 @@ If you created custom geometry classes:
 ```python
 class CustomGeometry:
     yaml_tag = "CustomGeometry"
-    
+
     def __init__(self, name, r, z):
         self.name = name
         self.r = r
         self.z = z
-    
+
     @classmethod
     def from_dict(cls, values):
         return cls(
@@ -920,12 +920,12 @@ class CustomGeometry:
             r=values["r"],
             z=values["z"]
         )
-    
+
     # Manual YAML constructor
     def custom_constructor(loader, node):
         values = loader.construct_mapping(node)
         return CustomGeometry.from_dict(values)
-    
+
     yaml.add_constructor("CustomGeometry", custom_constructor)
 ```
 
@@ -936,17 +936,17 @@ from python_magnetgeo.validation import GeometryValidator
 
 class CustomGeometry(YAMLObjectBase):
     yaml_tag = "CustomGeometry"
-    
+
     def __init__(self, name: str, r: list, z: list):
         # Add validation
         GeometryValidator.validate_name(name)
         GeometryValidator.validate_numeric_list(r, 'r', expected_length=2)
         GeometryValidator.validate_numeric_list(z, 'z', expected_length=2)
-        
+
         self.name = name
         self.r = r
         self.z = z
-    
+
     @classmethod
     def from_dict(cls, values: dict, debug: bool = False):
         return cls(
@@ -954,7 +954,7 @@ class CustomGeometry(YAMLObjectBase):
             r=values["r"],
             z=values["z"]
         )
-    
+
     # No manual registration needed - automatic via __init_subclass__!
 ```
 
@@ -1005,41 +1005,41 @@ from pathlib import Path
 
 def scan_python_file(filepath: Path):
     """Scan Python file for old API usage"""
-    
+
     issues = []
-    
+
     with open(filepath, 'r') as f:
         content = f.read()
         lines = content.split('\n')
-    
+
     # Check for old field names
     old_fields = ['Helices', 'Rings', 'CurrentLeads', 'HAngles', 'RAngles']
     for i, line in enumerate(lines, 1):
         for field in old_fields:
             if field in line:
                 issues.append(f"Line {i}: Old field name '{field}' found")
-    
+
     # Check for removed methods
     removed_methods = ['loadYamlOld', 'from_yaml_old', 'simple_load']
     for i, line in enumerate(lines, 1):
         for method in removed_methods:
             if method in line:
                 issues.append(f"Line {i}: Removed method '{method}' found")
-    
+
     # Check for missing type hints in from_dict
     if 'def from_dict(cls, values)' in content:
         issues.append("from_dict() missing type hints (should be: values: Dict[str, Any])")
-    
+
     return issues
 
 def scan_directory(directory: str):
     """Scan all Python files in directory"""
-    
+
     path = Path(directory)
     python_files = list(path.rglob("*.py"))
-    
+
     print(f"Scanning {len(python_files)} Python files...\n")
-    
+
     total_issues = 0
     for py_file in python_files:
         issues = scan_python_file(py_file)
@@ -1048,7 +1048,7 @@ def scan_directory(directory: str):
             for issue in issues:
                 print(f"  ⚠ {issue}")
             total_issues += len(issues)
-    
+
     if total_issues == 0:
         print("✓ No API compatibility issues found!")
     else:
@@ -1058,7 +1058,7 @@ if __name__ == "__main__":
     if len(sys.argv) != 2:
         print("Usage: python scan_api_usage.py <directory>")
         sys.exit(1)
-    
+
     scan_directory(sys.argv[1])
 ```
 
@@ -1091,7 +1091,7 @@ def verify_yaml_file(filepath: str):
         else:
             print(f"⚠ Unknown type: {filepath}")
             return False
-        
+
         print(f"✓ {filepath} loads successfully")
         return True
     except Exception as e:
@@ -1102,10 +1102,10 @@ def verify_directory(directory: str):
     """Verify all YAML files in directory"""
     path = Path(directory)
     yaml_files = list(path.glob("*.yaml")) + list(path.glob("*.yml"))
-    
+
     success = sum(1 for f in yaml_files if verify_yaml_file(str(f)))
     total = len(yaml_files)
-    
+
     print(f"\n{success}/{total} files loaded successfully")
     return success == total
 
@@ -1113,7 +1113,7 @@ if __name__ == "__main__":
     if len(sys.argv) != 2:
         print("Usage: python verify_migration.py <directory>")
         sys.exit(1)
-    
+
     success = verify_directory(sys.argv[1])
     sys.exit(0 if success else 1)
 ```

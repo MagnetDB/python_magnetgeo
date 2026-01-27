@@ -19,7 +19,7 @@ def example_basic_logging():
     print(f"Created: {helix.name}")
     
     # Save to file (will log)
-    helix.dump()
+    helix.write_to_yaml()
 
 def example_debug_logging():
     """Debug logging example"""
@@ -49,7 +49,7 @@ def example_file_logging():
     
     # Create some objects
     ring = pmg.Ring(name="example_ring", r=[5, 15], z=[0, 10])
-    ring.dump()
+    ring.write_to_yaml()
     
     print("Check magnetgeo_example.log for detailed logs")
 
@@ -69,7 +69,7 @@ def example_different_levels():
     # This will show INFO on console but DEBUG details in file
     try:
         helix = pmg.Helix(name="test", r=[10, 20], z=[0, 50])
-        helix.dump()
+        helix.write_to_yaml()
     except Exception as e:
         print(f"Error: {e}")
 
@@ -151,7 +151,7 @@ def example_silent_mode():
     print("Logging disabled - no log output:")
     
     helix = pmg.Helix(name="silent", r=[10, 20], z=[0, 50])
-    helix.dump()
+    helix.write_to_yaml()
     
     print("Operations completed without logs")
     

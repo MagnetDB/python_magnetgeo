@@ -185,7 +185,7 @@ Examples:
   python load_profile_from_dat.py Shape_HR-54-116.dat --yaml
 
   # Load and save to YAML (HR-54-116.yaml)
-  python load_profile_from_dat.py Shape_HR-54-116.dat --save-yaml
+  python load_profile_from_dat.py Shape_HR-54-116.dat --save-yaml .
 
   # Load and export to JSON
   python load_profile_from_dat.py Shape_HR-54-116.dat --json
@@ -210,13 +210,13 @@ Examples:
     )
     output_group.add_argument(
         "--save-yaml",
-        metavar="FILE",
-        help="Save to YAML file"
+        metavar="DIRECTORY",
+        help="Save to YAML directory"
     )
     output_group.add_argument(
         "--save-json",
-        metavar="FILE",
-        help="Save to JSON file"
+        metavar="DIRECTORY",
+        help="Save to JSON directory"
     )
 
     parser.add_argument(
@@ -247,12 +247,12 @@ Examples:
             # Save to specified YAML file
             import yaml
             output_path = Path(args.save_yaml)
-            profile.dump()
+            profile.write_to_yaml(directory=output_path)
             print(f"Saved YAML to: {args.save_yaml}/{profile.cad}.yaml")
         elif args.save_json:
             output_path = Path(args.save_json)
-            profile.to_json(output_path)
-            print(f"Saved JSON to: {args.save_json}")
+            profile.write_to_json(filename=f"{profile.cad}.json", directory=output_path)
+            print(f"Saved JSON to: {args.save_json}/{profile.cad}.json")
         else:
             # Default: show profile information
             print(f"Profile loaded successfully!")

@@ -180,7 +180,7 @@ class TestProfileSerialization:
 
             try:
                 # Dump to YAML (creates Profile.yaml)
-                original.dump()
+                original.write_to_yaml()
                 assert os.path.exists("Profile0.yaml")
 
                 # Load it back
@@ -363,7 +363,7 @@ class TestProfileInheritance:
         """Test that Profile has all YAML serialization methods"""
         profile = Profile(cad="TEST", points=[[0, 0]])
 
-        assert hasattr(profile, 'dump')
+        assert hasattr(profile, 'write_to_yaml')
         assert hasattr(profile, 'to_json')
         assert hasattr(profile, 'write_to_json')
         assert hasattr(Profile, 'from_yaml')

@@ -172,7 +172,7 @@ if __name__ == "__main__":
     
     # Save examples to YAML
     print("\n=== Saving to YAML ===")
-    insert1.dump()
-    bitters.dump() 
-    supras.dump()
+    insert1.write_to_yaml()
+    bitters.write_to_yaml() 
+    supras.write_to_yaml()
     print("YAML files created: M9_Insert.yaml, Bitter_Stack.yaml, HTS_Stack.yaml")
