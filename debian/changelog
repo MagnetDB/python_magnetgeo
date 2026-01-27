@@ -2,6 +2,7 @@ python-magnetgeo (1.0.0-6) UNRELEASED; urgency=medium
 
   * add logging support
   * fix helper to create Profile from Shape_profile.dat
+  * add helper to split helix YAML files for magnetdb
 
  -- Christophe Trophime <christophe.trophime@lncmi.cnrs.fr>  Mon, 26 Jan 2026 16:07:38 +0100
 
@@ -16,7 +17,7 @@ python-magnetgeo (1.0.0-5) unstable; urgency=medium
   * Explicitly add _basedir field
   * Make detail an enum in hts
   * Move DetailLevel into separate file
-  * Add tolerance when comparing Ring radius with Helices 
+  * Add tolerance when comparing Ring radius with Helices
   * Add validation for Groove in Helix
   * Better exceptions for utils
 
@@ -112,9 +113,9 @@ python-magnetgeo (0.3.2-6) unstable; urgency=medium
 
 python-magnetgeo (0.3.2-5) unstable; urgency=medium
 
-  * d/patches: 
+  * d/patches:
     - add tierod.patch
-    - add fix-bitter-names.patch 
+    - add fix-bitter-names.patch
 
  -- Christophe Trophime <christophe.trophime@lncmi.cnrs.fr>  Wed, 31 Jan 2024 10:37:03 +0100
 
@@ -261,7 +262,7 @@ python-magnetgeo (0.3.1-1.6) unstable; urgency=medium
 
 python-magnetgeo (0.3.1-1.5) unstable; urgency=medium
 
-  * make get_names mimic salome names for SupraStruct 
+  * make get_names mimic salome names for SupraStruct
 
  -- Christophe Trophime <christophe.trophime@lncmi.cnrs.fr>  Wed, 08 Mar 2023 11:15:28 +0100
 
