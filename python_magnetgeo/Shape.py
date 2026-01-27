@@ -304,12 +304,11 @@ class Shape(YAMLObjectBase):
         logger.debug(f"Shape.from_dict: values={values}")
         profile = None
         _profile = values.get("profile", None)
-        if _profile is not None and isinstance(_profile, str):
-            if not _profile.strip():
+        if _profile is not None:
+            if isinstance(_profile, str) and  not _profile.strip():
                 logger.warning("Shape.from_dict:Profile name cannot be an empty string -- ignore shape")
                 return None
-            else:
-                profile = cls._load_nested_single(_profile, Profile, debug=debug)
+        profile = cls._load_nested_single(_profile, Profile, debug=debug)
 
         return cls(
             name=values.get("name"),
