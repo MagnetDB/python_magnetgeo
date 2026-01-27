@@ -18,14 +18,16 @@ from typing import Optional
 from .base import YAMLObjectBase
 from .validation import GeometryValidator
 
-
+# Module logger
+from .logging_config import get_logger
+logger = get_logger(__name__)
 class Profile(YAMLObjectBase):
     """
     Represents a profile defined by 2D points and labels.
-    
+
     A Profile object defines a shape as a sequence of (X, F) coordinate pairs
     with associated integer labels.
-    
+
     Attributes:
         cad (str): CAD identifier for the profile
         points (list[list[float]]): List of [X, F] coordinate pairs
@@ -79,7 +81,7 @@ class Profile(YAMLObjectBase):
         """
         # Validate CAD identifier
         #GeometryValidator.validate_name(cad)
-        
+
         # Validate labels length if provided
         if labels is not None and len(labels) != len(points):
             raise ValueError(
@@ -147,11 +149,10 @@ class Profile(YAMLObjectBase):
         points = values["points"]
         labels = values.get("labels", None)
 
-        if debug:
-            print(
-                f"Creating Profile from dict: cad={cad}, "
-                f"points count={len(points)}, labels={labels}"
-            )
+        logger.debug(
+            f"Creating Profile from dict: cad={cad}, "
+            f"points count={len(points)}, labels={labels}"
+        )
 
         return cls(cad, points, labels)
 

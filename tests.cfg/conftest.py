@@ -27,6 +27,16 @@ from python_magnetgeo.ModelAxi import ModelAxi
 from python_magnetgeo.Model3D import Model3D
 
 
+@pytest.fixture(scope="session", autouse=True)
+def change_test_dir():
+    """Change to tests.yaml directory for all tests to find yaml fixtures"""
+    original_dir = os.getcwd()
+    test_dir = os.path.dirname(os.path.abspath(__file__))
+    os.chdir(test_dir)
+    yield
+    os.chdir(original_dir)
+
+
 @pytest.fixture
 def sample_modelaxi():
     """Fixture providing a sample ModelAxi object"""

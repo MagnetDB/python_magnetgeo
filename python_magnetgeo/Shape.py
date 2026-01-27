@@ -11,6 +11,10 @@ from .base import YAMLObjectBase
 from .Profile import Profile
 from .validation import GeometryValidator, ValidationError
 
+from .logging_config import get_logger
+
+# Get logger for this module
+logger = get_logger(__name__)
 
 class ShapePosition(Enum):
     """
@@ -143,9 +147,12 @@ class Shape(YAMLObjectBase):
             ... )
         """
         # GeometryValidator.validate_name(name)
-        
+        logger.debug(f"Shape init: name={name}, profile={profile}, length={length}, angle={angle}, onturns={onturns}, position={position}")
+
         self.name = name
         if profile is not None and isinstance(profile, str):
+            if not profile.strip():
+                raise ValidationError("Profile name cannot be an empty string")
             self.profile = Profile.from_yaml(f"{profile}.yaml")
         else:
             self.profile = profile
@@ -294,10 +301,17 @@ class Shape(YAMLObjectBase):
             ... }
             >>> shape3 = Shape.from_dict(data3)
         """
-        profile = cls._load_nested_single(values.get("profile"), Profile, debug=debug)
+        logger.debug(f"Shape.from_dict: values={values}")
+        profile = None
+        _profile = values.get("profile", None)
+        if _profile is not None:
+            if isinstance(_profile, str) and  not _profile.strip():
+                logger.warning("Shape.from_dict:Profile name cannot be an empty string -- ignore shape")
+                return None
+        profile = cls._load_nested_single(_profile, Profile, debug=debug)
 
         return cls(
-            name=values["name"],
+            name=values.get("name"),
             profile=profile,
             length=values.get("length", [0.0]),
             angle=values.get("angle", [0.0]),

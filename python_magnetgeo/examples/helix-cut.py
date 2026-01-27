@@ -14,7 +14,7 @@ odd = True
 dble = True
 axi = ModelAxi()
 m3d = Model3D(cad="test")
-shape = Shape("", "")
+shape = None
 helix = Helix("Helix", r, z, cutwidth, odd, dble, axi, m3d, shape)
 # print object attribute
 print("Helix attributes:", list(vars(helix).keys()), f'type={type(vars(helix))}')
@@ -32,7 +32,7 @@ for file in args.jsonfiles:
     ofile = file.replace('.json','')
     jsondata = helix.from_json(file)
     print(f'jsondata: {jsondata}')
-    
+
     print('compact modelaxi: ')
     (turns, pitch) = jsondata.modelaxi.compact(1.e-6)
     jsondata.modelaxi.turns = turns

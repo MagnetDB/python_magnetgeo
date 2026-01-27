@@ -192,7 +192,7 @@ class TestIntegration:
         # Create complex nested structure
         axi = ModelAxi("serial_axi", 32.125, [2.0, 3.0, 2.5], [8.0, 9.0, 8.5])
         model3d = Model3D("serial_model3d", "serial_cad", True, False)
-        shape = Shape("serial_shape", "hexagonal", [12] * 6, [60.0] * 6, [1], "ALTERNATE")
+        shape = Shape("serial_shape", "rectangular", [12] * 4, [90.0] * 4, [1], "ALTERNATE")
         helix1 = Helix("serial_helix", [15.0, 30.0], [5.0, 85.0], 3.0, False, True, axi, model3d, shape)
         helix2 = Helix("serial_helix", [35.0, 40.0], [5.0, 85.0], 3.0, False, True, axi, model3d, shape)
         helix3 = Helix("serial_helix", [45.0, 60.0], [5.0, 85.0], 3.0, False, True, axi, model3d, shape)

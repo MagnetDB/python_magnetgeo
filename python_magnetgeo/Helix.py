@@ -23,6 +23,10 @@ from .ModelAxi import ModelAxi
 from .Shape import Shape
 from .validation import GeometryValidator, ValidationError
 
+from .logging_config import get_logger
+
+# Get logger for this module
+logger = get_logger(__name__)
 
 class Helix(YAMLObjectBase):
     """
@@ -105,8 +109,10 @@ class Helix(YAMLObjectBase):
         else:
             self.model3d = model3d
 
-        if shape is not None and isinstance(shape, str):
+        if shape is not None and isinstance(shape, str) and shape.strip():
             self.shape = Shape.from_yaml(f"{shape}.yaml")
+        elif isinstance(shape, str) and not shape.strip():
+            self.shape = None
         else:
             self.shape = shape
 
@@ -207,19 +213,19 @@ class Helix(YAMLObjectBase):
             angle = self.shape.angle
             nshapes = nturns * (360 / float(angle[0]))  # only one angle to be checked
             if verbose:
-                print("shapes: ", nshapes, math.floor(nshapes), math.ceil(nshapes))
+                logger.info("shapes: ", nshapes, math.floor(nshapes), math.ceil(nshapes))
 
             nshapes = (
                 lambda x: (math.ceil(x) if math.ceil(x) - x < x - math.floor(x) else math.floor(x))
             )(nshapes)
             nInsulators = int(nshapes)
-            print("nKaptons=", nInsulators)
+            logger.info("nKaptons=", nInsulators)
         else:
             nInsulators = 1
             if self.dble:
                 nInsulators = 2
             if verbose:
-                print("helix:", self.name, htype, nturns)
+                logger.info("helix:", self.name, htype, nturns)
 
         if is2D:
             nsection = len(self.modelaxi.turns)
@@ -234,7 +240,7 @@ class Helix(YAMLObjectBase):
                 solid_names.append(f"{sInsulator}{j}")
 
         if verbose:
-            print(f"Helix_Gmsh[{htype}]: solid_names {len(solid_names)}")
+            logger.info(f"Helix_Gmsh[{htype}]: solid_names {len(solid_names)}")
         return solid_names
 
     def __repr__(self):
@@ -272,6 +278,7 @@ class Helix(YAMLObjectBase):
             Handles nested objects (modelaxi, model3d, shape, chamfers, grooves)
             by loading from files or instantiating from dicts
         """
+        logger.debug(f"Helix.from_dict: values keys={list(values.keys())}")
         modelaxi = cls._load_nested_single(values.get("modelaxi"), ModelAxi, debug=debug)
         model3d = cls._load_nested_single(values.get("model3d"), Model3D, debug=debug)
         shape = cls._load_nested_single(values.get("shape"), Shape, debug=debug)
@@ -317,7 +324,7 @@ class Helix(YAMLObjectBase):
             debug: Enable debug output
         """
         if debug:
-            print("  Analyzing Helix nested dependencies...")
+            logger.info("  Analyzing Helix nested dependencies...")
 
         # Analyze single nested objects
         cls._analyze_single_dependency(
@@ -376,19 +383,20 @@ class Helix(YAMLObjectBase):
         if self.model3d.with_shapes:
 
             # if Profile class is used: self.shape.profile.generate_dat_file()
-            shape_profile = f"{self._basedir}/Shape_{self.shape.profile}.dat"
-            if not os.path.exists(shape_profile):
-                raise RuntimeError(f"Helix.generate_cut: {str(shape_profile)} no such file")
+            if self.shape is not None and self.shape.profile is not None:
+                    self.shape.profile.generate_dat_file(self._basedir)
+                    shape_profile = f"{self._basedir}/Shape_{self.shape.cad}.dat"
+            else:
+                return
 
             if self.get_type() == "HL":
                 angles = " ".join(f"{t:4.2f}" for t in self.shape.angle if t != 0)
                 cmd = f'add_shape --angle="{angles}" --shape_angular_length={self.shape.length} --shape={shape_profile} --format={format} --position="{self.shape.position} {self.name}"'
-                print(f"create_cut: with_shapes not implemented - shall run {cmd}")
+                logger.info(f"create_cut: with_shapes not implemented - shall run {cmd}")
             else:
                 angles = " ".join(f"{t:4.2f}" for t in self.shape.angle if t != 0)
                 cmd = f'add_shape --angle="{angles[0]}" --shape_angular_length={self.shape.length[0]} --shape={shape_profile} --format={format} --position="{self.shape.position} {self.name}"'
-                print(f"create_cut: with_shapes not implemented - shall run {cmd}")
-
+                logger.info(f"create_cut: with_shapes not implemented - shall run {cmd}")
             try:
                 import subprocess
 
@@ -451,12 +459,12 @@ class Helix(YAMLObjectBase):
             sInsulator = "Kapton"
             angle = self.shape.angle
             nshapes = self.get_Nturns() * (360 / float(angle[0]))
-            # print("shapes: ", nshapes, math.floor(nshapes), math.ceil(nshapes))
+            # logger.info("shapes: ", nshapes, math.floor(nshapes), math.ceil(nshapes))
 
             nshapes = (
                 lambda x: (math.ceil(x) if math.ceil(x) - x < x - math.floor(x) else math.floor(x))
             )(nshapes)
             nInsulators = int(nshapes)
-            # print("nKaptons=", nInsulators)
+            # logger.info("nKaptons=", nInsulators)
 
         return (sInsulator, nInsulators)

@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """
-Create missing YAML test fixtures for tests.old directory
-Run this script from the tests.old directory to create all required YAML files.
+Create missing YAML test fixtures for tests.yaml directory
+Run this script from the tests.yaml directory to create all required YAML files.
 
 Usage:
-    cd tests.old
+    cd tests.yaml
     python create_test_fixtures.py
 """
 
@@ -131,7 +131,7 @@ position: "BELOW"
     }
     
     print("=" * 70)
-    print("Creating YAML Test Fixtures for tests.old")
+    print("Creating YAML Test Fixtures for tests.yaml")
     print("=" * 70)
     print()
     

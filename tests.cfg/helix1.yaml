@@ -61,7 +61,7 @@ model3d: !<Model3D>
   with_channels: False
 shape: !<Shape>
   name: "noshape"
-  profile: ""
+  profile: null
   length: 0
   angle: 0
   onturns: 0

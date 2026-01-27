@@ -48,6 +48,11 @@ from typing import Any, Type, TypeVar
 
 import yaml
 
+from .logging_config import get_logger
+
+# Get logger for this module
+logger = get_logger(__name__)
+
 # Type variable for proper type hinting in return types
 T = TypeVar("T", bound="SerializableMixin")
 
@@ -197,11 +202,9 @@ class SerializableMixin:
         """
         from .utils import loadYaml
 
-        if debug:
-            print(
-                f"SerializableMixin.load_from_yaml: Loading {cls.__name__} from {filename}",
-                flush=True,
-            )
+        logger.debug(
+            f"SerializableMixin.load_from_yaml: Loading {cls.__name__} from {filename}",
+        )
         return loadYaml(cls.__name__, filename, cls, debug)
 
     @classmethod
@@ -365,7 +368,7 @@ class YAMLObjectBase(SerializableMixin):
         import os
 
         if os.getenv("SPHINX_BUILD") != "1":
-            print(f"Auto-registered YAML constructor and representer for {cls.__name__}")
+            logger.info(f"Auto-registered YAML constructor and representer for {cls.__name__}")
 
     @classmethod
     def get_class(cls, name: str):
@@ -409,8 +412,7 @@ class YAMLObjectBase(SerializableMixin):
         Returns:
             Instance loaded from YAML file
         """
-        if debug:
-            print(f"YAMLObjectBase.from_yaml: Loading {cls.__name__} from {filename}", flush=True)
+        logger.debug(f"YAMLObjectBase.from_yaml: Loading {cls.__name__} from {filename}")
         return cls.load_from_yaml(filename, debug)
 
     @classmethod
@@ -465,8 +467,7 @@ class YAMLObjectBase(SerializableMixin):
         for i, item in enumerate(data):
             if isinstance(item, str):
                 # String reference → load from file
-                if debug:
-                    print(f"Loading object[{i}] from file: {item}")
+                logger.debug(f"Loading object[{i}] from file: {item}")
                 from .utils import getObject
 
                 filename = f"{item}.yaml"
@@ -475,8 +476,7 @@ class YAMLObjectBase(SerializableMixin):
 
             elif isinstance(item, dict):
                 # Inline dictionary → try each class until one works
-                if debug:
-                    print(f"Creating object[{i}] from inline dict")
+                logger.debug(f"Creating object[{i}] from inline dict")
 
                 obj = None
                 last_error = None
@@ -500,8 +500,7 @@ class YAMLObjectBase(SerializableMixin):
 
             elif item is None:
                 # Skip None values
-                if debug:
-                    print(f"Skipping None value at index {i}")
+                logger.debug(f"Skipping None value at index {i}")
                 continue
 
             else:
@@ -549,19 +548,16 @@ class YAMLObjectBase(SerializableMixin):
 
         if isinstance(data, str):
             # String reference → load from file
-            if debug:
-                print(f"Loading object from file: {data}")
+            logger.debug(f"Loading object from file: {data}")
             from .utils import getObject
 
             filename = f"{data}.yaml"
-            if debug:
-                print(f"  Loading nested {object_class.__name__} from {filename}")
+            logger.debug(f"  Loading nested {object_class.__name__} from {filename}")
             return getObject(filename)
 
         elif isinstance(data, dict):
             # Inline dictionary → try each class until one works
-            if debug:
-                print("Creating object from inline dict")
+            logger.debug("Creating object from inline dict")
 
             last_error = None
 

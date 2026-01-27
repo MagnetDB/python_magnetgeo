@@ -15,6 +15,9 @@ from .Ring import Ring
 from .utils import flatten, getObject
 from .validation import GeometryValidator, ValidationError
 
+# Module logger
+from .logging_config import get_logger
+logger = get_logger(__name__)
 
 def filter(data: list[float], tol: float = 1.0e-6) -> list[float]:
     result = []
@@ -356,10 +359,9 @@ class Insert(YAMLObjectBase):
             # For the moment keep iChannel_Submeshes into
             # iChannel_Submeshes.append(inames)
 
-        if debug:
-            print("Channels:")
-            for channel in Channels:
-                print(f"\t{channel}")
+        logger.debug("Channels:")
+        for channel in Channels:
+            logger.debug(f"\t{channel}")
         return Channels
 
     def get_isolants(self, mname: str, debug: bool = False):
