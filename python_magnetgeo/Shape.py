@@ -1,49 +1,50 @@
 #!/usr/bin/env python3
-# -*- coding:utf-8 -*-
+# encoding: UTF-8
 
 """
 Provides definition for Shape with Position enum
 """
 import os
-
 from enum import Enum
-from typing import List, Union
+
 from .base import YAMLObjectBase
+from .Profile import Profile
 from .validation import GeometryValidator, ValidationError
 
 
 class ShapePosition(Enum):
     """
     Enumeration defining valid positions for shape placement on helical cuts.
-    
+
     This enum specifies where additional cut profiles (shapes) should be placed
     relative to the main helical cut pattern in Helix or Bitter magnets.
-    
+
     Attributes:
         ABOVE: Place shapes above the reference plane
         BELOW: Place shapes below the reference plane
         ALTERNATE: Alternate shapes between above and below positions
-    
+
     Notes:
         - Position determines the vertical placement of cut profiles
         - ALTERNATE is useful for balanced geometric patterns
         - String values are uppercase for consistency with YAML format
         - The __str__ method returns the enum value for serialization
-    
+
     Example:
         >>> from python_magnetgeo.Shape import ShapePosition
         >>> pos1 = ShapePosition.ABOVE
         >>> pos2 = ShapePosition["BELOW"]
         >>> pos3 = ShapePosition.ALTERNATE
-        >>> 
+        >>>
         >>> # String representation
         >>> print(pos1)  # "ABOVE"
         >>> print(pos2.value)  # "BELOW"
     """
+
     ABOVE = "ABOVE"
     BELOW = "BELOW"  # Note: fixed typo from BELLOW
     ALTERNATE = "ALTERNATE"
-    
+
     def __str__(self):
         """String representation returns the value"""
         return self.value
@@ -52,7 +53,7 @@ class ShapePosition(Enum):
 class Shape(YAMLObjectBase):
     """
     Shape definition for helical cuts
-    
+
     Attributes:
         name: Shape identifier
         profile: Name of the cut profile to be added
@@ -67,20 +68,20 @@ class Shape(YAMLObjectBase):
     def __init__(
         self,
         name: str,
-        profile: str,
-        length: List[float] = None,
-        angle: List[float] = None,
-        onturns: List[int] = None,
-        position: Union[ShapePosition, str] = ShapePosition.ABOVE,
+        profile: Profile | str,
+        length: list[float] = None,
+        angle: list[float] = None,
+        onturns: list[int] = None,
+        position: ShapePosition | str = ShapePosition.ABOVE,
     ):
         """
         Initialize a Shape definition for helical cut modifications.
-            
+
         A Shape represents additional geometric features (cut profiles) that can be
             applied to helical cuts in magnet conductors. These shapes modify the basic
             helical pattern to create features like cooling channels, mechanical slots,
             or other specialized geometries.
-            
+
         Args:
             name: Unique identifier for this shape configuration
             profile: Name of the cut profile to be applied. References a predefined
@@ -98,19 +99,19 @@ class Shape(YAMLObjectBase):
                     - ShapePosition enum value (ABOVE, BELOW, ALTERNATE)
                     - String ("ABOVE", "BELOW", or "ALTERNATE")
                     Default: ShapePosition.ABOVE
-            
+
         Raises:
             ValidationError: If name is invalid (empty or None)
             ValidationError: If position string doesn't match valid enum values
             ValidationError: If position is neither string nor ShapePosition enum
-            
+
         Notes:
             - All list parameters default to single-element lists if None
             - String position values are automatically converted to enum
             - Position strings are case-insensitive (converted to uppercase)
             - Profile name references an externally defined cut geometry
             - Shapes are applied during helical cut generation
-            
+
         Example:
             >>> # Simple shape on first turn
             >>> shape1 = Shape(
@@ -121,7 +122,7 @@ class Shape(YAMLObjectBase):
             ...     onturns=[1],         # Only on first turn
             ...     position="ABOVE"
             ... )
-            
+
             >>> # Shape on multiple turns with enum
             >>> from python_magnetgeo.Shape import ShapePosition
             >>> shape2 = Shape(
@@ -132,7 +133,7 @@ class Shape(YAMLObjectBase):
             ...     onturns=[1, 3, 5],   # Odd turns only
             ...     position=ShapePosition.ALTERNATE
             ... )
-            
+
             >>> # Using defaults
             >>> shape3 = Shape(
             ...     name="simple_cut",
@@ -144,37 +145,41 @@ class Shape(YAMLObjectBase):
         # GeometryValidator.validate_name(name)
         
         self.name = name
-        self.profile = profile
+        if profile is not None and isinstance(profile, str):
+            self.profile = Profile.from_yaml(f"{profile}.yaml")
+        else:
+            self.profile = profile
+
         self.length = length if length is not None else [0.0]
         self.angle = angle if angle is not None else [0.0]
         self.onturns = onturns if onturns is not None else [1]
-        
+
         # Handle position - convert string to enum if needed
         if isinstance(position, str):
             try:
                 self.position = ShapePosition[position.upper()]
-            except KeyError:
-                valid_positions = ', '.join([p.name for p in ShapePosition])
+            except KeyError as e:
+                valid_positions = ", ".join([p.name for p in ShapePosition])
                 raise ValidationError(
                     f"Invalid position '{position}'. Must be one of: {valid_positions}"
-                )
+                ) from e
         elif isinstance(position, ShapePosition):
             self.position = position
         else:
             raise ValidationError(
                 f"Position must be string or ShapePosition enum, got {type(position)}"
             )
-        
+
         # Store the directory context for resolving struct paths
         self._basedir = os.getcwd()
 
     def __repr__(self):
         """
         Return string representation of Shape instance.
-        
+
         Provides a detailed string showing all attributes and their values,
         useful for debugging, logging, and interactive inspection.
-        
+
         Returns:
             str: String representation in constructor-like format showing:
                 - name: Shape identifier
@@ -183,12 +188,12 @@ class Shape(YAMLObjectBase):
                 - angle: Spacing angle list
                 - onturns: Turn number list
                 - position: Position as string value (not enum)
-        
+
         Notes:
             - Position is shown as string value (e.g., "ABOVE") not enum representation
             - Handles both enum and string position values during deserialization
             - Uses getattr with fallback to handle position gracefully
-        
+
         Example:
             >>> shape = Shape(
             ...     name="test_shape",
@@ -199,7 +204,7 @@ class Shape(YAMLObjectBase):
             ...     position="ABOVE"
             ... )
             >>> print(repr(shape))
-            Shape(name='test_shape', profile='slot', length=[5.0], 
+            Shape(name='test_shape', profile='slot', length=[5.0],
                 angle=[30.0], onturns=[1, 2], position='ABOVE')
             >>>
             >>> # In Python REPL
@@ -210,11 +215,11 @@ class Shape(YAMLObjectBase):
             >>> from python_magnetgeo.Shape import ShapePosition
             >>> shape2 = Shape("shape2", "hole", position=ShapePosition.BELOW)
             >>> print(repr(shape2))
-            Shape(name='shape2', profile='hole', length=[0.0], 
+            Shape(name='shape2', profile='hole', length=[0.0],
                 angle=[0.0], onturns=[1], position='BELOW')
         """
         # Handle position being either enum or string during deserialization
-        position_str = getattr(self.position, 'value', self.position)
+        position_str = getattr(self.position, "value", self.position)
         return (
             f"{self.__class__.__name__}(name={self.name!r}, "
             f"profile={self.profile!r}, length={self.length!r}, "
@@ -226,10 +231,10 @@ class Shape(YAMLObjectBase):
     def from_dict(cls, values: dict, debug: bool = False):
         """
         Create Shape instance from dictionary representation.
-        
+
         Provides flexible deserialization with proper defaults for optional parameters.
         String position values are automatically converted to ShapePosition enum.
-        
+
         Args:
             values: Dictionary containing Shape configuration with keys:
                 - name (str): Shape identifier (required)
@@ -243,20 +248,20 @@ class Shape(YAMLObjectBase):
                 - position (str or ShapePosition, optional): Placement position
                 Default: "ABOVE"
             debug: Enable debug output showing object creation process
-        
+
         Returns:
             Shape: New Shape instance created from dictionary
-        
+
         Raises:
             KeyError: If required keys ('name' or 'profile') are missing
             ValidationError: If position value is invalid
             ValidationError: If name validation fails
-        
+
         Notes:
             - All optional parameters have sensible defaults
             - Position strings are case-insensitive
             - Lists can be single values or arrays
-        
+
         Example:
             >>> # Full specification
             >>> data = {
@@ -268,7 +273,7 @@ class Shape(YAMLObjectBase):
             ...     "position": "ABOVE"
             ... }
             >>> shape = Shape.from_dict(data)
-            
+
             >>> # Minimal specification (uses defaults)
             >>> minimal = {
             ...     "name": "simple_shape",
@@ -279,7 +284,7 @@ class Shape(YAMLObjectBase):
             >>> # shape2.angle == [0.0]
             >>> # shape2.onturns == [1]
             >>> # shape2.position == ShapePosition.ABOVE
-            
+
             >>> # Using enum value in dict
             >>> from python_magnetgeo.Shape import ShapePosition
             >>> data3 = {
@@ -289,11 +294,13 @@ class Shape(YAMLObjectBase):
             ... }
             >>> shape3 = Shape.from_dict(data3)
         """
+        profile = cls._load_nested_single(values.get("profile"), Profile, debug=debug)
+
         return cls(
             name=values["name"],
-            profile=values["profile"],
+            profile=profile,
             length=values.get("length", [0.0]),
             angle=values.get("angle", [0.0]),
             onturns=values.get("onturns", [1]),
-            position=values.get("position", "ABOVE")
+            position=values.get("position", "ABOVE"),
         )

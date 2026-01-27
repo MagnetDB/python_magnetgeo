@@ -15,16 +15,13 @@ import math
 import os
 
 from .base import YAMLObjectBase
-from .validation import GeometryValidator, ValidationError
-
-from .ModelAxi import ModelAxi
-from .Model3D import Model3D
-from .Shape import Shape
-
-from .Groove import Groove
 from .Chamfer import Chamfer
-
+from .Groove import Groove
 from .hcuts import create_cut
+from .Model3D import Model3D
+from .ModelAxi import ModelAxi
+from .Shape import Shape
+from .validation import GeometryValidator, ValidationError
 
 
 class Helix(YAMLObjectBase):
@@ -139,6 +136,8 @@ class Helix(YAMLObjectBase):
                     raise ValidationError(
                         f"Groove: {self.grooves.n} of eps={self.grooves.eps} exceed circumference on rext"
                     )
+
+        self.start_hole_diameter = start_hole_diameter
 
         # add check for self.modelaxi.h must be less than (z[1]-z[0])/2.
         if self.modelaxi is not None and self.modelaxi.h > (z[1] - z[0]) / 2.0:
@@ -304,6 +303,33 @@ class Helix(YAMLObjectBase):
         # object.update()
         return object
 
+    @classmethod
+    def _analyze_nested_dependencies(cls, values: dict, required_files: set, debug: bool = False):
+        """
+        Analyze nested dependencies specific to Helix class.
+
+        Identifies files that would be loaded for modelaxi, model3d, shape,
+        chamfers, and grooves nested objects.
+
+        Args:
+            values: Dictionary containing helix parameters
+            required_files: Set to populate with file paths (modified in place)
+            debug: Enable debug output
+        """
+        if debug:
+            print("  Analyzing Helix nested dependencies...")
+
+        # Analyze single nested objects
+        cls._analyze_single_dependency(
+            values.get("modelaxi"), ModelAxi, required_files, debug=debug
+        )
+        cls._analyze_single_dependency(values.get("model3d"), Model3D, required_files, debug=debug)
+        cls._analyze_single_dependency(values.get("shape"), Shape, required_files, debug=debug)
+        cls._analyze_single_dependency(values.get("grooves"), Groove, required_files, debug=debug)
+
+        # Analyze list of nested objects
+        cls._analyze_list_dependency(values.get("chamfers"), Chamfer, required_files, debug=debug)
+
     def getModelAxi(self):
         """
         Get the axisymmetric model definition.
@@ -368,7 +394,7 @@ class Helix(YAMLObjectBase):
 
                 subprocess.run(cmd, shell=True, check=True)
             except RuntimeError as e:
-                raise Exception(f"cannot run add_shape properly: {e}")
+                raise Exception(f"cannot run add_shape properly: {e}") from e
 
     def intersect(self, r: list[float], z: list[float]) -> bool:
         """

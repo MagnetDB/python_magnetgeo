@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-# -*- coding:utf-8 -*-
+# encoding: UTF-8
 
 """
 Provides definition for chamfer geometry features.
@@ -15,13 +15,9 @@ The chamfer can be positioned on either the high-pressure (HP) or
 low-pressure (BP) side, and on either the inner (rint) or outer (rext) radius.
 """
 
-import yaml
-import json
 import math
 
-from typing import List
 from .base import YAMLObjectBase
-from .validation import GeometryValidator, ValidationError
 
 
 class Chamfer(YAMLObjectBase):

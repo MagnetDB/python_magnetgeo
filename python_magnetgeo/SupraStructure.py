@@ -1,21 +1,18 @@
 #!/usr/bin/env python3
-# -*- coding:utf-8 -*-
+# encoding: UTF-8
 
 """
 Define HTS insert geometry with DetailLevel enum support
 """
-from typing import Self, Optional, Union
+from typing import Optional
 
+from .enums import DetailLevel
+from .hts.dblpancake import dblpancake
+from .hts.isolation import isolation
+from .hts.pancake import pancake
+from .hts.tape import tape
 from .utils import flatten
 
-# Import DetailLevel from Supra module
-from .enums import DetailLevel
-
-
-from .hts.tape import tape
-from .hts.pancake import pancake
-from .hts.isolation import isolation
-from .hts.dblpancake import dblpancake
 
 class HTSInsert:
     """
@@ -36,8 +33,8 @@ class HTSInsert:
         r1: float = 0,
         z1: float = 0,
         n: int = 0,
-        dblpancakes: list[dblpancake] = [],
-        isolations: list[isolation] = [],
+        dblpancakes: list[dblpancake] = None,
+        isolations: list[isolation] = None,
     ):
         self.name = name
         self.z0 = z0
@@ -46,8 +43,8 @@ class HTSInsert:
         self.r1 = r1
         self.z1 = z1
         self.n = n
-        self.dblpancakes = dblpancakes
-        self.isolations = isolations
+        self.dblpancakes = dblpancakes if dblpancakes is not None else []
+        self.isolations = isolations if isolations is not None else []
 
     @classmethod
     def fromcfg(
@@ -97,9 +94,7 @@ class HTSInsert:
                     if debug:
                         print(f"Loading {n} similar dblpancakes, z={z}")
                     if "isolation" in data["dblpancakes"]:
-                        dpisolation = isolation.from_data(
-                            data["dblpancakes"]["isolation"]
-                        )
+                        dpisolation = isolation.from_data(data["dblpancakes"]["isolation"])
                     else:
                         dpisolation = myisolation
                     if debug:
@@ -135,14 +130,10 @@ class HTSInsert:
                         n += 1
                         if debug:
                             print("dp:", dp, data["dblpancakes"][dp]["pancake"])
-                        mypancake = pancake.from_data(
-                            data["dblpancakes"][dp]["pancake"]
-                        )
+                        mypancake = pancake.from_data(data["dblpancakes"][dp]["pancake"])
 
                         if "isolation" in data["isolations"][dp]:
-                            dpisolation = isolation.from_data(
-                                data["isolations"][dp]["isolation"]
-                            )
+                            dpisolation = isolation.from_data(data["isolations"][dp]["isolation"])
                         else:
                             dpisolation = myisolation
                         isolations.append(dpisolation)
@@ -193,41 +184,24 @@ class HTSInsert:
         """
         representation of object
         """
-        return (
-            "htsinsert(name=%s, r0=%r, r1=%r, z0=%r, h=%r, n=%r, dblpancakes=%r, isolations=%r)"
-            % (
-                self.name,
-                self.r0,
-                self.r1,
-                self.z0,
-                self.h,
-                self.n,
-                self.dblpancakes,
-                self.isolations,
-            )
-        )
+        return f"htsinsert(name={self.name}, r0={self.r0!r}, r1={self.r1!r}, z0={self.z0!r}, h={self.h!r}, n={self.n!r}, dblpancakes={self.dblpancakes!r}, isolations={self.isolations!r})"
 
-    def get_names(
-        self, 
-        mname: str, 
-        detail: Union[str, DetailLevel], 
-        verbose: bool = False
-    ) -> list[str]:
+    def get_names(self, mname: str, detail: str | DetailLevel, verbose: bool = False) -> list[str]:
         """
         Get marker names for HTS insert elements.
-        
+
         Args:
             mname: Base name prefix
             detail: Detail level (DetailLevel enum or string)
             verbose: Enable verbose output
-        
+
         Returns:
             list[str]: Flattened list of all marker names
         """
         # Convert enum to string for comparison
         if isinstance(detail, str):
             detail = DetailLevel[detail.upper()]
-        
+
         dp_ids = []
         i_ids = []
 

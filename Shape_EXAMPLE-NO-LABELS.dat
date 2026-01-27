@@ -1,0 +1,11 @@
+#Shape : EXAMPLE-NO-LABELS
+#
+# Profile geometry
+#
+#N_i
+4
+#X_i F_i
+0.00 0.00
+0.50 0.05
+1.00 0.03
+1.50 0.00

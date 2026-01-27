@@ -9,6 +9,8 @@ This document details all API breaking changes introduced in version 1.0.0 compa
 ### v1.0.0 (Current) - Major Architectural Overhaul
 - Complete rewrite with base class architecture
 - Enhanced type safety and validation system
+- **New Profile class** for bump profile management
+- **Enhanced Shape class** with Profile integration and ShapePosition enum
 - Breaking changes from all previous versions
 
 ### v0.7.0 - YAML Type System Enhancement
@@ -178,6 +180,8 @@ axi: !<ModelAxi>
 | Base Classes | Individual | Refactored | YAMLObjectBase |
 | Auto Registration | Manual | Semi-auto | Fully automatic |
 | Error Messages | Generic | Improved | Detailed |
+| Profile Class | ✗ None | ✗ None | ✓ New Class |
+| Shape Integration | Limited | Limited | ✓ Profile Support |
 
 ### Key Differences: v0.7.0 → v1.0.0
 
@@ -449,6 +453,160 @@ shape = Shape(name="s", profile="p", position="above")  # Still works
 - Accepts enum or case-insensitive string
 - Invalid positions raise `ValidationError`
 
+### 6.2 New Profile Class (v1.0.0)
+
+**Introduction:**
+
+Version 1.0.0 introduces the `Profile` class for representing bump profiles as 2D point sequences. This is a new addition (not a breaking change) that provides structured profile data management.
+
+**Profile Class Structure:**
+```python
+from python_magnetgeo import Profile
+
+profile = Profile(
+    cad="HR-54-116",                    # CAD identifier
+    points=[[-5.34, 0], [0, 0.9], ...], # List of [X, F] coordinates
+    labels=[0, 1, 0, ...]               # Optional integer labels per point
+)
+```
+
+**YAML Format:**
+```yaml
+!<Profile>
+cad: "HR-54-116"
+points:
+  - [-5.34, 0]
+  - [-3.34, 0]
+  - [0, 0.9]
+  - [3.34, 0]
+  - [5.34, 0]
+labels: [0, 0, 1, 0, 0]  # Optional - defaults to all zeros if omitted
+```
+
+**Features:**
+- **DAT File Generation**: `profile.generate_dat_file("./output")` creates Shape_*.dat files
+- **Full Serialization**: YAML and JSON support via `from_yaml()`, `to_json()`, `dump()`
+- **Validation**: Automatic label length validation against points
+- **Optional Labels**: Labels default to zeros if not provided
+
+**Example Usage:**
+```python
+# Load from YAML
+profile = Profile.from_yaml("aerodynamic_profile.yaml")
+
+# Generate DAT file for external tools
+output = profile.generate_dat_file("./data")
+print(f"Created: {output}")  # data/Shape_aerodynamic_profile.dat
+
+# Serialize
+profile.dump()  # Saves to aerodynamic_profile.yaml
+json_data = profile.to_json()
+```
+
+**Migration Impact:**
+- **New Feature Only**: No changes required to existing code
+- **Backward Compatible**: Existing YAML files unaffected
+- **Optional Usage**: Only needed when working with aerodynamic profiles
+
+### 6.3 Enhanced Shape Class (v1.0.0)
+
+**Major Enhancement:**
+
+The `Shape` class has been significantly enhanced to support `Profile` objects and provide better type safety.
+
+**Old Structure (Conceptual):**
+```python
+# Previous versions (if existed) used simple string references
+shape = Shape(name="s", profile="profile_name", ...)
+```
+
+**New Structure (v1.0.0):**
+```python
+from python_magnetgeo import Shape, Profile
+from python_magnetgeo.Shape import ShapePosition
+
+# Method 1: Reference Profile by name (auto-loads from YAML)
+shape = Shape(
+    name="cooling_slot",
+    profile="my_profile",      # Loads from my_profile.yaml
+    length=[15.0],             # Angular length in degrees
+    angle=[60.0, 90.0],        # Angles between shapes
+    onturns=[1, 2, 3],         # Turns to apply shape
+    position=ShapePosition.ABOVE  # or "ABOVE", "BELOW", "ALTERNATE"
+)
+
+# Method 2: Use Profile object directly
+profile = Profile.from_yaml("my_profile.yaml")
+shape = Shape(
+    name="cooling_slot",
+    profile=profile,           # Direct Profile object
+    length=[15.0],
+    angle=[60.0],
+    onturns=[1],
+    position="ALTERNATE"       # Case-insensitive string
+)
+```
+
+**Complete Shape Constructor:**
+```python
+Shape(
+    name: str,                          # Shape identifier (required)
+    profile: Profile | str,             # Profile object or filename (required)
+    length: list[float] = None,        # Defaults to [0.0]
+    angle: list[float] = None,         # Defaults to [0.0]
+    onturns: list[int] = None,         # Defaults to [1]
+    position: ShapePosition | str = ShapePosition.ABOVE
+)
+```
+
+**YAML Format:**
+```yaml
+!<Shape>
+name: "cooling_channels"
+profile: "02_10_2014_H1"  # References Profile YAML file
+length: [15.0]
+angle: [60, 90, 120, 120]
+onturns: [1, 2, 3, 4, 5]
+position: ALTERNATE
+```
+
+**Embedded in Helix:**
+```yaml
+!<Helix>
+name: "HL-31_H1"
+odd: true
+r: [19.3, 24.2]
+z: [-226, 108]
+dble: true
+cutwidth: 0.22
+shape: !<Shape>
+  name: "cooling_slot"
+  profile: "aerodynamic_cut"
+  length: [15.0]
+  angle: [60, 90, 120]
+  onturns: [1, 3, 5]
+  position: ALTERNATE
+```
+
+**Key Features:**
+- **Profile Integration**: Profile can be string (auto-loads) or Profile object
+- **Type Safety**: ShapePosition enum with string fallback
+- **Flexible Parameters**: All list parameters have sensible defaults
+- **Position Options**: ABOVE, BELOW, ALTERNATE (case-insensitive)
+- **Validation**: Automatic position validation with clear error messages
+
+**Breaking Changes:**
+- **Type Annotations**: `profile` parameter now accepts `Profile | str` (was just `str`)
+- **Position Enum**: Position must be valid ShapePosition value or string
+- **Required Parameters**: `name` and `profile` are required (no defaults)
+- **List Types**: `length`, `angle`, `onturns` are now properly typed as `list[float]` or `list[int]`
+
+**Migration Notes:**
+- Existing YAML files with string profile references continue to work
+- Position strings are now case-insensitive ("above", "ABOVE", "Above" all work)
+- Invalid position values now raise `ValidationError` instead of silent failure
+- Profile auto-loading looks for `{profile}.yaml` in current directory or base directory
+
 ---
 
 ## 7. Import Changes
@@ -465,6 +623,26 @@ from python_magnetgeo.validation import ValidationError, GeometryValidator
 **New imports available:**
 ```python
 from python_magnetgeo.base import YAMLObjectBase, SerializableMixin
+```
+
+### 7.3 Shape and Profile Classes (v1.0.0)
+
+**New imports for bump profiles and shape definitions:**
+```python
+# Profile class for bump profiles
+from python_magnetgeo import Profile
+
+# Shape class and position enum
+from python_magnetgeo import Shape
+from python_magnetgeo.Shape import ShapePosition
+
+# Example usage
+profile = Profile.from_yaml("my_profile.yaml")
+shape = Shape(
+    name="slot",
+    profile=profile,
+    position=ShapePosition.ALTERNATE
+)
 ```
 
 ---

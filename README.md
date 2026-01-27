@@ -17,6 +17,8 @@ Python Magnet Geometry contains magnet geometrical models for high-field magnet 
 - **CAD integration** - Load/Create CAD and mesh with Salome (see hifimagnet.salome)
 - **Mesh generation** - Create Gmsh meshes from Salome XAO format
 - **Comprehensive geometry support** - Helix, Insert, Ring, Bitter, Supra, and more
+- **Bump profiles** - New Profile class for 2D profile definitions with DAT file export
+- **Advanced shape features** - Enhanced Shape class with Profile integration and position control
 - **JSON/YAML serialization** - Full serialization/deserialization support
 - **Input validation** - Automatic validation with descriptive error messages
 - **Type annotations** - Full type hint support for better IDE integration
@@ -89,6 +91,32 @@ ring = Ring(
 ### YAML Configuration Format
 
 Version 1.0.0 uses structured YAML with type annotations:
+
+#### Profile Configuration (New in v1.0.0)
+
+```yaml
+!<Profile>
+cad: "HR-54-116"
+points:
+  - [-5.34, 0]
+  - [-3.34, 0]
+  - [0, 0.9]
+  - [3.34, 0]
+  - [5.34, 0]
+labels: [0, 0, 1, 0, 0]
+```
+
+#### Shape Configuration (Enhanced in v1.0.0)
+
+```yaml
+!<Shape>
+name: "cooling_slot"
+profile: "HR-54-116"  # References Profile by name
+length: [15.0]        # Angular length in degrees
+angle: [60, 90, 120]  # Angles between consecutive shapes
+onturns: [1, 3, 5]    # Turns where shapes are applied
+position: ALTERNATE   # ABOVE, BELOW, or ALTERNATE
+```
 
 #### Insert Configuration
 
@@ -411,6 +439,8 @@ python -m python_magnetgeo.xao HL-31-Axi.xao mesh --group CoolingChannels --geo 
 - **Major refactor** - Complete rewrite of internal architecture
 - **Type safety** - Full type annotations and validation
 - **YAML 2.0** - Enhanced structured format (builds on v0.7.0)
+- **Profile class** - New class for bump profile management with DAT file export
+- **Enhanced Shape** - Profile integration, ShapePosition enum, flexible positioning
 - **Breaking changes** - See BREAKING_CHANGES.md
 - **New features**: `ValidationError`, `YAMLObjectBase`, automatic YAML registration
 
@@ -669,6 +699,141 @@ if __name__ == "__main__":
 ```
 
 ## Advanced Usage
+
+### Working with Shape and Profile
+
+#### Profile Class - Aerodynamic Profiles
+
+The `Profile` class represents bump shape profiles as 2D point sequences with optional labels:
+
+```python
+from python_magnetgeo import Profile
+
+# Create a profile programmatically
+profile = Profile(
+    cad="HR-54-116",
+    points=[[-5.34, 0], [-3.34, 0], [0, 0.9], [3.34, 0], [5.34, 0]],
+    labels=[0, 0, 1, 0, 0]  # Optional region labels
+)
+
+# Load from YAML
+profile = Profile.from_yaml("my_profile.yaml")
+
+# Generate DAT file for external tools
+output_path = profile.generate_dat_file("./output")
+print(f"Generated: {output_path}")
+# Creates: output/Shape_HR-54-116.dat
+
+# Serialize to YAML
+profile.dump()  # Saves to HR-54-116.yaml
+```
+
+**Profile YAML Format:**
+```yaml
+!<Profile>
+cad: "NACA-0012"
+points:
+  - [0, 0]
+  - [0.5, 0.05]
+  - [1, 0]
+labels: [0, 1, 0]  # Optional - defaults to all zeros
+```
+
+**DAT File Output:**
+```
+#Shape : NACA-0012
+#
+# Profile with region labels
+#
+#N_i
+3
+#X_i F_i	Id_i
+0.00 0.00	0
+0.50 0.05	1
+1.00 0.00	0
+```
+
+#### Shape Class - Helical Cut Modifications
+
+The `Shape` class defines additional geometric features (cut profiles) applied to helical cuts:
+
+```python
+from python_magnetgeo import Shape, Profile
+from python_magnetgeo.Shape import ShapePosition
+
+# Method 1: Load Profile separately
+profile = Profile.from_yaml("cooling_profile.yaml")
+shape = Shape(
+    name="cooling_slot",
+    profile=profile,
+    length=[15.0],       # 15 degrees wide
+    angle=[60.0],        # Spaced 60 degrees apart
+    onturns=[1, 2, 3],   # First three turns
+    position=ShapePosition.ABOVE
+)
+
+# Method 2: Reference Profile by filename (automatic loading)
+shape = Shape(
+    name="vent_holes",
+    profile="circular_hole",  # Loads from circular_hole.yaml
+    length=[5.0, 10.0],       # Variable lengths
+    angle=[45.0],             # Fixed spacing
+    onturns=[1, 3, 5, 7],     # Odd turns only
+    position="ALTERNATE"      # String or enum accepted
+)
+
+# Method 3: Use in Helix configuration
+from python_magnetgeo import Helix
+helix = Helix(
+    name="H1",
+    r=[19.3, 24.2],
+    z=[-226, 108],
+    cutwidth=0.22,
+    odd=True,
+    dble=True,
+    shape=shape  # Attach shape to helix
+)
+```
+
+**Shape Position Options:**
+```python
+from python_magnetgeo.Shape import ShapePosition
+
+# Three placement strategies:
+shape1 = Shape(..., position=ShapePosition.ABOVE)     # All above
+shape2 = Shape(..., position=ShapePosition.BELOW)     # All below
+shape3 = Shape(..., position=ShapePosition.ALTERNATE) # Alternating
+
+# Case-insensitive string also works:
+shape4 = Shape(..., position="above")      # Converted to enum
+shape5 = Shape(..., position="BELOW")      # Converted to enum
+shape6 = Shape(..., position="alternate")  # Converted to enum
+```
+
+**Complete Helix with Shape YAML:**
+```yaml
+!<Helix>
+name: "HL-31_H1"
+odd: true
+r: [19.3, 24.2]
+z: [-226, 108]
+dble: true
+cutwidth: 0.22
+shape: !<Shape>
+  name: "cooling_channels"
+  profile: "02_10_2014_H1"  # References Profile YAML file
+  length: [15.0]
+  angle: [60, 90, 120, 120]
+  onturns: [1, 2, 3, 4, 5]
+  position: ALTERNATE
+```
+
+**Key Features:**
+- **Profile References**: Shape can reference Profile by name (string) or object
+- **Automatic Loading**: String profile names automatically load from `{profile}.yaml`
+- **Flexible Positioning**: Enum or case-insensitive string for position
+- **Multi-Turn Support**: Apply shapes to specific turns or patterns
+- **Variable Parameters**: Different lengths/angles for different positions
 
 ### Lazy Loading with getObject()
 

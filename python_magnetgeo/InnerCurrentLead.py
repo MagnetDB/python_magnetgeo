@@ -5,7 +5,6 @@
 Provides Inner and OuterCurrentLead class
 """
 
-from typing import List
 from .base import YAMLObjectBase
 from .validation import GeometryValidator, ValidationError
 
@@ -13,10 +12,10 @@ from .validation import GeometryValidator, ValidationError
 class InnerCurrentLead(YAMLObjectBase):
     """
     Inner current lead geometry for magnet electrical connections.
-    
+
     Represents the current lead structure on the inner bore of a magnet assembly,
     including mounting holes, support structure, and optional edge filleting.
-    
+
     Attributes:
         name (str): Unique identifier for the current lead
         r (list[float]): Radial bounds [R0, R1] in mm, where R0 < R1
@@ -34,14 +33,14 @@ class InnerCurrentLead(YAMLObjectBase):
             [1] DZ: Vertical offset in mm (can be negative)
 
         fillet (bool): Apply edge filleting for smooth transitions (default: False)
-    
+
     Validation Rules:
         - name must be non-empty string
         - r must have exactly 2 elements in ascending order
         - h must be non-negative
         - holes, if provided, must have exactly 6 elements with specific constraints
         - support, if provided, must have exactly 2 elements
-    
+
     Example:
         >>> # Basic inner lead without holes
         >>> lead = InnerCurrentLead(
@@ -49,7 +48,7 @@ class InnerCurrentLead(YAMLObjectBase):
         ...     r=[10.0, 20.0],
         ...     h=50.0
         ... )
-        >>> 
+        >>>
         >>> # Complete inner lead with holes and support
         >>> lead_full = InnerCurrentLead(
         ...     name="inner_lead_complete",
@@ -59,7 +58,7 @@ class InnerCurrentLead(YAMLObjectBase):
         ...     support=[28.0, 6.5],                    # Support structure
         ...     fillet=True                              # With edge filleting
         ... )
-    
+
     Notes:
         - Inner leads typically connect to helical coils on the inside bore
         - Hole patterns allow for cooling or mounting features
@@ -74,13 +73,13 @@ class InnerCurrentLead(YAMLObjectBase):
         name: str,
         r: list[float],
         h: float = 0.0,
-        holes: list = [],
-        support: list = [],
+        holes: list = None,
+        support: list = None,
         fillet: bool = False,
     ) -> None:
         """
         Initialize InnerCurrentLead with comprehensive validation.
-        
+
         Args:
             name: Unique identifier for the current lead
             r: Radial bounds [R0, R1] in mm, must be ascending
@@ -90,7 +89,7 @@ class InnerCurrentLead(YAMLObjectBase):
 
             support: Optional support structure with 2 parameters: [R2, DZ]
             fillet: Apply edge filleting (default: False)
-        
+
         Raises:
             ValidationError: If validation fails for:
                 - Empty or invalid name
@@ -103,13 +102,13 @@ class InnerCurrentLead(YAMLObjectBase):
                   * Angle not in (0, 360]
                   * Angular_Position not in [0, 360)
                   * N_Holes <= 0 or not an integer
-                  
+
                 - support not exactly 2 elements or R2 negative
-        
+
         Example:
             >>> # Minimal configuration
             >>> lead = InnerCurrentLead("simple", [10.0, 20.0])
-            >>> 
+            >>>
             >>> # Full configuration with validation
             >>> try:
             ...     lead = InnerCurrentLead(
@@ -122,7 +121,7 @@ class InnerCurrentLead(YAMLObjectBase):
             ...     )
             ... except ValidationError as e:
             ...     print(f"Configuration error: {e}")
-        
+
         Notes:
             - All geometric parameters are in millimeters
             - Angles are in degrees
@@ -134,7 +133,7 @@ class InnerCurrentLead(YAMLObjectBase):
         GeometryValidator.validate_numeric_list(r, "r", expected_length=2)
         GeometryValidator.validate_ascending_order(r, "r")
         GeometryValidator.validate_positive(h, "h")
-        
+
         if holes:
             GeometryValidator.validate_numeric_list(holes, "holes", expected_length=6)
             if holes[0] <= 0:
@@ -157,37 +156,29 @@ class InnerCurrentLead(YAMLObjectBase):
         self.name = name
         self.r = r
         self.h = h
-        self.holes = holes
-        self.support = support
+        self.holes = holes if holes is not None else []
+        self.support = support if support is not None else []
         self.fillet = fillet
 
     def __repr__(self):
         """
         Generate string representation of InnerCurrentLead.
-        
+
         Returns:
             str: String showing all attributes with their values
-        
+
         Example:
             >>> lead = InnerCurrentLead("test", [10.0, 20.0], h=50.0)
             >>> repr(lead)
             "InnerCurrentLead(name='test', r=[10.0, 20.0], h=50.0, holes=[], support=[], fillet=False)"
         """
-        return "%s(name=%r, r=%r, h=%r, holes=%r, support=%r, fillet=%r)" % (
-            self.__class__.__name__,
-            self.name,
-            self.r,
-            self.h,
-            self.holes,
-            self.support,
-            self.fillet,
-        )
+        return f"{self.__class__.__name__}(name={self.name!r}, r={self.r!r}, h={self.h!r}, holes={self.holes!r}, support={self.support!r}, fillet={self.fillet!r})"
 
     @classmethod
     def from_dict(cls, values: dict, debug: bool = False):
         """
         Create InnerCurrentLead from dictionary representation.
-        
+
         Args:
             values: Dictionary with keys matching constructor parameters:
                 - name: Lead identifier (required)
@@ -197,10 +188,10 @@ class InnerCurrentLead(YAMLObjectBase):
                 - support: Support structure (required)
                 - fillet: Edge filleting flag (required)
             debug: Enable debug output during construction
-        
+
         Returns:
             InnerCurrentLead: New instance constructed from dictionary
-        
+
         Example:
             >>> data = {
             ...     'name': 'lead_from_dict',
@@ -211,7 +202,7 @@ class InnerCurrentLead(YAMLObjectBase):
             ...     'fillet': True
             ... }
             >>> lead = InnerCurrentLead.from_dict(data)
-        
+
         Notes:
             - All keys shown in example are expected in the dictionary
             - Uses standard constructor, so all validation applies
@@ -223,5 +214,4 @@ class InnerCurrentLead(YAMLObjectBase):
         holes = values["holes"]
         support = values["support"]
         fillet = values["fillet"]
-        return cls(name, r, h, holes, support, fillet)        
-
+        return cls(name, r, h, holes, support, fillet)

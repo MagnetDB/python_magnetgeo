@@ -1,16 +1,15 @@
 import os
 
-from typing import List, Union
 from .base import YAMLObjectBase
-from .validation import GeometryValidator, ValidationError
-
 from .Contour2D import Contour2D
+from .validation import GeometryValidator
+
 
 class Tierod(YAMLObjectBase):
     yaml_tag = "Tierod"
 
     def __init__(
-        self, name: str, r: float, n: int, dh: float, sh: float, contour2d: Union[str, Contour2D]
+        self, name: str, r: float, n: int, dh: float, sh: float, contour2d: str | Contour2D
     ) -> None:
         """
         Initialize a tie rod configuration for Bitter disk magnets.
@@ -142,11 +141,12 @@ class Tierod(YAMLObjectBase):
             Tierod(name='simple_rods', r=100.0, n=12, dh=0.0, sh=0.0,
                 contour2d=None)
         """
-        return (f"{self.__class__.__name__}(name={self.name!r}, "
-                f"r={self.r!r}, n={self.n!r}, "
-                f"dh={self.dh!r}, sh={self.sh!r}, "
-                f"contour2d={self.contour2d!r})")
-
+        return (
+            f"{self.__class__.__name__}(name={self.name!r}, "
+            f"r={self.r!r}, n={self.n!r}, "
+            f"dh={self.dh!r}, sh={self.sh!r}, "
+            f"contour2d={self.contour2d!r})"
+        )
 
     @classmethod
     def from_dict(cls, values: dict, debug: bool = False):
@@ -215,15 +215,12 @@ class Tierod(YAMLObjectBase):
             >>> tierod3 = Tierod.from_dict(data3)
         """
         # Smart nested object handling
-        contour2d = cls._load_nested_single(values.get('contour2d'), Contour2D, debug=debug)
+        contour2d = cls._load_nested_single(values.get("contour2d"), Contour2D, debug=debug)
         return cls(
             name=values.get("name", "")
             r=values["r"],
             n=values["n"],
             dh=values.get("dh", 0.0),
             sh=values.get("sh", 0.0),
-            contour2d=contour2d
+            contour2d=contour2d,
         )
-
-
-
