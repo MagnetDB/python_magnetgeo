@@ -25,11 +25,8 @@ class Groove(YAMLObjectBase):
 
     Grooves are radial indentations or channels machined into the conductor
     surface. They typically have a square cross-section and are distributed
-    circumferentially around the conductor. Common uses include:
+    circumferentially around the conductor. Use for:
     - Cooling channels
-    - Stress relief features
-    - Mounting features
-    - Electrical isolation
 
     Attributes:
         name (str): Unique identifier for the groove set (default: '')
