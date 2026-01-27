@@ -217,7 +217,7 @@ class Tierod(YAMLObjectBase):
         # Smart nested object handling
         contour2d = cls._load_nested_single(values.get("contour2d"), Contour2D, debug=debug)
         return cls(
-            name=values.get("name", "")
+            name=values.get("name", ""),
             r=values["r"],
             n=values["n"],
             dh=values.get("dh", 0.0),
