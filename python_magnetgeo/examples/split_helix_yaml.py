@@ -23,6 +23,7 @@ Example:
 import sys
 import yaml
 import os
+import argparse
 from python_magnetgeo.Helix import Helix
 from python_magnetgeo.ModelAxi import ModelAxi
 from python_magnetgeo.Shape import Shape
@@ -44,16 +45,28 @@ def split_helix_yaml(input_file):
     Returns:
         tuple: (helix_file, modelaxi_file, shape_file) - paths to the created files
     """
-    print(f"Loading Helix from: {input_file}")
+    # Split input_file into basedir and basename
+    basedir = os.path.dirname(input_file)
+    basename = os.path.basename(input_file)
+    
+    # Change to basedir if it's not empty and not '.'
+    if basedir and basedir != '.':
+        print(f"Changing directory to: {basedir}")
+        os.chdir(basedir)
+        input_path = basename
+    else:
+        input_path = input_file
+    
+    print(f"Loading Helix from: {input_path}")
 
     # Load the Helix object using getObject from utils
-    helix = getObject(input_file)
+    helix = getObject(input_path)
     logger.debug(helix)
 
 
-    # Extract the base name (without directory and extension)
-    base_name = os.path.splitext(os.path.basename(input_file))[0]
-    output_dir = os.path.dirname(input_file) or '.'
+    # Extract the base name (without extension)
+    base_name = os.path.splitext(basename)[0]
+    output_dir = '.'
 
     # Define output file names
     modelaxi_filename = f"{base_name}_modelaxi"
@@ -114,20 +127,23 @@ def split_helix_yaml(input_file):
 
 def main():
     """Main function to handle command line arguments."""
-    if len(sys.argv) < 2:
-        print("Error: Missing input file argument")
-        print(f"\nUsage: {sys.argv[0]} <helix_yaml_file>")
-        print(f"\nExample: {sys.argv[0]} data/HL-31_H1.yaml")
-        sys.exit(1)
+    parser = argparse.ArgumentParser(
+        description='Split an Helix YAML file into separate files for modelaxi and shape objects.',
+        epilog='Example: %(prog)s data/HL-31_H1.yaml'
+    )
+    parser.add_argument(
+        'input_file',
+        help='Path to the input Helix YAML file'
+    )
 
-    input_file = sys.argv[1]
+    args = parser.parse_args()
 
-    if not os.path.exists(input_file):
-        print(f"Error: File not found: {input_file}")
+    if not os.path.exists(args.input_file):
+        print(f"Error: File not found: {args.input_file}")
         sys.exit(1)
 
     try:
-        split_helix_yaml(input_file)
+        split_helix_yaml(args.input_file)
     except Exception as e:
         print(f"Error: {e}")
         import traceback
