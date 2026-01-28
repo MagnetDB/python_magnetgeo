@@ -31,7 +31,7 @@ def test_refactored_tierod_functionality():
     print(f"✓ Tierod created: {tierod}")
 
     # Test that all inherited methods exist
-    assert hasattr(tierod, 'dump')
+    assert hasattr(tierod, 'write_to_yaml')
     assert hasattr(tierod, 'to_json')
     assert hasattr(tierod, 'write_to_json')
     assert hasattr(Tierod, 'from_yaml')
@@ -162,7 +162,7 @@ def test_contour2d_handling():
 
     # Save the contour2d to YAML file
     try:
-        ref_contour.dump()  # This should create string_reference.yaml
+        ref_contour.write_to_yaml()  # This should create string_reference.yaml
         print("✓ Created string_reference.yaml")
     except Exception as e:
         print(f"Note: Could not create YAML file: {e}")
@@ -215,7 +215,7 @@ def test_yaml_round_trip_with_contour2d():
 
     try:
         # Dump to YAML file
-        original.dump()  # Creates yaml_with_contour.yaml
+        original.write_to_yaml()  # Creates yaml_with_contour.yaml
         print("✓ Dumped Tierod with Contour2D to YAML")
 
         # Verify the file was created
@@ -262,7 +262,7 @@ def test_yaml_with_contour2d_string_reference():
 
     try:
         # Save the Contour2D object - this creates my_special_contour.yaml
-        ref_contour.dump()
+        ref_contour.write_to_yaml()
         contour_file = f"{ref_contour_name}.yaml"
         assert os.path.exists(contour_file)
         print(f"✓ Created Contour2D file: {contour_file}")
@@ -331,7 +331,7 @@ def test_yaml_round_trip():
     )
 
     # Dump to YAML file
-    original.dump()  # Creates basic_yaml_test.yaml
+    original.write_to_yaml()  # Creates basic_yaml_test.yaml
 
     try:
         # Load it back

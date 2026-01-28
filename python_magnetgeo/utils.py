@@ -25,7 +25,7 @@ class UnsupportedTypeError(Exception):
     """Raised when object type is not supported"""
     pass
 
-def writeYaml(comment: str, obj: Any, obj_class: Type = None, debug: bool = True):
+def writeYaml(comment: str, obj: Any, obj_class: Type = None, debug: bool = True, directory: str | None = None):
     """
     Write object to YAML file.
 
@@ -34,6 +34,8 @@ def writeYaml(comment: str, obj: Any, obj_class: Type = None, debug: bool = True
         obj: Object to write
         obj_class: Class type (for compatibility, not used)
         debug: Enable debug output
+        directory: Optional directory path where the file should be created.
+                  If None, uses current directory.
     """
     # Determine filename
     if hasattr(obj, "name") and obj.name:
@@ -42,6 +44,11 @@ def writeYaml(comment: str, obj: Any, obj_class: Type = None, debug: bool = True
         filename = f"{obj.cad}.yaml"
     else:
         filename = f"{comment}.yaml"
+
+    # Add directory path if specified
+    if directory:
+        os.makedirs(directory, exist_ok=True)
+        filename = os.path.join(directory, filename)
 
     try:
         logger.debug(f"Writing {comment} to {filename}")

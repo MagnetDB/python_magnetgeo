@@ -35,7 +35,7 @@ Modified `/home/LNCMI-G/christophe.trophime/github/python_magnetgeo/python_magne
 - Logs errors with full context
 - Logs directory changes during file loading
 
-#### Updated `base.py`  
+#### Updated `base.py`
 - Added logger import
 - Ready for future logging enhancements
 
@@ -50,7 +50,7 @@ Created comprehensive documentation:
 
 - **`docs/logging.md`**: Full logging guide with examples
   - Quick start examples
-  - Advanced configuration  
+  - Advanced configuration
   - Runtime control
   - Common use cases
   - Troubleshooting
@@ -77,7 +77,7 @@ pmg.configure_logging(level='INFO')
 
 # Use the package normally - operations will be logged
 helix = pmg.Helix(name="H1", r=[10, 20], z=[0, 50])
-helix.dump()
+helix.write_to_yaml()
 ```
 
 ### Debug Mode
@@ -143,7 +143,7 @@ pmg.configure_logging(
 
 The logging implementation has been tested with:
 - Basic configuration tests
-- File logging tests  
+- File logging tests
 - Integration with existing package functionality
 - Multiple log level tests
 - Format customization tests

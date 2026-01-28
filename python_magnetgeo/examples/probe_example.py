@@ -44,9 +44,9 @@ field_probes = Probe(
 )
 
 # Save to YAML files
-voltage_probes.dump()
-temp_probes.dump()
-field_probes.dump()
+voltage_probes.write_to_yaml()
+temp_probes.write_to_yaml()
+field_probes.write_to_yaml()
 
 # Save to JSON files
 voltage_probes.write_to_json()

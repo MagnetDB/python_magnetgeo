@@ -325,9 +325,9 @@ insert = Insert(
 )
 
 # Save to YAML
-insert.dump()  # Creates HL-31.yaml
-helix.dump()   # Creates H1.yaml
-ring.dump()    # Creates Ring-H1H2.yaml
+insert.write_to_yaml()  # Creates HL-31.yaml
+helix.write_to_yaml()   # Creates H1.yaml
+ring.write_to_yaml()    # Creates Ring-H1H2.yaml
 
 # Save to JSON
 json_str = insert.to_json()
@@ -736,7 +736,7 @@ print(f"Generated: {output_path}")
 # Creates: output/Shape_HR-54-116.dat
 
 # Serialize to YAML
-profile.dump()  # Saves to HR-54-116.yaml
+profile.write_to_yaml()  # Saves to HR-54-116.yaml
 ```
 
 **Profile YAML Format:**
@@ -1084,7 +1084,7 @@ coil = CustomCoil(
     turns=100,
     current=1000.0
 )
-coil.dump()  # Saves to my_coil.yaml
+coil.write_to_yaml()  # Saves to my_coil.yaml
 ```
 
 ### Batch Processing

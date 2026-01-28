@@ -37,8 +37,10 @@ Example:
     >>>
     >>> # All serialization methods available automatically:
     >>> obj = MyGeometry("test", 42.0)
-    >>> obj.dump()  # Writes test.yaml
+    >>> obj.to_yaml()  # Returns YAML string
+    >>> obj.write_to_yaml()  # Writes test.yaml
     >>> obj.to_json()  # Returns JSON string
+    >>> obj.write_to_json()  # Writes test.json
     >>> MyGeometry.from_yaml("test.yaml")  # Loads from YAML
 """
 
@@ -65,7 +67,8 @@ class SerializableMixin:
     of JSON/YAML serialization methods that all geometry classes inherit.
 
     Inherited Methods:
-        - dump(): Write object to YAML file
+        - to_yaml(): Convert object to YAML string
+        - write_to_yaml(): Write object to YAML file
         - to_json(): Convert object to JSON string
         - write_to_json(): Write object to JSON file
         - load_from_yaml(): Load object from YAML file (classmethod)
@@ -78,31 +81,62 @@ class SerializableMixin:
         - Subclasses must implement from_dict() for complete functionality
     """
 
-    def dump(self, filename: str | None = None) -> None:
+    def write_to_yaml(self, directory: str | None = None) -> None:
         """
-        Dump object to YAML file.
+        Write object to YAML file.
 
         Serializes this object to YAML format and writes to a file. The filename
         is automatically determined from the object's 'name' attribute.
 
         Args:
-            filename: Optional custom filename. If None, uses object name.
-                     Currently not used - kept for API compatibility.
+            directory: Optional directory path where the file should be created.
+                      If None, uses current directory.
 
         Example:
-            >>> ring = Ring("test_ring", [10.0, 20.0], [0.0, 10.0])
-            >>> ring.dump()  # Creates test_ring.yaml
+            >>> ring = Ring("test_ring", [10.0, 20.0, 30.0, 40.0], [0.0, 10.0])
+            >>> ring.write_to_yaml()  # Creates test_ring.yaml in current directory
+            >>> ring.write_to_yaml("/tmp")  # Creates /tmp/test_ring.yaml
 
         Notes:
-            - Creates file in current directory
+            - Filename is automatically determined from object name: {name}.yaml
             - Overwrites existing files without warning
-            - Uses object name for filename: {name}.yaml
+            - Creates directory if it doesn't exist
         """
         from .utils import writeYaml
 
         # Use the class name for writeYaml's comment parameter
         class_name = self.__class__.__name__
-        writeYaml(class_name, self)
+        writeYaml(class_name, self, directory=directory)
+
+    def to_yaml(self) -> str:
+        """
+        Convert object to YAML string representation.
+
+        Serializes this object to a YAML-formatted string with proper formatting.
+
+        Returns:
+            str: YAML string representation of the object
+
+        Example:
+            >>> ring = Ring("test", [10.0, 20.0], [0.0, 10.0])
+            >>> yaml_str = ring.to_yaml()
+            >>> print(yaml_str)
+            !<Ring>
+            name: test
+            r:
+            - 10.0
+            - 20.0
+            z:
+            - 0.0
+            - 10.0
+            ...
+
+        Notes:
+            - Uses PyYAML's default_flow_style=False for readable output
+            - Includes custom YAML tag (e.g., !<Ring>)
+            - Can be passed to yaml.safe_load() for deserialization
+        """
+        return yaml.dump(self, default_flow_style=False)
 
     def to_json(self) -> str:
         """
@@ -135,7 +169,7 @@ class SerializableMixin:
 
         return json.dumps(self, default=deserialize.serialize_instance, sort_keys=True, indent=4)
 
-    def write_to_json(self, filename: str | None = None) -> None:
+    def write_to_json(self, filename: str | None = None, directory: str | None = None) -> None:
         """
         Write object to JSON file.
 
@@ -144,22 +178,33 @@ class SerializableMixin:
 
         Args:
             filename: Optional custom filename. If None, uses "{object.name}.json"
+            directory: Optional directory path where the file should be created.
+                      If None, uses current directory.
 
         Raises:
             Exception: If file write fails for any reason
 
         Example:
             >>> helix = Helix("test_helix", [15.0, 25.0], [0.0, 100.0], ...)
-            >>> helix.write_to_json()  # Creates test_helix.json
+            >>> helix.write_to_json()  # Creates test_helix.json in current directory
             >>> helix.write_to_json("custom_name.json")  # Custom filename
+            >>> helix.write_to_json(directory="/tmp")  # Creates /tmp/test_helix.json
 
         Notes:
-            - Creates file in current directory
+            - Filename defaults to object name: {name}.json
             - Overwrites existing files without warning
+            - Creates directory if it doesn't exist
         """
+        import os
+
         if filename is None:
             name = getattr(self, "name", self.__class__.__name__)
             filename = f"{name}.json"
+
+        # Add directory path if specified
+        if directory:
+            os.makedirs(directory, exist_ok=True)
+            filename = os.path.join(directory, filename)
 
         try:
             with open(filename, "w") as ostream:

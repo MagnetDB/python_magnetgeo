@@ -28,14 +28,14 @@ class TestSerialization:
         """Test Helix JSON serialization roundtrip"""
         # Serialize to JSON
         sample_helix.write_to_json()
-        
+
         # Read back and verify
         with open(f"{sample_helix.name}.json", 'r') as f:
             json_data = json.load(f)
-        
+
         assert json_data["__classname__"] == "Helix"
         assert json_data["name"] == sample_helix.name
-        
+
         # Cleanup
         Path(f"{sample_helix.name}.json").unlink(missing_ok=True)
 
@@ -54,7 +54,7 @@ class TestSerialization:
             "model3d": None,
             "shape": None
         }
-        
+
         ring_dict = {
             "__classname__": "Ring",
             "name": "ring1",
@@ -65,7 +65,7 @@ class TestSerialization:
             "bpside": True,
             "fillets": False
         }
-        
+
         # Define inline currentleads - both InnerCurrentLead and OuterCurrentLead
         inner_lead_dict = {
             "__classname__": "InnerCurrentLead",
@@ -76,7 +76,7 @@ class TestSerialization:
             "support": [20.0, 5.0],
             "fillet": True
         }
-        
+
         outer_lead_dict = {
             "__classname__": "OuterCurrentLead",
             "name": "outer",
@@ -85,7 +85,7 @@ class TestSerialization:
             "bar": [37.5, 10.0, 15.0, 40.0],
             "support": [5.0, 10.0, 30.0, 0.0]
         }
-        
+
         probe_dict = {
             "__classname__": "Probe",
             "name": "probe1",
@@ -93,7 +93,7 @@ class TestSerialization:
             "labels": ["B1", "B2"],
             "points": [[12.0, 5.0, 25.0], [18.0, -5.0, 45.0]]
         }
-        
+
         data = {
             "__classname__": "Insert",
             "name": "dict_insert",
@@ -106,9 +106,9 @@ class TestSerialization:
             "outerbore": 35.0,
             "probes": [probe_dict]                # Use inline dict
         }
-        
+
         insert = Insert.from_dict(data)
-        
+
         assert insert.name == "dict_insert"
         assert len(insert.helices) == 1
         assert insert.helices[0].name == "helix1"
@@ -129,9 +129,9 @@ class TestSerialization:
             "n": 6,
             "struct": None  # Empty to avoid file loading
         }
-        
+
         supra = Supra.from_dict(data)
-        
+
         assert supra.name == "dict_supra"
         assert supra.r == [30.0, 50.0]
         assert supra.z == [20.0, 80.0]
@@ -147,9 +147,9 @@ class TestSerialization:
             "labels": ["B1", "B2"],
             "points": [[12.0, 5.0, 25.0], [18.0, -5.0, 45.0]]
         }
-        
+
         probe = Probe.from_dict(data)
-        
+
         assert probe.name == "dict_probe"
         assert probe.type == "field_sensors"
         assert probe.labels == ["B1", "B2"]
@@ -176,17 +176,17 @@ class TestSerialization:
     def test_class_serialization_interface(self, class_obj, sample_data):
         """Test that all classes implement required serialization methods"""
         instance = class_obj.from_dict(sample_data)
-        
+
         # Test required class methods exist
         assert hasattr(class_obj, 'from_dict')
         assert hasattr(class_obj, 'from_yaml')
         assert hasattr(class_obj, 'from_json')
-        
+
         # Test required instance methods exist
         assert hasattr(instance, 'to_json')
         assert hasattr(instance, 'write_to_json')
-        assert hasattr(instance, 'dump')
-        
+        assert hasattr(instance, 'write_to_yaml')
+
         # Test JSON serialization works
         json_str = instance.to_json()
         parsed = json.loads(json_str)

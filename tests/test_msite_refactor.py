@@ -117,7 +117,7 @@ def test_inherited_methods():
     msite = MSite("test_msite", [insert], None, None, None, None)
 
     # Check all inherited methods exist
-    assert hasattr(msite, 'dump')
+    assert hasattr(msite, 'write_to_yaml')
     assert hasattr(msite, 'to_json')
     assert hasattr(msite, 'write_to_json')
     assert hasattr(MSite, 'from_yaml')
@@ -312,7 +312,7 @@ def test_yaml_roundtrip():
     msite = MSite("yaml_msite", [insert], None, [0.0], [0.0], [0.0])
 
     # Dump to YAML
-    msite.dump()
+    msite.write_to_yaml()
     yaml_file = "yaml_msite.yaml"
 
     assert os.path.exists(yaml_file), "YAML file should be created"

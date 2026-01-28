@@ -8,7 +8,7 @@ version = "1.0.0"
 description = "Python helpers to create HiFiMagnet cads and meshes"
 readme = "README.rst"
 requires-python = ">=3.11"
-license = "MIT"
+license = {text = "MIT"}
 authors = [
     {name = "Christophe Trophime", email = "christophe.trophime@lncmi.cnrs.fr"},
     {name = "Romain Vallet", email = "romain.vallet@lncmi.cnrs.fr"},

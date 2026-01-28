@@ -60,7 +60,7 @@ def test_refactored_shape_functionality():
     print(f"✓ Shape created with all parameters: {shape_full}")
 
     # Test that all inherited methods exist
-    assert hasattr(shape, 'dump')
+    assert hasattr(shape, 'write_to_yaml')
     assert hasattr(shape, 'to_json')
     assert hasattr(shape, 'write_to_json')
     assert hasattr(Shape, 'from_yaml')
@@ -196,7 +196,7 @@ def test_shape_yaml_round_trip():
     )
 
     # Dump to YAML file
-    original.dump()  # Creates yaml_test_shape.yaml
+    original.write_to_yaml()  # Creates yaml_test_shape.yaml
 
     try:
         # Load it back

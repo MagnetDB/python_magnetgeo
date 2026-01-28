@@ -4,7 +4,7 @@
 
 The issue occurs because `yaml.YAMLObject` has its own `from_yaml()` method that expects different parameters than our custom implementation. We need to either:
 
-1. Override the method properly, or  
+1. Override the method properly, or
 2. Use different method names to avoid conflicts
 
 ## Solution: Updated Base Classes
@@ -30,19 +30,19 @@ T = TypeVar('T', bound='SerializableMixin')
 class SerializableMixin:
     """
     Mixin providing common serialization functionality.
-    
+
     This eliminates duplicate serialization code across all geometry classes.
     """
-    
+
     def dump(self, filename: Optional[str] = None) -> None:
         """
         Dump object to YAML file.
-        
+
         Args:
             filename: Optional custom filename. If None, uses object name.
         """
         from .utils import writeYaml
-        
+
         # Use the class name for writeYaml's comment parameter
         class_name = self.__class__.__name__
         writeYaml(class_name, self)
@@ -50,29 +50,29 @@ class SerializableMixin:
     def to_json(self) -> str:
         """
         Convert object to JSON string.
-        
+
         Returns:
             JSON string representation of the object
         """
         from . import deserialize
         return json.dumps(
-            self, 
-            default=deserialize.serialize_instance, 
-            sort_keys=True, 
+            self,
+            default=deserialize.serialize_instance,
+            sort_keys=True,
             indent=4
         )
 
     def write_to_json(self, filename: Optional[str] = None) -> None:
         """
         Write object to JSON file.
-        
+
         Args:
             filename: Optional custom filename. If None, uses object name.
         """
         if filename is None:
             name = getattr(self, 'name', self.__class__.__name__)
             filename = f"{name}.json"
-            
+
         try:
             with open(filename, "w") as ostream:
                 ostream.write(self.to_json())
@@ -83,32 +83,32 @@ class SerializableMixin:
     def load_from_yaml(cls: Type[T], filename: str, debug: bool = False) -> T:
         """
         Load object from YAML file.
-        
-        Note: Using 'load_from_yaml' instead of 'from_yaml' to avoid 
+
+        Note: Using 'load_from_yaml' instead of 'from_yaml' to avoid
         conflicts with yaml.YAMLObject.from_yaml()
-        
+
         Args:
             filename: Path to YAML file
             debug: Enable debug output
-            
+
         Returns:
             Instance of the class loaded from YAML
         """
         from .utils import loadYaml
         return loadYaml(cls.__name__, filename, cls, debug)
 
-    @classmethod  
+    @classmethod
     def load_from_json(cls: Type[T], filename: str, debug: bool = False) -> T:
         """
         Load object from JSON file.
-        
-        Note: Using 'load_from_json' instead of 'from_json' to avoid 
+
+        Note: Using 'load_from_json' instead of 'from_json' to avoid
         potential conflicts.
-        
+
         Args:
-            filename: Path to JSON file  
+            filename: Path to JSON file
             debug: Enable debug output
-            
+
         Returns:
             Instance of the class loaded from JSON
         """
@@ -120,13 +120,13 @@ class SerializableMixin:
     def from_dict(cls: Type[T], values: Dict[str, Any], debug: bool = False) -> T:
         """
         Create instance from dictionary.
-        
+
         This method must be implemented by each subclass.
-        
+
         Args:
             values: Dictionary containing object data
             debug: Enable debug output
-            
+
         Returns:
             New instance of the class
         """
@@ -136,32 +136,32 @@ class SerializableMixin:
 class YAMLObjectBase(yaml.YAMLObject, SerializableMixin):
     """
     Base class for all YAML serializable geometry objects.
-    
+
     This class automatically handles YAML constructor registration and provides
     compatibility with existing from_yaml/from_json class methods.
     """
-    
+
     def __init_subclass__(cls, **kwargs):
         """
         Automatically register YAML constructors for all subclasses.
-        
+
         This is called whenever a class inherits from YAMLObjectBase.
         """
         super().__init_subclass__(**kwargs)
-        
+
         # Ensure the class has a yaml_tag
         if not hasattr(cls, 'yaml_tag') or not cls.yaml_tag:
             raise ValueError(f"Class {cls.__name__} must define a yaml_tag")
-        
+
         # Auto-register YAML constructor
         def constructor(loader, node):
             """Generated YAML constructor for this class"""
             values = loader.construct_mapping(node)
             return cls.from_dict(values)
-        
+
         # Register the constructor with PyYAML
         yaml.add_constructor(cls.yaml_tag, constructor)
-        
+
         # Optional: print confirmation (remove in production)
         print(f"Auto-registered YAML constructor for {cls.__name__}")
 
@@ -169,28 +169,28 @@ class YAMLObjectBase(yaml.YAMLObject, SerializableMixin):
     def from_yaml(cls: Type[T], filename: str, debug: bool = False) -> T:
         """
         Create object from YAML file.
-        
+
         This method overrides yaml.YAMLObject.from_yaml() to provide
         the expected behavior for our geometry classes.
-        
+
         Args:
             filename: Path to YAML file
             debug: Enable debug output
-            
+
         Returns:
             Instance loaded from YAML file
         """
         return cls.load_from_yaml(filename, debug)
 
-    @classmethod  
+    @classmethod
     def from_json(cls: Type[T], filename: str, debug: bool = False) -> T:
         """
         Create object from JSON file.
-        
+
         Args:
-            filename: Path to JSON file  
+            filename: Path to JSON file
             debug: Enable debug output
-            
+
         Returns:
             Instance loaded from JSON file
         """
@@ -221,7 +221,7 @@ T = TypeVar('T', bound='SerializableMixin')
 
 class SerializableMixin:
     """Mixin providing common serialization functionality."""
-    
+
     def dump(self, filename: Optional[str] = None) -> None:
         """Dump object to YAML file."""
         from .utils import writeYaml
@@ -232,9 +232,9 @@ class SerializableMixin:
         """Convert object to JSON string."""
         from . import deserialize
         return json.dumps(
-            self, 
-            default=deserialize.serialize_instance, 
-            sort_keys=True, 
+            self,
+            default=deserialize.serialize_instance,
+            sort_keys=True,
             indent=4
         )
 
@@ -243,7 +243,7 @@ class SerializableMixin:
         if filename is None:
             name = getattr(self, 'name', self.__class__.__name__)
             filename = f"{name}.json"
-            
+
         try:
             with open(filename, "w") as ostream:
                 ostream.write(self.to_json())
@@ -256,7 +256,7 @@ class SerializableMixin:
         from .utils import loadYaml
         return loadYaml(cls.__name__, filename, cls, debug)
 
-    @classmethod  
+    @classmethod
     def from_json(cls: Type[T], filename: str, debug: bool = False) -> T:
         """Load object from JSON file."""
         from .utils import loadJson
@@ -272,42 +272,42 @@ class SerializableMixin:
 class GeometryBase(SerializableMixin):
     """
     Base class for all geometry objects.
-    
+
     This approach manually handles YAML registration without inheriting
     from yaml.YAMLObject to avoid method conflicts.
     """
-    
+
     # This will be set by subclasses
     yaml_tag = None
-    
+
     def __init_subclass__(cls, **kwargs):
         """Automatically register YAML constructors for all subclasses."""
         super().__init_subclass__(**kwargs)
-        
+
         # Ensure the class has a yaml_tag
         if not hasattr(cls, 'yaml_tag') or not cls.yaml_tag:
             raise ValueError(f"Class {cls.__name__} must define a yaml_tag")
-        
+
         # Make this class a YAML object manually
         cls.yaml_loader = yaml.SafeLoader
         cls.yaml_dumper = yaml.SafeDumper
-        
+
         # Auto-register YAML constructor
         def constructor(loader, node):
             """Generated YAML constructor for this class"""
             values = loader.construct_mapping(node)
             return cls.from_dict(values)
-        
+
         # Register the constructor with PyYAML
         yaml.add_constructor(cls.yaml_tag, constructor)
-        
+
         # Also register representer for dumping
         def representer(dumper, obj):
             """Generated YAML representer for this class"""
             return dumper.represent_mapping(cls.yaml_tag, obj.__dict__)
-        
+
         yaml.add_representer(cls, representer)
-        
+
         print(f"Auto-registered YAML constructor for {cls.__name__}")
 ```
 
@@ -329,18 +329,18 @@ from .validation import GeometryValidator
 
 class Ring(YAMLObjectBase):
     """Ring geometry class."""
-    
+
     yaml_tag = "Ring"
 
-    def __init__(self, name: str, r: List[float], z: List[float], 
-                 n: int = 0, angle: float = 0, bpside: bool = True, 
+    def __init__(self, name: str, r: List[float], z: List[float],
+                 n: int = 0, angle: float = 0, bpside: bool = True,
                  fillets: bool = False, cad: str = None) -> None:
         """Initialize Ring object."""
-        
+
         GeometryValidator.validate_name(name)
         GeometryValidator.validate_radial_bounds(r)
         GeometryValidator.validate_axial_bounds(z)
-        
+
         self.name = name
         self.r = r
         self.z = z
@@ -400,7 +400,7 @@ from .validation import GeometryValidator
 
 class Ring(GeometryBase):
     """Ring geometry class."""
-    
+
     yaml_tag = "Ring"
 
     # ... rest of the implementation is identical ...
@@ -422,7 +422,7 @@ from python_magnetgeo.Ring import Ring
 def test_refactored_ring_functionality():
     """Test that refactored Ring has identical functionality"""
     print("Testing refactored Ring functionality...")
-    
+
     # Test basic creation
     ring = Ring(
         name="test_ring",
@@ -434,28 +434,28 @@ def test_refactored_ring_functionality():
         fillets=False,
         cad="test_cad"
     )
-    
+
     print(f"✓ Ring created: {ring}")
-    
+
     # Test that all inherited methods exist
     assert hasattr(ring, 'dump')
-    assert hasattr(ring, 'to_json')  
+    assert hasattr(ring, 'to_json')
     assert hasattr(ring, 'write_to_json')
     assert hasattr(Ring, 'from_yaml')
     assert hasattr(Ring, 'from_json')
     assert hasattr(Ring, 'from_dict')
-    
+
     print("✓ All serialization methods inherited correctly")
-    
+
     # Test JSON serialization
     json_str = ring.to_json()
     parsed = json.loads(json_str)
     assert parsed['name'] == 'test_ring'
     assert parsed['r'] == [10.0, 20.0]
     assert parsed['__classname__'] == 'Ring'
-    
+
     print("✓ JSON serialization works identically")
-    
+
     # Test from_dict
     test_dict = {
         'name': 'dict_ring',
@@ -467,40 +467,40 @@ def test_refactored_ring_functionality():
         'fillets': True,
         'cad': 'dict_cad'
     }
-    
+
     dict_ring = Ring.from_dict(test_dict)
     assert dict_ring.name == 'dict_ring'
     assert dict_ring.r == [5.0, 15.0]
-    
+
     print("✓ from_dict works identically")
-    
+
     # Test validation
     try:
         Ring(name="", r=[1.0, 2.0], z=[0.0, 1.0])
         assert False, "Should have raised ValidationError for empty name"
     except Exception as e:
         print(f"✓ Validation works: {e}")
-    
+
     try:
         Ring(name="bad_ring", r=[2.0, 1.0], z=[0.0, 1.0])  # inner > outer
         assert False, "Should have raised ValidationError for bad radii"
     except Exception as e:
         print(f"✓ Validation works: {e}")
-    
+
     # Test YAML round-trip - using dump() to create file first
-    ring.dump()  # This creates test_ring.yaml
-    
+    ring.write_to_yaml()  # This creates test_ring.yaml
+
     # Now load it back
     loaded_ring = Ring.from_yaml('test_ring.yaml')
     assert loaded_ring.name == ring.name
     assert loaded_ring.r == ring.r
-    
+
     print("✓ YAML round-trip works")
-    
+
     # Clean up
     if os.path.exists('test_ring.yaml'):
         os.unlink('test_ring.yaml')
-    
+
     print("All refactored functionality verified! Ring.py successfully refactored.\n")
 
 if __name__ == "__main__":
