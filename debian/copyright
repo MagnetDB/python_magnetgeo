@@ -1,11 +1,11 @@
 Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 Upstream-Name: python-magnetgeo
-Upstream-Contact: <preferred name and address to reach the upstream project>
-Source: https://github.com/Trophime/python_magnetgeo
+Upstream-Contact: Christophe Trophime <christophe.trophime@lncmi.cnrs.fr>
+Source: https://github.com/MagnetDB/python_magnetgeo
 
 Files: *
-Copyright: 2020-2021 Lncmi <christophe.trophime@lncmi.cnrs.fr><
-License: MIT License
+Copyright: 2020-2026 Lncmi <christophe.trophime@lncmi.cnrs.fr>
+License: MIT
 
 Files: debian/*
 Copyright: 2021 Christophe Trophime <christophe.trophime@lncmi.cnrs.fr>
