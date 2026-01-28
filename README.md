@@ -46,7 +46,6 @@ cd python_magnetgeo
 git checkout v1.0.0
 python -m venv --system-site-packages magnetgeo-env
 source ./magnetgeo-env/bin/activate
-pip install -r requirements.txt
 pip install -e .
 ```
 
