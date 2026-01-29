@@ -51,6 +51,7 @@ from typing import Any, Type, TypeVar
 import yaml
 
 from .logging_config import get_logger
+from .visualization import VisualizableMixin
 
 # Get logger for this module
 logger = get_logger(__name__)
@@ -325,15 +326,17 @@ class SerializableMixin:
         raise NotImplementedError(f"{cls.__name__} must implement from_dict method")
 
 
-class YAMLObjectBase(SerializableMixin):
+class YAMLObjectBase(SerializableMixin, VisualizableMixin):
     """
     Base class for all YAML-serializable geometry objects.
 
-    Combines yaml.YAMLObject functionality with SerializableMixin to provide:
+    Combines yaml.YAMLObject functionality with SerializableMixin and
+    VisualizableMixin to provide:
     - Automatic YAML constructor registration via __init_subclass__
     - Consistent serialization API across all geometry classes
     - Support for both YAML and JSON serialization
     - Type-safe loading with validation
+    - Optional 2D axisymmetric plotting with matplotlib
 
     All geometry classes (Helix, Ring, Insert, Supra, etc.) inherit from this base.
 
@@ -347,6 +350,7 @@ class YAMLObjectBase(SerializableMixin):
         - No need to manually call yaml.add_constructor
         - Consistent from_yaml() and from_json() aliases
         - Consistent YAML representation via custom representer
+        - plot_axisymmetric() method available on all geometry classes
     """
 
     # Class registry - shared across all subclasses

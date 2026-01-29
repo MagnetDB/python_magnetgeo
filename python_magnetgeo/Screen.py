@@ -235,3 +235,96 @@ class Screen(YAMLObjectBase):
         r_overlap = max(self.r[0], r[0]) < min(self.r[1], r[1])
         z_overlap = max(self.z[0], z[0]) < min(self.z[1], z[1])
         return r_overlap and z_overlap
+
+    def _plot_geometry(self, ax, show_labels: bool = True, **kwargs):
+        """
+        Plot Screen geometry in 2D axisymmetric coordinates.
+
+        Screens are typically displayed with distinct styling to differentiate
+        them from active conductor elements.
+
+        Args:
+            ax: Matplotlib axes to draw on
+            show_labels: If True, display screen name at center
+            **kwargs: Styling options (color, alpha, linewidth, etc.)
+
+        Example:
+            >>> import matplotlib.pyplot as plt
+            >>> screen = Screen("outer_shield", [100, 110], [0, 500])
+            >>> fig, ax = plt.subplots()
+            >>> screen._plot_geometry(ax, color='gray', alpha=0.4)
+        """
+        from matplotlib.patches import Rectangle
+
+        # Get bounding box
+        r_bounds, z_bounds = self.boundingBox()
+        r_min, r_max = r_bounds[0], r_bounds[1]
+        z_min, z_max = z_bounds[0], z_bounds[1]
+
+        # Extract styling parameters with defaults (gray for screens)
+        color = kwargs.get('color', 'lightgray')
+        alpha = kwargs.get('alpha', 0.5)
+        edgecolor = kwargs.get('edgecolor', 'dimgray')
+        linewidth = kwargs.get('linewidth', 2.0)
+        label = kwargs.get('label', self.name if show_labels else None)
+        hatch = kwargs.get('hatch', '///')  # Hatching to distinguish screens
+
+        # Create rectangle patch for screen
+        width = r_max - r_min
+        height = z_max - z_min
+        rect = Rectangle(
+            (r_min, z_min),
+            width,
+            height,
+            facecolor=color,
+            alpha=alpha,
+            edgecolor=edgecolor,
+            linewidth=linewidth,
+            hatch=hatch,
+            label=label
+        )
+        ax.add_patch(rect)
+
+        # Update axis limits to include this geometry with some padding
+        current_xlim = ax.get_xlim()
+        current_ylim = ax.get_ylim()
+        
+        # Calculate padding (5% of geometry size)
+        r_padding = width * 0.05
+        z_padding = height * 0.05
+        
+        # Expand limits if needed (check if limits are default)
+        if current_xlim == (0.0, 1.0):
+            # Default limits, set based on geometry
+            ax.set_xlim(r_min - r_padding, r_max + r_padding)
+        else:
+            # Expand existing limits
+            ax.set_xlim(
+                min(current_xlim[0], r_min - r_padding),
+                max(current_xlim[1], r_max + r_padding)
+            )
+        
+        if current_ylim == (0.0, 1.0):
+            # Default limits, set based on geometry
+            ax.set_ylim(z_min - z_padding, z_max + z_padding)
+        else:
+            # Expand existing limits
+            ax.set_ylim(
+                min(current_ylim[0], z_min - z_padding),
+                max(current_ylim[1], z_max + z_padding)
+            )
+
+        # Add text label at center if requested
+        if show_labels and 'label' not in kwargs:
+            center_r = (r_min + r_max) / 2
+            center_z = (z_min + z_max) / 2
+            ax.text(
+                center_r,
+                center_z,
+                self.name,
+                ha='center',
+                va='center',
+                fontsize=9,
+                style='italic',
+                color='black'
+            )

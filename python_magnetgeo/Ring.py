@@ -303,6 +303,97 @@ class Ring(YAMLObjectBase):
             f"fillets={self.fillets!r}, cad={self.cad!r})"
         )
 
+    def _plot_geometry(self, ax, show_labels: bool = True, **kwargs):
+        """
+        Plot Ring geometry in 2D axisymmetric coordinates.
+
+        Renders the ring as a rectangle in the r-z plane using its bounding box.
+        The ring is drawn from minimum to maximum radius and axial extent.
+
+        Args:
+            ax: Matplotlib axes to draw on
+            show_labels: If True, display ring name at center
+            **kwargs: Styling options passed to matplotlib (color, alpha, etc.)
+
+        Example:
+            >>> import matplotlib.pyplot as plt
+            >>> ring = Ring("R1", [100, 120, 110, 130], [250, 280])
+            >>> fig, ax = plt.subplots()
+            >>> ring._plot_geometry(ax, color='blue', alpha=0.5)
+        """
+        from matplotlib.patches import Rectangle
+
+        # Get bounding box
+        r_bounds, z_bounds = self.r, self.z
+        r_min, r_max = min(r_bounds), max(r_bounds)
+        z_min, z_max = z_bounds[0], z_bounds[1]
+
+        # Extract styling parameters with defaults
+        color = kwargs.get('color', 'steelblue')
+        alpha = kwargs.get('alpha', 0.6)
+        edgecolor = kwargs.get('edgecolor', 'black')
+        linewidth = kwargs.get('linewidth', 1.5)
+        label = kwargs.get('label', self.name if show_labels else None)
+
+        # Create rectangle patch
+        width = r_max - r_min
+        height = z_max - z_min
+        rect = Rectangle(
+            (r_min, z_min),
+            width,
+            height,
+            facecolor=color,
+            alpha=alpha,
+            edgecolor=edgecolor,
+            linewidth=linewidth,
+            label=label
+        )
+        ax.add_patch(rect)
+
+        # Update axis limits to include this geometry with some padding
+        current_xlim = ax.get_xlim()
+        current_ylim = ax.get_ylim()
+        
+        # Calculate padding (5% of geometry size)
+        r_padding = width * 0.05
+        z_padding = height * 0.05
+        
+        # Expand limits if needed (check if limits are default)
+        if current_xlim == (0.0, 1.0):
+            # Default limits, set based on geometry
+            ax.set_xlim(r_min - r_padding, r_max + r_padding)
+        else:
+            # Expand existing limits
+            ax.set_xlim(
+                min(current_xlim[0], r_min - r_padding),
+                max(current_xlim[1], r_max + r_padding)
+            )
+        
+        if current_ylim == (0.0, 1.0):
+            # Default limits, set based on geometry
+            ax.set_ylim(z_min - z_padding, z_max + z_padding)
+        else:
+            # Expand existing limits
+            ax.set_ylim(
+                min(current_ylim[0], z_min - z_padding),
+                max(current_ylim[1], z_max + z_padding)
+            )
+
+        # Add text label at center if requested and no custom label
+        if show_labels and 'label' not in kwargs:
+            center_r = (r_min + r_max) / 2
+            center_z = (z_min + z_max) / 2
+            ax.text(
+                center_r,
+                center_z,
+                self.name,
+                ha='center',
+                va='center',
+                fontsize=9,
+                fontweight='bold',
+                color='white' if alpha > 0.5 else 'black'
+            )
+
 
 # Note: No manual YAML constructor needed!
 # YAMLObjectBase automatically registers it via __init_subclass__

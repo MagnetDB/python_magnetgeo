@@ -787,3 +787,82 @@ class Insert(YAMLObjectBase):
         Dh.append(2 * (Rext - Rint))
         Sh.append(math.pi * (Rext - Rint) * (Rext + Rint))
         return (Nhelices, Nrings, NChannels, Nsections, R1, R2, Dh, Sh, Zc)
+
+    def _plot_geometry(self, ax, show_labels: bool = True, **kwargs):
+        """
+        Plot Insert geometry in 2D axisymmetric coordinates.
+
+        Renders all helices in the insert assembly. Each helix is plotted
+        with its main body and optional modelaxi zone.
+
+        Args:
+            ax: Matplotlib axes to draw on
+            show_labels: If True, display component names
+            **kwargs: Styling options passed to component plotting
+                Special kwargs:
+                - show_modelaxi: Show modelaxi zones for helices (default: True)
+                - helix_colors: List of colors for each helix (optional)
+                - helix_alpha: Transparency for helices (default: 0.6)
+
+        Example:
+            >>> import matplotlib.pyplot as plt
+            >>> insert = Insert("HL-31", helices=[h1, h2, h3], ...)
+            >>> fig, ax = plt.subplots()
+            >>> insert._plot_geometry(ax, show_modelaxi=True)
+        """
+        # Extract Insert-specific parameters
+        show_modelaxi = kwargs.get('show_modelaxi', True)
+        helix_colors = kwargs.get('helix_colors', None)
+        helix_alpha = kwargs.get('helix_alpha', 0.6)
+        
+        # Default color palette for helices
+        default_colors = ['darkgreen', 'forestgreen', 'seagreen', 'mediumseagreen', 
+                         'springgreen', 'limegreen', 'olivedrab', 'yellowgreen']
+        
+        # Plot all helices
+        for i, helix in enumerate(self.helices):
+            # Determine color for this helix
+            if helix_colors and i < len(helix_colors):
+                color = helix_colors[i]
+            elif helix_colors:
+                color = helix_colors[-1]  # Use last color if list too short
+            else:
+                color = default_colors[i % len(default_colors)]
+            
+            # Plot the helix
+            helix._plot_geometry(
+                ax,
+                show_labels=show_labels,
+                color=color,
+                alpha=helix_alpha,
+                show_modelaxi=show_modelaxi,
+                **{k: v for k, v in kwargs.items() 
+                   if k not in ['show_modelaxi', 'helix_colors', 'helix_alpha']}
+            )
+        
+        # Update axis limits to encompass entire insert
+        if self.helices:
+            rb, zb = self.boundingBox()
+            current_xlim = ax.get_xlim()
+            current_ylim = ax.get_ylim()
+            
+            # Calculate padding (5% of geometry size)
+            r_padding = (rb[1] - rb[0]) * 0.05
+            z_padding = (zb[1] - zb[0]) * 0.05
+            
+            # Expand limits if needed
+            if current_xlim == (0.0, 1.0):
+                ax.set_xlim(rb[0] - r_padding, rb[1] + r_padding)
+            else:
+                ax.set_xlim(
+                    min(current_xlim[0], rb[0] - r_padding),
+                    max(current_xlim[1], rb[1] + r_padding)
+                )
+            
+            if current_ylim == (0.0, 1.0):
+                ax.set_ylim(zb[0] - z_padding, zb[1] + z_padding)
+            else:
+                ax.set_ylim(
+                    min(current_ylim[0], zb[0] - z_padding),
+                    max(current_ylim[1], zb[1] + z_padding)
+                )
