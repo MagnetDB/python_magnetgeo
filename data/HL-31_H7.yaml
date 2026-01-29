@@ -10,7 +10,7 @@ dble: true
 r:
   - 66.5
   - 77.2
-axi: !<ModelAxi>
+modelaxi: !<ModelAxi>
   name: "HL-31.d"
   h: 117.2992
   turns:
@@ -57,7 +57,7 @@ axi: !<ModelAxi>
     - 19.56797679056729
 odd: true
 name: HL-31_H7
-m3d: !<Model3D>
+model3d: !<Model3D>
   with_channels: false
   cad: "HL-31-014MC"
   with_shapes: false

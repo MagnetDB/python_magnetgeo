@@ -9,7 +9,7 @@ z:
   - -107
   - 107
 cutwidth: 0.22
-axi: !<ModelAxi>
+modelaxi: !<ModelAxi>
   name: 03032015J
   h: 75
   pitch:
@@ -42,7 +42,7 @@ axi: !<ModelAxi>
     - 2.214201647214494
     - 2.214201647214494
     - 2.214201647214494
-m3d: !<Model3D>
+model3d: !<Model3D>
   cad: "03032015J_H2"
   with_shapes: true
   with_channels: true

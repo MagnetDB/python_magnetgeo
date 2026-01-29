@@ -7,7 +7,7 @@ shape: !<Shape>
   position: ABOVE
   length: 0
   onturns: 0
-axi: !<ModelAxi>
+modelaxi: !<ModelAxi>
   name: "HL-31.d"
   h: 149.2674
   pitch:
@@ -53,7 +53,7 @@ axi: !<ModelAxi>
     - 0.656955263051511
     - 0.6638843127993697
 name: HL-31_H13
-m3d: !<Model3D>
+model3d: !<Model3D>
   with_channels: false
   with_shapes: false
   cad: "HL-31-026MC"
