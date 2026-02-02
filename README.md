@@ -161,13 +161,12 @@ r: [19.3, 24.2]
 z: [-226, 108]
 dble: true
 cutwidth: 0.22
-axi: !<ModelAxi>
+modelaxi: !<ModelAxi>
   name: "HL-31.d"
   h: 86.51
   turns: [0.292, 0.287, 0.283]
   pitch: [29.59, 30.10, 30.61]
 shape: !<Shape>
-  name: "NewShape"
   profile: "02_10_2014_H1"
   length: 15
   angle: [60, 90, 120, 120]
