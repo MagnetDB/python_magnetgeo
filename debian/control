@@ -2,26 +2,25 @@ Source: python-magnetgeo
 Section: python
 Priority: optional
 Maintainer: Christophe Trophime <christophe.trophime@lncmi.cnrs.fr>
-Build-Depends: debhelper-compat (= 12),
+Build-Depends: debhelper-compat (= 13),
  dh-python,
  pybuild-plugin-pyproject,
  python3-all,
  python3-setuptools (>= 61.0),
  python3-wheel,
  python3-yaml (>= 6.0),
- python3-pandas (>=1.5.3),
+ python3-pandas (>= 1.5.3),
  python3-pytest (>= 7.2.0)
-Standards-Version: 4.6.0
-Homepage: https://github.com/Trophime/python_magnetgeo
-#Vcs-Browser: https://salsa.debian.org/debian/python-magnetgeo
-#Vcs-Git: https://salsa.debian.org/debian/python-magnetgeo.git
-#Testsuite: autopkgtest-pkg-python
+Standards-Version: 4.7.0
+Homepage: https://github.com/MagnetDB/python_magnetgeo
+Vcs-Browser: https://github.com/MagnetDB/python_magnetgeo
+Vcs-Git: https://github.com/MagnetDB/python_magnetgeo.git
 Rules-Requires-Root: no
 
 Package: python3-magnetgeo
 Architecture: all
 Depends: magnettools, python3-yaml, ${python3:Depends}, ${misc:Depends}
-Suggests: python-python-magnetgeo-doc
+Suggests: python-magnetgeo-doc
 Description: Magnet Geometry Python module (Python 3)
  This module enable to perform the following operations
  * Define Magnet geometry as yaml file
