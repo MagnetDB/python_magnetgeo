@@ -72,7 +72,7 @@ def split_helix_yaml(input_file):
     modelaxi_filename = f"{base_name}_modelaxi"
     if helix.shape is not None:
         shape_filename = f"{base_name}_shape"
-    helix_filename = f"{base_name}_split"
+    helix_filename = f"{helix.model3d.cad}"
 
     modelaxi_file = os.path.join(output_dir, f"{modelaxi_filename}.yaml")
     shape_file = None
@@ -93,13 +93,13 @@ def split_helix_yaml(input_file):
 
     # Create a new Helix object with references to the files
     # Store the original objects for reference
-    original_modelaxi = helix.modelaxi
-    original_shape = helix.shape
+    #original_modelaxi = helix.modelaxi
+    #original_shape = helix.shape
 
     # Replace modelaxi and shape with string references (filenames without extension)
-    helix.modelaxi = modelaxi_filename
-    if helix.shape is not None:
-        helix.shape = shape_filename
+    #helix.modelaxi = modelaxi_filename
+    #if helix.shape is not None:
+    #    helix.shape = shape_filename
 
     # Save the modified Helix YAML
     print(f"Writing split Helix to: {helix_file}")
@@ -107,9 +107,9 @@ def split_helix_yaml(input_file):
         yaml.dump(helix, f, default_flow_style=False)
 
     # Restore original objects (in case the helix object is used later)
-    helix.modelaxi = original_modelaxi
-    if helix.shape is not None:
-        helix.shape = original_shape
+    #helix.modelaxi = original_modelaxi
+    #if helix.shape is not None:
+    #    helix.shape = original_shape
 
     print("\nSplit completed successfully!")
     print(f"  - ModelAxi: {modelaxi_file}")
