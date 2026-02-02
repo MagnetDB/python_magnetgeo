@@ -34,7 +34,7 @@ shift $((OPTIND - 1))
 
 # add parameters
 : ${VERSION:="1.0.0"}
-: ${DIST:="bookworm"}
+: ${DIST:="trixie"}
 
 # cleanup source
 find . -type d -name __pycache__ | xargs rm -rf
