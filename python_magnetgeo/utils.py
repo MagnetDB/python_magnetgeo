@@ -17,15 +17,22 @@ from .logging_config import get_logger
 # Get logger for this module
 logger = get_logger(__name__)
 
+
 class ObjectLoadError(Exception):
     """Raised when object loading fails"""
+
     pass
+
 
 class UnsupportedTypeError(Exception):
     """Raised when object type is not supported"""
+
     pass
 
-def writeYaml(comment: str, obj: Any, obj_class: Type = None, debug: bool = True, directory: str | None = None):
+
+def writeYaml(
+    comment: str, obj: Any, obj_class: Type = None, debug: bool = True, directory: str | None = None
+):
     """
     Write object to YAML file.
 
@@ -61,6 +68,7 @@ def writeYaml(comment: str, obj: Any, obj_class: Type = None, debug: bool = True
         logger.error(f"Failed to write {comment} to {filename}: {e}", exc_info=True)
         raise Exception(f"Failed to {comment} dump - {filename} - {e}")
 
+
 def writeJson(comment: str, obj: Any, debug: bool = True):
     """
     Write object to JSON file.
@@ -79,7 +87,7 @@ def writeJson(comment: str, obj: Any, debug: bool = True):
     try:
         logger.debug(f"Writing {comment} to {filename}")
         with open(filename, "w") as ostream:
-            if hasattr(obj, 'to_json'):
+            if hasattr(obj, "to_json"):
                 jsondata = obj.to_json()
             else:
                 jsondata = json.dumps(obj, indent=4)
@@ -90,6 +98,7 @@ def writeJson(comment: str, obj: Any, debug: bool = True):
     except Exception as e:
         logger.error(f"Failed to write {comment} to {filename}: {e}", exc_info=True)
         raise Exception(f"Failed to {comment} dump - {filename} - {e}")
+
 
 def loadYaml(comment: str, filename: str, supported_type: Type = None, debug: bool = False) -> Any:
     """
@@ -113,7 +122,9 @@ def loadYaml(comment: str, filename: str, supported_type: Type = None, debug: bo
     # Handle path splitting
     basedir, basename = os.path.split(filename)
 
-    logger.debug(f"Loading YAML: comment={comment}, filename={filename}, basedir={basedir}, cwd={cwd}")
+    logger.debug(
+        f"Loading YAML: comment={comment}, filename={filename}, basedir={basedir}, cwd={cwd}"
+    )
 
     # Change to target directory if needed
     if basedir and basedir != ".":
@@ -123,14 +134,14 @@ def loadYaml(comment: str, filename: str, supported_type: Type = None, debug: bo
     try:
         # Load YAML file
         logger.debug(f"looking for file: {basename}, supported_type={supported_type}")
-        with open(basename, "r") as istream: # Potential FileNotFoundError happens here
+        with open(basename, "r") as istream:  # Potential FileNotFoundError happens here
             obj = yaml.load(stream=istream, Loader=yaml.FullLoader)
             obj._basedir = cwd
             if basedir and basedir != ".":
                 obj._basedir = os.getcwd()
 
         logger.debug(f"Loaded object type: {type(obj).__name__}")
-        if hasattr(obj, 'name'):
+        if hasattr(obj, "name"):
             logger.debug(f"  Object name: {obj.name}")
 
         # Type validation if expected_type provided
@@ -141,7 +152,7 @@ def loadYaml(comment: str, filename: str, supported_type: Type = None, debug: bo
             raise UnsupportedTypeError(error_msg)
 
         # Auto-update if object supports it
-        if hasattr(obj, 'update'):
+        if hasattr(obj, "update"):
             logger.debug(f"Calling update() on {type(obj).__name__}")
             obj.update()
 
@@ -153,7 +164,9 @@ def loadYaml(comment: str, filename: str, supported_type: Type = None, debug: bo
     # Combine YAML parsing and File not found into a single handler
     except (FileNotFoundError, yaml.YAMLError) as e:
         # Now raise ObjectLoadError with a message that includes the specific failure reason
-        error_type = "YAML file not found" if isinstance(e, FileNotFoundError) else "Failed to parse YAML"
+        error_type = (
+            "YAML file not found" if isinstance(e, FileNotFoundError) else "Failed to parse YAML"
+        )
         error_msg = f"{error_type}: {filename}. Details: {e}"
         logger.error(error_msg)
         raise ObjectLoadError(error_msg)
@@ -168,6 +181,7 @@ def loadYaml(comment: str, filename: str, supported_type: Type = None, debug: bo
         if basedir and basedir != ".":
             os.chdir(cwd)
             logger.debug(f"Restored directory: {basedir} -> {cwd}")
+
 
 def loadJson(comment: str, filename: str, debug: bool = False) -> Any:
     """
@@ -189,7 +203,9 @@ def loadJson(comment: str, filename: str, debug: bool = False) -> Any:
     cwd = os.getcwd()
     basedir, basename = os.path.split(filename)
 
-    logger.debug(f"Loading JSON: comment={comment}, filename={filename}, basedir={basedir}, cwd={cwd}")
+    logger.debug(
+        f"Loading JSON: comment={comment}, filename={filename}, basedir={basedir}, cwd={cwd}"
+    )
 
     if basedir and basedir != ".":
         os.chdir(basedir)
@@ -199,10 +215,7 @@ def loadJson(comment: str, filename: str, debug: bool = False) -> Any:
         logger.debug(f"Loading JSON from: {basename}")
 
         with open(basename, "r") as istream:
-            obj = json.loads(
-                istream.read(),
-                object_hook=deserialize.unserialize_object
-            )
+            obj = json.loads(istream.read(), object_hook=deserialize.unserialize_object)
             obj._basedir = cwd
             if basedir and basedir != ".":
                 obj._basedir = os.getcwd()
@@ -213,7 +226,9 @@ def loadJson(comment: str, filename: str, debug: bool = False) -> Any:
 
     # Combine JSON decoding and File not found into a single handler
     except (FileNotFoundError, json.JSONDecodeError) as e:
-        error_type = "JSON file not found" if isinstance(e, FileNotFoundError) else "Failed to decode JSON"
+        error_type = (
+            "JSON file not found" if isinstance(e, FileNotFoundError) else "Failed to decode JSON"
+        )
         error_msg = f"{error_type}: {filename}. Details: {e}"
         logger.error(error_msg)
         raise ObjectLoadError(error_msg)
@@ -221,6 +236,7 @@ def loadJson(comment: str, filename: str, debug: bool = False) -> Any:
         if basedir and basedir != ".":
             os.chdir(cwd)
             logger.debug(f"Restored directory: {basedir} -> {cwd}")
+
 
 def check_objects(objects, supported_type):
     """
@@ -246,6 +262,7 @@ def check_objects(objects, supported_type):
     else:
         return isinstance(objects, supported_type)
 
+
 def check_type(obj, types_list):
     """
     Check if object is one of the types in the list.
@@ -261,6 +278,7 @@ def check_type(obj, types_list):
         if isinstance(obj, item):
             return True
     return False
+
 
 def loadObject(comment: str, data, supported_type, constructor):
     """
@@ -291,6 +309,7 @@ def loadObject(comment: str, data, supported_type, constructor):
 
     else:
         raise UnsupportedTypeError(f"{comment}: unsupported type {type(data)}")
+
 
 def loadList(comment: str, objects, supported_types: list, dict_objects: dict):
     """
@@ -364,18 +383,31 @@ def loadList(comment: str, objects, supported_types: list, dict_objects: dict):
     else:
         raise UnsupportedTypeError(f"{comment}: unsupported objects type: {type(objects)}")
 
-def getObject(filename: str):
+
+def getObject(filename: str) -> Any:
     """
-    Load an object from a YAML file and update it if necessary.
+    Load an object from a YAML or JSON file and update it if necessary.
+    By default, loads from YAML unless from_json is True.
 
     Args:
-        filename: Path to YAML file
-
+        filename: Path to YAML or JSON file
     Returns:
         Loaded and updated object
+
+    Raises:
+        ObjectLoadError: When file extension is not .json, .yaml, or .yml
     """
-    obj = loadYaml("getObject", filename)
+    obj = None
+    if filename.endswith(".json"):
+        obj = loadJson("object", filename)
+    elif filename.endswith(".yaml") or filename.endswith(".yml"):
+        obj = loadYaml("object", filename)
+    else:
+        raise ObjectLoadError(
+            f"Unsupported file extension for {filename}. Only .json, .yaml, and .yml files are supported."
+        )
     return obj
+
 
 def flatten(S: list) -> list:
     from pandas.core.common import flatten as pd_flatten
