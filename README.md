@@ -65,20 +65,60 @@ split-helix-yaml <helix.yaml>
 
 ## Quick Start
 
+### Package-Level Lazy Loading (New in v1.0.0)
+
+The package now supports **lazy loading** of geometry classes for better performance and cleaner imports:
+
+```python
+# Simply import the package - classes are loaded on-demand
+import python_magnetgeo as pmg
+
+# Load any YAML file with automatic type detection
+# Classes are imported automatically as needed
+obj = pmg.load("config.yaml")
+
+# Or access classes directly through the package
+helix = pmg.Helix.from_yaml("H1.yaml")
+ring = pmg.Ring(name="R1", r=[10, 20], z=[0, 10])
+insert = pmg.Insert.from_yaml("HL-31.yaml")
+
+# All geometry classes are available via the package namespace:
+# pmg.Helix, pmg.Ring, pmg.Insert, pmg.Bitter, pmg.Supra, pmg.Screen, etc.
+```
+
+**Important**: When loading YAML files that use type tags (e.g., `!<Helix>`), you need to ensure YAML constructors are registered first:
+
+```python
+import python_magnetgeo as pmg
+
+# For YAML loading, register all classes first
+pmg.verify_class_registration()
+
+# Now load YAML files
+helix = pmg.load("helix.yaml")
+```
+
+**Why?** Lazy loading defers class imports until needed. YAML parsing requires constructors to be registered beforehand. The `verify_class_registration()` function forces all classes to be imported, registering their YAML constructors.
+
 ### Loading Methods Quick Reference
 
 ```python
-# Method 1: Type-specific loading (when you know the type)
+# Method 1: Package-level lazy loading (recommended for v1.0.0+)
+import python_magnetgeo as pmg
+pmg.verify_class_registration()  # Required for YAML loading
+obj = pmg.load("config.yaml")    # Automatic type detection
+
+# Method 2: Type-specific loading (when you know the type)
 from python_magnetgeo import Insert, Helix, Ring
 insert = Insert.from_yaml("HL-31.yaml")
 helix = Helix.from_yaml("H1.yaml")
 ring = Ring.from_yaml("Ring-01.yaml")
 
-# Method 2: Lazy loading (automatic type detection)
+# Method 3: Using getObject utility (legacy)
 from python_magnetgeo.utils import getObject
 obj = getObject("config.yaml")  # Returns Insert, Helix, Ring, etc.
 
-# Method 3: From dictionary
+# Method 4: From dictionary
 from python_magnetgeo import Helix
 helix = Helix.from_dict({
     'name': 'H1',
@@ -89,10 +129,10 @@ helix = Helix.from_dict({
     'dble': False
 })
 
-# Method 4: JSON loading
+# Method 5: JSON loading
 helix = Helix.from_json("H1.json")
 
-# Method 5: Direct instantiation
+# Method 6: Direct instantiation
 from python_magnetgeo import Ring
 ring = Ring(
     name="Ring-01",
@@ -209,25 +249,28 @@ ring = Ring.from_yaml("Ring-H1H2.yaml")
 print(f"Ring: {ring.name}")
 ```
 
-#### Method 2: Lazy Loading (Automatic Type Detection)
+#### Method 2: Automatic Type Detection from YAML
 
 ```python
-from python_magnetgeo.utils import getObject
+import python_magnetgeo as pmg
+
+# Ensure YAML constructors are registered
+pmg.verify_class_registration()
 
 # Load any geometry object without knowing its type
 # The type is automatically detected from the YAML type annotation
-obj = getObject("HL-31.yaml")
+obj = pmg.load("HL-31.yaml")
 print(f"Loaded {type(obj).__name__}: {obj.name}")
 
 # Works with any geometry type
-helix = getObject("HL-31_H1.yaml")  # Returns Helix instance
-ring = getObject("Ring-H1H2.yaml")  # Returns Ring instance
-bitter = getObject("Bitter-01.yaml")  # Returns Bitter instance
+helix = pmg.load("HL-31_H1.yaml")  # Returns Helix instance
+ring = pmg.load("Ring-H1H2.yaml")   # Returns Ring instance
+bitter = pmg.load("Bitter-01.yaml") # Returns Bitter instance
 
 # Useful for command-line tools
 import sys
 if len(sys.argv) > 1:
-    geometry = getObject(sys.argv[1])
+    geometry = pmg.load(sys.argv[1])
     print(f"Loaded: {geometry.name}")
     rb, zb = geometry.boundingBox() if hasattr(geometry, 'boundingBox') else (None, None)
     if rb:
@@ -237,8 +280,11 @@ if len(sys.argv) > 1:
 #### Method 3: Batch Loading with Type Detection
 
 ```python
-from python_magnetgeo.utils import getObject
+import python_magnetgeo as pmg
 from pathlib import Path
+
+# Ensure YAML constructors are registered before loading
+pmg.verify_class_registration()
 
 def load_all_geometries(directory: str):
     """Load all YAML files with automatic type detection"""
@@ -246,7 +292,7 @@ def load_all_geometries(directory: str):
 
     for yaml_file in Path(directory).glob("*.yaml"):
         try:
-            obj = getObject(str(yaml_file))
+            obj = pmg.load(str(yaml_file))
             geometries.append(obj)
             print(f"✓ Loaded {type(obj).__name__}: {obj.name}")
         except Exception as e:
@@ -710,6 +756,171 @@ if __name__ == "__main__":
 ```
 
 ## Advanced Usage
+
+### Understanding Lazy Loading
+
+The package uses Python's `__getattr__` mechanism for lazy loading of geometry classes:
+
+```python
+import python_magnetgeo as pmg
+
+# At this point, only core utilities are imported
+# Geometry classes (Helix, Ring, etc.) are NOT yet imported
+
+# Classes are imported on first access
+helix = pmg.Helix(name="H1", r=[10, 20], z=[0, 50])  # Helix imported here
+ring = pmg.Ring(name="R1", r=[5, 15], z=[0, 10])     # Ring imported here
+
+# Subsequent access uses cached imports (fast)
+another_helix = pmg.Helix(name="H2", r=[15, 25], z=[0, 60])  # No import needed
+```
+
+**Benefits:**
+- **Faster startup** - Only import what you use
+- **Cleaner code** - No need for multiple import statements
+- **Better IDE support** - Autocomplete still works via `__dir__` implementation
+
+**For YAML Loading:**
+
+YAML files with type tags (`!<Helix>`, `!<Ring>`, etc.) require classes to be imported **before** parsing:
+
+```python
+import python_magnetgeo as pmg
+
+# Option 1: Register all classes (recommended for batch processing)
+pmg.verify_class_registration()
+helix = pmg.load("helix.yaml")
+ring = pmg.load("ring.yaml")
+insert = pmg.load("insert.yaml")
+
+# Option 2: Access specific class first (if you know the type)
+_ = pmg.Helix  # Trigger import and YAML constructor registration
+helix = pmg.load("helix.yaml")  # Now works
+
+# Option 3: Use type-specific loading (no registration needed)
+helix = pmg.Helix.from_yaml("helix.yaml")  # Class imported by access
+```
+
+**Why is this needed?** YAML parsing calls the constructor for `!<Helix>` tags. If the `Helix` class hasn't been imported yet, Python/PyYAML doesn't know how to construct the object. The `verify_class_registration()` function forces all geometry classes to be imported, registering their YAML constructors.
+
+### Package API Reference
+
+The `python_magnetgeo` package provides several utility functions at the package level:
+
+#### Loading Functions
+
+```python
+import python_magnetgeo as pmg
+
+# Load any geometry from YAML/JSON with automatic type detection
+obj = pmg.load("config.yaml")          # Recommended alias
+obj = pmg.loadObject("config.yaml")    # Legacy alias
+obj = pmg.load_yaml("config.yaml")     # Explicit YAML loader
+
+# Note: These are all aliases for the same function
+```
+
+#### Class Registration Functions
+
+```python
+# Force registration of all YAML constructors (required for YAML loading)
+pmg.verify_class_registration()
+
+# Get dictionary of all registered classes
+classes = pmg.list_registered_classes()
+print(classes.keys())  # ['Insert', 'Helix', 'Ring', ...]
+
+# Check if specific class is registered
+if 'Helix' in classes:
+    helix_class = classes['Helix']
+```
+
+#### Geometry Classes (Lazy Loaded)
+
+All geometry classes are available through the package namespace:
+
+```python
+# Core geometry types
+pmg.Insert       # Magnet insert (collection of helices/rings)
+pmg.Helix        # Helical coil
+pmg.Ring         # Ring coil
+pmg.Bitter       # Bitter coil
+pmg.Supra        # Superconducting coil
+pmg.Screen       # Screening current element
+pmg.Probe        # Probe element
+
+# Additional components
+pmg.Shape        # Shape modification for cuts
+pmg.Profile      # 2D profile definition
+pmg.ModelAxi     # Axisymmetric model data
+pmg.Model3D      # 3D model data
+pmg.InnerCurrentLead   # Inner current lead
+pmg.OuterCurrentLead   # Outer current lead
+pmg.Contour2D    # 2D contour definition
+pmg.Chamfer      # Chamfer modification
+pmg.Groove       # Groove modification
+pmg.Tierod       # Tie rod element
+pmg.CoolingSlit  # Cooling slit element
+
+# Multi-element types
+pmg.Supras       # Collection of Supra elements
+pmg.Bitters      # Collection of Bitter elements
+```
+
+#### Logging Functions
+
+```python
+# Configure logging
+pmg.configure_logging(level=pmg.INFO, log_file="magnet.log")
+
+# Get logger for your module
+logger = pmg.get_logger(__name__)
+
+# Change log level at runtime
+pmg.set_level(pmg.DEBUG)
+
+# Temporarily disable/enable logging
+pmg.disable_logging()
+pmg.enable_logging()
+
+# Log levels
+pmg.DEBUG      # Detailed diagnostic information
+pmg.INFO       # General informational messages
+pmg.WARNING    # Warning messages
+pmg.ERROR      # Error messages
+pmg.CRITICAL   # Critical error messages
+```
+
+#### Validation Classes
+
+```python
+from python_magnetgeo import ValidationError, ValidationWarning, GeometryValidator
+
+# Validation is automatic, but you can use validators directly
+GeometryValidator.validate_name("MyHelix")
+GeometryValidator.validate_positive_value(10.0, "radius")
+GeometryValidator.validate_array_length([1, 2, 3], min_length=2, name="coordinates")
+
+# Handle validation errors
+try:
+    helix = pmg.Helix.from_yaml("invalid.yaml")
+except ValidationError as e:
+    print(f"Validation failed: {e}")
+```
+
+#### Base Classes
+
+```python
+from python_magnetgeo import YAMLObjectBase, SerializableMixin
+
+# All geometry classes inherit from YAMLObjectBase
+# which provides automatic YAML/JSON serialization
+
+# Check if object is a magnetgeo geometry
+if isinstance(obj, YAMLObjectBase):
+    print(f"Geometry type: {type(obj).__name__}")
+    print(f"Supports YAML: {hasattr(obj, 'to_yaml')}")
+```
 
 ### Working with Shape and Profile
 

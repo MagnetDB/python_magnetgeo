@@ -64,6 +64,7 @@ Changelog = "https://github.com/Trophime/python_magnetgeo/blob/main/HISTORY.rst"
 [project.scripts]
 load-profile-from-dat = "python_magnetgeo.examples.load_profile_from_dat:main"
 split-helix-yaml = "python_magnetgeo.examples.split_helix_yaml:main"
+check-magnetgeo-yaml = "python_magnetgeo.examples.check_magnetgeo_yaml:main"
 
 [tool.setuptools]
 zip-safe = false
