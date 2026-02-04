@@ -45,7 +45,7 @@ class TestSerialization:
         helix_dict = {
             "__classname__": "Helix",
             "name": "helix1",
-            "r": [10.0, 20.0],
+            "r": [10.0, 10.1],
             "z": [0.0, 50.0],
             "cutwidth": 2.0,
             "odd": False,
@@ -73,7 +73,7 @@ class TestSerialization:
             "r": [8.0, 9.5],
             "h": 52.0,
             "holes": [5.0, 10.0, 0.0, 45.0, 0.0, 8],
-            "support": [20.0, 5.0],
+            "support": [10.1, 5.0],
             "fillet": True
         }
 
