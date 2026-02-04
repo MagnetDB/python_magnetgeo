@@ -134,9 +134,9 @@ class SerializableMixin:
         Notes:
             - Uses PyYAML's default_flow_style=False for readable output
             - Includes custom YAML tag (e.g., !<Ring>)
-            - Can be passed to yaml.safe_load() for deserialization
+            - Recursively handles embedded objects with their YAML tags
         """
-        return yaml.dump(self, default_flow_style=False)
+        return yaml.dump(self, default_flow_style=False, sort_keys=False)
 
     def to_json(self) -> str:
         """
@@ -391,19 +391,25 @@ class YAMLObjectBase(SerializableMixin):
             Generated YAML representer for this class.
 
             This is called during YAML dumping to convert objects to YAML nodes.
+            Properly handles nested YAMLObjectBase objects so they get their YAML tags.
             """
-            # Convert object to dictionary (excluding private attributes)
-            from enum import Enum  # ← Add this import
+            from enum import Enum
 
-            data = {}
+            # Build pairs list for represent_mapping
+            # Don't pre-convert to dict - let dumper handle nested objects
+            pairs = []
             for key, value in obj.__dict__.items():
                 if not key.startswith("_"):
-                    if isinstance(value, Enum):  # ← Add this check
-                        data[key] = value.value
+                    # Convert Enum to value
+                    if isinstance(value, Enum):
+                        pairs.append((key, value.value))
                     else:
-                        data[key] = value
+                        # Let dumper handle the value (including nested YAMLObjectBase)
+                        pairs.append((key, value))
+
             # Create YAML mapping node with custom tag
-            return dumper.represent_mapping(cls.yaml_tag, data)
+            # Using represent_mapping with pairs allows nested objects to be properly represented
+            return dumper.represent_mapping(cls.yaml_tag, pairs)
 
         # Register both constructor and representer with PyYAML
         yaml.add_constructor(cls.yaml_tag, constructor)
@@ -748,9 +754,7 @@ class YAMLObjectBase(SerializableMixin):
                     continue
 
     @classmethod
-    def _analyze_list_dependency(
-        cls, data, object_class, required_files: set, debug: bool = False
-    ):
+    def _analyze_list_dependency(cls, data, object_class, required_files: set, debug: bool = False):
         """
         Analyze a list of nested object dependencies for required files.
 
