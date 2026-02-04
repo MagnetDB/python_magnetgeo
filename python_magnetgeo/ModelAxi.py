@@ -113,9 +113,11 @@ class ModelAxi(YAMLObjectBase):
         # sum of pitch*turns must be equal to 2*h
         if pitch:
             total_height = sum(p * t for p, t in zip(pitch, turns))
-            if abs(total_height - 2 * self.h) > 1.0e-6:
+            error = abs(1 - total_height / (2 * self.h))
+            threshold = 1.e-6
+            if error > threshold:
                 raise ValidationError(
-                    f"Sum of pitch*turns ({total_height}) must be equal to 2*h ({2*self.h})"
+                    f"Sum of pitch*turns ({total_height}) must be equal to 2*h ({2*self.h}) -- got error={error} exceed threshold={threshold}"
                 )
 
     def __repr__(self):

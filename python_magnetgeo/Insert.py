@@ -24,7 +24,7 @@ def filter(data: list[float], tol: float = 1.0e-6) -> list[float]:
     ndata = len(data)
     for i in range(ndata):
         result += [j for j in range(i, ndata) if i != j and abs(data[i] - data[j]) <= tol]
-    # print(f"duplicate index: {result}")
+    # logger.debug(f"duplicate index: {result}")
 
     # remove result from data
     return [data[i] for i in range(ndata) if i not in result]
@@ -206,59 +206,58 @@ class Insert(YAMLObjectBase):
                 )
 
         # check that rings are stored in ascending order of radius
-        for i in range(1, len(self.rings)):
+        for i in range(len(self.rings)):
             ring_side = "BP" if self.rings[i].bpside else "HP"
-            if self.rings[i].r[0] <= self.rings[i - 1].r[0]:
+            if i >= 1 and self.rings[i].r[0] <= self.rings[i - 1].r[0]:
                 raise ValidationError(
-                    f"Rings must be ordered by ascending inner radius: ring {i} has inner radius {self.rings[i].r[0]} which is not greater than previous ring inner radius {self.rings[i - 1].r[0]}"
+                    f"Rings must be ordered by ascending inner radius: ring {i} ({self.rings[i].name}) has inner radius {self.rings[i].r[0]} which is not greater than previous ring inner radius {self.rings[i - 1].r[0]}"
                 )
 
             # check that rings radius matches with helices[i] and helices[i+1] radius only valid when helix has not chamfer
             helix0 = self.helices[i]
             helix1 = self.helices[i + 1]
-            helices_radius = [helix.r for helix in (helix0, helix1)]
+            helices_radius = flatten([helix.r for helix in (helix0, helix1)])
 
             if helix0.chamfers:
                 # select chamfer that are on same side as ring
                 chamfers = [
                     chamfer for chamfer in helix0.chamfers if chamfer.side == ring_side
-                ]  # for chamfer in helix0.chamfers:
+                ]
                 for chamfer in chamfers:
                     if chamfer.rside == "rext":
                         helices_radius[1] -= chamfer.getDr()
                     else:
-                        helices_radius[0] -= chamfer.getDr()
+                        helices_radius[0] += chamfer.getDr()
 
             if helix1.chamfers:
                 # select chamfer that are on same side as ring
                 chamfers = [
                     chamfer for chamfer in helix1.chamfers if chamfer.side == ring_side
-                ]  # for chamfer in helix1.chamfers:
+                ] # for chamfer in helix1.chamfers:
                 for chamfer in chamfers:
                     if chamfer.rside == "rext":
                         helices_radius[3] -= chamfer.getDr()
                     else:
-                        helices_radius[2] -= chamfer.getDr()
-
+                        helices_radius[2] += chamfer.getDr()
             import numpy as np
 
             r_rings = np.array(self.rings[i].r)
             r_helices = np.array(flatten(helices_radius))
             norm = np.linalg.norm(r_rings - r_helices)
             bound = 1.0e-5 * max(abs(np.max(r_rings)), abs(np.max(r_helices)))
-            # print("norm:", norm, type(norm), "bound: ", bound, type(bound))
+            # logger.debug(f"norm: {norm}, bound: {bound}")
             if norm > bound:
                 raise ValidationError(
-                    f"Ring {i} radius {r_rings} does not match with adjacent helices radii {r_helices}"
+                    f"Ring[{i}] ({self.rings[i].name}) radius {r_rings} does not match with adjacent helices radii {r_helices}"
                 )
 
         for helix in self.helices:
-            print(helix)
+            logger.debug(helix)
 
         # check leads radius
         if self.currentleads is not None:
             for lead in self.currentleads:
-                print(lead, type(lead))
+                logger.debug(f"{lead} {type(lead)}")
                 zinf_inner = None
                 if isinstance(lead, InnerCurrentLead):
                     rext = lead.r[1]
@@ -269,7 +268,7 @@ class Insert(YAMLObjectBase):
                         zinf_inner -= lead.support[1]
                     if rext != self.helices[0].r[1]:
                         raise ValidationError(
-                            f"InnerCurrentLead outer radius ({rext}) must be egal to first helix outer radius ({self.helices[0].r[1]})"
+                            f"{lead.name}: InnerCurrentLead outer radius ({rext}) must be egal to first helix outer radius ({self.helices[0].r[1]})"
                         )
                 else:
                     zinf_outer = self.helices[-1].z[0] - lead.h
@@ -442,10 +441,9 @@ class Insert(YAMLObjectBase):
 
         if self.rings:
             for i, ring in enumerate(self.rings):
-                if verbose:
-                    print(f"ring: {ring}")
+                logger.info(f"Ring[{i}] ({ring.name}): {ring}")
                 solid_names.append(f"{prefix}R{i+1}")
-            # print(f'Insert_Gmsh: ring_ids={ring_ids}')
+            # logger.debug(f'Insert_Gmsh: ring_ids={ring_ids}')
 
         if not is2D:
             if self.currentleads is not None:
@@ -455,8 +453,7 @@ class Insert(YAMLObjectBase):
                         prefix = "i"
                     solid_names.append(f"{prefix}L{i+1}")
 
-        if verbose:
-            print(f"Insert_Gmsh: solid_names {len(solid_names)}")
+        logger.info(f"Insert_Gmsh: solid_names {len(solid_names)}")
         return solid_names
 
     def get_nhelices(self):
@@ -722,7 +719,7 @@ class Insert(YAMLObjectBase):
                 tZh.append(z)
             tZh.append(helix.z[1])
             Zh.append(tZh)
-            # print(f"Zh[{i}]: {Zh[-1]}")
+            # logger.debug(f"Zh[{i}]: {Zh[-1]}")
 
         Rint = self.innerbore
         Rext = self.outerbore
@@ -737,28 +734,28 @@ class Insert(YAMLObjectBase):
         for i, ring in enumerate(self.rings):
             dz = abs(ring.z[1] - ring.z[0])
             if i % 2 == 1:
-                # print(f"ring[{i}]: minus dz_ring={dz} to Zh[i][0]")
+                # logger.debug(f"ring[{i}]: minus dz_ring={dz} to Zh[i][0]")
                 Zr.append(Zh[i][0] - dz)
 
             if i % 2 == 0:
-                # print(f"ring[{i}]: add dz={dz} to Zh[i][-1]")
+                # logger.debug(f"ring[{i}]: add dz={dz} to Zh[i][-1]")
                 Zr.append(Zh[i][-1] + dz)
-        # print(f"Zr: {Zr}")
+        # logger.debug(f"Zr: {Zr}")
 
         # get Z per Channel for Tw(z) estimate
         Zc = []
         Zi = []
         for i in range(NChannels - 1):
             nZh = Zh[i] + Zi
-            # print(f"C{i}:")
+            # logger.debug(f"C{i}:")
             if i >= 0 and i < NChannels - 2:
-                # print(f"\tR{i}")
+                # logger.debug(f"\tR{i}")
                 nZh.append(Zr[i])
             if i >= 1 and i <= NChannels - 2:
-                # print(f"\tR{i-1}")
+                # logger.debug(f"\tR{i-1}")
                 nZh.append(Zr[i - 1])
             if i >= 2 and i <= NChannels - 2:
-                # print(f"\tR{i-2}")
+                # logger.debug(f"\tR{i-2}")
                 nZh.append(Zr[i - 2])
 
             nZh.sort()
@@ -766,8 +763,8 @@ class Insert(YAMLObjectBase):
             # remove duplicates (requires to have a compare method with a tolerance: |z[i] - z[j]| <= tol means z[i] == z[j])
             Zi = Zh[i]
 
-            # print(f"Zh[{i}]={Zh[i]}")
-            # print(f"Zc[{i}]={Zc[-1]}")
+            # logger.debug(f"Zh[{i}]={Zh[i]}")
+            # logger.debug(f"Zc[{i}]={Zc[-1]}")
 
         # Add latest Channel: Zh[-1] + R[-1]
         nZh = Zh[-1] + [Zr[-1]]
@@ -780,9 +777,9 @@ class Insert(YAMLObjectBase):
         for _z in Zc:
             Zmin = min(Zmin, min(_z))
             Zmax = max(Zmax, max(_z))
-            # print(f"Zc[Channel{i}]={_z}")
-        # print(f"Zmin={Zmin}")
-        # print(f"Zmax={Zmax}")
+            # logger.debug(f"Zc[Channel{i}]={_z}")
+        # logger.debug(f"Zmin={Zmin}")
+        # logger.debug(f"Zmax={Zmax}")
 
         Dh.append(2 * (Rext - Rint))
         Sh.append(math.pi * (Rext - Rint) * (Rext + Rint))
