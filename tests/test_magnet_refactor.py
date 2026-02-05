@@ -56,7 +56,6 @@ def test_insert_serialization():
     assert parsed["probes"] == [], "Wrong probes"
 
     print("✓ Insert serialization test PASSED")
-    return True
 
 
 def test_supras_serialization():
@@ -83,7 +82,6 @@ def test_supras_serialization():
     assert parsed["probes"] == [], "Wrong probes"
 
     print("✓ Supras serialization test PASSED")
-    return True
 
 
 def test_bitters_serialization():
@@ -110,7 +108,6 @@ def test_bitters_serialization():
     assert parsed["probes"] == [], "Wrong probes"
 
     print("✓ Bitters serialization test PASSED")
-    return True
 
 
 def main():
