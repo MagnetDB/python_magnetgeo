@@ -267,6 +267,27 @@ class HTSInsert:
             n_.append(2 * dp.getPancake().getN())
         return n_
 
+    def getNdbpancakes(self) -> int:
+        """
+        returns the number of double pancakes
+        """
+        return len(self.dblpancakes)
+
+    def getNisolations(self) -> int:
+        """
+        returns the number of isolations between double pancakes
+        """
+        return len(self.isolations)
+
+    def getNpancakes(self) -> list[int]:
+        """
+        returns the number of pancakes per double pancake as a list
+        """
+        n_ = []
+        for dp in self.dblpancakes:
+            n_.append(dp.getPancake().getN())
+        return n_
+    
     def getWMandrin(self) -> list:
         """
         returns the width of Mandrin as a list
