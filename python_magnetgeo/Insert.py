@@ -189,10 +189,32 @@ class Insert(YAMLObjectBase):
         # Compute overall bounding box
         self.r, self.z = self.boundingBox()
 
+        # Small offset for bore adjustments
+        eps = 0.1  # mm
+
+        # Handle case where innerbore is not specified (0)
+        if self.helices and innerbore == 0:
+            innerbore = self.helices[0].r[0] - eps
+            self.innerbore = innerbore
+            logger.warning(
+                f"innerbore was not specified (0), setting it to first helix inner radius minus eps: "
+                f"{innerbore:.3f} mm (= {self.helices[0].r[0]:.3f} - {eps})"
+            )
+
         if self.helices and innerbore > self.helices[0].r[0]:
             raise ValidationError(
                 f"innerbore ({innerbore}) must be less than first helix inner radius ({self.helices[0].r[0]})"
             )
+
+        # Handle case where outerbore is not specified (0)
+        if self.helices and outerbore == 0:
+            outerbore = self.helices[-1].r[1] + eps
+            self.outerbore = outerbore
+            logger.warning(
+                f"outerbore was not specified (0), setting it to last helix outer radius plus eps: "
+                f"{outerbore:.3f} mm (= {self.helices[-1].r[1]:.3f} + {eps})"
+            )
+
         if self.helices and outerbore < self.helices[-1].r[1]:
             raise ValidationError(
                 f"outerbore ({outerbore}) must be greater than last helix outer radius ({self.helices[-1].r[1]})"

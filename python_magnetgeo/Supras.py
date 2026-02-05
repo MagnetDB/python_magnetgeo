@@ -11,6 +11,9 @@ from .Supra import Supra
 from .utils import getObject
 from .validation import GeometryValidator, ValidationError
 
+# Module logger
+from .logging_config import get_logger
+logger = get_logger(__name__)
 
 class Supras(YAMLObjectBase):
     """
@@ -88,11 +91,33 @@ class Supras(YAMLObjectBase):
                 else:
                     self.probes.append(probe)
 
+        # Small offset for bore adjustments
+        eps = 0.1  # mm
+
+        # Handle case where innerbore is not specified (0)
+        if self.magnets and innerbore == 0:
+            innerbore = min([magnet.r[0] for magnet in self.magnets]) - eps
+            self.innerbore = innerbore
+            logger.warning(
+                f"innerbore was not specified (0), setting it to minimum magnet inner radius minus eps: "
+                f"{innerbore:.3f} mm (= {min([magnet.r[0] for magnet in self.magnets]):.3f} - {eps})"
+            )
+
         # Compute overall bounding box
         if self.magnets and innerbore > min([magnet.r[0] for magnet in self.magnets]):
             raise ValidationError(
                 f"innerbore ({innerbore}) must be less than ({min([magnet.r[0] for magnet in self.magnets])})"
             )
+
+        # Handle case where outerbore is not specified (0)
+        if self.magnets and outerbore == 0:
+            outerbore = max([magnet.r[1] for magnet in self.magnets]) + eps
+            self.outerbore = outerbore
+            logger.warning(
+                f"outerbore was not specified (0), setting it to maximum magnet outer radius plus eps: "
+                f"{outerbore:.3f} mm (= {max([magnet.r[1] for magnet in self.magnets]):.3f} + {eps})"
+            )
+
         if self.magnets and outerbore < max([magnet.r[1] for magnet in self.magnets]):
             raise ValidationError(
                 f"outerbore ({outerbore}) must be greater than last bitter outer radius ({max([magnet.r[1] for magnet in self.magnets])})"
