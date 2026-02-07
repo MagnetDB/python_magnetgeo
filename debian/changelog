@@ -1,10 +1,12 @@
-python-magnetgeo (1.0.0-6) UNRELEASED; urgency=medium
+python-magnetgeo (1.0.0-7) UNRELEASED; urgency=medium
 
   * add logging support
   * fix helper to create Profile from Shape_profile.dat
-  * add helper to split helix YAML files for magnetdb
+  * add helper to prepare helix YAML files for magnetdb
+  * add helper to check yaml files
+  * add support for lazzy loading
 
- -- Christophe Trophime <christophe.trophime@lncmi.cnrs.fr>  Mon, 26 Jan 2026 16:07:38 +0100
+ -- Christophe Trophime <christophe.trophime@lncmi.cnrs.fr>  Tue, 03 Feb 2026 15:52:42 +0100
 
 python-magnetgeo (1.0.0-5) unstable; urgency=medium
 

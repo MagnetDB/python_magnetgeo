@@ -115,7 +115,9 @@ def unserialize_object(d, debug: bool = False):
         # Set attributes (lowercase keys for compatibility)
         for key, value in d.items():
             logger.debug(f"key={key}, value={value} type={type(value)}")
-            setattr(obj, key.lower(), value)
+            # Recursively deserialize nested objects
+            deserialized_value = _deserialize_value(value)
+            setattr(obj, key.lower(), deserialized_value)
 
         logger.debug(f"obj={obj}")
 
@@ -123,3 +125,30 @@ def unserialize_object(d, debug: bool = False):
     else:
         logger.debug(f"no classname: {d}")
         return d
+
+
+def _deserialize_value(value):
+    """
+    Recursively deserialize a value that may contain nested objects.
+
+    Args:
+        value: Value to deserialize (can be dict, list, or primitive)
+
+    Returns:
+        Deserialized value with nested objects converted to class instances
+    """
+    if isinstance(value, dict):
+        # Check if it's a serialized object
+        if "__classname__" in value:
+            # Make a copy to avoid modifying the original
+            value_copy = value.copy()
+            return unserialize_object(value_copy)
+        else:
+            # Regular dict - recursively process values
+            return {k: _deserialize_value(v) for k, v in value.items()}
+    elif isinstance(value, list):
+        # Recursively process list items
+        return [_deserialize_value(item) for item in value]
+    else:
+        # Primitive value - return as is
+        return value

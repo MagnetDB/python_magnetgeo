@@ -17,6 +17,8 @@ from .ModelAxi import ModelAxi
 from .tierod import Tierod
 from .validation import GeometryValidator, ValidationError
 
+from .logging_config import get_logger
+logger = get_logger(__name__)
 
 class Bitter(YAMLObjectBase):
     """
@@ -295,11 +297,11 @@ class Bitter(YAMLObjectBase):
         n_slits = 0
         if self.coolingslits:
             n_slits = len(self.coolingslits)
-            print(f"Bitter({self.name}): CoolingSlits={n_slits}")
+            logger.debug(f"Bitter({self.name}): CoolingSlits={n_slits}")
 
             Channels += [f"{prefix}Slit{i+1}" for i in range(n_slits)]
         Channels += [f"{prefix}Slit{n_slits+1}"]
-        print(f"Bitter({prefix}): {Channels}")
+        logger.debug(f"Bitter({prefix}): {Channels}")
         return Channels
 
     def get_lc(self) -> float:
@@ -339,7 +341,7 @@ class Bitter(YAMLObjectBase):
                 dr.append(_x - x)
                 x = _x
             dr.append(self.r[1] - x)
-            # print(f"Bitter: dr={dr}")
+            # logger.debug(f"Bitter: dr={dr}")
             lc = min(dr) / 5.0
 
         return lc
@@ -437,8 +439,7 @@ class Bitter(YAMLObjectBase):
         else:
             solid_names.append(f"{prefix}B")
             solid_names.append(f"{prefix}Kapton")
-        if verbose:
-            print(f"Bitter/get_names: solid_names {len(solid_names)}")
+        logger.warning(f"Bitter/get_names: solid_names {len(solid_names)}")
         return solid_names
 
     def get_Nturns(self) -> float:
@@ -600,10 +601,10 @@ class Bitter(YAMLObjectBase):
             Zh.append(z)
         if abs(self.z[1] - z) >= tol:
             Zh.append(self.z[1])
-        print(f"Zh={Zh}")
+        logger.debug(f"Zh={Zh}")
 
         filling_factor.append(1)
-        print(f"filling_factor={filling_factor}")
+        logger.debug(f"filling_factor={filling_factor}")
 
         # return (nslits, Dh, Sh, Zh)
         return (nslits, Dh, Sh, Zh, filling_factor)

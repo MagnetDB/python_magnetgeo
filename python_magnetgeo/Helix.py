@@ -291,7 +291,7 @@ class Helix(YAMLObjectBase):
         odd = values["odd"]
         dble = values["dble"]
         cutwidth = values["cutwidth"]
-        start_diameter_hole = values.get("start_hole_diameter", 0.0)
+        start_diameter_hole = values.get("start_diameter_hole", 0.0)
 
         object = cls(
             name,

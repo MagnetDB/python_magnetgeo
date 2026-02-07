@@ -291,7 +291,7 @@ class ProbeTestUtils:
         assert len(magnet_obj.probes) == expected_probe_count, f"Expected {expected_probe_count} probes"
 
 
-class SuiteRunner:
+class MagnetTestRunner:
     """Comprehensive test runner with reporting and validation"""
 
     def __init__(self, test_dir: str = "new-tests"):
@@ -507,7 +507,7 @@ Provides comprehensive testing with validation and reporting
 import argparse
 import sys
 from pathlib import Path
-from test_utils import SuiteRunner
+from test_utils import MagnetTestRunner
 
 
 def main():
@@ -568,7 +568,7 @@ Examples:
     args = parser.parse_args()
 
     # Initialize test runner
-    runner = SuiteRunner(args.test_dir)
+    runner = MagnetTestRunner(args.test_dir)
 
     # Environment validation
     if not args.no_validate:

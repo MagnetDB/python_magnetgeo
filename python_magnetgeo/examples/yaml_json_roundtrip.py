@@ -22,6 +22,7 @@ Example:
 
 import sys
 import yaml
+import json
 import os
 import argparse
 import python_magnetgeo as pmg
@@ -64,6 +65,19 @@ def check_yaml(input_file):
 
     print(f"Loaded: {type(object)}")
     print(f"Object: {object}")
+
+    json_str = object.to_json()
+    print("JSON representation:")
+    print(json_str)
+
+    from python_magnetgeo.deserialize import unserialize_object
+    json_dict = json.loads(json_str)
+    object_reconstructed = unserialize_object(json_dict)
+    print(f"Reconstructed Object: {object}")
+
+    yaml_str = object_reconstructed.to_yaml()
+    print("YAML representation:")
+    print(yaml_str)
 
 
 def main():

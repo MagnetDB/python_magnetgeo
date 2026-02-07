@@ -35,12 +35,13 @@ from python_magnetgeo.logging_config import get_logger
 # Get logger for this module
 logger = get_logger(__name__)
 
-def split_helix_yaml(input_file):
+def split_helix_yaml(input_file, output_dir='.'):
     """
     Split an Helix YAML file into separate files for modelaxi and shape.
 
     Args:
         input_file: Path to the input Helix YAML file
+        output_dir: Path to the output directory (default: '.')
 
     Returns:
         tuple: (helix_file, modelaxi_file, shape_file) - paths to the created files
@@ -48,7 +49,7 @@ def split_helix_yaml(input_file):
     # Split input_file into basedir and basename
     basedir = os.path.dirname(input_file)
     basename = os.path.basename(input_file)
-    
+
     # Change to basedir if it's not empty and not '.'
     if basedir and basedir != '.':
         print(f"Changing directory to: {basedir}")
@@ -56,7 +57,7 @@ def split_helix_yaml(input_file):
         input_path = basename
     else:
         input_path = input_file
-    
+
     print(f"Loading Helix from: {input_path}")
 
     # Load the Helix object using getObject from utils
@@ -66,13 +67,12 @@ def split_helix_yaml(input_file):
 
     # Extract the base name (without extension)
     base_name = os.path.splitext(basename)[0]
-    output_dir = '.'
 
     # Define output file names
     modelaxi_filename = f"{base_name}_modelaxi"
     if helix.shape is not None:
         shape_filename = f"{base_name}_shape"
-    helix_filename = f"{helix.model3d.cad}"
+    helix_filename = f"{helix.model3d.cad[:-2]}"
 
     modelaxi_file = os.path.join(output_dir, f"{modelaxi_filename}.yaml")
     shape_file = None
@@ -90,16 +90,6 @@ def split_helix_yaml(input_file):
         print(f"Writing shape to: {shape_file}")
         with open(shape_file, 'w') as f:
             yaml.dump(helix.shape, f, default_flow_style=False)
-
-    # Create a new Helix object with references to the files
-    # Store the original objects for reference
-    #original_modelaxi = helix.modelaxi
-    #original_shape = helix.shape
-
-    # Replace modelaxi and shape with string references (filenames without extension)
-    #helix.modelaxi = modelaxi_filename
-    #if helix.shape is not None:
-    #    helix.shape = shape_filename
 
     # Save the modified Helix YAML
     print(f"Writing split Helix to: {helix_file}")
@@ -135,6 +125,11 @@ def main():
         'input_file',
         help='Path to the input Helix YAML file'
     )
+    parser.add_argument(
+        '--output_dir',
+        help='Path to the output directory',
+        default='.',
+    )
 
     args = parser.parse_args()
 
@@ -143,7 +138,7 @@ def main():
         sys.exit(1)
 
     try:
-        split_helix_yaml(args.input_file)
+        split_helix_yaml(args.input_file, args.output_dir)
     except Exception as e:
         print(f"Error: {e}")
         import traceback
