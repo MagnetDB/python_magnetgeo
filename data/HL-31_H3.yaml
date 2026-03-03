@@ -9,7 +9,7 @@ z:
   - 125.0
 dble: true
 cutwidth: 0.22
-axi: !<ModelAxi>
+modelaxi: !<ModelAxi>
   name: "HL-31.d"
   h: 95
   turns:
@@ -54,7 +54,7 @@ axi: !<ModelAxi>
     - 19.58177777239263
     - 23.29705899795419
     - 25.53105659056708
-m3d: !<Model3D>
+model3d: !<Model3D>
   cad: "HL-31-206MC"
   with_shapes: false
   with_channels: false

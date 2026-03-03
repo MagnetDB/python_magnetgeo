@@ -1,3 +1,56 @@
+python-magnetgeo (1.0.0-7) UNRELEASED; urgency=medium
+
+  * add logging support
+  * fix helper to create Profile from Shape_profile.dat
+  * add helper to prepare helix YAML files for magnetdb
+  * add helper to check yaml files
+  * add support for lazzy loading
+
+ -- Christophe Trophime <christophe.trophime@lncmi.cnrs.fr>  Tue, 03 Feb 2026 15:52:42 +0100
+
+python-magnetgeo (1.0.0-5) unstable; urgency=medium
+
+  * New upstream release
+  * Switch to pyproject.toml build system
+  * Update to Python 3.11+
+  * Add pybuild-plugin-pyproject dependency
+
+  * Add _basedir in YAMLBaseObject
+  * Explicitly add _basedir field
+  * Make detail an enum in hts
+  * Move DetailLevel into separate file
+  * Add tolerance when comparing Ring radius with Helices
+  * Add validation for Groove in Helix
+  * Better exceptions for utils
+
+ -- Christophe Trophime <christophe.trophime@lncmi.cnrs.fr>  Thu, 09 Oct 2025 15:19:37 +0200
+
+python-magnetgeo (0.8.0-1) UNRELEASED; urgency=medium
+
+  * add probes class
+
+ -- Christophe Trophime <christophe.trophime@lncmi.cnrs.fr>  Tue, 02 Sep 2025 09:46:22 +0200
+
+python-magnetgeo (0.7.0-1) unstable; urgency=medium
+
+  * new upstream release
+  * refactor
+
+ -- Christophe Trophime <christophe.trophime@lncmi.cnrs.fr>  Thu, 26 Jun 2025 07:33:49 +0200
+
+python-magnetgeo (0.6.0-1) unstable; urgency=medium
+
+  * new release: breaking API changes
+
+ -- Christophe Trophime <christophe.trophime@lncmi.cnrs.fr>  Wed, 11 Jun 2025 17:33:02 +0200
+
+python-magnetgeo (0.5.1-4) unstable; urgency=medium
+
+  * fix optional cad entry in ring
+  * change __repr__ output for helix
+
+ -- Christophe Trophime <christophe.trophime@lncmi.cnrs.fr>  Mon, 14 Apr 2025 09:36:43 +0200
+
 python-magnetgeo (0.5.1-3) unstable; urgency=medium
 
   * fix __repr__
@@ -62,9 +115,9 @@ python-magnetgeo (0.3.2-6) unstable; urgency=medium
 
 python-magnetgeo (0.3.2-5) unstable; urgency=medium
 
-  * d/patches: 
+  * d/patches:
     - add tierod.patch
-    - add fix-bitter-names.patch 
+    - add fix-bitter-names.patch
 
  -- Christophe Trophime <christophe.trophime@lncmi.cnrs.fr>  Wed, 31 Jan 2024 10:37:03 +0100
 
@@ -211,7 +264,7 @@ python-magnetgeo (0.3.1-1.6) unstable; urgency=medium
 
 python-magnetgeo (0.3.1-1.5) unstable; urgency=medium
 
-  * make get_names mimic salome names for SupraStruct 
+  * make get_names mimic salome names for SupraStruct
 
  -- Christophe Trophime <christophe.trophime@lncmi.cnrs.fr>  Wed, 08 Mar 2023 11:15:28 +0100
 

@@ -7,7 +7,7 @@ shape: !<Shape>
   length: 6
   profile: "HL-31-993"
   onturns: 0
-m3d: !<Model3D>
+model3d: !<Model3D>
   with_channels: false
   cad: "HL-31-012MC"
   with_shapes: true
@@ -15,7 +15,7 @@ dble: true
 r:
   - 56.2
   - 65.6
-axi: !<ModelAxi>
+modelaxi: !<ModelAxi>
   name: "HL-31.d"
   h: 115.1071
   pitch:

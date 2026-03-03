@@ -1,0 +1,73 @@
+Bootstrap: docker
+From: debian:13
+
+%labels
+    Author Christophe Trophime <christophe.trophime@lncmi.cnrs.fr>
+    Version 1.0.0
+    Description Python Magnet Geometry - helpers to create HiFiMagnet cads and meshes
+
+%help
+    This container provides the Python Magnet Geometry package for high-field magnet
+    design and simulation.
+
+    Usage:
+        singularity exec python_magnetgeo.sif python -c "import python_magnetgeo"
+        singularity shell python_magnetgeo.sif
+
+    For more information visit:
+    https://github.com/MagnetDB/python_magnetgeo
+
+%environment
+    export LC_ALL=C
+    export DEBIAN_FRONTEND=noninteractive
+    export PYTHONUNBUFFERED=1
+    export PYTHONDONTWRITEBYTECODE=1
+    export VIRTUAL_ENV=/opt/venv
+    export PATH="$VIRTUAL_ENV/bin:$PATH"
+
+%post
+    # Update and install system dependencies
+    apt-get update
+    apt-get -y install debian-keyring lsb-release
+    apt-get -y install python-is-python3 python3-matplotlib python3-pandas
+    ln -sf /usr/share/keyrings/debian-maintainers.gpg /etc/apt/trusted.gpg.d/
+    echo "deb http://euler.lncmig.local/~christophe.trophime@LNCMIG.local/debian/ $(lsb_release -cs) main" > /etc/apt/sources.list.d/lncmi.list
+    apt-get update
+    apt-get -y upgrade
+    apt-get -y install python3-magnetgeo
+
+    # create custom motd
+    # Install figlet!
+    apt update
+    apt install -y figlet
+
+    # Clean up
+    apt-get clean
+    rm -rf /var/lib/apt/lists/*
+
+    # add banner
+    cat > /.singularity.d/env/99-motd.sh <<EOF
+    case \$0 in
+        /.singularity.d/actions/shell)
+            figlet MagnetGeo
+            echo
+            echo "Hello \$USER from shell" ;;
+        /.singularity.d/actions/exec)
+            echo "Hello \$USER from exec" ;;
+        /.singularity.d/actions/run)
+            echo "Hello \$USER from run" ;;
+        /.singularity.d/actions/test)
+            echo "Hello \$USER from test" ;;
+    esac
+EOF
+
+
+%runscript
+    # Default action when running the container
+    python3 "$@"
+
+%test
+    # Run tests to verify installation
+    python3 -c "import python_magnetgeo; print('python_magnetgeo version:', python_magnetgeo.__version__ if hasattr(python_magnetgeo, '__version__') else '1.0.0')"
+    python3 -c "import yaml; import pandas; print('Dependencies OK')"
+

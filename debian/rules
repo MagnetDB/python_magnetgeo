@@ -1,13 +1,12 @@
 #!/usr/bin/make -f
 # See debhelper(7) (uncomment to enable)
 # output every command that modifies files on the build system.
-export DH_VERBOSE = 1
+#export DH_VERBOSE = 1
 
 export PYBUILD_NAME=magnetgeo
 
 %:
-	dh $@ --with python3 --buildsystem=pybuild
-
+	dh $@ --buildsystem=pybuild
 
 # If you need to rebuild the Sphinx documentation
 # Add sphinxdoc to the dh --with line
@@ -21,6 +20,3 @@ export PYBUILD_NAME=magnetgeo
 #	docs/ build/html # HTML generator
 #	PYTHONPATH=. python3 -m sphinx -N -bman \
 #	docs/ build/man # Manpage generator
-
-#override_dh_auto_test:
-#	echo "disable pytest (issue with trusted-host)"

@@ -1,91 +1,154 @@
-import yaml
-import json
+#!/usr/bin/env python3
+# encoding: UTF-8
 
 """
-Provides definition for Groove
-!!! groove are supposed to be "square" like !!!
+Provides definition for groove geometry features.
 
-gtype: rint or rext
-n: number of grooves
-eps: depth of groove
+This module defines the Groove class for representing square-profile grooves
+on helical conductor geometries. Grooves are radial indentations used for
+various purposes such as cooling channels or structural features.
+
+Classes:
+    Groove: Represents square-profile grooves on a helix geometry
+
+Notes:
+    Grooves are assumed to have a square cross-section profile. They can be
+    positioned on either the inner or outer radius of the conductor.
 """
 
+from .base import YAMLObjectBase
 
-class Groove(yaml.YAMLObject):
+
+class Groove(YAMLObjectBase):
+    """
+    Represents square-profile grooves on helical conductor geometry.
+
+    Grooves are radial indentations or channels machined into the conductor
+    surface. They typically have a square cross-section and are distributed
+    circumferentially around the conductor. Use for:
+    - Cooling channels
+
+    Attributes:
+        name (str): Unique identifier for the groove set (default: '')
+        gtype (str): Groove location - "rint" (inner radius) or "rext" (outer radius)
+        n (int): Number of grooves distributed around the circumference (default: 0)
+        eps (float): Depth of each groove in millimeters (default: 0)
+
+    Example:
+        >>> # Create grooves on inner radius
+        >>> grooves = Groove(
+        ...     name="cooling_grooves",
+        ...     gtype="rint",
+        ...     n=8,
+        ...     eps=2.5
+        ... )
+        >>>
+        >>> # Create empty/default groove (no grooves)
+        >>> no_grooves = Groove()
+        >>>
+        >>> # Load from YAML
+        >>> grooves = Groove.from_yaml("grooves.yaml")
+    """
+
     yaml_tag = "Groove"
 
-    def __init__(self, gtype: str=None, n: int=0, eps: float=0) -> None:
+    def __init__(self, name: str = "", gtype: str = None, n: int = 0, eps: float = 0) -> None:
+        """
+        Initialize a Groove object.
+
+        Creates a groove specification with the given parameters. All parameters
+        have defaults, allowing creation of an empty groove specification (no grooves).
+
+        Args:
+            name: Unique identifier for the groove set (default: '').
+                  Empty string is allowed for default/no-groove cases.
+            gtype: Groove radial position (default: None):
+                   - "rint": Grooves on inner radius
+                   - "rext": Grooves on outer radius
+                   - None: No grooves defined
+            n: Number of grooves distributed evenly around the circumference
+               (default: 0). Must be non-negative. Zero means no grooves.
+            eps: Depth of each groove in millimeters (default: 0). Must be
+                 non-negative. This is the radial depth of the square groove.
+
+        Example:
+            >>> # Full specification
+            >>> g1 = Groove("cooling", "rint", 8, 2.5)
+            >>>
+            >>> # Default (no grooves)
+            >>> g2 = Groove()
+            >>>
+            >>> # Partial specification
+            >>> g3 = Groove(name="test_grooves", gtype="rext", n=4, eps=1.5)
+
+        Notes:
+            The grooves are assumed to:
+            - Have square cross-sections (width ≈ depth = eps)
+            - Be evenly distributed around the circumference (360°/n spacing)
+            - Extend along the full axial length of the conductor
+        """
+        self.name = name
         self.gtype = gtype
         self.n = n
         self.eps: float = eps
 
     def __repr__(self):
-        return "%s(gtype=%s, n=%d, eps=%g)" % (
-            self.__class__.__name__,
-            self.gtype,
-            self.n,
-            self.eps,
-        )
+        """
+        Return string representation of the Groove object.
 
-    def dump(self, name: str):
-        """
-        dump object to file
-        """
-        try:
-            with open(f"{name}.yaml", "w") as ostream:
-                yaml.dump(self, stream=ostream)
-        except Exception:
-            raise Exception("Failed to Tierod dump")
+        Returns:
+            str: String showing class name and all attribute values
 
-    def load(self, name: str):
+        Example:
+            >>> g = Groove("test", "rint", 4, 2.0)
+            >>> repr(g)
+            "Groove(name=test, gtype=rint, n=4, eps=2)"
         """
-        load object from file
-        """
-        data = None
-        try:
-            with open(f"{name}.yaml", "r") as istream:
-                data = yaml.load(stream=istream, Loader=yaml.FullLoader)
-        except Exception:
-            raise Exception(f"Failed to load Groove data {name}.yaml")
-
-        self.gtype = data.gtype
-        self.n = data.n
-        self.eps = data.eps
-
-    def to_json(self):
-        """
-        convert from yaml to json
-        """
-        from . import deserialize
-
-        return json.dumps(
-            self, default=deserialize.serialize_instance, sort_keys=True, indent=4
-        )
+        return f"{self.__class__.__name__}(name={self.name}, gtype={self.gtype}, n={self.n}, eps={self.eps:g})"
 
     @classmethod
-    def from_json(cls, filename: str, debug: bool = False):
+    def from_dict(cls, values: dict, debug: bool = False):
         """
-        convert from json to yaml
+        Create a Groove object from a dictionary.
+
+        This method is used for deserialization from YAML/JSON formats.
+        The 'name' field is optional and defaults to empty string if not present.
+
+        Args:
+            values: Dictionary containing groove specification with keys:
+                    - 'name': str (optional, defaults to '')
+                    - 'gtype': str ("rint" or "rext")
+                    - 'n': int (number of grooves)
+                    - 'eps': float (groove depth in mm)
+            debug: Enable debug output (default: False)
+
+        Returns:
+            Groove: New instance created from the dictionary data
+
+        Raises:
+            KeyError: If required keys are missing ('gtype', 'n', 'eps')
+
+        Example:
+            >>> # Full specification
+            >>> data = {
+            ...     "name": "inner_grooves",
+            ...     "gtype": "rint",
+            ...     "n": 8,
+            ...     "eps": 2.5
+            ... }
+            >>> groove = Groove.from_dict(data)
+            >>>
+            >>> # Without name (uses default empty string)
+            >>> data2 = {
+            ...     "gtype": "rext",
+            ...     "n": 4,
+            ...     "eps": 1.5
+            ... }
+            >>> groove2 = Groove.from_dict(data2)
+            >>> print(groove2.name)  # ''
         """
-        from . import deserialize
-
-        if debug:
-            print(f"Groove.from_json: filename={filename}")
-        with open(filename, "r") as istream:
-            return json.loads(
-                istream.read(), object_hook=deserialize.unserialize_object
-            )
-
-
-def Groove_constructor(loader, node):
-    """
-    build an Groove object
-    """
-    values = loader.construct_mapping(node)
-    gtype = values["gtype"]
-    n = values["n"]
-    eps = values["eps"]
-    return Groove(gtype, n, eps)
-
-
-yaml.add_constructor("!Groove", Groove_constructor)
+        name = values.get("name", "")
+        gtype = values["gtype"]
+        n = values["n"]
+        eps = values["eps"]
+        return Groove(name, gtype, n, eps)

@@ -1,0 +1,6 @@
+!<Supra>
+name: "Supra_Test"
+r: [25.0, 35.0]
+z: [10.0, 50.0]
+n: 10
+detail: 0

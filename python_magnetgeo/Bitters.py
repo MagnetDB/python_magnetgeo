@@ -2,177 +2,372 @@
 # encoding: UTF-8
 
 """defines Bitter Insert structure"""
+import os
 
-import json
-import yaml
+from .base import YAMLObjectBase
 
+# Add import at the top
+from .Bitter import Bitter
+from .Probe import Probe
+from .utils import getObject
+from .validation import GeometryValidator, ValidationError
 
-class Bitters(yaml.YAMLObject):
+# Module logger
+from .logging_config import get_logger
+logger = get_logger(__name__)
+
+class Bitters(YAMLObjectBase):
     """
     name :
     magnets :
 
     innerbore:
     outerbore:
+    probes :       # NEW ATTRIBUTE
     """
 
     yaml_tag = "Bitters"
 
     def __init__(
-        self, name: str, magnets: list, innerbore: float, outerbore: float
+        self,
+        name: str,
+        magnets: list,
+        innerbore: float,
+        outerbore: float,
+        probes: list = None,  # NEW PARAMETER
     ) -> None:
-        """constructor"""
+        """
+        Initialize a Bitters magnet assembly (collection of Bitter plates).
+
+        A Bitters represents a complete assembly of multiple Bitter plate magnets,
+        which are resistive disk-shaped magnets with helical cooling channels.
+        The class validates that individual Bitter magnets do not intersect.
+
+        Args:
+            name: Unique identifier for the Bitters assembly
+            magnets: List of Bitter objects or string references to Bitter YAML files.
+                    Each Bitter represents a single disk/plate in the assembly.
+            innerbore: Inner bore radius in mm (0 means unspecified)
+            outerbore: Outer bore radius in mm (0 means unspecified)
+            probes: Optional list of Probe objects or string references to probe YAML files
+                for measurement instrumentation
+
+        Raises:
+            ValidationError: If name is invalid
+            ValidationError: If innerbore >= outerbore (when both non-zero)
+            ValidationError: If any two Bitter magnets intersect spatially
+
+        Notes:
+            - Magnets are loaded from YAML files if provided as strings
+            - Intersection checking ensures physical validity of the stack
+            - Bitter plates are typically stacked axially (along z-axis)
+            - Inner/outer bore defines the usable experimental volume
+
+        Example:
+            >>> bitter1 = Bitter("B1", r=[100, 150], z=[0, 50], ...)
+            >>> bitter2 = Bitter("B2", r=[100, 150], z=[60, 110], ...)
+            >>> bitters = Bitters(
+            ...     name="M10_Bitters",
+            ...     magnets=[bitter1, bitter2],
+            ...     innerbore=80,
+            ...     outerbore=160,
+            ...     probes=[]
+            ... )
+
+            >>> # Or load from files
+            >>> bitters = Bitters(
+            ...     name="M10_Bitters",
+            ...     magnets=["B1", "B2"],  # Load from B1.yaml, B2.yaml
+            ...     innerbore=80,
+            ...     outerbore=160,
+            ...     probes=None
+            ... )
+        """
+        # General validation
+        GeometryValidator.validate_name(name)
+
+        # Validate bore dimensions if not zero (zero means not specified)
+        if innerbore != 0 and outerbore != 0:
+            if innerbore >= outerbore:
+                raise ValidationError(
+                    f"innerbore ({innerbore}) must be less than outerbore ({outerbore})"
+                )
+
         self.name = name
-        self.magnets = magnets
+        self.magnets = []
+        for magnet in magnets:
+            if isinstance(magnet, str):
+                self.magnets.append(getObject(f"{magnet}.yaml"))
+            else:
+                self.magnets.append(magnet)
+
         self.innerbore = innerbore
         self.outerbore = outerbore
 
-    def __repr__(self):
-        """representation"""
-        return "%s(name=%r, magnets=%r, innerbore=%r, outerbore=%r)" % (
-            self.__class__.__name__,
-            self.name,
-            self.magnets,
-            self.innerbore,
-            self.outerbore,
-        )
+        self.probes = []
+        if probes is not None:
+            for probe in probes:
+                if isinstance(probe, str):
+                    self.probes.append(Probe.from_yaml(f"{probe}.yaml"))
+                else:
+                    self.probes.append(probe)
 
-    def get_channels(
-        self, mname: str, hideIsolant: bool = True, debug: bool = False
-    ) -> dict:
-        """
-        get Channels def as dict
-        """
-        print(f"Bitters/get_channels:")
-        Channels = {}
+        # Small offset for bore adjustments
+        eps = 0.1  # mm
 
-        if isinstance(self.magnets, str):
-            YAMLFile = f"{self.magnets}.yaml"
-            with open(YAMLFile, "r") as f:
-                Object = yaml.load(f, Loader=yaml.FullLoader)
-
-            Channels[self.name] = Object.get_channels(self.name, hideIsolant, debug)
-        elif isinstance(self.magnets, list):
-            for magnet in self.magnets:
-                YAMLFile = f"{magnet}.yaml"
-                with open(YAMLFile, "r") as f:
-                    Object = yaml.load(f, Loader=yaml.FullLoader)
-
-                Channels[magnet] = Object.get_channels(magnet, hideIsolant, debug)
-
-        elif isinstance(self.magnets, dict):
-            for key in self.magnets:
-                magnet = self.magnets[key]
-                YAMLFile = f"{magnet}.yaml"
-                with open(YAMLFile, "r") as f:
-                    Object = yaml.load(f, Loader=yaml.FullLoader)
-
-                Channels[magnet] = Object.get_channels(key, hideIsolant, debug)
-
-        else:
-            raise RuntimeError(
-                f"Bitters: unsupported type of magnets ({type(self.magnets)})"
+        # Handle case where innerbore is not specified (0)
+        if self.magnets and innerbore == 0:
+            innerbore = min([magnet.r[0] for magnet in self.magnets]) - eps
+            self.innerbore = innerbore
+            logger.warning(
+                f"innerbore was not specified (0), setting it to minimum magnet inner radius minus eps: "
+                f"{innerbore:.3f} mm (= {min([magnet.r[0] for magnet in self.magnets]):.3f} - {eps})"
             )
 
-        if debug:
-            print("Channels:")
-            for key, value in Channels:
-                print(f"\t{key}: {value}")
+        # Compute overall bounding box
+        if self.magnets and innerbore > min([magnet.r[0] for magnet in self.magnets]):
+            raise ValidationError(
+                f"innerbore ({innerbore}) must be less than ({min([magnet.r[0] for magnet in self.magnets])})"
+            )
+        
+        # Handle case where outerbore is not specified (0)
+        if self.magnets and outerbore == 0:
+            outerbore = max([magnet.r[1] for magnet in self.magnets]) + eps
+            self.outerbore = outerbore
+            logger.warning(
+                f"outerbore was not specified (0), setting it to maximum magnet outer radius plus eps: "
+                f"{outerbore:.3f} mm (= {max([magnet.r[1] for magnet in self.magnets]):.3f} + {eps})"
+            )
+        
+        if self.magnets and outerbore < max([magnet.r[1] for magnet in self.magnets]):
+            raise ValidationError(
+                f"outerbore ({outerbore}) must be greater than last bitter outer radius ({max([magnet.r[1] for magnet in self.magnets])})"
+            )
+
+        # check that magnets are not intersecting
+        for i in range(1, len(self.magnets)):
+            rb, zb = self.magnets[i - 1].boundingBox()
+            for j in range(i + 1, len(self.magnets)):
+                if self.magnets[j].intersect(rb, zb):
+                    raise ValidationError(
+                        f"magnets intersect: magnet[{i}] intersect magnet[{i-1}]: /n{self.magnets[i]} /n{self.magnets[i-1]}"
+                    )
+
+        # Store the directory context for resolving struct paths
+        self._basedir = os.getcwd()
+
+    def __repr__(self):
+        """
+        Return string representation of Bitters instance.
+
+        Provides a detailed string showing all attributes and their values,
+        useful for debugging, logging, and interactive inspection.
+
+        Returns:
+            str: String representation in constructor-like format showing:
+                - name: Assembly identifier
+                - magnets: List of Bitter objects
+                - innerbore: Inner bore radius
+                - outerbore: Outer bore radius
+                - probes: List of probe objects
+
+        Example:
+            >>> bitters = Bitters("M10_Bitters", magnets=[b1, b2],
+            ...                   innerbore=80, outerbore=160, probes=[])
+            >>> print(repr(bitters))
+            Bitters(name='M10_Bitters', magnets=[Bitter(...), Bitter(...)],
+                    innerbore=80, outerbore=160, probes=[])
+            >>>
+            >>> # In Python REPL
+            >>> bitters
+            Bitters(name='M10_Bitters', magnets=[...], innerbore=80, ...)
+        """
+        return f"{self.__class__.__name__}(name={self.name!r}, magnets={self.magnets!r}, innerbore={self.innerbore!r}, outerbore={self.outerbore!r}, probes={self.probes!r})"
+
+    def get_channels(self, mname: str, hideIsolant: bool = True, debug: bool = False) -> dict:
+        """
+        Retrieve cooling channel definitions for all Bitter magnets.
+
+        Aggregates channel definitions from all constituent Bitter plates into a
+        hierarchical dictionary structure. Each Bitter contributes its own
+        channel definitions (including helical cooling slits).
+
+        Args:
+            mname: Magnet assembly name prefix for channel identifiers
+            hideIsolant: If True, exclude isolant and kapton layer markers from
+                        channel definitions. Passed to each Bitter's get_channels().
+            debug: Enable debug output showing channel aggregation process.
+                Also passed to each Bitter's get_channels() method.
+
+        Returns:
+            dict: Hierarchical dictionary of channels:
+                {
+                    "{mname}_{bitter1.name}": bitter1.get_channels(...),
+                    "{mname}_{bitter2.name}": bitter2.get_channels(...),
+                    ...
+                }
+                Each value is the channel structure from that Bitter's get_channels().
+
+        Notes:
+            - Channels are organized by Bitter plate name for clarity
+            - Debug output prefixed with "Bitters/get_channels:"
+            - Each Bitter may have multiple cooling slits with channels
+            - Channel structure depends on Bitter geometry and cooling slit configuration
+
+        Example:
+            >>> bitters = Bitters("M10_Bitters", magnets=[b1, b2, b3], ...)
+            >>> channels = bitters.get_channels("M10", hideIsolant=True)
+            >>> print(channels.keys())
+            >>> # dict_keys(['M10_B1', 'M10_B2', 'M10_B3'])
+            >>>
+            >>> # Access specific Bitter's channels
+            >>> b1_channels = channels['M10_B1']
+        """
+        print("Bitters/get_channels:")
+        Channels = {}
+
+        prefix = ""
+        if mname:
+            prefix = f"{mname}_"
+        for magnet in self.magnets:
+            oname = f"{prefix}{magnet.name}"
+            Channels[oname] = magnet.get_channels(oname, hideIsolant, debug)
+
+        logger.debug("Channels:")
+        for key, value in Channels:
+            logger.debug(f"\t{key}: {value}")
         return Channels  # flatten list?
 
     def get_isolants(self, mname: str, debug: bool = False) -> dict:
         """
-        return isolants
+        Retrieve electrical isolant definitions for the Bitters assembly.
+
+        Returns dictionary of isolant regions that electrically insulate
+        components within the assembly.
+
+        Args:
+            mname: Magnet assembly name prefix for isolant identifiers
+            debug: Enable debug output
+
+        Returns:
+            dict: Dictionary of isolant regions (currently returns empty dict)
+
+        Notes:
+            This is a placeholder method for future isolant tracking functionality.
+            Current implementation returns an empty dictionary.
+            When implemented, will aggregate isolants from all Bitter plates.
+
+        Example:
+            >>> bitters = Bitters("M10_Bitters", ...)
+            >>> isolants = bitters.get_isolants("M10")
+            >>> # Currently returns {}
         """
         return {}
 
-    def get_names(
-        self, mname: str, is2D: bool = False, verbose: bool = False
-    ) -> list[str]:
+    def get_names(self, mname: str, is2D: bool = False, verbose: bool = False) -> list[str]:
         """
-        return names for Markers
+        Generate marker names for all geometric entities in the Bitters assembly.
+
+        Aggregates marker names from all constituent Bitter plates, creating a
+        complete list of identifiers for all solid components used in mesh
+        generation, visualization, and post-processing.
+
+        Args:
+            mname: Magnet assembly name prefix (e.g., "M10")
+            is2D: If True, generate detailed 2D marker names from each Bitter
+                (includes individual sectors for helical cuts)
+                If False, use simplified 3D naming convention
+            verbose: Enable verbose output showing name generation process
+
+        Returns:
+            list[str]: Ordered list of marker names for all components:
+                - Names from Bitter 1 (with prefix "{mname}_{bitter1.name}_")
+                - Names from Bitter 2 (with prefix "{mname}_{bitter2.name}_")
+                - ... (for all Bitter plates)
+
+        Notes:
+            - Each Bitter's names are prefixed with assembly and plate identifiers
+            - Name format depends on is2D flag (passed to each Bitter)
+            - 2D mode: Detailed sector names for each cooling slit section
+            - 3D mode: Simplified names for whole plates
+            - Order is deterministic: follows magnet order in self.magnets list
+            - Verbose mode shows total count: "Bitters/get_names: solid_names {count}"
+
+        Example:
+            >>> bitters = Bitters("M10_Bitters", magnets=[b1, b2], ...)
+            >>>
+            >>> # 3D naming (simplified)
+            >>> names_3d = bitters.get_names("M10", is2D=False)
+            >>> print(names_3d)
+            >>> # ['M10_B1_B', 'M10_B1_Kapton', 'M10_B2_B', 'M10_B2_Kapton']
+            >>>
+            >>> # 2D naming (detailed with sectors)
+            >>> names_2d = bitters.get_names("M10", is2D=True)
+            >>> # Returns detailed sector names for each cooling slit section
+            >>> print(f"Total 2D markers: {len(names_2d)}")
         """
+        prefix = ""
+        if mname:
+            prefix = f"{mname}_"
+
         solid_names = []
-        if isinstance(self.magnets, str):
-            YAMLFile = f"{self.magnets}.yaml"
-            with open(YAMLFile, "r") as f:
-                Object = yaml.load(f, Loader=yaml.FullLoader)
-
-            solid_names += Object.get_names(self.name, is2D, verbose)
-        elif isinstance(self.magnets, list):
-            for magnet in self.magnets:
-                YAMLFile = f"{magnet}.yaml"
-                with open(YAMLFile, "r") as f:
-                    Object = yaml.load(f, Loader=yaml.FullLoader)
-
-                solid_names += Object.get_names(
-                    magnet, is2D, verbose
-                )  # magnet or Object.name??
-        elif isinstance(self.magnets, dict):
-            for key in self.magnets:
-                magnet = self.magnets[key]
-                YAMLFile = f"{magnet}.yaml"
-                with open(YAMLFile, "r") as f:
-                    Object = yaml.load(f, Loader=yaml.FullLoader)
-
-                solid_names += Object.get_names(self.name, is2D, verbose)
-        else:
-            raise RuntimeError(
-                f"Bitters/get_names: unsupported type of magnets ({type(self.magnets)})"
-            )
+        for magnet in self.magnets:
+            oname = f"{prefix}{magnet.name}"
+            solid_names += magnet.get_names(oname, is2D, verbose)
 
         if verbose:
             print(f"Bitters/get_names: solid_names {len(solid_names)}")
         return solid_names
 
-    def dump(self):
-        """dump to a yaml file name.yaml"""
-        try:
-            with open(f"{self.name}.yaml", "w") as ostream:
-                yaml.dump(self, stream=ostream)
-        except:
-            raise Exception("Failed to Bitters dump")
-
-    def load(self):
-        """load from a yaml file"""
-        data = None
-        try:
-            with open(f"{self.name}.yaml", "r") as istream:
-                data = yaml.load(stream=istream, Loader=yaml.FullLoader)
-        except:
-            raise Exception(f"Failed to load Insert data {self.name}.yaml")
-
-        self.name = data.name
-        self.magnets = data.magnets
-
-        self.innerbore = data.innerbore
-        self.outerbore = data.outerbore
-
-    def to_json(self):
-        """convert from yaml to json"""
-        from . import deserialize
-
-        return json.dumps(
-            self, default=deserialize.serialize_instance, sort_keys=True, indent=4
-        )
-
-    def write_to_json(self):
-        """write to a json file"""
-        with open(f"{self.name}.json", "w") as ostream:
-            jsondata = self.to_json()
-            ostream.write(str(jsondata))
-
     @classmethod
-    def from_json(cls, filename: str, debug: bool = False):
+    def from_dict(cls, values: dict, debug: bool = False):
         """
-        convert from json to yaml
-        """
-        from . import deserialize
+        Create Bitters instance from dictionary representation.
 
-        if debug:
-            print(f'Bitters.from_json: filename={filename}')
-        with open(filename, "r") as istream:
-            return json.loads(istream.read(), object_hook=deserialize.unserialize_object)
+        Supports flexible input formats for nested Bitter magnet objects,
+        allowing mixed specifications of inline definitions and external references.
+
+        Args:
+            values: Dictionary containing Bitters configuration with keys:
+                - name (str): Bitters assembly name
+                - magnets (list): List of Bitter magnets (strings/dicts/objects)
+                - innerbore (float, optional): Inner bore radius (default: 0)
+                - outerbore (float, optional): Outer bore radius (default: 0)
+                - probes (list, optional): List of probes (default: empty list)
+            debug: Enable debug output showing object loading process
+
+        Returns:
+            Bitters: New Bitters instance created from dictionary
+
+        Raises:
+            KeyError: If required 'name' or 'magnets' keys are missing
+            ValidationError: If magnet data is malformed
+            ValidationError: If magnets intersect
+
+        Example:
+            >>> data = {
+            ...     "name": "M10_Bitters",
+            ...     "magnets": [
+            ...         "B1",  # Load from file
+            ...         {"name": "B2", "r": [100, 150], "z": [60, 110], ...}  # Inline
+            ...     ],
+            ...     "innerbore": 80,
+            ...     "outerbore": 160,
+            ...     "probes": []
+            ... }
+            >>> bitters = Bitters.from_dict(data)
+        """
+        magnets = cls._load_nested_list(values.get("magnets"), Bitter, debug=debug)
+        probes = cls._load_nested_list(values.get("probes"), Probe, debug=debug)  # NEW: Load probes
+
+        name = values["name"]
+        # magnets = values["magnets"]
+        innerbore = values.get("innerbore", 0)
+        outerbore = values.get("outerbore", 0)
+        # probes = values.get("probes", [])  # NEW: Optional with default empty list
+
+        object = cls(name, magnets, innerbore, outerbore, probes)
+        return object
 
     ###################################################################
     #
@@ -181,67 +376,77 @@ class Bitters(yaml.YAMLObject):
 
     def boundingBox(self) -> tuple:
         """
-        return Bounding as r[], z[]
+        Calculate the bounding box encompassing all Bitter magnets.
 
-        so far exclude Leads
+        Computes the minimum and maximum radial (r) and axial (z) extents
+        that encompass all Bitter plates in the assembly.
+
+        Returns:
+            tuple: (rb, zb) where:
+                - rb: [r_min, r_max] - radial bounds in mm
+                - zb: [z_min, z_max] - axial bounds in mm
+
+        Notes:
+            - Takes union of all individual Bitter bounding boxes
+            - Efficiently computed using list comprehensions with min/max
+            - Probes are not included in bounding box calculation
+            - Uses actual geometry from each Bitter plate
+
+        Example:
+            >>> bitter1 = Bitter("B1", r=[100, 150], z=[0, 50], ...)
+            >>> bitter2 = Bitter("B2", r=[110, 160], z=[60, 110], ...)
+            >>> bitters = Bitters("test", [bitter1, bitter2], ...)
+            >>>
+            >>> rb, zb = bitters.boundingBox()
+            >>> print(f"Radial: {rb[0]} to {rb[1]} mm")  # [100, 160]
+            >>> print(f"Axial: {zb[0]} to {zb[1]} mm")   # [0, 110]
         """
 
-        rb = [0, 0]
-        zb = [0, 0]
-
-        for i, mname in enumerate(self.magnets):
-            bitter = None
-            with open(f"{mname}.yaml", "r") as f:
-                bitter = yaml.load(f, Loader=yaml.FullLoader)
-
-            if i == 0:
-                rb = bitter.r
-                zb = bitter.z
-
-            rb[0] = min(rb[0], bitter.r[0])
-            zb[0] = min(zb[0], bitter.z[0])
-            rb[1] = max(rb[1], bitter.r[1])
-            zb[1] = max(zb[1], bitter.z[1])
+        rb = [
+            min([bitter.r[0] for bitter in self.magnets]),
+            max([bitter.r[1] for bitter in self.magnets]),
+        ]
+        zb = [
+            min([bitter.z[0] for bitter in self.magnets]),
+            max([bitter.z[1] for bitter in self.magnets]),
+        ]
 
         return (rb, zb)
 
     def intersect(self, r: list[float], z: list[float]) -> bool:
         """
-        Check if intersection with rectangle defined by r,z is empty or not
-        return False if empty, True otherwise
-        """
+        Check if Bitters assembly intersects with a rectangular region.
 
+        Tests whether the assembly's bounding box overlaps with a given
+        rectangular region defined by radial and axial bounds.
+
+        Args:
+            r: [r_min, r_max] - radial bounds of test rectangle in mm
+            z: [z_min, z_max] - axial bounds of test rectangle in mm
+
+        Returns:
+            bool: True if rectangles overlap (intersection non-empty),
+                False if no intersection
+
+        Notes:
+            Uses the bounding box for intersection testing (not individual plates).
+            Efficient for collision detection and spatial queries.
+
+        Example:
+            >>> bitters = Bitters("test", magnets=[b1, b2], ...)
+            >>>
+            >>> # Check if assembly overlaps with region
+            >>> if bitters.intersect([120, 140], [20, 80]):
+            ...     print("Bitters overlaps with test region")
+            >>>
+            >>> # Check clearance for another component
+            >>> other_rb, other_zb = other_component.boundingBox()
+            >>> if bitters.intersect(other_rb, other_zb):
+            ...     print("WARNING: Components overlap!")
+        """
         (r_i, z_i) = self.boundingBox()
 
-        # TODO take into account Mandrin and Isolation even if detail="None"
-        collide = False
-        isR = abs(r_i[0] - r[0]) < abs(r_i[1] - r_i[0] + r[0] + r[1]) / 2.0
-        isZ = abs(z_i[0] - z[0]) < abs(z_i[1] - z_i[0] + z[0] + z[1]) / 2.0
-        if isR and isZ:
-            collide = True
-        return collide
+        r_overlap = max(r_i[0], r[0]) < min(r_i[1], r[1])
+        z_overlap = max(z_i[0], z[0]) < min(z_i[1], z[1])
 
-    def Create_AxiGeo(self, AirData):
-        """
-        create Axisymetrical Geo Model for gmsh
-
-        return
-        H_ids, BC_ids, Air_ids, BC_Air_ids
-        """
-        pass
-
-
-def Bitters_constructor(loader, node):
-    values = loader.construct_mapping(node)
-    name = values["name"]
-    magnets = values["magnets"]
-    innerbore = 0
-    if "innerbore":
-        innerbore = values["innerbore"]
-    outerbore = 0
-    if "outerbore":
-        outerbore = values["outerbore"]
-    return Bitters(name, magnets, innerbore, outerbore)
-
-
-yaml.add_constructor("!Bitters", Bitters_constructor)
+        return r_overlap and z_overlap

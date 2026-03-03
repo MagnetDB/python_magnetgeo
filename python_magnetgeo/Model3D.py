@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding:utf-8 -*-
 
 """
 Provides definiton for Helix:
@@ -10,19 +9,12 @@ Provides definiton for Helix:
 * Shape: definition of Shape eventually added to the helical cut
 """
 
-import json
-import yaml
-
-# from Shape import *
-# from ModelAxi import *
-# from Model3D import *
-
-from . import Shape
-from . import ModelAxi
+from .base import YAMLObjectBase
 
 
-class Model3D(yaml.YAMLObject):
+class Model3D(YAMLObjectBase):
     """
+    name:
     cad :
     with_shapes :
     with_channels :
@@ -31,65 +23,116 @@ class Model3D(yaml.YAMLObject):
     yaml_tag = "Model3D"
 
     def __init__(
-        self, cad: str, with_shapes: bool = False, with_channels: bool = False
+        self, name: str, cad: str, with_shapes: bool = False, with_channels: bool = False
     ) -> None:
         """
-        initialize object
+        Initialize a 3D CAD model configuration.
+
+        A Model3D specifies parameters for generating actual 3D CAD representations
+        of magnet geometries. It defines which CAD system to use and what geometric
+        features to include in the generated model (shapes, channels, etc.).
+
+        Args:
+            name: Unique identifier for this 3D model configuration. Can be empty
+                string "" if the model doesn't require a specific name.
+            cad: CAD system identifier. Specifies which CAD ID in Catia/Smarteam
+            with_shapes: If True, include additional geometric shapes/features
+                        (such as those defined in Shape objects) in the 3D model.
+                        These are typically cooling channels, ventilation holes,
+                        or other secondary geometric features. Default: False
+            with_channels: If True, include cooling/flow channels explicitly in
+                        the 3D model geometry. Channels may be modeled as solid
+                        voids or separate geometric entities. Default: False
+
+        Notes:
+            - Name can be empty string (no validation required)
+            - CAD identifier determines the export format and methodology
+            - with_shapes and with_channels control model complexity/detail
+            - More detailed models (True flags) take longer to generate
+            - Balance between model detail and computational efficiency
+            - Used in conjunction with Helix, Bitter, or other magnet classes
+
+        Example:
+            >>> # Simple model without extra features
+            >>> model1 = Model3D(
+            ...     name="basic_model",
+            ...     cad="SALOME",
+            ...     with_shapes=False,
+            ...     with_channels=False
+            ... )
+
         """
+        self.name = name
         self.cad = cad
         self.with_shapes = with_shapes
         self.with_channels = with_channels
 
     def __repr__(self):
         """
-        representation of object
-        """
-        return "%s(cad=%r, with_shapes=%r, with_channels=%r)" % (
-            self.__class__.__name__,
-            self.cad,
-            self.with_shapes,
-            self.with_channels,
-        )
+        Return string representation of Model3D instance.
 
-    def to_json(self):
-        """
-        convert from yaml to json
-        """
-        from . import deserialize
+        Provides a detailed string showing all attributes and their values,
+        useful for debugging, logging, and interactive inspection.
 
-        return json.dumps(
-            self, default=deserialize.serialize_instance, sort_keys=True, indent=4
-        )
+        Returns:
+            str: String representation in constructor-like format showing:
+                - name: Model identifier (may be empty string)
+                - cad: CAD identifier
+                - with_shapes: Shape inclusion flag
+                - with_channels: Channel inclusion flag
 
-    def write_to_json(self, name: str = ""):
+        Example:
+            >>> model = Model3D(
+            ...     name="helix_cad",
+            ...     cad="SALOME",
+            ...     with_shapes=True,
+            ...     with_channels=False
+            ... )
+            >>> print(repr(model))
+            Model3D(name='helix_cad', cad='SALOME', with_shapes=True, with_channels=False)
+
         """
-        write from json file
-        """
-        with open(f"{name}.json", "w") as ostream:
-            jsondata = self.to_json()
-            ostream.write(str(jsondata))
+        return f"{self.__class__.__name__}(name={self.name!r}, cad={self.cad!r}, with_shapes={self.with_shapes!r}, with_channels={self.with_channels!r})"
 
     @classmethod
-    def from_json(cls, filename: str, debug: bool = False):
+    def from_dict(cls, values: dict, debug: bool = False):
         """
-        convert from json to yaml
+        Create Model3D instance from dictionary representation.
+
+        Standard deserialization method with default values for optional parameters.
+
+        Args:
+            values: Dictionary containing Model3D configuration with keys:
+                - name (str, optional): Model identifier. Default: ""
+                - cad (str): Catia/SmarTeam CAD identifier (required)
+                - with_shapes (bool, optional): Include shapes flag. Default: False
+                - with_channels (bool, optional): Include channels flag. Default: False
+            debug: Enable debug output (currently unused)
+
+        Returns:
+            Model3D: New Model3D instance created from dictionary
+
+        Raises:
+            KeyError: If required 'cad' key is missing from dictionary
+
+        Notes:
+            - Name defaults to empty string if not provided
+            - Boolean flags default to False if not provided
+            - CAD identifier is the only required field
+
+        Example:
+            >>> # Full specification
+            >>> data = {
+            ...     "name": "helix_model",
+            ...     "cad": "SALOME",
+            ...     "with_shapes": True,
+            ...     "with_channels": True
+            ... }
+            >>> model = Model3D.from_dict(data)
         """
-        from . import deserialize
+        name = values.get("name", "")
+        cad = values["cad"]
+        with_shapes = values.get("with_shapes", False)
+        with_channels = values.get("with_channels", False)
 
-        if debug:
-            print(f'Model3D.from_json: filename={filename}')
-        with open(filename, "r") as istream:
-            return json.loads(istream.read(), object_hook=deserialize.unserialize_object)
-
-def Model3D_constructor(loader, node):
-    """
-    build an Model3d object
-    """
-    values = loader.construct_mapping(node)
-    cad = values["cad"]
-    with_shapes = values["with_shapes"]
-    with_channels = values["with_channels"]
-    return Model3D(cad, with_shapes, with_channels)
-
-
-yaml.add_constructor("!Model3D", Model3D_constructor)
+        return cls(name, cad, with_shapes, with_channels)

@@ -6,8 +6,8 @@
 # Compulsory line, this is a version 4 file
 version=4
 
-# GitHub hosted projects
-opts="filenamemangle=s%(?:.*?)?v?(\d[\d.]*)\.tar\.gz%python-magnetgeo-$1.tar.gz%" \
-  https://github.com/trophime/python_magnetgeo/tags \
-  (?:.*?/)?v?(\d[\d.]*)\.tar\.gz debian uupdate
+# GitHub hosted projects - monitor releases
+opts="filenamemangle=s/.+\/v?(\d\S+)\.tar\.gz/python-magnetgeo-$1\.tar\.gz/" \
+  https://github.com/MagnetDB/python_magnetgeo/tags \
+  .*/v?(\d\S+)\.tar\.gz
 

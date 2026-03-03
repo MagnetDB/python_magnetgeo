@@ -67,7 +67,7 @@ docs: ## generate Sphinx HTML documentation, including API docs
 	rm -f docs/modules.rst
 	sphinx-apidoc -o docs/ python_magnetgeo
 	$(MAKE) -C docs clean
-	$(MAKE) -C docs html
+	SPHINX_BUILD=1 $(MAKE) -C docs html
 	$(BROWSER) docs/_build/html/index.html
 
 servedocs: docs ## compile the docs watching for changes

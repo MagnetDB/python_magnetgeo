@@ -1,0 +1,6 @@
+!<Chamfer>
+name: "test_chamfer"
+side: "HP"
+rside: "rext"
+alpha: 45.0
+l: 5.0

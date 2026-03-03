@@ -1,1 +1,9 @@
+# Ignore common build artifacts and version control
 extend-diff-ignore = "^[^/]*[.]egg-info/"
+extend-diff-ignore = "^[.]pytest_cache/"
+extend-diff-ignore = "^__pycache__/"
+extend-diff-ignore = "^[.]tox/"
+extend-diff-ignore = "^build/"
+extend-diff-ignore = "^dist/"
+extend-diff-ignore = "^[.]coverage$"
+extend-diff-ignore = "^coverage[.]xml$"

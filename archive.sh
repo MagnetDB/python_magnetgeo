@@ -33,8 +33,8 @@ done
 shift $((OPTIND - 1))
 
 # add parameters
-: ${VERSION:="0.4.0"}
-: ${DIST:="bookworm"}
+: ${VERSION:="1.0.0"}
+: ${DIST:="trixie"}
 
 # cleanup source
 find . -type d -name __pycache__ | xargs rm -rf
@@ -56,10 +56,17 @@ tar \
     --exclude=*.crt \
     --exclude=*.pem \
     --exclude=*.log \
+    --exclude=*.old \
+    --exclude=*.new \
+    --exclude=*.sif \
+    --exclude=*.simg \
     --exclude=*~ \
     --exclude=#*# \
-    --exclude=pyproject.toml \
     --exclude=poetry.lock \
+    --exclude=.pytest_cache \
+    --exclude=.github \
+    --exclude=_build \
+    --exclude=_static \
     -zcvf ${PACKAGE}_${VERSION}.orig.tar.gz ${SRCDIR}
 
 # build package

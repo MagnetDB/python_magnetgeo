@@ -1,0 +1,13 @@
+!<Insert>
+name: "Insert_Test"
+innerbore: 15.0
+outerbore: 120.0
+helices:
+  - "helix1"
+  - "helix2"
+rings:
+  - "ring1"
+currentleads:
+  - "lead1"
+hangles: [0.0, 0.0]
+rangles: [0.0]

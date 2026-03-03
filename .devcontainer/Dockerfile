@@ -1,4 +1,4 @@
-FROM debian:bookworm
+FROM debian:trixie
 
 USER root
 
@@ -24,7 +24,7 @@ RUN apt-get update \
     && apt-get -y install --no-install-recommends apt-utils dialog 2>&1 \
     # \
     # Verify git, process tools, lsb-release (useful for CLI installs) installed\
-    && apt-get -y install git iproute2 procps lsb-release \
+    && apt-get -y install git git-lfs vim-nox nano iproute2 procps lsb-release \
     #\
     # Install C++ tools\
     && apt-get -y install build-essential \
@@ -52,17 +52,6 @@ RUN apt-get update \
     && ssh-keyscan github.com >> ~vscode/.ssh/known_hosts \
     && chown -R vscode.$USER_GID ~vscode/.ssh
 
-# install prerequistes from Lncmi debian repo
-RUN apt update \
-    && apt-get install -y lsb-release \
-    && apt-get install -y debian-keyring \
-    && cp /usr/share/keyrings/debian-maintainers.gpg /etc/apt/trusted.gpg.d \
-    && echo "deb http://euler.lncmig.local/~christophe.trophime@LNCMIG.local/debian/ $(lsb_release -cs) main" > /etc/apt/sources.list.d/lncmi.list \
-    && apt update \
-    && apt-get -y install python3-chevron
-
-# Install latest gsh dev version (support for BoundingBox) ?
-#RUN python3 -m pip install -i https://gmsh.info/python-packages --force-reinstall --no-cache-dir gmsh-dev
 
 # Clean up
 RUN apt-get autoremove -y \

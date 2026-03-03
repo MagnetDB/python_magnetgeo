@@ -1,0 +1,7 @@
+!<InnerCurrentLead>
+fillet: 0
+h: 480.0
+holes: [123, 12, 90, 60, 45, 3]
+name: Inner
+r: [19.3, 25.0]
+support: [25.0, 0]

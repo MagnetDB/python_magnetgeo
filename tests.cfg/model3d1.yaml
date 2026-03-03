@@ -1,0 +1,5 @@
+!<Model3D>
+name: "test_3d_model"
+cad: "CAD-123"
+with_shapes: true
+with_channels: false

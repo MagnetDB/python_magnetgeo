@@ -1,5 +1,5 @@
 Welcome to Python Magnet Geometry's documentation!
-======================================
+==================================================
 
 .. toctree::
    :maxdepth: 2
