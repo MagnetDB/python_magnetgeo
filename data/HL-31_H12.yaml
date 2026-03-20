@@ -1,5 +1,5 @@
 !<Helix>
-axi: !<ModelAxi>
+modelaxi: !<ModelAxi>
   name: "HL-31.d"
   h: 149.3813
   turns:
@@ -45,7 +45,7 @@ axi: !<ModelAxi>
     - 21.45931051401753
     - 29.03667644291524
 cutwidth: 0.26
-m3d: !<Model3D>
+model3d: !<Model3D>
   with_shapes: false
   with_channels: false
   cad: "HL-31-024MC"

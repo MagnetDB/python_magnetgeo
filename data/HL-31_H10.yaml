@@ -4,7 +4,7 @@ name: HL-31_H10
 r:
   - 104.8
   - 118.9
-axi: !<ModelAxi>
+modelaxi: !<ModelAxi>
   name: "HL-31.d"
   pitch:
     - 20.33093266283109
@@ -54,7 +54,7 @@ z:
   - 168.0
 odd: false
 cutwidth: 0.26
-m3d: !<Model3D>
+model3d: !<Model3D>
   with_shapes: false
   cad: "HL-31-020MC"
   with_channels: false

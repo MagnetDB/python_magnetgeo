@@ -7,7 +7,7 @@ shape: !<Shape>
   position: ABOVE
   profile: ""
   name: ""
-axi: !<ModelAxi>
+modelaxi: !<ModelAxi>
   name: "HL-31.d"
   turns:
     - 0.7089719947246353
@@ -58,7 +58,7 @@ r:
   - 135
 odd: true
 name: HL-31_H11
-m3d: !<Model3D>
+model3d: !<Model3D>
   with_channels: false
   with_shapes: false
   cad: "HL-31-022MC"
