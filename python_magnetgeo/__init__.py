@@ -52,6 +52,30 @@ from .base import YAMLObjectBase, SerializableMixin
 from .validation import ValidationError, ValidationWarning, GeometryValidator
 from .utils import getObject as load, loadObject, ObjectLoadError, UnsupportedTypeError
 
+# Import all geometry classes eagerly so their YAML constructors are registered
+# before any yaml.load() call is made. Lazy loading breaks YAML deserialization
+# because constructors are only registered when the class is first imported.
+from .Insert import Insert
+from .Helix import Helix
+from .Ring import Ring
+from .Bitter import Bitter
+from .Bitters import Bitters
+from .Supra import Supra
+from .Supras import Supras
+from .Screen import Screen
+from .MSite import MSite
+from .Probe import Probe
+from .Shape import Shape
+from .ModelAxi import ModelAxi
+from .Model3D import Model3D
+from .InnerCurrentLead import InnerCurrentLead
+from .OuterCurrentLead import OuterCurrentLead
+from .Contour2D import Contour2D
+from .Chamfer import Chamfer
+from .Groove import Groove
+from .tierod import Tierod
+from .coolingslit import CoolingSlit
+
 # Define what gets imported with "from python_magnetgeo import *"
 __all__ = [
     # Core functionality
@@ -79,7 +103,7 @@ __all__ = [
     # Exceptions
     "ObjectLoadError",
     "UnsupportedTypeError",
-    # Geometry classes (lazy loaded)
+    # Geometry classes
     "Insert",
     "Helix",
     "Ring",
@@ -101,91 +125,6 @@ __all__ = [
     "Tierod",
     "CoolingSlit",
 ]
-
-# Lazy loading map: maps class names to their module paths
-_LAZY_IMPORTS = {
-    "Insert": "Insert",
-    "Helix": "Helix",
-    "Ring": "Ring",
-    "Bitter": "Bitter",
-    "Supra": "Supra",
-    "Supras": "Supra",
-    "Bitters": "Bitter",
-    "Screen": "Screen",
-    "MSite": "MSite",
-    "Probe": "Probe",
-    "Shape": "Shape",
-    "ModelAxi": "ModelAxi",
-    "Model3D": "Model3D",
-    "InnerCurrentLead": "CurrentLead",
-    "OuterCurrentLead": "CurrentLead",
-    "Contour2D": "Contour2D",
-    "Chamfer": "Chamfer",
-    "Groove": "Groove",
-    "Tierod": "Tierod",
-    "CoolingSlit": "CoolingSlit",
-}
-
-# Cache for loaded modules
-_loaded_classes = {}
-
-
-def __getattr__(name):
-    """
-    Lazy loading implementation.
-
-    This function is called when an attribute is not found in the module.
-    We use it to lazily import geometry classes only when they're accessed.
-
-    Args:
-        name: Attribute name being accessed
-
-    Returns:
-        The requested class or raises AttributeError
-
-    Example:
-        >>> import python_magnetgeo as pmg
-        >>> helix = pmg.Helix(...)  # Helix is imported here, not at initial import
-    """
-    # Check if it's a known geometry class
-    if name in _LAZY_IMPORTS:
-        # Check cache first
-        if name in _loaded_classes:
-            return _loaded_classes[name]
-
-        # Import the module
-        module_name = _LAZY_IMPORTS[name]
-        try:
-            module = __import__(f"python_magnetgeo.{module_name}", fromlist=[name])
-            cls = getattr(module, name)
-
-            # Cache it
-            _loaded_classes[name] = cls
-            return cls
-
-        except (ImportError, AttributeError) as e:
-            raise AttributeError(
-                f"Failed to lazy load class '{name}' from module " f"'{module_name}': {e}"
-            ) from e
-
-    # Not a lazy import - raise normal AttributeError
-    raise AttributeError(f"module '{__name__}' has no attribute '{name}'")
-
-
-def __dir__():
-    """
-    Return list of available attributes for tab-completion.
-
-    This ensures that IDEs and interactive shells can see all available
-    classes even though they're lazy loaded.
-    """
-    # Start with standard module attributes
-    attrs = list(globals().keys())
-
-    # Add all lazy-loadable classes
-    attrs.extend(_LAZY_IMPORTS.keys())
-
-    return sorted(set(attrs))
 
 
 def list_registered_classes():
