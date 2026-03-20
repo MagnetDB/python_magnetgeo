@@ -1,5 +1,5 @@
 !<Helix>
-axi: !<ModelAxi>
+modelaxi: !<ModelAxi>
   name: "HL-31.d"
   h: 129.7051
   pitch:
@@ -57,7 +57,7 @@ z:
   - -157.0
   - 168.0
 dble: true
-m3d: !<Model3D>
+model3d: !<Model3D>
   with_shapes: false
   with_channels: false
   cad: "HL-31-018MC"

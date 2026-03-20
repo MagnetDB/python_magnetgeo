@@ -9,7 +9,7 @@ z:
   - -108
   - 108
 cutwidth: 0.22
-axi: !<ModelAxi>
+modelaxi: !<ModelAxi>
   name: "HL-31.d"
   h: 91.7
   pitch:
@@ -54,7 +54,7 @@ axi: !<ModelAxi>
     - 0.418437672341563
     - 0.3431296695896973
     - 0.2823535494503169
-m3d: !<Model3D>
+model3d: !<Model3D>
   cad: "HL-31-204MC"
   with_shapes: false
   with_channels: false

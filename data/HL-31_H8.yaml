@@ -15,11 +15,11 @@ cutwidth: 0.26
 r:
   - 78.10000000000001
   - 90
-m3d: !<Model3D>
+model3d: !<Model3D>
   cad: "HL-31-016MC"
   with_channels: false
   with_shapes: false
-axi: !<ModelAxi>
+modelaxi: !<ModelAxi>
   name: "HL-31.d"
   turns:
     - 0.626349246760017
