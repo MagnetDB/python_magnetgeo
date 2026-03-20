@@ -5,7 +5,7 @@ r:
   - 47.2
   - 55.3
 name: HL-31_H5
-axi: !<ModelAxi>
+modelaxi: !<ModelAxi>
   name: "HL-31.d"
   turns:
     - 0.4602599952964374
@@ -51,7 +51,7 @@ axi: !<ModelAxi>
     - 21.18181368853585
     - 22.99306298207053
 cutwidth: 0.26
-m3d: !<Model3D>
+model3d: !<Model3D>
   cad: "HL-31-010MC"
   with_shapes: true
   with_channels: false
