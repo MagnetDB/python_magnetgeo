@@ -468,3 +468,128 @@ class Helix(YAMLObjectBase):
             # logger.info("nKaptons=", nInsulators)
 
         return (sInsulator, nInsulators)
+
+    def _plot_geometry(self, ax, show_labels: bool = True, **kwargs):
+        """
+        Plot Helix geometry in 2D axisymmetric coordinates.
+
+        Renders the helix as a rectangle in the r-z plane, with an optional
+        modelaxi zone showing the helical cut region centered at z=0.
+
+        Args:
+            ax: Matplotlib axes to draw on
+            show_labels: If True, display helix name at center
+            **kwargs: Styling options (color, alpha, linewidth, etc.)
+                Special kwargs:
+                - show_modelaxi: If True, display modelaxi zone (default: True)
+                - modelaxi_color: Color for modelaxi zone (default: 'orange')
+                - modelaxi_alpha: Transparency for modelaxi zone (default: 0.3)
+
+        Example:
+            >>> import matplotlib.pyplot as plt
+            >>> helix = Helix("H1", [50, 60], [0, 100], 5.0, True, False, modelaxi)
+            >>> fig, ax = plt.subplots()
+            >>> helix._plot_geometry(ax, color='green', alpha=0.5)
+        """
+        from matplotlib.patches import Rectangle
+
+        # Get bounding box
+        r_bounds, z_bounds = self.r, self.z
+        r_min, r_max = r_bounds[0], r_bounds[1]
+        z_min, z_max = z_bounds[0], z_bounds[1]
+
+        # Extract styling parameters with defaults
+        color = kwargs.get('color', 'darkgreen')
+        alpha = kwargs.get('alpha', 0.6)
+        edgecolor = kwargs.get('edgecolor', 'black')
+        linewidth = kwargs.get('linewidth', 1.5)
+        label = kwargs.get('label', self.name if show_labels else None)
+        
+        # ModelAxi zone parameters
+        show_modelaxi = kwargs.get('show_modelaxi', True)
+        modelaxi_color = kwargs.get('modelaxi_color', 'orange')
+        modelaxi_alpha = kwargs.get('modelaxi_alpha', 0.3)
+
+        # Create rectangle patch for main helix
+        width = r_max - r_min
+        height = z_max - z_min
+        rect = Rectangle(
+            (r_min, z_min),
+            width,
+            height,
+            facecolor=color,
+            alpha=alpha,
+            edgecolor=edgecolor,
+            linewidth=linewidth,
+            label=label
+        )
+        ax.add_patch(rect)
+
+        # Plot modelaxi zone if requested and available
+        if show_modelaxi and self.modelaxi is not None and hasattr(self.modelaxi, 'h'):
+            h = self.modelaxi.h
+            # ModelAxi zone: from -h to +h on z-axis, same r dimensions
+            modelaxi_rect = Rectangle(
+                (r_min, -h),
+                width,
+                2 * h,  # Total height from -h to +h
+                facecolor=modelaxi_color,
+                alpha=modelaxi_alpha,
+                edgecolor='darkorange',
+                linewidth=1.0,
+                linestyle='--',
+                label=f'{self.name}_modelaxi' if show_labels else None
+            )
+            ax.add_patch(modelaxi_rect)
+
+        # Update axis limits to include this geometry with some padding
+        current_xlim = ax.get_xlim()
+        current_ylim = ax.get_ylim()
+        
+        # Calculate padding (5% of geometry size)
+        r_padding = width * 0.05
+        z_padding = height * 0.05
+        
+        # Also consider modelaxi zone for y limits
+        if show_modelaxi and self.modelaxi is not None and hasattr(self.modelaxi, 'h'):
+            z_min_total = min(z_min, -self.modelaxi.h)
+            z_max_total = max(z_max, self.modelaxi.h)
+        else:
+            z_min_total = z_min
+            z_max_total = z_max
+        
+        # Expand limits if needed (check if limits are default)
+        if current_xlim == (0.0, 1.0):
+            # Default limits, set based on geometry
+            ax.set_xlim(r_min - r_padding, r_max + r_padding)
+        else:
+            # Expand existing limits
+            ax.set_xlim(
+                min(current_xlim[0], r_min - r_padding),
+                max(current_xlim[1], r_max + r_padding)
+            )
+        
+        if current_ylim == (0.0, 1.0):
+            # Default limits, set based on geometry
+            ax.set_ylim(z_min_total - z_padding, z_max_total + z_padding)
+        else:
+            # Expand existing limits
+            ax.set_ylim(
+                min(current_ylim[0], z_min_total - z_padding),
+                max(current_ylim[1], z_max_total + z_padding)
+            )
+
+        # Add text label at center if requested and no custom label
+        if show_labels and 'label' not in kwargs:
+            center_r = (r_min + r_max) / 2
+            center_z = (z_min + z_max) / 2
+            ax.text(
+                center_r,
+                center_z,
+                self.name,
+                ha='center',
+                va='center',
+                fontsize=9,
+                fontweight='bold',
+                color='white' if alpha > 0.5 else 'black'
+            )

@@ -134,6 +134,8 @@ currentleads:
 | `RAngles` | `rangles` | `rangles` | Optional |
 | `Supras` | `supras` | `supras` | Optional |
 | `Bitters` | `bitters` | `bitters` | Optional |
+| `axi` (Helix) | `modelaxi` | `modelaxi` | Optional |
+| `m3d` (Helix) | `model3d` | `model3d` | Optional |
 | - | - | `innerbore` | **New in v1.0.0** |
 | - | - | `outerbore` | **New in v1.0.0** |
 | - | - | `probes` | **New in v1.0.0** |
@@ -141,10 +143,11 @@ currentleads:
 **Migration Notes:**
 - **v0.5.x → v0.7.0**: All field names changed to lowercase
 - **v0.7.0 → v1.0.0**: Field names unchanged, but new optional fields added
+- **Helix-specific changes**: `axi` → `modelaxi`, `m3d` → `model3d`
 
 ### 1.3 Nested Object Structure
 
-**Old Format:**
+**Old Format (v0.5.x and earlier):**
 ```yaml
 name: "HL-31_H1"
 axi:
@@ -156,7 +159,7 @@ m3d:
 shape:
 ```
 
-**New Format:**
+**New Format (v1.0.0):**
 ```yaml
 !<Helix>
 name: "HL-31_H1"
@@ -184,6 +187,8 @@ shape: !<Shape>
 
 **Breaking Changes:**
 - Nested objects require explicit type annotations
+- Helix field `axi` renamed to `modelaxi`
+- Helix field `m3d` renamed to `model3d`
 - All nested structures must follow new format
 
 ---
@@ -235,7 +240,7 @@ Helix(
     cutwidth: float,
     odd: bool,
     dble: bool,
-    axi: Optional[ModelAxi] = None,
+    modelaxi: Optional[ModelAxi] = None,
     model3d: Optional[Model3D] = None,
     shape: Optional[Shape] = None
 )
@@ -244,7 +249,7 @@ Helix(
 **Breaking Changes:**
 - Removed default values for `odd` and `dble` (now required)
 - Added type hints (strictly enforced)
-- New optional parameters: `axi`, `model3d`, `shape`
+- New optional parameters: `modelaxi`, `model3d`, `shape`
 
 #### Ring
 **Old:**

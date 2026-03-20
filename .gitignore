@@ -137,3 +137,6 @@ ENV/
 *.sif
 *.simg
 
+# images
+*.png
+
