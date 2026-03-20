@@ -150,16 +150,37 @@ name: "HL-31_H1"
 axi:
   name: "HL-31.d"
   h: 86.51
+  ...
+m3d:
+  ...
+shape:
 ```
 
 **New Format:**
 ```yaml
 !<Helix>
 name: "HL-31_H1"
-axi: !<ModelAxi>
+modelaxi: !<ModelAxi>
   name: "HL-31.d"
   h: 86.51
+model3d: !<Model3D>
+    ...
+shape: !<Shape>
+    ...
+
 ```
+
+#### Complete Field Name Migration History
+
+| Field (v0.5.x) | Field (v0.7.0) | Field (v1.0.0) | Status in v1.0.0 |
+|----------------|----------------|----------------|------------------|
+| `axi` | `modelaxi` | `modelaxi` | ✓ Required |
+| `m3d` | `model3d` | `model3d` | ✓ Required |
+| `shape` | `shape` | `shape` | ✓ Required |
+
+**Migration Notes:**
+- **v0.5.x → v0.7.0**: Rename field names
+- **v0.7.0 → v1.0.0**: Use nested objects with explicit type annotations
 
 **Breaking Changes:**
 - Nested objects require explicit type annotations
