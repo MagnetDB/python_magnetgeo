@@ -33,7 +33,7 @@ done
 shift $((OPTIND - 1))
 
 # add parameters
-: ${VERSION:="1.0.0"}
+: ${VERSION:="1.0.1"}
 : ${DIST:="trixie"}
 
 # cleanup source
