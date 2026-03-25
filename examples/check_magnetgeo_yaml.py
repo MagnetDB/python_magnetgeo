@@ -50,20 +50,20 @@ def check_yaml(input_file):
 
     # Change to basedir if it's not empty and not '.'
     if basedir and basedir != '.':
-        print(f"Changing directory to: {basedir}")
+        logger.debug(f"Changing directory to: {basedir}")
         os.chdir(basedir)
         input_path = basename
     else:
         input_path = input_file
 
-    print(f"Loading: {input_path}")
+    logger.debug(f"Loading: {input_path}")
 
     # Load the object using getObject from utils
     object = pmg.load(input_path)
     logger.debug(object)
 
-    print(f"Loaded: {type(object)}")
-    print(f"Object: {object}")
+    # print(f"Loaded: {type(object)}")
+    # print(f"Object: {object}")
 
 
 def main():
@@ -98,7 +98,7 @@ def main():
         try:
             check_yaml(input_file)
         except Exception as e:
-            print(f"Error processing {input_file}: {e}")
+            logger.error(f"Error processing {input_file}: {e}")
             import traceback
             traceback.print_exc()
             errors += 1

@@ -47,6 +47,9 @@ python find_cadref_in_yaml.py --yaml_dir /path/to/configs --field model3d.cad
 
 # Walk subdirectories and save results to a custom CSV file
 python find_cadref_in_yaml.py --yaml_dir /path/to/configs --recursive --output results.csv
+
+# Exclude specific directories from the search
+python find_cadref_in_yaml.py --yaml_dir /path/to/configs --recursive --exclude-dirs archive deprecated old
 ```
 
 **Options:**
@@ -58,6 +61,7 @@ python find_cadref_in_yaml.py --yaml_dir /path/to/configs --recursive --output r
 | `--type` | `all` | Restrict to part type: `helix`, `ring`, `bitter`, `screen`, `lead`, `supra` |
 | `--field` | *(all fields)* | Restrict to a specific attribute path (e.g. `model3d.cad`) |
 | `--recursive` | off | Walk subdirectories |
+| `--exclude-dirs` | *(none)* | Directory names to skip (e.g. `--exclude-dirs archive deprecated`) |
 | `--output` | `cad_refs.csv` | Output CSV file path |
 
 **Output:**
