@@ -18,6 +18,7 @@ Optional flags:
 
 import argparse
 import csv
+import re
 import sys
 from pathlib import Path
 
@@ -51,6 +52,23 @@ CLASSNAME_TO_TYPE = {
 }
 
 
+_BASE_CAD_RE = re.compile(r'^([A-Z]+-\d+-\d+)', re.IGNORECASE)
+
+def normalize_cad_ref(value: str) -> str:
+    """Strip suffix from a CAD reference, returning only the base (e.g. 'HL-34-020').
+
+    Examples:
+        'HL-34-020-A'   -> 'HL-34-020'
+        'HL-34-020A'    -> 'HL-34-020'
+        'HL-34-020MC'   -> 'HL-34-020'
+        'HL-34-020.brep'-> 'HL-34-020'
+    """
+    # Strip file extension first
+    stem = Path(value).stem
+    m = _BASE_CAD_RE.match(stem)
+    return m.group(1).upper() if m else stem
+
+
 def get_nested_attr(obj, dotted_path: str):
     """Traverse nested object attributes with a dotted path. Returns None if missing."""
     node = obj
@@ -62,12 +80,12 @@ def get_nested_attr(obj, dotted_path: str):
 
 
 def extract_cad_refs(obj, part_type: str) -> dict[str, str]:
-    """Return {field_path: value} for all CAD fields found in obj for the given part_type."""
+    """Return {field_path: normalized_base} for all CAD fields found in obj for the given part_type."""
     found = {}
     for path in CAD_FIELD_MAP.get(part_type, ["cad"]):
         val = get_nested_attr(obj, path)
         if val:
-            found[path] = val
+            found[path] = normalize_cad_ref(val)
     return found
 
 
@@ -80,7 +98,11 @@ def search(yaml_dir: Path, cad_ref: str | None, type_filter: str, recursive: boo
     pattern = "**/*.yaml" if recursive else "*.yaml"
     matches = []
 
+    normalized_query = normalize_cad_ref(cad_ref) if cad_ref else None
+
     for yaml_file in sorted(yaml_dir.glob(pattern)):
+        if "tmp" in yaml_file.parts:
+            continue
         try:
             obj = pmg.load(str(yaml_file.resolve()))
         except Exception as e:
@@ -96,8 +118,8 @@ def search(yaml_dir: Path, cad_ref: str | None, type_filter: str, recursive: boo
 
         cad_refs = extract_cad_refs(obj, part_type)
         for field_path, value in cad_refs.items():
-            # If no cad_ref given, collect all; otherwise support substring match
-            if cad_ref is None or cad_ref in value or value in cad_ref:
+            # value is already normalized; compare against normalized query
+            if normalized_query is None or normalized_query == value:
                 matches.append({
                     "file":      yaml_file,
                     "part_type": part_type,
