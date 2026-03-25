@@ -27,6 +27,24 @@ Prints the loaded object type and its string representation. Exits with a non-ze
 
 ---
 
+### `json_to_yaml.py`
+
+Load one or more `python_magnetgeo` objects from JSON files and write them as YAML files.
+
+```bash
+python json_to_yaml.py helix.json
+python json_to_yaml.py data/*.json
+python json_to_yaml.py file1.json file2.json file3.json
+```
+
+For each input file, the script deserializes the object and writes `<name>.yaml` alongside it.
+Glob patterns are supported. Exits with a non-zero status if any file fails to convert.
+
+> **Note:** The JSON file must contain a `__classname__` field (e.g. `"__classname__": "Helix"`)
+> to identify the object type. This field is produced automatically by `obj.write_to_json()`.
+
+---
+
 ### `find_cadref_in_yaml.py`
 
 Search a directory of YAML config files for Part definitions whose CAD reference matches a given value.
@@ -51,6 +69,11 @@ python find_cadref_in_yaml.py --yaml_dir /path/to/configs --recursive --output r
 # Exclude specific directories from the search
 python find_cadref_in_yaml.py --yaml_dir /path/to/configs --recursive --exclude-dirs archive deprecated old
 ```
+
+> A practical use case is to search the `hifimagnet-projects/` directory for all CAD references, excluding certain subdirectories:
+> ```bash
+> python find_cadref_in_yaml.py --yaml_dir hifimagnet-projects/ --recursive --exclude-dirs BancMesure H1H4 H1H8
+> ```
 
 **Options:**
 

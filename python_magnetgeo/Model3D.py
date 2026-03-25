@@ -23,7 +23,7 @@ class Model3D(YAMLObjectBase):
     yaml_tag = "Model3D"
 
     def __init__(
-        self, name: str, cad: str, with_shapes: bool = False, with_channels: bool = False
+        self, name: str = "", cad: str = "", with_shapes: bool = False, with_channels: bool = False
     ) -> None:
         """
         Initialize a 3D CAD model configuration.
@@ -92,7 +92,11 @@ class Model3D(YAMLObjectBase):
             Model3D(name='helix_cad', cad='SALOME', with_shapes=True, with_channels=False)
 
         """
-        return f"{self.__class__.__name__}(name={self.name!r}, cad={self.cad!r}, with_shapes={self.with_shapes!r}, with_channels={self.with_channels!r})"
+        name = getattr(self, "name", None)
+        cad = getattr(self, "cad", None)
+        with_shapes = getattr(self, "with_shapes", False)
+        with_channels = getattr(self, "with_channels", False)
+        return f"{self.__class__.__name__}(name={name!r}, cad={cad!r}, with_shapes={with_shapes!r}, with_channels={with_channels!r})"
 
     @classmethod
     def from_dict(cls, values: dict, debug: bool = False):
