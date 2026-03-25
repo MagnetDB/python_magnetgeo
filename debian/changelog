@@ -5,6 +5,8 @@ python-magnetgeo (1.0.1-7) UNRELEASED; urgency=medium
   * add helper to prepare helix YAML files for magnetdb
   * add helper to check yaml files
   * add support for lazzy loading
+  * add json_to_yaml helper to convert JSON objects to YAML
+  * fix Model3D.__repr__ and __init__ to handle optional name attribute
 
  -- Christophe Trophime <christophe.trophime@lncmi.cnrs.fr>  Tue, 03 Feb 2026 15:52:42 +0100
 
