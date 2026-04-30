@@ -1,30 +1,31 @@
-import pytest
 import json
-import yaml
+import os
+import sys
 import tempfile
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 from unittest.mock import Mock
 
-import sys
-import os
+import pytest
+import yaml
+
 # Add the parent directory to Python path so we can import from python_magnetgeo
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # Import all classes for testing
-from python_magnetgeo.Insert import Insert
-from python_magnetgeo.Helix import Helix
-from python_magnetgeo.Ring import Ring
-from python_magnetgeo.Supra import Supra
-from python_magnetgeo.Supras import Supras
 from python_magnetgeo.Bitter import Bitter
 from python_magnetgeo.Bitters import Bitters
-from python_magnetgeo.Screen import Screen
+from python_magnetgeo.Helix import Helix
+from python_magnetgeo.Insert import Insert
+from python_magnetgeo.Model3D import Model3D
+from python_magnetgeo.ModelAxi import ModelAxi
 from python_magnetgeo.MSite import MSite
 from python_magnetgeo.Probe import Probe
+from python_magnetgeo.Ring import Ring
+from python_magnetgeo.Screen import Screen
 from python_magnetgeo.Shape import Shape
-from python_magnetgeo.ModelAxi import ModelAxi
-from python_magnetgeo.Model3D import Model3D
+from python_magnetgeo.Supra import Supra
+from python_magnetgeo.Supras import Supras
 
 
 @pytest.fixture

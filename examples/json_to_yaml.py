@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding:utf-8 -*-
 
 """
 Script to load a python_magnetgeo object from a JSON file and dump it to a YAML file.
@@ -14,17 +13,16 @@ Example:
     python json_to_yaml.py data/*.json
 """
 
-import sys
+import argparse
+import glob
 import json
 import os
-import glob
-import argparse
+import sys
 
 import python_magnetgeo as pmg
+from python_magnetgeo.logging_config import get_logger
 
 pmg.verify_class_registration()  # Required for YAML loading
-
-from python_magnetgeo.logging_config import get_logger
 
 logger = get_logger(__name__)
 
@@ -55,7 +53,7 @@ def json_to_yaml(input_file: str) -> str:
             os.chdir(basedir)
 
         logger.debug(f"Loading JSON: {basename}")
-        with open(basename, "r") as f:
+        with open(basename) as f:
             data = json.load(f)
             print(
                 f"Loaded JSON data:\n{json.dumps(data, indent=2)}"

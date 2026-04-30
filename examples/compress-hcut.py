@@ -1,10 +1,10 @@
 import argparse
 import glob
-import sys
 import os
+import sys
 
-from python_magnetgeo.ModelAxi import ModelAxi
 from python_magnetgeo.Helix import Helix
+from python_magnetgeo.ModelAxi import ModelAxi
 
 
 def main():
@@ -42,7 +42,6 @@ def main():
 
     pmg.verify_class_registration()
 
-    errors = 0
     for input_file in files:
         # basename =
         # dirname =
@@ -61,7 +60,7 @@ def main():
 
         print(f"Compact hcut: {len(nhcut.pitch)}", flush=True)
 
-        nhelix = Helix(
+        Helix(
             f"{obj.name}-compressed",
             obj.r,
             obj.z,
@@ -74,7 +73,7 @@ def main():
             obj.chamfers,
             obj.grooves,
         )
-        print(f"Create new helix with compacted hcut")
+        print("Create new helix with compacted hcut")
 
         # save as yaml
 

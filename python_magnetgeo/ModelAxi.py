@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding:utf-8 -*-
 
 """
 Provides definiton for Helix:
@@ -29,8 +28,8 @@ class ModelAxi(YAMLObjectBase):
         self,
         name: str = "",
         h: float = 0.0,
-        turns: list[float] = [],
-        pitch: list[float] = [],
+        turns: list[float] | None = None,
+        pitch: list[float] | None = None,
     ) -> None:
         """
         Initialize an axisymmetric helical cut model.
@@ -98,6 +97,10 @@ class ModelAxi(YAMLObjectBase):
             ...     pitch=[]
             ... )
         """
+        if turns is None:
+            turns = []
+        if pitch is None:
+            pitch = []
         GeometryValidator.validate_name(name)
         if pitch and turns:
             if len(pitch) != len(turns):
@@ -107,12 +110,12 @@ class ModelAxi(YAMLObjectBase):
 
         self.name = name
         self.h = h
-        self.turns = turns
-        self.pitch = pitch
+        self.turns: list[float] = turns
+        self.pitch: list[float] = pitch
 
         # sum of pitch*turns must be equal to 2*h
         if pitch:
-            total_height = sum(p * t for p, t in zip(pitch, turns))
+            total_height = sum(p * t for p, t in zip(pitch, turns, strict=False))
             error = abs(1 - total_height / (2 * self.h))
             threshold = 1.e-6
             if error > threshold:
@@ -154,13 +157,7 @@ class ModelAxi(YAMLObjectBase):
             >>> print(repr(empty))
             ModelAxi(name='empty', h=50.0, turns=[], pitch=[])
         """
-        return "%s(name=%r, h=%r, turns=%r, pitch=%r)" % (
-            self.__class__.__name__,
-            self.name,
-            self.h,
-            self.turns,
-            self.pitch,
-        )
+        return f"{self.__class__.__name__}(name={self.name!r}, h={self.h!r}, turns={self.turns!r}, pitch={self.pitch!r})"
 
     @classmethod
     def from_dict(cls, values: dict, debug: bool = False):

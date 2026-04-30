@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding:utf-8 -*-
 
 """
 Utilities for generating helical cut files for magnet manufacturing.
@@ -19,6 +18,10 @@ axial position.
 """
 
 from math import pi
+
+from .logging_config import get_logger
+
+logger = get_logger(__name__)
 
 
 def lncmi_cut(object, filename: str, append: bool = False, z0: float = 0):
@@ -69,7 +72,7 @@ def lncmi_cut(object, filename: str, append: bool = False, z0: float = 0):
     See Also:
         MagnetTools/MagnetField/Stack.cc write_lncmi_paramfile L136
     """
-    print(f"lncmi_cut: filename={filename}, append={append}, z0={z0}")
+    logger.info(f"lncmi_cut: filename={filename}, append={append}, z0={z0}")
     from math import pi
 
     sign = 1
@@ -82,8 +85,6 @@ def lncmi_cut(object, filename: str, append: bool = False, z0: float = 0):
 
     z = z0
     theta = 0
-    shape_id = 0
-    tab = "\t"
 
     # 'x' create file, 'a' append to file
     flag = "x"
@@ -107,9 +108,11 @@ def lncmi_cut(object, filename: str, append: bool = False, z0: float = 0):
         f.write("G0X-0.000\n")
         f.write("G0A0.\n")
 
-        print(f"lncmi_cut: Starting point: theta={theta}, z={z}")
+        logger.debug(f"lncmi_cut: starting point theta={theta}, z={z}")
         # Generate toolpath points from helix geometry
-        for i, (turn, pitch) in enumerate(zip(object.modelaxi.turns, object.modelaxi.pitch)):
+        for i, (turn, pitch) in enumerate(
+            zip(object.modelaxi.turns, object.modelaxi.pitch, strict=False)
+        ):
             theta += turn * (2 * pi) * sign
             z -= turn * pitch
             logger.debug(
@@ -198,7 +201,7 @@ def salome_cut(object, filename: str, append: bool = False, z0: float = 0):
     flag = "x"
     if append:
         flag = "a"
-    print(f"flag={flag}")
+    logger.debug(f"salome_cut: open mode={flag}")
     with open(filename, flag) as f:
         # Write header
         f.write(f"#theta[rad]{tab}Shape_id[]{tab}tZ[mm]\n")
@@ -207,7 +210,9 @@ def salome_cut(object, filename: str, append: bool = False, z0: float = 0):
         f.write(f"{theta*(-sign):12.8f}{tab}{shape_id:8}{tab}{z:12.8f}\n")
 
         # Generate subsequent points from helix geometry
-        for i, (turn, pitch) in enumerate(zip(object.modelaxi.turns, object.modelaxi.pitch)):
+        for _, (turn, pitch) in enumerate(
+            zip(object.modelaxi.turns, object.modelaxi.pitch, strict=False)
+        ):
             theta += turn * (2 * pi) * sign
             z -= turn * pitch
             f.write(f"{theta*(-sign):12.8f}{tab}{shape_id:8}{tab}{z:12.8f}\n")
@@ -243,7 +248,7 @@ def catia_cut(object, filename: str, append: bool = False, z0: float = 0):
     theta_deg = 0.0
 
     points = [(z, theta_deg)]
-    for turn, pitch in zip(object.modelaxi.turns, object.modelaxi.pitch):
+    for turn, pitch in zip(object.modelaxi.turns, object.modelaxi.pitch, strict=False):
         theta_deg += turn * 360.0 * sign
         z -= turn * pitch
         points.append((z, theta_deg))
@@ -295,9 +300,9 @@ def catia_cut(object, filename: str, append: bool = False, z0: float = 0):
     previous_theta = None
     for i, (z_point, theta_point_deg) in enumerate(points):
         if previous_theta is not None and abs(theta_point_deg) < abs(previous_theta):
-            print(
-                "CATIA: Warning Point[%d] dropped: %s,%s (%s,%s)"
-                % (i, z_point, theta_point_deg, points[i - 1][0], previous_theta)
+            logger.warning(
+                f"CATIA: Warning Point[{i}] dropped: {z_point},{theta_point_deg} "
+                f"({points[i - 1][0]},{previous_theta})"
             )
 
         x_coord = theta_point_deg * radius * pi / 180.0 * (-sign)
@@ -385,10 +390,10 @@ def create_cut(object, format: str, name: str, append: bool = False, z0: float =
 
     try:
         format_cut = dformat[format.lower()]
-    except:
+    except KeyError as e:
         raise RuntimeError(
             f"create_cut: format={format} unsupported\nallowed formats are: {dformat.keys()}"
-        )
+        ) from e
 
     # create file for shape: Shape_name.dat
     shape = getattr(object, "shape", None)

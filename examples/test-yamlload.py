@@ -3,8 +3,6 @@
 """
 from python_magnetgeo.utils import getObject
 
-
-
 Object = getObject("HL-31-H1H2.yaml")
 print(f"Object={Object}, type={type(Object)}")
 Object = getObject("M9Bitters.yaml")

@@ -7,18 +7,20 @@ as test-refactor-ring.py, ensuring all functionality is preserved while using
 the new YAMLObjectBase and validation framework.
 """
 
-import os
 import json
-import yaml
+import os
 import tempfile
+
 import pytest
-from python_magnetgeo.Helix import Helix
-from python_magnetgeo.ModelAxi import ModelAxi
-from python_magnetgeo.Model3D import Model3D
-from python_magnetgeo.Shape import Shape
-from python_magnetgeo.Groove import Groove
+import yaml
+
 from python_magnetgeo.Chamfer import Chamfer
+from python_magnetgeo.Groove import Groove
+from python_magnetgeo.Helix import Helix
+from python_magnetgeo.Model3D import Model3D
+from python_magnetgeo.ModelAxi import ModelAxi
 from python_magnetgeo.Profile import Profile
+from python_magnetgeo.Shape import Shape
 from python_magnetgeo.validation import ValidationError
 
 
@@ -133,8 +135,8 @@ def test_refactored_helix_basic_functionality():
     assert helix.r == [20.0, 40.0]
     assert helix.z == [10.0, 90.0]
     assert helix.cutwidth == 2.5
-    assert helix.odd == True
-    assert helix.dble == False
+    assert helix.odd
+    assert not helix.dble
     assert helix.modelaxi is not None
     assert helix.model3d is not None
     assert helix.shape is not None
@@ -172,8 +174,8 @@ def test_helix_json_serialization():
     assert parsed['r'] == [15.0, 35.0]
     assert parsed['z'] == [5.0, 85.0]
     assert parsed['cutwidth'] == 3.0
-    assert parsed['odd'] == False
-    assert parsed['dble'] == True
+    assert not parsed['odd']
+    assert parsed['dble']
 
     # Verify nested objects are serialized
     assert 'modelaxi' in parsed
@@ -244,8 +246,8 @@ def test_helix_with_chamfers_and_grooves():
     shape = Shape("groove_shape", "rectangular", [15.0], [90.0, 90.0, 90.0, 90.0], [2], "ALTERNATE")
 
     # Create chamfers
-    chamfer1 = Chamfer(name="chamfer1", side="HP", rside="rint", alpha=45.0, dr=None, l=1.0)
-    chamfer2 = Chamfer(name="chamfer2", side="BP", rside="rext", alpha=None, dr=0.5, l=1.0)
+    chamfer1 = Chamfer(name="chamfer1", side="HP", rside="rint", alpha=45.0, dr=None, length=1.0)
+    chamfer2 = Chamfer(name="chamfer2", side="BP", rside="rext", alpha=None, dr=0.5, length=1.0)
 
     # Create groove
     groove = Groove(name="test_groove", gtype="rint", n=4, eps=1.5)
@@ -298,8 +300,8 @@ def test_helix_default_values():
     helix = Helix.from_dict(test_dict)
 
     # Check defaults
-    assert helix.odd == True  # default
-    assert helix.dble == False  # default
+    assert helix.odd  # default
+    assert not helix.dble  # default
     assert helix.chamfers == []  # default empty list
     assert (helix.grooves is None)  # default Groove object
 
@@ -327,7 +329,7 @@ def test_helix_validation():
             model3d=model3d,
             shape=shape
         )
-        assert False, "Should have raised ValidationError for empty name"
+        raise AssertionError("Should have raised ValidationError for empty name")
     except (ValidationError, ValueError) as e:
         print(f"✓ Name validation works: {e}")
 
@@ -344,7 +346,7 @@ def test_helix_validation():
             model3d=model3d,
             shape=shape
         )
-        assert False, "Should have raised ValidationError for bad radial bounds"
+        raise AssertionError("Should have raised ValidationError for bad radial bounds")
     except (ValidationError, ValueError) as e:
         print(f"✓ Radial bounds validation works: {e}")
 
@@ -361,7 +363,7 @@ def test_helix_validation():
             model3d=model3d,
             shape=shape
         )
-        assert False, "Should have raised ValidationError for bad axial bounds"
+        raise AssertionError("Should have raised ValidationError for bad axial bounds")
     except (ValidationError, ValueError) as e:
         print(f"✓ Axial bounds validation works: {e}")
 
@@ -423,8 +425,8 @@ def test_helix_complex_serialization():
     model3d = Model3D("complex_model3d", "GMSH", True, True)
     shape = Shape("complex_shape", "rectangular", [15.0, 15.0, 15.0] , [45.0, 45.0, 45.0], [3], "BELOW")
 
-    chamfer1 = Chamfer(name="chamfer1", side="HP", rside="rint", alpha=45.0, dr=None, l=1.0)
-    chamfer2 = Chamfer(name="chamfer2", side="BP", rside="rext", alpha=None, dr=0.5, l=1.0)
+    chamfer1 = Chamfer(name="chamfer1", side="HP", rside="rint", alpha=45.0, dr=None, length=1.0)
+    chamfer2 = Chamfer(name="chamfer2", side="BP", rside="rext", alpha=None, dr=0.5, length=1.0)
     groove = Groove(name="test_groove", gtype="rint", n=4, eps=1.5)
 
     helix = Helix(

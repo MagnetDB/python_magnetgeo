@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "python-magnetgeo"
 version = "1.0.1"
 description = "Python helpers to create HiFiMagnet cads and meshes"
-readme = "README.rst"
+readme = "README.md"
 requires-python = ">=3.11"
 license = {text = "MIT"}
 authors = [
@@ -49,6 +49,7 @@ docs = [
     "sphinx>=6.0.0",
     "sphinx-rtd-theme>=1.2.0",
     "sphinx-autodoc-typehints>=1.22.0",
+    "myst-parser>=0.18.0",
 ]
 test = [
     "pytest>=8.2.0",
@@ -56,11 +57,11 @@ test = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/Trophime/python_magnetgeo"
+Homepage = "https://github.com/MagnetDB/python_magnetgeo"
 Documentation = "https://python-magnetgeo.readthedocs.io"
-Repository = "https://github.com/Trophime/python_magnetgeo"
-Issues = "https://github.com/Trophime/python_magnetgeo/issues"
-Changelog = "https://github.com/Trophime/python_magnetgeo/blob/main/HISTORY.rst"
+Repository = "https://github.com/MagnetDB/python_magnetgeo"
+Issues = "https://github.com/MagnetDB/python_magnetgeo/issues"
+Changelog = "https://github.com/MagnetDB/python_magnetgeo/blob/main/HISTORY.md"
 
 [project.scripts]
 load-profile-from-dat = "python_magnetgeo.examples.load_profile_from_dat:main"
@@ -111,6 +112,7 @@ filterwarnings = [
 
 # Coverage configuration
 [tool.coverage.run]
+branch = true
 source = ["python_magnetgeo"]
 omit = [
     "*/tests/*",
@@ -211,6 +213,7 @@ commands = black --check python_magnetgeo tests
 deps =
     sphinx>=6.0.0
     sphinx-rtd-theme>=1.2.0
+    myst-parser>=0.18.0
 changedir = docs
 commands = sphinx-build -W -b html -d {envtmpdir}/doctrees . {envtmpdir}/html
 """
@@ -219,6 +222,8 @@ commands = sphinx-build -W -b html -d {envtmpdir}/doctrees . {envtmpdir}/html
 [tool.ruff]
 line-length = 100
 target-version = "py311"
+
+[tool.ruff.lint]
 select = [
     "E",   # pycodestyle errors
     "W",   # pycodestyle warnings
@@ -234,9 +239,9 @@ ignore = [
     "C901",  # too complex
 ]
 
-[tool.ruff.per-file-ignores]
+[tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401"]
 "tests/*" = ["F401", "F811"]
 
-[tool.ruff.isort]
+[tool.ruff.lint.isort]
 known-first-party = ["python_magnetgeo"]

@@ -4,10 +4,11 @@ Test suite for Profile class
 Tests creation, serialization, validation, and DAT file generation
 """
 
-import os
 import json
+import os
 import tempfile
 from pathlib import Path
+
 import pytest
 
 from python_magnetgeo.Profile import Profile
@@ -191,7 +192,7 @@ class TestProfileDATGeneration:
 
             # Check data points with labels
             lines = content.split("\n")
-            data_lines = [l for l in lines if l and not l.startswith("#")]
+            data_lines = [line for line in lines if line and not line.startswith("#")]
             assert len(data_lines) >= 5  # 1 for count, 5 for points
 
     def test_generate_dat_without_labels(self):
@@ -219,7 +220,7 @@ class TestProfileDATGeneration:
 
             # Verify data lines don't have labels
             lines = content.split("\n")
-            data_lines = [l for l in lines if l and not l.startswith("#") and len(l.strip()) > 0]
+            data_lines = [line for line in lines if line and not line.startswith("#") and len(line.strip()) > 0]
             # First data line is the count
             # Subsequent lines should have 2 values only (X, F)
             for line in data_lines[1:]:

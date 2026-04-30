@@ -6,12 +6,13 @@ Tests that the migrated Tierod class works correctly with the new base classes
 and validation framework, similar to test-refactor-ring.py approach.
 """
 
-import os
 import json
+import os
 import tempfile
+
+from python_magnetgeo.Contour2D import Contour2D
 from python_magnetgeo.tierod import Tierod
 from python_magnetgeo.validation import ValidationError
-from python_magnetgeo.Contour2D import Contour2D
 
 
 def test_refactored_tierod_functionality():
@@ -87,14 +88,14 @@ def test_enhanced_validation():
     # Test validation catches negative radius
     try:
         Tierod(name="test", r=-5.0, n=8, dh=10.0, sh=5.0, contour2d=None)
-        assert False, "Should have raised ValidationError for negative radius"
+        raise AssertionError("Should have raised ValidationError for negative radius")
     except ValidationError as e:
         print(f"✓ Negative radius validation: {e}")
 
     # Test validation catches invalid n type
     try:
         Tierod(name="test", r=12.5, n="invalid", dh=10.0, sh=5.0, contour2d=None)
-        assert False, "Should have raised ValidationError for invalid n"
+        raise AssertionError("Should have raised ValidationError for invalid n")
     except ValidationError as e:
         print(f"✓ Invalid n type validation: {e}")
 
@@ -376,7 +377,7 @@ def test_json_file_operations():
 
     # Verify file exists and contains correct data
     assert os.path.exists(filename)
-    with open(filename, 'r') as f:
+    with open(filename) as f:
         content = f.read()
         assert 'json_test' in content
         assert '25.0' in content

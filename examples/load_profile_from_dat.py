@@ -18,11 +18,9 @@ Usage:
 
 import sys
 from pathlib import Path
-from typing import Optional
 
 # Add the current directory to the Python path to import python_magnetgeo
 #sys.path.insert(0, str(Path(__file__).parent))
-
 from python_magnetgeo.Profile import Profile
 
 
@@ -69,7 +67,7 @@ def load_profile_from_dat(dat_file_path: str) -> Profile:
 
     for encoding in encodings:
         try:
-            with open(dat_path, "r", encoding=encoding, errors='strict') as f:
+            with open(dat_path, encoding=encoding, errors='strict') as f:
                 file_content = f.readlines()
             successful_encoding = encoding
             print(f'{dat_file_path}: Successfully read file with encoding: {encoding}', flush=True)
@@ -255,15 +253,15 @@ Examples:
             print(f"Saved JSON to: {args.save_json}/{profile.cad}.json")
         else:
             # Default: show profile information
-            print(f"Profile loaded successfully!")
+            print("Profile loaded successfully!")
             print(f"  CAD: {profile.cad}")
             print(f"  Points: {len(profile.points)}")
             print(f"  Has labels: {profile.labels is not None and any(label != 0 for label in profile.labels)}")
 
             if args.verbose:
-                print(f"\nProfile representation:")
+                print("\nProfile representation:")
                 print(f"  {profile!r}")
-                print(f"\nFirst 5 points:")
+                print("\nFirst 5 points:")
                 for i, (point, label) in enumerate(zip(profile.points[:5], profile.labels[:5]), 1):
                     print(f"    {i}. [{point[0]:.2f}, {point[1]:.2f}] label={label}")
                 if len(profile.points) > 5:

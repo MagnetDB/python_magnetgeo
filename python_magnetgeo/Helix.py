@@ -13,19 +13,17 @@ Provides definition for Helix:
 
 import math
 import os
-import subprocess
 import sys
 
 from .base import YAMLObjectBase
 from .Chamfer import Chamfer
 from .Groove import Groove
 from .hcuts import create_cut
+from .logging_config import get_logger
 from .Model3D import Model3D
 from .ModelAxi import ModelAxi
 from .Shape import Shape
 from .validation import GeometryValidator, ValidationError
-
-from .logging_config import get_logger
 
 # Get logger for this module
 logger = get_logger(__name__)

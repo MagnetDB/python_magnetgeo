@@ -21,10 +21,10 @@ __email__ = "christophe.trophime@lncmi.cnrs.fr"
 # Version is read from package metadata (defined in pyproject.toml)
 # This ensures a single source of truth for the version number
 try:
-    from importlib.metadata import version, PackageNotFoundError
+    from importlib.metadata import PackageNotFoundError, version
 except ImportError:
     # Fallback for Python < 3.8 (though we require 3.11+)
-    from importlib_metadata import version, PackageNotFoundError
+    from importlib_metadata import PackageNotFoundError, version
 
 try:
     __version__ = version("python-magnetgeo")
@@ -34,47 +34,47 @@ except PackageNotFoundError:
     __version__ = "0.0.0+unknown"
 
 # Import logging configuration
-from .logging_config import (
-    configure_logging,
-    get_logger,
-    set_level,
-    disable_logging,
-    enable_logging,
-    DEBUG,
-    INFO,
-    WARNING,
-    ERROR,
-    CRITICAL,
-)
-
 # Import core utilities and base classes immediately
-from .base import YAMLObjectBase, SerializableMixin
-from .validation import ValidationError, ValidationWarning, GeometryValidator
-from .utils import getObject as load, loadObject, ObjectLoadError, UnsupportedTypeError
+from .base import SerializableMixin, YAMLObjectBase
+from .Bitter import Bitter
+from .Bitters import Bitters
+from .Chamfer import Chamfer
+from .Contour2D import Contour2D
+from .coolingslit import CoolingSlit
+from .Groove import Groove
+from .Helix import Helix
+from .InnerCurrentLead import InnerCurrentLead
 
 # Import all geometry classes eagerly so their YAML constructors are registered
 # before any yaml.load() call is made. Lazy loading breaks YAML deserialization
 # because constructors are only registered when the class is first imported.
 from .Insert import Insert
-from .Helix import Helix
+from .logging_config import (
+    CRITICAL,
+    DEBUG,
+    ERROR,
+    INFO,
+    WARNING,
+    configure_logging,
+    disable_logging,
+    enable_logging,
+    get_logger,
+    set_level,
+)
+from .Model3D import Model3D
+from .ModelAxi import ModelAxi
+from .MSite import MSite
+from .OuterCurrentLead import OuterCurrentLead
+from .Probe import Probe
 from .Ring import Ring
-from .Bitter import Bitter
-from .Bitters import Bitters
+from .Screen import Screen
+from .Shape import Shape
 from .Supra import Supra
 from .Supras import Supras
-from .Screen import Screen
-from .MSite import MSite
-from .Probe import Probe
-from .Shape import Shape
-from .ModelAxi import ModelAxi
-from .Model3D import Model3D
-from .InnerCurrentLead import InnerCurrentLead
-from .OuterCurrentLead import OuterCurrentLead
-from .Contour2D import Contour2D
-from .Chamfer import Chamfer
-from .Groove import Groove
 from .tierod import Tierod
-from .coolingslit import CoolingSlit
+from .utils import ObjectLoadError, UnsupportedTypeError, loadObject
+from .utils import getObject as load
+from .validation import GeometryValidator, ValidationError, ValidationWarning
 
 # Define what gets imported with "from python_magnetgeo import *"
 __all__ = [

@@ -13,10 +13,8 @@ Classes:
 """
 
 from pathlib import Path
-from typing import Optional
 
 from .base import YAMLObjectBase
-from .validation import GeometryValidator
 
 # Module logger
 from .logging_config import get_logger
@@ -58,7 +56,7 @@ class Profile(YAMLObjectBase):
 
     yaml_tag = "Profile"
 
-    def __init__(self, cad: str, points: list[list[float]], labels: Optional[list[int]] = None):
+    def __init__(self, cad: str, points: list[list[float]], labels: list[int] | None = None):
         """
         Initialize a Profile object.
 

@@ -9,11 +9,12 @@ adding validation and improved error handling.
 CoolingSlit represents cooling channels in magnets with nested Contour2D geometry.
 """
 
-import os
 import json
+import os
 import tempfile
-from python_magnetgeo.coolingslit import CoolingSlit
+
 from python_magnetgeo.Contour2D import Contour2D
+from python_magnetgeo.coolingslit import CoolingSlit
 from python_magnetgeo.validation import ValidationError
 
 
@@ -141,7 +142,7 @@ def test_coolingslit_json_serialization():
 
     print("✓ JSON serialization works correctly")
     print(f"  - __classname__: {parsed['__classname__']}")
-    print(f"  - All attributes serialized properly")
+    print("  - All attributes serialized properly")
     print(f"  - Nested Contour2D serialized: {parsed['contour2d']['name']}")
 
 
@@ -361,7 +362,7 @@ def test_coolingslit_in_bitter_context():
     print("✓ CoolingSlits work correctly in Bitter context")
     print(f"  - Slit 1: {slit1.name} at r={slit1.r}, angle={slit1.angle}°")
     print(f"  - Slit 2: {slit2.name} at r={slit2.r}, angle={slit2.angle}°")
-    print(f"  - List serialization works correctly")
+    print("  - List serialization works correctly")
 
 
 def test_coolingslit_repr():
@@ -487,7 +488,7 @@ def test_coolingslit_comprehensive_functionality():
         assert slit_from_json.name == slit.name
         assert slit_from_json.r == slit.r
         print("✓ JSON round-trip works correctly")
-    except Exception as e:
+    except Exception:
         print("✗ JSON round-trip works correctly")
     finally:
         if os.path.exists(json_file):

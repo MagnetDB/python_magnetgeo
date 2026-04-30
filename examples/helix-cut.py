@@ -1,11 +1,10 @@
-import yaml
-from python_magnetgeo.Shape import Shape
-from python_magnetgeo.ModelAxi import ModelAxi
-from python_magnetgeo.Model3D import Model3D
-from python_magnetgeo.Helix import Helix
-
-import json
 import argparse
+
+import yaml
+
+from python_magnetgeo.Helix import Helix
+from python_magnetgeo.Model3D import Model3D
+from python_magnetgeo.ModelAxi import ModelAxi
 
 r = [38.6 / 2.0, 48.4 / 2.0]
 z = []

@@ -1,16 +1,15 @@
 #!/usr/bin/env python3
-# -*- coding:utf-8 -*-
 
 """
 Utility functions for python_magnetgeo
 Fixed version compatible with both original and refactored classes
 """
 
-import os
-import yaml
 import json
-from typing import Any, Type
-from pathlib import Path
+import os
+from typing import Any
+
+import yaml
 
 from .logging_config import get_logger
 
@@ -31,7 +30,7 @@ class UnsupportedTypeError(Exception):
 
 
 def writeYaml(
-    comment: str, obj: Any, obj_class: Type = None, debug: bool = True, directory: str | None = None
+    comment: str, obj: Any, obj_class: type = None, debug: bool = True, directory: str | None = None
 ):
     """
     Write object to YAML file.
@@ -66,7 +65,7 @@ def writeYaml(
 
     except Exception as e:
         logger.error(f"Failed to write {comment} to {filename}: {e}", exc_info=True)
-        raise Exception(f"Failed to {comment} dump - {filename} - {e}")
+        raise Exception(f"Failed to {comment} dump - {filename} - {e}") from e
 
 
 def writeJson(comment: str, obj: Any, debug: bool = True):
@@ -97,10 +96,10 @@ def writeJson(comment: str, obj: Any, debug: bool = True):
 
     except Exception as e:
         logger.error(f"Failed to write {comment} to {filename}: {e}", exc_info=True)
-        raise Exception(f"Failed to {comment} dump - {filename} - {e}")
+        raise Exception(f"Failed to {comment} dump - {filename} - {e}") from e
 
 
-def loadYaml(comment: str, filename: str, supported_type: Type = None, debug: bool = False) -> Any:
+def loadYaml(comment: str, filename: str, supported_type: type = None, debug: bool = False) -> Any:
     """
     Load object from YAML file.
 
@@ -134,7 +133,7 @@ def loadYaml(comment: str, filename: str, supported_type: Type = None, debug: bo
     try:
         # Load YAML file
         logger.debug(f"looking for file: {basename}, supported_type={supported_type}")
-        with open(basename, "r") as istream:  # Potential FileNotFoundError happens here
+        with open(basename) as istream:  # Potential FileNotFoundError happens here
             obj = yaml.load(stream=istream, Loader=yaml.FullLoader)
             obj._basedir = cwd
             if basedir and basedir != ".":
@@ -169,13 +168,13 @@ def loadYaml(comment: str, filename: str, supported_type: Type = None, debug: bo
         )
         error_msg = f"{error_type}: {filename}. Details: {e}"
         logger.error(error_msg)
-        raise ObjectLoadError(error_msg)
+        raise ObjectLoadError(error_msg) from e
 
     except Exception as e:
         # Catch all others, but now the file not found is handled above.
         error_msg = f"Failed to load {comment} data from {filename} due to an unexpected error: {e}"
         logger.error(error_msg, exc_info=True)
-        raise ObjectLoadError(error_msg)
+        raise ObjectLoadError(error_msg) from e
     finally:
         # Always restore original directory
         if basedir and basedir != ".":
@@ -214,7 +213,7 @@ def loadJson(comment: str, filename: str, debug: bool = False) -> Any:
     try:
         logger.debug(f"Loading JSON from: {basename}")
 
-        with open(basename, "r") as istream:
+        with open(basename) as istream:
             obj = json.loads(istream.read(), object_hook=deserialize.unserialize_object)
             obj._basedir = cwd
             if basedir and basedir != ".":
@@ -231,7 +230,7 @@ def loadJson(comment: str, filename: str, debug: bool = False) -> Any:
         )
         error_msg = f"{error_type}: {filename}. Details: {e}"
         logger.error(error_msg)
-        raise ObjectLoadError(error_msg)
+        raise ObjectLoadError(error_msg) from e
     finally:
         if basedir and basedir != ".":
             os.chdir(cwd)

@@ -8,12 +8,13 @@ from .base import YAMLObjectBase
 
 # Add import at the top
 from .Bitter import Bitter
+
+# Module logger
+from .logging_config import get_logger
 from .Probe import Probe
 from .utils import getObject
 from .validation import GeometryValidator, ValidationError
 
-# Module logger
-from .logging_config import get_logger
 logger = get_logger(__name__)
 
 class Bitters(YAMLObjectBase):
@@ -129,7 +130,7 @@ class Bitters(YAMLObjectBase):
             raise ValidationError(
                 f"innerbore ({innerbore}) must be less than ({min([magnet.r[0] for magnet in self.magnets])})"
             )
-        
+
         # Handle case where outerbore is not specified (0)
         if self.magnets and outerbore == 0:
             outerbore = max([magnet.r[1] for magnet in self.magnets]) + eps
@@ -138,7 +139,7 @@ class Bitters(YAMLObjectBase):
                 f"outerbore was not specified (0), setting it to maximum magnet outer radius plus eps: "
                 f"{outerbore:.3f} mm (= {max([magnet.r[1] for magnet in self.magnets]):.3f} + {eps})"
             )
-        
+
         if self.magnets and outerbore < max([magnet.r[1] for magnet in self.magnets]):
             raise ValidationError(
                 f"outerbore ({outerbore}) must be greater than last bitter outer radius ({max([magnet.r[1] for magnet in self.magnets])})"

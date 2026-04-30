@@ -8,10 +8,9 @@ import os
 from enum import Enum
 
 from .base import YAMLObjectBase
-from .Profile import Profile
-from .validation import GeometryValidator, ValidationError
-
 from .logging_config import get_logger
+from .Profile import Profile
+from .validation import ValidationError
 
 # Get logger for this module
 logger = get_logger(__name__)

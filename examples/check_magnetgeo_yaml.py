@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding:utf-8 -*-
 
 """
 Script to split an Helix YAML file into separate files for modelaxi and shape objects.
@@ -20,20 +19,19 @@ Example:
     python split_helix_yaml.py data/HL-31_H1.yaml
 """
 
-import sys
-import yaml
-import os
-import glob
 import argparse
+import glob
+import os
+import sys
 
 import python_magnetgeo as pmg
-pmg.verify_class_registration()  # Required for YAML loading
-
-
 from python_magnetgeo.logging_config import get_logger
+
+pmg.verify_class_registration()  # Required for YAML loading
 
 # Get logger for this module
 logger = get_logger(__name__)
+
 
 def check_yaml(input_file):
     """
@@ -49,7 +47,7 @@ def check_yaml(input_file):
     basename = os.path.basename(input_file)
 
     # Change to basedir if it's not empty and not '.'
-    if basedir and basedir != '.':
+    if basedir and basedir != ".":
         logger.debug(f"Changing directory to: {basedir}")
         os.chdir(basedir)
         input_path = basename
@@ -69,13 +67,12 @@ def check_yaml(input_file):
 def main():
     """Main function to handle command line arguments."""
     parser = argparse.ArgumentParser(
-        description='Check an YAML file.',
-        epilog='Example: %(prog)s data/HL-31_H1.yaml data/*.yaml'
+        description="Check an YAML file.", epilog="Example: %(prog)s data/HL-31_H1.yaml data/*.yaml"
     )
     parser.add_argument(
-        'input_files',
-        nargs='+',
-        help='Path(s) to input YAML file(s); glob patterns (e.g. "data/*.yaml") are supported'
+        "input_files",
+        nargs="+",
+        help='Path(s) to input YAML file(s); glob patterns (e.g. "data/*.yaml") are supported',
     )
 
     args = parser.parse_args()
@@ -100,6 +97,7 @@ def main():
         except Exception as e:
             logger.error(f"Error processing {input_file}: {e}")
             import traceback
+
             traceback.print_exc()
             errors += 1
 

@@ -4,11 +4,12 @@ Phase 4 Test: Validate Shape class refactor implementation
 Following the pattern from test-refactor-ring.py
 """
 
-import os
 import json
+import os
 import tempfile
-from python_magnetgeo.Shape import Shape, ShapePosition
+
 from python_magnetgeo.Profile import Profile
+from python_magnetgeo.Shape import Shape, ShapePosition
 from python_magnetgeo.validation import ValidationError
 
 
@@ -171,7 +172,7 @@ def test_shape_validation():
     # Test position validation which is active
     try:
         Shape(name="test_invalid_position", profile=test_profile, position="INVALID_POS")
-        assert False, "Should have raised ValidationError for invalid position"
+        raise AssertionError("Should have raised ValidationError for invalid position")
     except ValidationError as e:
         assert "Invalid position" in str(e)
         print(f"✓ Invalid position validation works: {e}")
@@ -284,7 +285,7 @@ def test_shape_json_file_operations():
 
     # Verify file exists and contains correct data
     assert os.path.exists(filename)
-    with open(filename, 'r') as f:
+    with open(filename) as f:
         content = json.load(f)
         assert content['name'] == 'json_file_test'
         assert 'profile' in content  # Profile is a nested object
@@ -364,7 +365,7 @@ def test_shape_position_values():
             profile=test_profile,
             position="INVALID"
         )
-        assert False, "Should have raised ValidationError for invalid position"
+        raise AssertionError("Should have raised ValidationError for invalid position")
     except ValidationError as e:
         assert "Invalid position" in str(e)
         assert "ABOVE, BELOW, ALTERNATE" in str(e)
