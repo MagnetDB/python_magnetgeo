@@ -69,7 +69,7 @@ def lncmi_cut(object, filename: str, append: bool = False, z0: float = 0):
     See Also:
         MagnetTools/MagnetField/Stack.cc write_lncmi_paramfile L136
     """
-    print(f'lncmi_cut: filename={filename}')
+    print(f"lncmi_cut: filename={filename}, append={append}, z0={z0}")
     from math import pi
 
     sign = 1
@@ -77,7 +77,7 @@ def lncmi_cut(object, filename: str, append: bool = False, z0: float = 0):
         sign *= -1
 
     # force units (mm, deg)
-    units = 1.e+3
+    units = 1  # entries -- aka r,z -- are stored in mm
     angle_units = 180 / pi
 
     z = z0
@@ -107,20 +107,25 @@ def lncmi_cut(object, filename: str, append: bool = False, z0: float = 0):
         f.write("G0X-0.000\n")
         f.write("G0A0.\n")
 
+        print(f"lncmi_cut: Starting point: theta={theta}, z={z}")
         # Generate toolpath points from helix geometry
         for i, (turn, pitch) in enumerate(zip(object.modelaxi.turns, object.modelaxi.pitch)):
             theta += turn * (2 * pi) * sign
             z -= turn * pitch
+            logger.debug(
+                f"lncmi_cut: i={i}, turn={turn}, pitch={pitch}, sign={sign}, theta={-sign * theta * angle_units}, z={z}, angle_units={angle_units}"
+            )
             f.write(f"N{i+1}")
-            if i == len(object.modelaxi.turns)-1:
+            if i == len(object.modelaxi.turns) - 1:
                 f.write("G01")
 
-            f.write("\t");
+            f.write("\t")
             f.write(f"X {-z * units:12.4f}\t")
             f.write(f"W {-sign * theta * angle_units:12.3f}\n")
 
         f.write("M50\nM29\nM30")
         f.write("%")
+
 
 def salome_cut(object, filename: str, append: bool = False, z0: float = 0):
     """
@@ -177,7 +182,7 @@ def salome_cut(object, filename: str, append: bool = False, z0: float = 0):
     See Also:
         MagnetTools/MagnetField/Stack.cc write_salome_paramfile L1011
     """
-    print(f'salome_cut: filename={filename}')
+    logger.info(f"salome_cut: filename={filename}")
     from math import pi
 
     sign = 1
@@ -193,7 +198,7 @@ def salome_cut(object, filename: str, append: bool = False, z0: float = 0):
     flag = "x"
     if append:
         flag = "a"
-    print(f'flag={flag}')
+    print(f"flag={flag}")
     with open(filename, flag) as f:
         # Write header
         f.write(f"#theta[rad]{tab}Shape_id[]{tab}tZ[mm]\n")
@@ -208,9 +213,112 @@ def salome_cut(object, filename: str, append: bool = False, z0: float = 0):
             f.write(f"{theta*(-sign):12.8f}{tab}{shape_id:8}{tab}{z:12.8f}\n")
 
 
-def create_cut(
-    object, format: str, name: str, append: bool = False, z0: float = 0
-):
+def catia_cut(object, filename: str, append: bool = False, z0: float = 0):
+    """
+    Generate helical cut file in CATIA-style tabular format.
+
+    The output format mirrors HL-41/write_catia.cpp (write_catia_paramfile):
+    a short commented header followed by a ``StartLoft/StartCurve`` block and
+    one row per curve point with columns:
+    ``R*theta[mm.rad]``, ``R[mm]``, ``Z[mm]``.
+
+    Args:
+        object: Helix or Bitter object containing the geometry definition.
+                Must expose ``modelaxi.turns``, ``modelaxi.pitch`` and ``r``.
+        filename: Base output filename.
+        append: If True, append to output file; if False, create new file.
+        z0: Reference axial origin in millimeters. If 0, uses the initial
+            generated point (``modelaxi.h``).
+    """
+    logger.info(f"catia_cut: filename={filename}")
+
+    sign = 1
+    if not object.odd:
+        sign = -1
+
+    # C++ version receives R and Z0 from caller; here we derive sensible defaults.
+    radius = (object.r[0] + object.r[1]) / 2.0
+    z = object.modelaxi.h
+    z_ref = z0 if z0 != 0 else z
+    theta_deg = 0.0
+
+    points = [(z, theta_deg)]
+    for turn, pitch in zip(object.modelaxi.turns, object.modelaxi.pitch):
+        theta_deg += turn * 360.0 * sign
+        z -= turn * pitch
+        points.append((z, theta_deg))
+
+    try:
+        import importlib
+
+        xlwt = importlib.import_module("xlwt")
+    except ImportError as exc:
+        raise RuntimeError(
+            "catia_cut requires xlwt to write a real .xls file. Install it with: pip install xlwt"
+        ) from exc
+
+    if append:
+        raise RuntimeError("catia_cut append=True is not supported for .xls export")
+
+    workbook = xlwt.Workbook()
+    sheet = workbook.add_sheet("CATIA")
+
+    row = 0
+    sheet.write(row, 0, "# ---- Cut from here -----")
+    row += 1
+    sheet.write(row, 0, "# Fichier de decoupe Catia V5 R19")
+    row += 1
+    sheet.write(row, 0, f"# Fichier de decoupe Machine : {filename}")
+    row += 1
+    sheet.write(row, 0, f"# Decoupe helice {'gauche' if sign > 0 else 'droite'}")
+    row += 2
+
+    sheet.write(row, 0, "# Params")
+    row += 1
+    sheet.write(row, 0, f"# R = {radius} mm")
+    row += 1
+    sheet.write(row, 0, f"# Z0 = {z_ref} mm")
+    row += 1
+    sheet.write(row, 0, "#")
+    row += 1
+    sheet.write(row, 0, "# R*theta[mm.rad]")
+    sheet.write(row, 1, "R[mm]")
+    sheet.write(row, 2, "Z[mm]")
+    row += 1
+    sheet.write(row, 0, "# ---- To here -----")
+    row += 1
+    sheet.write(row, 0, "StartLoft")
+    row += 1
+    sheet.write(row, 0, "StartCurve")
+    row += 1
+
+    previous_theta = None
+    for i, (z_point, theta_point_deg) in enumerate(points):
+        if previous_theta is not None and abs(theta_point_deg) < abs(previous_theta):
+            print(
+                "CATIA: Warning Point[%d] dropped: %s,%s (%s,%s)"
+                % (i, z_point, theta_point_deg, points[i - 1][0], previous_theta)
+            )
+
+        x_coord = theta_point_deg * radius * pi / 180.0 * (-sign)
+        y_coord = radius
+        z_coord = -(z_point - z_ref)
+        sheet.write(row, 0, x_coord)
+        sheet.write(row, 1, y_coord)
+        sheet.write(row, 2, z_coord)
+        row += 1
+        previous_theta = theta_point_deg
+
+    sheet.write(row, 0, "EndCurve")
+    row += 1
+    sheet.write(row, 0, "EndLoft")
+    row += 1
+    sheet.write(row, 0, "End")
+
+    workbook.save(filename)
+
+
+def create_cut(object, format: str, name: str, append: bool = False, z0: float = 0):
     """
     Create helical cut file in the specified format.
 
@@ -266,11 +374,13 @@ def create_cut(
     See Also:
         lncmi_cut: For LNCMI format details
         salome_cut: For SALOME format details
+        catia_cut: For CATIA format details
     """
 
     dformat = {
-        "lncmi": {"run": lncmi_cut, "extension": "_lncmi.iso"},
+        "lncmi": {"run": lncmi_cut, "extension": "_cut.iso"},
         "salome": {"run": salome_cut, "extension": "_cut_salome.dat"},
+        "catia": {"run": catia_cut, "extension": "_cut_catia-V5R19.xls"},
     }
 
     try:
@@ -291,4 +401,3 @@ def create_cut(
     ext = format_cut["extension"]
     filename = f"{name}{ext}"
     write_cut(object, filename, append, z0)
-

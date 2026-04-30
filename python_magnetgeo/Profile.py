@@ -20,7 +20,10 @@ from .validation import GeometryValidator
 
 # Module logger
 from .logging_config import get_logger
+
 logger = get_logger(__name__)
+
+
 class Profile(YAMLObjectBase):
     """
     Represents a profile defined by 2D points and labels.
@@ -80,7 +83,7 @@ class Profile(YAMLObjectBase):
             ... )
         """
         # Validate CAD identifier
-        #GeometryValidator.validate_name(cad)
+        # GeometryValidator.validate_name(cad)
 
         # Validate labels length if provided
         if labels is not None and len(labels) != len(points):
@@ -248,67 +251,5 @@ class Profile(YAMLObjectBase):
                 for x, y in self.points:
                     f.write(f"{x:.2f} {y:.2f}\n")
 
+        print(f"Generated DAT file: {output_path}")
         return output_path
-
-
-# Example usage
-if __name__ == "__main__":
-    print("=== Example 1: Profile with labels ===")
-    # Create a profile with region labels
-    profile_with_labels = Profile(
-        cad="HR-54-116",
-        points=[
-            [-5.34, 0.0],
-            [-3.34, 0.0],
-            [-2.01, 0.9],
-            [0.0, 0.9],
-            [2.01, 0.9],
-            [3.34, 0.0],
-            [5.34, 0.0],
-        ],
-        labels=[0, 0, 0, 1, 0, 0, 0],
-    )
-
-    # Generate the DAT file with labels
-    output_file = profile_with_labels.generate_dat_file()
-    print(f"Generated file with labels: {output_file}")
-
-    print("\n=== Example 2: Profile without labels ===")
-    # Create a simple profile without labels
-    profile_no_labels = Profile(
-        cad="SIMPLE-AIRFOIL",
-        points=[
-            [0.0, 0.0],
-            [0.5, 0.05],
-            [1.0, 0.03],
-            [1.5, 0.0],
-            [1.0, -0.02],
-            [0.5, -0.03],
-        ],
-        labels=None,  # Explicitly no labels
-    )
-
-    # Generate the DAT file without labels
-    output_file_simple = profile_no_labels.generate_dat_file()
-    print(f"Generated file without labels: {output_file_simple}")
-
-    print("\n=== Example 3: Profile with all-zero labels (treated as no labels) ===")
-    # Create a profile where all labels are zero
-    profile_zero_labels = Profile(
-        cad="ZERO-LABELS",
-        points=[[0, 0], [1, 0.5], [2, 0]],
-        labels=[0, 0, 0],  # All zeros - file won't include Id_i column
-    )
-
-    output_file_zeros = profile_zero_labels.generate_dat_file()
-    print(f"Generated file (all-zero labels, no Id_i column): {output_file_zeros}")
-
-    # Demonstrate YAML serialization
-    print("\n=== YAML Export (with labels) ===")
-    yaml_str = profile_with_labels.dump()
-    print(yaml_str)
-
-    # Demonstrate JSON serialization
-    print("\n=== JSON Export (without labels) ===")
-    json_str = profile_no_labels.to_json()
-    print(json_str)
