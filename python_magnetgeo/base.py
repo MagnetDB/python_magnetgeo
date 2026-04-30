@@ -139,6 +139,19 @@ class SerializableMixin:
         """
         return yaml.dump(self, default_flow_style=False, sort_keys=False)
 
+    def dump(self) -> str:
+        """
+        Backward-compatible alias for YAML string serialization.
+
+        Returns:
+            str: YAML string representation of the object
+
+        Notes:
+            - Kept for compatibility with legacy code/tests that still call dump().
+            - Prefer to_yaml() in new code.
+        """
+        return self.to_yaml()
+
     def to_json(self) -> str:
         """
         Convert object to JSON string representation.
