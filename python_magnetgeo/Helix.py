@@ -437,38 +437,32 @@ class Helix(YAMLObjectBase):
                 ) from e
 
             # when format is catia, we need to convert the created xls to excel
-            # using Scripts/write_excel.py from magnettools
-            # ex: HL-41_H1-compressed_cut_with_shapes.xls
             if format == "CATIA":
-                xls_file = f"{self.name}-cut_with_shapes.xls"
-                excel_file = f"{self.name}-cut_with_shapes-v5R19.xlsx"
-                logger.info(
-                    "create_cut: convert to Excel - run %s -m magnettools.scripts.write_excel %s %s",
-                    sys.executable,
-                    xls_file,
-                    excel_file,
-                )
+                from tempfile import TemporaryFile
+
+                from xlwt import Workbook
+
+                xls_file = f"{self.name}_cut_with_shapes.xls"
+                excel_file = f"{self.name}_cut_with_shapes_V5R19.xls"
+                logger.info("create_cut: convert %s to Excel %s", xls_file, excel_file)
                 try:
-                    result = subprocess.run(
-                        [
-                            sys.executable,
-                            "-m",
-                            "magnettools.scripts.write_excel",
-                            xls_file,
-                            excel_file,
-                        ],
-                        check=True,
-                        text=True,
-                        capture_output=True,
-                    )
-                    logger.debug(result.stdout)
-                except subprocess.CalledProcessError as e:
-                    raise RuntimeError(
-                        f"Excel conversion failed (exit {e.returncode}):\n"
-                        f"  cmd: {' '.join(map(str, e.cmd))}\n"
-                        f"  stdout: {e.stdout}\n"
-                        f"  stderr: {e.stderr}"
-                    ) from e
+                    book = Workbook()
+                    sheet1 = book.add_sheet("Sheet 1")
+                    num = 0
+                    with open(xls_file, "r") as input_file:
+                        for line in input_file:
+                            if line[0] != "#" and len(line.strip()):
+                                data = line.split()
+                                row = sheet1.row(num)
+                                if len(data) == 3:
+                                    data = [float(v) for v in data]
+                                for n, value in enumerate(data):
+                                    row.write(n, value)
+                                num += 1
+                    book.save(excel_file)
+                    book.save(TemporaryFile())
+                except Exception as e:
+                    raise RuntimeError(f"Excel conversion failed for {xls_file}: {e}") from e
 
     def intersect(self, r: list[float], z: list[float]) -> bool:
         """
