@@ -13,7 +13,6 @@ Provides definition for Helix:
 
 import math
 import os
-import sys
 
 from .base import YAMLObjectBase
 from .Chamfer import Chamfer
@@ -449,7 +448,7 @@ class Helix(YAMLObjectBase):
                     book = Workbook()
                     sheet1 = book.add_sheet("Sheet 1")
                     num = 0
-                    with open(xls_file, "r") as input_file:
+                    with open(xls_file) as input_file:
                         for line in input_file:
                             if line[0] != "#" and len(line.strip()):
                                 data = line.split()
