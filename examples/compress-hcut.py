@@ -5,6 +5,8 @@ import sys
 
 from python_magnetgeo.Helix import Helix
 from python_magnetgeo.ModelAxi import ModelAxi
+from python_magnetgeo.Shape import Shape
+from python_magnetgeo.Profile import Profile
 
 
 def main():
@@ -18,7 +20,7 @@ def main():
         nargs="+",
         help='Path(s) to input YAML file(s); glob patterns (e.g. "data/*.yaml") are supported',
     )
-    parser.add_argument("--ratio", help="Compress ratio", type=float, default=0.9)
+    parser.add_argument("--ratio", help="Compress ratio", type=float, default=1.0)
 
     args = parser.parse_args()
 
@@ -56,7 +58,9 @@ def main():
         print(f"Original hcut: {len(hcut.pitch)}", flush=True)
         print(f"Compacted hcut: {len(pitch)}", flush=True)
         nhcut = ModelAxi(name="compacted", h=hcut.h, turns=turns, pitch=pitch)
-        assert hcut.get_Nturns() == nhcut.get_Nturns()
+        assert (
+            abs(1 - hcut.get_Nturns() / nhcut.get_Nturns()) < 1e-6
+        ), f"Nturns mismatch after compaction: original={hcut.get_Nturns()}, compacted={nhcut.get_Nturns()}"
 
         print(f"Compact hcut: {len(nhcut.pitch)}", flush=True)
 
@@ -75,9 +79,28 @@ def main():
         )
         print("Create new helix with compacted hcut")
 
-        # save as yaml
-
+        # compress hcut
         new_pitch = [args.ratio * p for p in nhcut.pitch]
+
+        # compress shape
+        print(f"Shape: {obj.shape}")
+        new_shape = None
+        if obj.shape is not None:
+            profile = obj.shape.profile
+            print(f"Profile: {profile}")
+            new_points = [[point[0], point[1] * args.ratio] for point in profile.points]
+            new_profile = Profile(
+                cad=f"{profile.cad}-compressed", points=new_points, labels=profile.labels
+            )
+
+            new_shape = Shape(
+                name=f"{obj.shape.name}-compressed",
+                profile=new_profile,
+                length=obj.shape.length,
+                angle=obj.shape.angle,
+                onturns=obj.shape.onturns,
+                position=obj.shape.position,
+            )
 
         # create new heliw with compressed hcut
         new_modelaxi = ModelAxi(
@@ -95,7 +118,7 @@ def main():
             obj.dble,
             new_modelaxi,
             obj.model3d,
-            obj.shape,
+            obj.shape if new_shape is None else new_shape,
             obj.chamfers,
             obj.grooves,
         )
