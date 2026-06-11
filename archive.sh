@@ -52,6 +52,7 @@ tar \
     --exclude=.pc \
     --exclude=.devcontainer \
     --exclude=.vscode \
+    --exclude=.ruff_cache \
     --exclude=*.sif \
     --exclude=*.crt \
     --exclude=*.pem \
