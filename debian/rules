@@ -9,7 +9,11 @@ export PYBUILD_NAME=magnetgeo
 	dh $@ --buildsystem=pybuild
 
 override_dh_auto_test:
-	PYTHONDONTWRITEBYTECODE=1 PYBUILD_TEST_ARGS='--override-ini=addopts= -v --tb=short --strict-markers' dh_auto_test
+	PYTHONDONTWRITEBYTECODE=1 PYBUILD_TEST_ARGS='--override-ini=addopts= -v --tb=short --strict-markers -p no:cacheprovider' dh_auto_test
+
+override_dh_auto_install:
+	dh_auto_install
+	find debian/*/ -depth \( -name '__pycache__' -o -name '.pytest_cache' \) -exec rm -rf {} +
 
 # If you need to rebuild the Sphinx documentation
 # Add sphinxdoc to the dh --with line
