@@ -7,9 +7,10 @@ Validates that the new YAMLObjectBase implementation maintains all functionality
 adding validation and improved error handling.
 """
 
-import os
 import json
+import os
 import tempfile
+
 from python_magnetgeo.InnerCurrentLead import InnerCurrentLead
 from python_magnetgeo.OuterCurrentLead import OuterCurrentLead
 from python_magnetgeo.validation import ValidationError
@@ -114,7 +115,7 @@ def test_inner_lead_json_serialization():
 
     print("✓ JSON serialization works correctly")
     print(f"  - __classname__: {parsed['__classname__']}")
-    print(f"  - All attributes serialized properly")
+    print("  - All attributes serialized properly")
 
 
 def test_inner_lead_from_dict():
@@ -473,7 +474,7 @@ def test_comparison_with_original_functionality():
         print("✓ JSON file round-trip successful")
         print(f"  - Inner lead: {inner_loaded}")
         print(f"  - Outer lead: {outer_loaded}")
-    except Exception as e:
+    except Exception:
         print("✗ JSON file round-trip successful")
         print(f"  - Inner lead: {inner_loaded}")
         print(f"  - Outer lead: {outer_loaded}")

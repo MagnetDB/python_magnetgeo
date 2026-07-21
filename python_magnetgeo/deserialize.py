@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding:utf-8 -*-
 
 """
 Provides tools to un/serialize data from json
@@ -7,32 +6,12 @@ Provides tools to un/serialize data from json
 
 from .base import YAMLObjectBase
 
+# Module logger
+from .logging_config import get_logger
+
 # Import all classes to ensure they're registered
 # (importing triggers __init_subclass__ which registers them)
 
-from .Probe import Probe
-from .Shape import Shape
-from .ModelAxi import ModelAxi
-from .Model3D import Model3D
-from .Helix import Helix
-from .Ring import Ring
-from .InnerCurrentLead import InnerCurrentLead
-from .OuterCurrentLead import OuterCurrentLead
-from .Insert import Insert
-from .Bitter import Bitter
-from .Supra import Supra
-from .Screen import Screen
-from .MSite import MSite
-from .Bitters import Bitters
-from .Supras import Supras
-from .Contour2D import Contour2D
-from .Chamfer import Chamfer
-from .Groove import Groove
-from .tierod import Tierod
-from .coolingslit import CoolingSlit
-
-# Module logger
-from .logging_config import get_logger
 logger = get_logger(__name__)
 
 # From : http://chimera.labs.oreilly.com/books/1230000000393/ch06.html#_discussion_95

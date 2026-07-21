@@ -74,7 +74,7 @@ class Chamfer(YAMLObjectBase):
         rside: str,
         alpha: float = None,
         dr: float = None,
-        l: float = None,
+        length: float = None,
     ):
         """
         Initialize a Chamfer object.
@@ -124,7 +124,7 @@ class Chamfer(YAMLObjectBase):
         self.rside = rside
         self.alpha = alpha
         self.dr = dr
-        self.l = l
+        self.length = length
 
         # TODO: data validation
         # at least alpha or dr must be given
@@ -151,7 +151,7 @@ class Chamfer(YAMLObjectBase):
             msg += f", alpha={self.alpha}"
         if hasattr(self, "dr"):
             msg += f", dr={self.dr}"
-        msg += f",l={self.l})"
+        msg += f",length={self.length})"
         return msg
 
     @classmethod
@@ -207,9 +207,9 @@ class Chamfer(YAMLObjectBase):
         alpha = values.get("alpha", None)
         dr = values.get("dr", None)
 
-        l = values["l"]
+        length = values["length"]
 
-        return cls(name, side, rside, alpha, dr, l)
+        return cls(name, side, rside, alpha, dr, length)
 
     def getDr(self):
         """
@@ -243,7 +243,7 @@ class Chamfer(YAMLObjectBase):
         else:
             return self.dr
 
-        dr = self.l * math.tan(math.pi / 180.0 * self.alpha)
+        dr = self.length * math.tan(math.pi / 180.0 * self.alpha)
         return dr
 
     def getAngle(self):
@@ -278,5 +278,5 @@ class Chamfer(YAMLObjectBase):
         else:
             return self.alpha
 
-        angle = math.atan2(self.dr, self.l)
+        angle = math.atan2(self.dr, self.length)
         return angle * 180 / math.pi

@@ -46,7 +46,7 @@ Example:
 
 import json
 from abc import abstractmethod
-from typing import Any, Type, TypeVar
+from typing import Any, TypeVar
 
 import yaml
 
@@ -139,6 +139,19 @@ class SerializableMixin:
         """
         return yaml.dump(self, default_flow_style=False, sort_keys=False)
 
+    def dump(self) -> str:
+        """
+        Backward-compatible alias for YAML string serialization.
+
+        Returns:
+            str: YAML string representation of the object
+
+        Notes:
+            - Kept for compatibility with legacy code/tests that still call dump().
+            - Prefer to_yaml() in new code.
+        """
+        return self.to_yaml()
+
     def to_json(self) -> str:
         """
         Convert object to JSON string representation.
@@ -214,7 +227,7 @@ class SerializableMixin:
             raise Exception(f"Failed to write {self.__class__.__name__} to {filename}: {e}") from e
 
     @classmethod
-    def load_from_yaml(cls: Type[T], filename: str, debug: bool = True) -> T:
+    def load_from_yaml(cls: type[T], filename: str, debug: bool = True) -> T:
         """
         Load object from YAML file.
 
@@ -254,7 +267,7 @@ class SerializableMixin:
         return loadYaml(cls.__name__, filename, cls, debug)
 
     @classmethod
-    def load_from_json(cls: Type[T], filename: str, debug: bool = False) -> T:
+    def load_from_json(cls: type[T], filename: str, debug: bool = False) -> T:
         """
         Load object from JSON file.
 
@@ -289,7 +302,7 @@ class SerializableMixin:
 
     @classmethod
     @abstractmethod
-    def from_dict(cls: Type[T], values: dict[str, Any], debug: bool = False) -> T:
+    def from_dict(cls: type[T], values: dict[str, Any], debug: bool = False) -> T:
         """
         Create instance from dictionary representation.
 
@@ -453,7 +466,7 @@ class YAMLObjectBase(SerializableMixin, VisualizableMixin):
         return cls._class_registry.copy()
 
     @classmethod
-    def from_yaml(cls: Type[T], filename: str, debug: bool = False) -> T:
+    def from_yaml(cls: type[T], filename: str, debug: bool = False) -> T:
         """
         Create object from YAML file.
 
@@ -471,7 +484,7 @@ class YAMLObjectBase(SerializableMixin, VisualizableMixin):
         return cls.load_from_yaml(filename, debug)
 
     @classmethod
-    def from_json(cls: Type[T], filename: str, debug: bool = False) -> T:
+    def from_json(cls: type[T], filename: str, debug: bool = False) -> T:
         """
         Create object from JSON file.
 
@@ -640,7 +653,7 @@ class YAMLObjectBase(SerializableMixin, VisualizableMixin):
             return data
 
     @classmethod
-    def get_required_files(cls: Type[T], values: dict, debug: bool = False) -> set[str]:
+    def get_required_files(cls: type[T], values: dict, debug: bool = False) -> set[str]:
         """
         Perform a dry run analysis to identify all files required to create an object.
 

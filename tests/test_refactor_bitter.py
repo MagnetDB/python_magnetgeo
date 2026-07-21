@@ -8,14 +8,15 @@ validation framework, and Tierod-style classmethod pattern.
 Similar to test-refactor-ring.py approach - focused on core functionality.
 """
 
-import os
 import json
+import os
 import tempfile
+
 from python_magnetgeo.Bitter import Bitter
-from python_magnetgeo.ModelAxi import ModelAxi
-from python_magnetgeo.coolingslit import CoolingSlit
-from python_magnetgeo.tierod import Tierod
 from python_magnetgeo.Contour2D import Contour2D
+from python_magnetgeo.coolingslit import CoolingSlit
+from python_magnetgeo.ModelAxi import ModelAxi
+from python_magnetgeo.tierod import Tierod
 from python_magnetgeo.validation import ValidationError
 
 
@@ -54,7 +55,7 @@ def test_refactored_bitter_functionality():
     assert parsed['name'] == 'test_bitter'
     assert parsed['r'] == [0.10, 0.15]
     assert parsed['z'] == [-0.05, 0.05]
-    assert parsed['odd'] == True
+    assert parsed['odd']
 
     print("✓ JSON serialization works")
 
@@ -75,7 +76,7 @@ def test_refactored_bitter_functionality():
     assert dict_bitter.name == 'dict_bitter'
     assert dict_bitter.r == [0.12, 0.17]
     assert dict_bitter.z == [-0.06, 0.06]
-    assert dict_bitter.odd == False
+    assert not dict_bitter.odd
 
     print("✓ from_dict works")
 
@@ -104,21 +105,21 @@ def test_enhanced_validation():
     # Test validation catches empty name
     try:
         Bitter(name="", r=[0.1, 0.15], z=[-0.05, 0.05], odd=True, modelaxi=None)
-        assert False, "Should have raised ValidationError for empty name"
+        raise AssertionError("Should have raised ValidationError for empty name")
     except ValidationError as e:
         print(f"✓ Empty name validation: {e}")
 
     # Test validation catches invalid r coordinates
     try:
         Bitter(name="test", r=[0.15, 0.1], z=[-0.05, 0.05], odd=True, modelaxi=None)  # Wrong order
-        assert False, "Should have raised ValidationError for wrong radial order"
+        raise AssertionError("Should have raised ValidationError for wrong radial order")
     except ValidationError as e:
         print(f"✓ Radial order validation: {e}")
 
     # Test validation catches invalid z coordinates
     try:
         Bitter(name="test", r=[0.1, 0.15], z=[0.05, -0.05], odd=True, modelaxi=None)  # Wrong order
-        assert False, "Should have raised ValidationError for wrong z order"
+        raise AssertionError("Should have raised ValidationError for wrong z order")
     except ValidationError as e:
         print(f"✓ Axial order validation: {e}")
 

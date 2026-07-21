@@ -33,7 +33,7 @@ done
 shift $((OPTIND - 1))
 
 # add parameters
-: ${VERSION:="1.0.0"}
+: ${VERSION:="1.0.1"}
 : ${DIST:="trixie"}
 
 # cleanup source
@@ -52,6 +52,7 @@ tar \
     --exclude=.pc \
     --exclude=.devcontainer \
     --exclude=.vscode \
+    --exclude=.ruff_cache \
     --exclude=*.sif \
     --exclude=*.crt \
     --exclude=*.pem \

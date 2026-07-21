@@ -18,15 +18,15 @@ from .base import YAMLObjectBase
 from .Chamfer import Chamfer
 from .Groove import Groove
 from .hcuts import create_cut
+from .logging_config import get_logger
 from .Model3D import Model3D
 from .ModelAxi import ModelAxi
 from .Shape import Shape
 from .validation import GeometryValidator, ValidationError
 
-from .logging_config import get_logger
-
 # Get logger for this module
 logger = get_logger(__name__)
+
 
 class Helix(YAMLObjectBase):
     """
@@ -379,30 +379,89 @@ class Helix(YAMLObjectBase):
             if model3d.with_shapes is enabled. Uses external MagnetTools utilities.
         """
 
+        format = format.upper()
         create_cut(self, format, self.name)
+
+        # create inputs required by add_shape: aka R[mm],
+        stdin_data = (
+            "\n".join(
+                [
+                    str(self.r[-1]),
+                    str(self.modelaxi.h),
+                ]
+            )
+            + "\n"
+        )
+
         if self.model3d.with_shapes:
 
             # if Profile class is used: self.shape.profile.generate_dat_file()
             if self.shape is not None and self.shape.profile is not None:
-                    self.shape.profile.generate_dat_file(self._basedir)
-                    shape_profile = f"{self._basedir}/Shape_{self.shape.cad}.dat"
+                shape_profile = str(self.shape.profile.generate_dat_file(self._basedir))
+                shape_profile = os.path.splitext(os.path.basename(shape_profile))[
+                    0
+                ]  # Use stem for add_shape
+                shape_profile = shape_profile.replace(
+                    "Shape_", ""
+                )  # Sanitize name for command line
             else:
                 return
 
             if self.get_type() == "HL":
                 angles = " ".join(f"{t:4.2f}" for t in self.shape.angle if t != 0)
-                cmd = f'add_shape --angle="{angles}" --shape_angular_length={self.shape.length} --shape={shape_profile} --format={format} --position="{self.shape.position} {self.name}"'
-                logger.info(f"create_cut: with_shapes not implemented - shall run {cmd}")
+                cmd = f'add_shape --angle="{angles}" --shape_angular_length={self.shape.length} --shape={shape_profile} --format={format} --position="{self.shape.position}" {self.name}'
+                logger.info(f"create_cut: HL with_shapes - run {cmd}")
             else:
                 angles = " ".join(f"{t:4.2f}" for t in self.shape.angle if t != 0)
-                cmd = f'add_shape --angle="{angles[0]}" --shape_angular_length={self.shape.length[0]} --shape={shape_profile} --format={format} --position="{self.shape.position} {self.name}"'
-                logger.info(f"create_cut: with_shapes not implemented - shall run {cmd}")
+                cmd = f'add_shape --angle="{angles[0]}" --shape_angular_length={self.shape.length[0]} --shape={shape_profile} --format={format} --position="{self.shape.position}" {self.name}'
+                logger.info(f"create_cut: HR with_shapes - run {cmd}")
             try:
                 import subprocess
 
-                subprocess.run(cmd, shell=True, check=True)
-            except RuntimeError as e:
-                raise Exception(f"cannot run add_shape properly: {e}") from e
+                result = subprocess.run(
+                    cmd,
+                    shell=True,
+                    check=True,
+                    input=stdin_data,
+                    text=True,
+                    capture_output=True,
+                )
+                logger.debug(result.stdout)
+            except subprocess.CalledProcessError as e:
+                raise RuntimeError(
+                    f"add_shape failed (exit {e.returncode}):\n"
+                    f"  cmd: {e.cmd}\n"
+                    f"  stdout: {e.stdout}\n"
+                    f"  stderr: {e.stderr}"
+                ) from e
+
+            # when format is catia, we need to convert the created xls to excel
+            if format == "CATIA":
+                from tempfile import TemporaryFile
+
+                from xlwt import Workbook
+
+                xls_file = f"{self.name}_cut_with_shapes.xls"
+                excel_file = f"{self.name}_cut_with_shapes_V5R19.xls"
+                logger.info("create_cut: convert %s to Excel %s", xls_file, excel_file)
+                try:
+                    book = Workbook()
+                    sheet1 = book.add_sheet("Sheet 1")
+                    num = 0
+                    with open(xls_file) as input_file:
+                        for line in input_file:
+                            if line[0] != "#" and len(line.strip()):
+                                data = line.split()
+                                row = sheet1.row(num)
+                                if len(data) == 3:
+                                    data = [float(v) for v in data]
+                                for n, value in enumerate(data):
+                                    row.write(n, value)
+                                num += 1
+                    book.save(excel_file)
+                    book.save(TemporaryFile())
+                except Exception as e:
+                    raise RuntimeError(f"Excel conversion failed for {xls_file}: {e}") from e
 
     def intersect(self, r: list[float], z: list[float]) -> bool:
         """
@@ -499,16 +558,16 @@ class Helix(YAMLObjectBase):
         z_min, z_max = z_bounds[0], z_bounds[1]
 
         # Extract styling parameters with defaults
-        color = kwargs.get('color', 'darkgreen')
-        alpha = kwargs.get('alpha', 0.6)
-        edgecolor = kwargs.get('edgecolor', 'black')
-        linewidth = kwargs.get('linewidth', 1.5)
-        label = kwargs.get('label', self.name if show_labels else None)
-        
+        color = kwargs.get("color", "darkgreen")
+        alpha = kwargs.get("alpha", 0.6)
+        edgecolor = kwargs.get("edgecolor", "black")
+        linewidth = kwargs.get("linewidth", 1.5)
+        label = kwargs.get("label", self.name if show_labels else None)
+
         # ModelAxi zone parameters
-        show_modelaxi = kwargs.get('show_modelaxi', True)
-        modelaxi_color = kwargs.get('modelaxi_color', 'orange')
-        modelaxi_alpha = kwargs.get('modelaxi_alpha', 0.3)
+        show_modelaxi = kwargs.get("show_modelaxi", True)
+        modelaxi_color = kwargs.get("modelaxi_color", "orange")
+        modelaxi_alpha = kwargs.get("modelaxi_alpha", 0.3)
 
         # Create rectangle patch for main helix
         width = r_max - r_min
@@ -521,12 +580,12 @@ class Helix(YAMLObjectBase):
             alpha=alpha,
             edgecolor=edgecolor,
             linewidth=linewidth,
-            label=label
+            label=label,
         )
         ax.add_patch(rect)
 
         # Plot modelaxi zone if requested and available
-        if show_modelaxi and self.modelaxi is not None and hasattr(self.modelaxi, 'h'):
+        if show_modelaxi and self.modelaxi is not None and hasattr(self.modelaxi, "h"):
             h = self.modelaxi.h
             # ModelAxi zone: from -h to +h on z-axis, same r dimensions
             modelaxi_rect = Rectangle(
@@ -535,29 +594,29 @@ class Helix(YAMLObjectBase):
                 2 * h,  # Total height from -h to +h
                 facecolor=modelaxi_color,
                 alpha=modelaxi_alpha,
-                edgecolor='darkorange',
+                edgecolor="darkorange",
                 linewidth=1.0,
-                linestyle='--',
-                label=f'{self.name}_modelaxi' if show_labels else None
+                linestyle="--",
+                label=f"{self.name}_modelaxi" if show_labels else None,
             )
             ax.add_patch(modelaxi_rect)
 
         # Update axis limits to include this geometry with some padding
         current_xlim = ax.get_xlim()
         current_ylim = ax.get_ylim()
-        
+
         # Calculate padding (5% of geometry size)
         r_padding = width * 0.05
         z_padding = height * 0.05
-        
+
         # Also consider modelaxi zone for y limits
-        if show_modelaxi and self.modelaxi is not None and hasattr(self.modelaxi, 'h'):
+        if show_modelaxi and self.modelaxi is not None and hasattr(self.modelaxi, "h"):
             z_min_total = min(z_min, -self.modelaxi.h)
             z_max_total = max(z_max, self.modelaxi.h)
         else:
             z_min_total = z_min
             z_max_total = z_max
-        
+
         # Expand limits if needed (check if limits are default)
         if current_xlim == (0.0, 1.0):
             # Default limits, set based on geometry
@@ -565,10 +624,9 @@ class Helix(YAMLObjectBase):
         else:
             # Expand existing limits
             ax.set_xlim(
-                min(current_xlim[0], r_min - r_padding),
-                max(current_xlim[1], r_max + r_padding)
+                min(current_xlim[0], r_min - r_padding), max(current_xlim[1], r_max + r_padding)
             )
-        
+
         if current_ylim == (0.0, 1.0):
             # Default limits, set based on geometry
             ax.set_ylim(z_min_total - z_padding, z_max_total + z_padding)
@@ -576,20 +634,20 @@ class Helix(YAMLObjectBase):
             # Expand existing limits
             ax.set_ylim(
                 min(current_ylim[0], z_min_total - z_padding),
-                max(current_ylim[1], z_max_total + z_padding)
+                max(current_ylim[1], z_max_total + z_padding),
             )
 
         # Add text label at center if requested and no custom label
-        if show_labels and 'label' not in kwargs:
+        if show_labels and "label" not in kwargs:
             center_r = (r_min + r_max) / 2
             center_z = (z_min + z_max) / 2
             ax.text(
                 center_r,
                 center_z,
                 self.name,
-                ha='center',
-                va='center',
+                ha="center",
+                va="center",
                 fontsize=9,
-                fontweight='bold',
-                color='white' if alpha > 0.5 else 'black'
+                fontweight="bold",
+                color="white" if alpha > 0.5 else "black",
             )

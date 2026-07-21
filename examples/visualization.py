@@ -50,31 +50,31 @@ except ImportError:
 print("\nExample 3: Combined Ring + Screen visualization")
 try:
     import matplotlib.pyplot as plt
-    
+
     # Create figure
     fig, ax = plt.subplots(figsize=(10, 12))
-    
+
     # Plot screen (background)
     screen.plot_axisymmetric(
-        ax=ax, 
-        color='lightgray', 
+        ax=ax,
+        color='lightgray',
         alpha=0.3,
         show_legend=False
     )
-    
+
     # Plot ring (foreground)
     ring.plot_axisymmetric(
-        ax=ax, 
-        color='steelblue', 
+        ax=ax,
+        color='steelblue',
         alpha=0.7,
         show_legend=False
     )
-    
+
     ax.set_title("Magnet Assembly", fontsize=14, fontweight='bold')
     plt.savefig("example_combined.png", dpi=150, bbox_inches='tight')
     print("  ✓ Saved visualization to example_combined.png")
     plt.close()
-    
+
 except ImportError:
     print("  ! Matplotlib not installed - skipping visualization")
 

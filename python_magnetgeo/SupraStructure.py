@@ -4,17 +4,17 @@
 """
 Define HTS insert geometry with DetailLevel enum support
 """
-from typing import Optional
 
 from .enums import DetailLevel
 from .hts.dblpancake import dblpancake
 from .hts.isolation import isolation
 from .hts.pancake import pancake
 from .hts.tape import tape
-from .utils import flatten
 
 # Module logger
 from .logging_config import get_logger
+from .utils import flatten
+
 logger = get_logger(__name__)
 
 class HTSInsert:
@@ -53,8 +53,8 @@ class HTSInsert:
     def fromcfg(
         cls,
         inputcfg: str,
-        directory: Optional[str] = None,
-        debug: Optional[bool] = False,
+        directory: str | None = None,
+        debug: bool | None = False,
     ):
         """create from a file"""
         import json
@@ -68,9 +68,8 @@ class HTSInsert:
             data = json.load(f)
             logger.debug(f"HTSinsert data: {data}")
 
-            mytape = None
             if "tape" in data:
-                mytape = tape.from_data(data["tape"])
+                tape.from_data(data["tape"])
 
             mypancake = pancake()
             if "pancake" in data:
@@ -287,7 +286,7 @@ class HTSInsert:
         for dp in self.dblpancakes:
             n_.append(dp.getPancake().getN())
         return n_
-    
+
     def getWMandrin(self) -> list:
         """
         returns the width of Mandrin as a list

@@ -1,0 +1,33 @@
+{
+  "components": {
+    "plate": {
+      "mu": 0.775,
+      "tolerance": 0.005,
+      "distribution": "normal"
+    },
+    "kapton": {
+      "mu": 0.125,
+      "tolerance": 0.00001,
+      "distribution": "uniform"
+    }
+  },
+  "segments": [
+    {
+      "n_turns": 14,
+      "plates_per_turn": 8,
+      "plate": "plate"
+    },
+    {
+      "n_turns": 122,
+      "plates_per_turn": 4,
+      "plate": "plate"
+    },
+    {
+      "n_turns": 14,
+      "plates_per_turn": 8,
+      "plate": "plate"
+    }
+  ],
+  "kapton": "kapton",
+  "n_kaptons": null
+}

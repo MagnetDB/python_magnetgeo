@@ -6,7 +6,6 @@ Provides definition for Site:
 
 """
 import os
-from typing import Optional
 
 from .base import YAMLObjectBase
 from .Bitter import Bitter
@@ -32,10 +31,10 @@ class MSite(YAMLObjectBase):
         self,
         name: str,
         magnets: str | list | dict,
-        screens: Optional[str | list | dict],
-        z_offset: Optional[list[float]],
-        r_offset: Optional[list[float]],
-        paralax: Optional[list[float]],
+        screens: str | list | dict | None,
+        z_offset: list[float] | None,
+        r_offset: list[float] | None,
+        paralax: list[float] | None,
     ) -> None:
         """
         Initialize a measurement site (MSite) assembly.
@@ -270,7 +269,7 @@ class MSite(YAMLObjectBase):
             print(f"MSite/get_names: solid_names {len(solid_names)}")
         return solid_names
 
-    def get_magnet(self, name: str) -> Optional[Insert | Bitter | Supra]:
+    def get_magnet(self, name: str) -> Insert | Bitter | Supra | None:
         """
         Retrieve a specific magnet by name from the site assembly.
 

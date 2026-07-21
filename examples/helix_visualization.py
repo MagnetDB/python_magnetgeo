@@ -9,10 +9,10 @@ Demonstrates:
 """
 
 from python_magnetgeo.Helix import Helix
+from python_magnetgeo.Model3D import Model3D
+from python_magnetgeo.ModelAxi import ModelAxi
 from python_magnetgeo.Ring import Ring
 from python_magnetgeo.Screen import Screen
-from python_magnetgeo.ModelAxi import ModelAxi
-from python_magnetgeo.Model3D import Model3D
 
 print("="*60)
 print("Helix + ModelAxi Visualization Example")
@@ -56,7 +56,7 @@ print()
 
 try:
     import matplotlib.pyplot as plt
-    
+
     # Example 1: Helix with modelaxi zone
     print("Example 1: Helix with ModelAxi zone")
     ax = helix.plot_axisymmetric(
@@ -66,7 +66,7 @@ try:
     plt.savefig("example_helix_with_modelaxi.png", dpi=150, bbox_inches='tight')
     print("  ✓ Saved to example_helix_with_modelaxi.png")
     plt.close()
-    
+
     # Example 2: Helix without modelaxi zone
     print("\nExample 2: Helix without ModelAxi zone")
     ax = helix.plot_axisymmetric(
@@ -77,33 +77,33 @@ try:
     plt.savefig("example_helix_without_modelaxi.png", dpi=150, bbox_inches='tight')
     print("  ✓ Saved to example_helix_without_modelaxi.png")
     plt.close()
-    
+
     # Example 3: Complete assembly with Helix, Ring, and Screen
     print("\nExample 3: Complete magnet assembly")
-    
+
     # Create Ring
     ring = Ring(
         name="Ring_H1H2",
         r=[50.0, 55.0, 60.0, 65.0],
         z=[110.0, 130.0]
     )
-    
+
     # Create Screen
     inner_screen = Screen(
         name="Inner_Shield",
         r=[40.0, 45.0],
         z=[-20.0, 150.0]
     )
-    
+
     outer_screen = Screen(
         name="Outer_Shield",
         r=[70.0, 75.0],
         z=[-20.0, 150.0]
     )
-    
+
     # Combined plot
     fig, ax = plt.subplots(figsize=(12, 14))
-    
+
     # Plot screens (background)
     inner_screen.plot_axisymmetric(
         ax=ax,
@@ -117,7 +117,7 @@ try:
         alpha=0.3,
         show_legend=False
     )
-    
+
     # Plot helix with modelaxi zone
     helix.plot_axisymmetric(
         ax=ax,
@@ -127,7 +127,7 @@ try:
         modelaxi_alpha=0.25,
         show_legend=False
     )
-    
+
     # Plot ring
     ring.plot_axisymmetric(
         ax=ax,
@@ -135,10 +135,10 @@ try:
         alpha=0.6,
         show_legend=False
     )
-    
-    ax.set_title("Magnet Assembly: Helix + Ring + Screens", 
+
+    ax.set_title("Magnet Assembly: Helix + Ring + Screens",
                  fontsize=14, fontweight='bold')
-    
+
     # Add legend manually
     from matplotlib.patches import Patch
     legend_elements = [
@@ -148,11 +148,11 @@ try:
         Patch(facecolor='lightgray', alpha=0.3, hatch='///', label='Screen')
     ]
     ax.legend(handles=legend_elements, loc='upper right', fontsize=10)
-    
+
     plt.savefig("example_complete_assembly.png", dpi=150, bbox_inches='tight')
     print("  ✓ Saved to example_complete_assembly.png")
     plt.close()
-    
+
     print("\n" + "="*60)
     print("✓ All examples completed successfully!")
     print("Check the generated PNG files:")
@@ -160,7 +160,7 @@ try:
     print("  - example_helix_without_modelaxi.png")
     print("  - example_complete_assembly.png")
     print("="*60)
-    
+
 except ImportError:
     print("! Matplotlib not installed")
     print("  Install with: pip install matplotlib")

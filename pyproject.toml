@@ -1,14 +1,14 @@
 [build-system]
-requires = ["setuptools>=61.0", "wheel"]
+requires = ["setuptools>=77.0.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "python-magnetgeo"
-version = "1.0.0"
+version = "1.0.1"
 description = "Python helpers to create HiFiMagnet cads and meshes"
-readme = "README.rst"
+readme = "README.md"
 requires-python = ">=3.11"
-license = {text = "MIT"}
+license = "MIT"
 authors = [
     {name = "Christophe Trophime", email = "christophe.trophime@lncmi.cnrs.fr"},
     {name = "Romain Vallet", email = "romain.vallet@lncmi.cnrs.fr"},
@@ -31,7 +31,8 @@ classifiers = [
 keywords = ["magnet", "geometry", "cad", "mesh", "simulation", "hifimagnet"]
 dependencies = [
     "pyyaml>=6.0.2,<7.0.0",
-    "pandas>=1.5.3"
+    "pandas>=1.5.3",
+    "xlwt>=1.3.0"
 ]
 
 [project.optional-dependencies]
@@ -48,6 +49,7 @@ docs = [
     "sphinx>=6.0.0",
     "sphinx-rtd-theme>=1.2.0",
     "sphinx-autodoc-typehints>=1.22.0",
+    "myst-parser>=0.18.0",
 ]
 test = [
     "pytest>=8.2.0",
@@ -55,16 +57,17 @@ test = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/Trophime/python_magnetgeo"
+Homepage = "https://github.com/MagnetDB/python_magnetgeo"
 Documentation = "https://python-magnetgeo.readthedocs.io"
-Repository = "https://github.com/Trophime/python_magnetgeo"
-Issues = "https://github.com/Trophime/python_magnetgeo/issues"
-Changelog = "https://github.com/Trophime/python_magnetgeo/blob/main/HISTORY.rst"
+Repository = "https://github.com/MagnetDB/python_magnetgeo"
+Issues = "https://github.com/MagnetDB/python_magnetgeo/issues"
+Changelog = "https://github.com/MagnetDB/python_magnetgeo/blob/main/HISTORY.md"
 
 [project.scripts]
 load-profile-from-dat = "python_magnetgeo.examples.load_profile_from_dat:main"
 split-helix-yaml = "python_magnetgeo.examples.split_helix_yaml:main"
 check-magnetgeo-yaml = "python_magnetgeo.examples.check_magnetgeo_yaml:main"
+compress-hcut = "python_magnetgeo.examples.compress_hcut:main"
 
 [tool.setuptools]
 zip-safe = false
@@ -110,6 +113,7 @@ filterwarnings = [
 
 # Coverage configuration
 [tool.coverage.run]
+branch = true
 source = ["python_magnetgeo"]
 omit = [
     "*/tests/*",
@@ -210,6 +214,7 @@ commands = black --check python_magnetgeo tests
 deps =
     sphinx>=6.0.0
     sphinx-rtd-theme>=1.2.0
+    myst-parser>=0.18.0
 changedir = docs
 commands = sphinx-build -W -b html -d {envtmpdir}/doctrees . {envtmpdir}/html
 """
@@ -218,6 +223,8 @@ commands = sphinx-build -W -b html -d {envtmpdir}/doctrees . {envtmpdir}/html
 [tool.ruff]
 line-length = 100
 target-version = "py311"
+
+[tool.ruff.lint]
 select = [
     "E",   # pycodestyle errors
     "W",   # pycodestyle warnings
@@ -233,9 +240,9 @@ ignore = [
     "C901",  # too complex
 ]
 
-[tool.ruff.per-file-ignores]
+[tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401"]
 "tests/*" = ["F401", "F811"]
 
-[tool.ruff.isort]
+[tool.ruff.lint.isort]
 known-first-party = ["python_magnetgeo"]

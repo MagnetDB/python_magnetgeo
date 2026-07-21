@@ -4,10 +4,11 @@ Test suite for Profile class
 Tests creation, serialization, validation, and DAT file generation
 """
 
-import os
 import json
+import os
 import tempfile
 from pathlib import Path
+
 import pytest
 
 from python_magnetgeo.Profile import Profile
@@ -19,11 +20,7 @@ class TestProfileCreation:
 
     def test_basic_creation_with_labels(self):
         """Test creating a profile with explicit labels"""
-        profile = Profile(
-            cad="TEST-001",
-            points=[[0, 0], [1, 0.5], [2, 0]],
-            labels=[0, 1, 0]
-        )
+        profile = Profile(cad="TEST-001", points=[[0, 0], [1, 0.5], [2, 0]], labels=[0, 1, 0])
 
         assert profile.cad == "TEST-001"
         assert len(profile.points) == 3
@@ -32,10 +29,7 @@ class TestProfileCreation:
 
     def test_creation_without_labels(self):
         """Test creating a profile without labels (should default to zeros)"""
-        profile = Profile(
-            cad="TEST-002",
-            points=[[0, 0], [5, 2], [10, 0]]
-        )
+        profile = Profile(cad="TEST-002", points=[[0, 0], [5, 2], [10, 0]])
 
         assert profile.cad == "TEST-002"
         assert len(profile.points) == 3
@@ -43,11 +37,7 @@ class TestProfileCreation:
 
     def test_creation_with_none_labels(self):
         """Test creating a profile with labels=None"""
-        profile = Profile(
-            cad="TEST-003",
-            points=[[0, 0], [1, 1]],
-            labels=None
-        )
+        profile = Profile(cad="TEST-003", points=[[0, 0], [1, 1]], labels=None)
 
         assert profile.labels == [0, 0]
 
@@ -57,7 +47,7 @@ class TestProfileCreation:
             Profile(
                 cad="TEST-004",
                 points=[[0, 0], [1, 1], [2, 2]],
-                labels=[0, 1]  # Only 2 labels for 3 points
+                labels=[0, 1],  # Only 2 labels for 3 points
             )
 
 
@@ -66,11 +56,7 @@ class TestProfileRepr:
 
     def test_repr_with_labels(self):
         """Test __repr__ with explicit labels"""
-        profile = Profile(
-            cad="REPR-001",
-            points=[[0, 0], [1, 1]],
-            labels=[0, 1]
-        )
+        profile = Profile(cad="REPR-001", points=[[0, 0], [1, 1]], labels=[0, 1])
 
         repr_str = repr(profile)
         assert "Profile" in repr_str
@@ -80,10 +66,7 @@ class TestProfileRepr:
 
     def test_repr_without_labels(self):
         """Test __repr__ with default labels"""
-        profile = Profile(
-            cad="REPR-002",
-            points=[[0, 0], [1, 1]]
-        )
+        profile = Profile(cad="REPR-002", points=[[0, 0], [1, 1]])
 
         repr_str = repr(profile)
         assert "Profile" in repr_str
@@ -96,9 +79,7 @@ class TestProfileSerialization:
     def test_to_json(self):
         """Test JSON serialization"""
         profile = Profile(
-            cad="JSON-001",
-            points=[[-5.34, 0], [0, 0.9], [5.34, 0]],
-            labels=[0, 1, 0]
+            cad="JSON-001", points=[[-5.34, 0], [0, 0.9], [5.34, 0]], labels=[0, 1, 0]
         )
 
         json_str = profile.to_json()
@@ -111,10 +92,7 @@ class TestProfileSerialization:
 
     def test_to_json_without_labels(self):
         """Test JSON serialization with default labels"""
-        profile = Profile(
-            cad="JSON-002",
-            points=[[0, 0], [1, 0.5], [2, 0]]
-        )
+        profile = Profile(cad="JSON-002", points=[[0, 0], [1, 0.5], [2, 0]])
 
         json_str = profile.to_json()
         parsed = json.loads(json_str)
@@ -124,11 +102,7 @@ class TestProfileSerialization:
 
     def test_from_dict_with_labels(self):
         """Test creating Profile from dictionary with labels"""
-        data = {
-            "cad": "DICT-001",
-            "points": [[0, 0], [5, 2], [10, 0]],
-            "labels": [0, 1, 0]
-        }
+        data = {"cad": "DICT-001", "points": [[0, 0], [5, 2], [10, 0]], "labels": [0, 1, 0]}
 
         profile = Profile.from_dict(data)
 
@@ -138,10 +112,7 @@ class TestProfileSerialization:
 
     def test_from_dict_without_labels(self):
         """Test creating Profile from dictionary without labels"""
-        data = {
-            "cad": "DICT-002",
-            "points": [[0, 0], [1, 1], [2, 0]]
-        }
+        data = {"cad": "DICT-002", "points": [[0, 0], [1, 1], [2, 0]]}
 
         profile = Profile.from_dict(data)
 
@@ -153,7 +124,7 @@ class TestProfileSerialization:
         original = Profile(
             cad="ROUNDTRIP-001",
             points=[[-5.34, 0], [-3.34, 0], [0, 0.9], [3.34, 0], [5.34, 0]],
-            labels=[0, 0, 1, 0, 0]
+            labels=[0, 0, 1, 0, 0],
         )
 
         json_str = original.to_json()
@@ -166,11 +137,7 @@ class TestProfileSerialization:
 
     def test_yaml_round_trip(self):
         """Test YAML serialization round trip"""
-        original = Profile(
-            cad="Profile0",
-            points=[[0, 0], [5, 2], [10, 0]],
-            labels=[0, 1, 0]
-        )
+        original = Profile(cad="Profile0", points=[[0, 0], [5, 2], [10, 0]], labels=[0, 1, 0])
 
         # Write to file and load back
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -201,7 +168,7 @@ class TestProfileDATGeneration:
         profile = Profile(
             cad="HR-54-116",
             points=[[-5.34, 0], [-3.34, 0], [0, 0.9], [3.34, 0], [5.34, 0]],
-            labels=[0, 0, 1, 0, 0]
+            labels=[0, 0, 1, 0, 0],
         )
 
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -224,16 +191,14 @@ class TestProfileDATGeneration:
             assert "5" in content
 
             # Check data points with labels
-            lines = content.split('\n')
-            data_lines = [l for l in lines if l and not l.startswith('#')]
+            lines = content.split("\n")
+            data_lines = [line for line in lines if line and not line.startswith("#")]
             assert len(data_lines) >= 5  # 1 for count, 5 for points
 
     def test_generate_dat_without_labels(self):
         """Test DAT file generation without labels (or all-zero labels)"""
         profile = Profile(
-            cad="SIMPLE-AIRFOIL",
-            points=[[0, 0], [0.5, 0.05], [1, 0.03]],
-            labels=None  # No labels
+            cad="SIMPLE-AIRFOIL", points=[[0, 0], [0.5, 0.05], [1, 0.03]], labels=None  # No labels
         )
 
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -254,22 +219,22 @@ class TestProfileDATGeneration:
             assert "Id_i" not in content
 
             # Verify data lines don't have labels
-            lines = content.split('\n')
-            data_lines = [l for l in lines if l and not l.startswith('#') and len(l.strip()) > 0]
+            lines = content.split("\n")
+            data_lines = [line for line in lines if line and not line.startswith("#") and len(line.strip()) > 0]
             # First data line is the count
             # Subsequent lines should have 2 values only (X, F)
             for line in data_lines[1:]:
                 parts = line.split()
                 if len(parts) > 0:  # Skip empty lines
                     # Should be 2 values (X, F), not 3
-                    assert len(parts) <= 2, f"Expected 2 values without labels, got {len(parts)}: {line}"
+                    assert (
+                        len(parts) <= 2
+                    ), f"Expected 2 values without labels, got {len(parts)}: {line}"
 
     def test_generate_dat_all_zero_labels(self):
         """Test that all-zero labels are treated as no labels"""
         profile = Profile(
-            cad="ZERO-LABELS",
-            points=[[0, 0], [1, 0.5], [2, 0]],
-            labels=[0, 0, 0]  # All zeros
+            cad="ZERO-LABELS", points=[[0, 0], [1, 0.5], [2, 0]], labels=[0, 0, 0]  # All zeros
         )
 
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -286,7 +251,7 @@ class TestProfileDATGeneration:
         profile = Profile(
             cad="MIXED-LABELS",
             points=[[0, 0], [1, 0.5], [2, 0.3], [3, 0]],
-            labels=[0, 1, 2, 0]  # Has non-zero labels
+            labels=[0, 1, 2, 0],  # Has non-zero labels
         )
 
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -299,10 +264,7 @@ class TestProfileDATGeneration:
 
     def test_generate_dat_custom_directory(self):
         """Test DAT file generation in custom directory"""
-        profile = Profile(
-            cad="CUSTOM-DIR",
-            points=[[0, 0], [1, 1]]
-        )
+        profile = Profile(cad="CUSTOM-DIR", points=[[0, 0], [1, 1]])
 
         with tempfile.TemporaryDirectory() as tmpdir:
             custom_dir = Path(tmpdir) / "custom" / "path"
@@ -316,9 +278,7 @@ class TestProfileDATGeneration:
     def test_dat_file_format_precision(self):
         """Test that DAT file uses correct precision (2 decimal places)"""
         profile = Profile(
-            cad="PRECISION-TEST",
-            points=[[1.234567, 2.345678], [3.456789, 4.567890]],
-            labels=[0, 1]
+            cad="PRECISION-TEST", points=[[1.234567, 2.345678], [3.456789, 4.567890]], labels=[0, 1]
         )
 
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -338,20 +298,13 @@ class TestProfileValidation:
     def test_empty_points_list(self):
         """Test that empty points list is handled"""
         # Should work but create empty labels
-        profile = Profile(
-            cad="EMPTY-POINTS",
-            points=[]
-        )
+        profile = Profile(cad="EMPTY-POINTS", points=[])
         assert profile.points == []
         assert profile.labels == []
 
     def test_single_point(self):
         """Test profile with single point"""
-        profile = Profile(
-            cad="SINGLE-POINT",
-            points=[[0, 0]],
-            labels=[1]
-        )
+        profile = Profile(cad="SINGLE-POINT", points=[[0, 0]], labels=[1])
         assert len(profile.points) == 1
         assert len(profile.labels) == 1
 
@@ -363,16 +316,102 @@ class TestProfileInheritance:
         """Test that Profile has all YAML serialization methods"""
         profile = Profile(cad="TEST", points=[[0, 0]])
 
-        assert hasattr(profile, 'write_to_yaml')
-        assert hasattr(profile, 'to_json')
-        assert hasattr(profile, 'write_to_json')
-        assert hasattr(Profile, 'from_yaml')
-        assert hasattr(Profile, 'from_json')
-        assert hasattr(Profile, 'from_dict')
+        assert hasattr(profile, "write_to_yaml")
+        assert hasattr(profile, "to_json")
+        assert hasattr(profile, "write_to_json")
+        assert hasattr(Profile, "from_yaml")
+        assert hasattr(Profile, "from_json")
+        assert hasattr(Profile, "from_dict")
 
     def test_yaml_tag(self):
         """Test that Profile has correct YAML tag"""
         assert Profile.yaml_tag == "Profile"
+
+
+class TestProfileExamples:
+    """Integration tests based on the canonical usage examples"""
+
+    def test_example1_profile_with_labels(self):
+        """Example 1: Profile with region labels - creates DAT file with Id_i column"""
+        profile = Profile(
+            cad="HR-54-116",
+            points=[
+                [-5.34, 0.0],
+                [-3.34, 0.0],
+                [-2.01, 0.9],
+                [0.0, 0.9],
+                [2.01, 0.9],
+                [3.34, 0.0],
+                [5.34, 0.0],
+            ],
+            labels=[0, 0, 0, 1, 0, 0, 0],
+        )
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            output_path = profile.generate_dat_file(tmpdir)
+
+            assert output_path.exists()
+            assert output_path.name == "Shape_HR-54-116.dat"
+            content = output_path.read_text()
+            assert "#X_i F_i\tId_i" in content
+
+    def test_example2_profile_without_labels(self):
+        """Example 2: Profile without labels - DAT file has no Id_i column"""
+        profile = Profile(
+            cad="SIMPLE-AIRFOIL",
+            points=[
+                [0.0, 0.0],
+                [0.5, 0.05],
+                [1.0, 0.03],
+                [1.5, 0.0],
+                [1.0, -0.02],
+                [0.5, -0.03],
+            ],
+            labels=None,
+        )
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            output_path = profile.generate_dat_file(tmpdir)
+
+            assert output_path.exists()
+            assert output_path.name == "Shape_SIMPLE-AIRFOIL.dat"
+            content = output_path.read_text()
+            assert "Id_i" not in content
+
+    def test_example3_all_zero_labels_treated_as_no_labels(self):
+        """Example 3: All-zero labels are treated as no labels - no Id_i column"""
+        profile = Profile(
+            cad="ZERO-LABELS",
+            points=[[0, 0], [1, 0.5], [2, 0]],
+            labels=[0, 0, 0],
+        )
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            output_path = profile.generate_dat_file(tmpdir)
+            content = output_path.read_text()
+            assert "Id_i" not in content
+
+    def test_yaml_export_with_labels(self):
+        """YAML export produces valid YAML string containing profile data"""
+        profile = Profile(
+            cad="HR-54-116",
+            points=[[-5.34, 0.0], [0.0, 0.9], [5.34, 0.0]],
+            labels=[0, 1, 0],
+        )
+        yaml_str = profile.dump()
+        assert "HR-54-116" in yaml_str
+
+    def test_json_export_without_labels(self):
+        """JSON export produces parseable JSON with correct fields"""
+        profile = Profile(
+            cad="SIMPLE-AIRFOIL",
+            points=[[0.0, 0.0], [0.5, 0.05], [1.0, 0.0]],
+            labels=None,
+        )
+        json_str = profile.to_json()
+        parsed = json.loads(json_str)
+        assert parsed["cad"] == "SIMPLE-AIRFOIL"
+        assert "points" in parsed
 
 
 if __name__ == "__main__":

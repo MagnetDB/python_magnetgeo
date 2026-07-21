@@ -13,10 +13,10 @@ if [ ! -d $VENVDIR ]; then
       python -m venv --system-site-packages $VENVDIR
    else
       python -m venv $VENVDIR
-      pip install black
    fi
    . $VENVDIR/bin/activate
-   python -m pip install -e
+   pip install black
+   python -m pip install -e ".[dev]"
    deactivate
 fi
 
