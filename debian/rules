@@ -9,7 +9,7 @@ export PYBUILD_NAME=magnetgeo
 	dh $@ --buildsystem=pybuild
 
 override_dh_auto_test:
-	PYBUILD_TEST_ARGS='--override-ini=addopts= -v --tb=short --strict-markers' dh_auto_test
+	PYTHONDONTWRITEBYTECODE=1 PYBUILD_TEST_ARGS='--override-ini=addopts= -v --tb=short --strict-markers' dh_auto_test
 
 # If you need to rebuild the Sphinx documentation
 # Add sphinxdoc to the dh --with line
