@@ -1,6 +1,8 @@
 python-magnetgeo (1.0.1-8) UNRELEASED; urgency=medium
 
   * d/rules: overwrite dh_auto_test to skip coverage
+  * fix CLI entry points: examples scripts had moved out of
+    python_magnetgeo.examples, breaking check-magnetgeo-yaml and friends
 
  -- Christophe Trophime <christophe.trophime@lncmi.cnrs.fr>  Thu, 07 May 2026 08:46:23 +0200
 
