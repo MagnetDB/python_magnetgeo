@@ -1,4 +1,10 @@
-python-magnetgeo (1.0.1-8) UNRELEASED; urgency=medium
+python-magnetgeo (1.0.1-9) UNRELEASED; urgency=medium
+
+  * d/rules: make sure no pycache directories are packaged
+
+ -- Christophe Trophime <christophe.trophime@lncmi.cnrs.fr>  Tue, 21 Jul 2026 15:27:34 +0200
+
+python-magnetgeo (1.0.1-8) unstable; urgency=medium
 
   * d/rules: overwrite dh_auto_test to skip coverage
   * fix CLI entry points: examples scripts had moved out of
