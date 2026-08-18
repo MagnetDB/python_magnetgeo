@@ -639,7 +639,7 @@ GeometryValidator.validate_ascending_order(r, 'r')
 | `Supras` | Multiple superconducting coils | `!<Supras>` |
 | `Bitters` | Multiple bitter plates | `!<Bitters>` |
 | `Screen` | Screening geometry | `!<Screen>` |
-| `MSite` | Measurement site | `!<MSite>` |
+| `Assembly` | Measurement assembly | `!<Assembly>` |
 | `Probe` | Probe/sensor definition | `!<Probe>` |
 | `Shape` | 2D profile shape | `!<Shape>` |
 | `ModelAxi` | Axisymmetric model | `!<ModelAxi>` |
