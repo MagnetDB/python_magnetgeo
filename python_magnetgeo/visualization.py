@@ -150,7 +150,7 @@ class VisualizableMixin:
             - Coordinate system: r (horizontal) = radial, z (vertical) = axial
             - Aspect ratio is set to 'equal' for correct geometry representation
             - Grid is enabled by default for easier reading
-            - For collection classes (Insert, MSite, etc.), plots all components
+            - For collection classes (Insert, Assembly, etc.), plots all components
         """
         # Import matplotlib only when needed (optional dependency)
         try:

@@ -63,7 +63,7 @@ from .logging_config import (
 )
 from .Model3D import Model3D
 from .ModelAxi import ModelAxi
-from .MSite import MSite
+from .Assembly import Assembly
 from .OuterCurrentLead import OuterCurrentLead
 from .Probe import Probe
 from .Ring import Ring
@@ -75,6 +75,8 @@ from .tierod import Tierod
 from .utils import ObjectLoadError, UnsupportedTypeError, loadObject
 from .utils import getObject as load
 from .validation import GeometryValidator, ValidationError, ValidationWarning
+
+MSite = Assembly  # deprecated alias — remove after one release
 
 # Define what gets imported with "from python_magnetgeo import *"
 __all__ = [
@@ -112,7 +114,7 @@ __all__ = [
     "Supras",
     "Bitters",
     "Screen",
-    "MSite",
+    "Assembly",
     "Probe",
     "Shape",
     "ModelAxi",
@@ -172,7 +174,7 @@ def verify_class_registration():
         "Supras",
         "Bitters",
         "Screen",
-        "MSite",
+        "Assembly",
         "Probe",
         "Shape",
         "ModelAxi",
