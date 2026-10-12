@@ -29,7 +29,6 @@
             "python.formatting.yapfPath": "/usr/bin/yapf3",
             "python.linting.banditPath": "/usr/bin/bandit",
             "python.linting.flake8Path": "/usr/bin/flake8",
-            "python.linting.mypyPath": "/usr/bin/mypy",
             "python.linting.pycodestylePath": "/usr/bin/pycodestyle",
             "python.linting.pydocstylePath": "/usr/bin/pydocstyle",
             "python.linting.pylintPath": "/usr/bin/pylint",

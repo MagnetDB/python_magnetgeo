@@ -665,7 +665,7 @@ pip install -r requirements.txt
 pip install -e .
 
 # Install development dependencies
-pip install pytest pytest-cov flake8 black mypy
+pip install -e ".[dev]"
 ```
 
 ### Running Tests
@@ -696,8 +696,8 @@ black python_magnetgeo/
 # Lint with flake8
 flake8 python_magnetgeo/ --max-line-length=100
 
-# Type checking with mypy
-mypy python_magnetgeo/
+# Type checking with ty
+ty check
 ```
 
 ### Building Documentation
