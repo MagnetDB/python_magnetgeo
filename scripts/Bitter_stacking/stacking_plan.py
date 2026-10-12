@@ -137,7 +137,7 @@ class Component:
     distribution: str = "normal"
 
     @classmethod
-    def from_dict(cls, name: str, d: dict, default_k: float = 3.0) -> "Component":
+    def from_dict(cls, name: str, d: dict, default_k: float = 3.0) -> Component:
         """Build a Component from a JSON dictionary entry."""
         dist = d.get("distribution", "normal")
         if dist not in _TOL_TO_SIGMA:
@@ -183,7 +183,7 @@ class StackingPlan:
     label: str
 
     @classmethod
-    def from_config(cls, cfg: dict) -> "StackingPlan":
+    def from_config(cls, cfg: dict) -> StackingPlan:
         """Build the plan from a parsed JSON configuration."""
         components = {
             name: Component.from_dict(name, d)

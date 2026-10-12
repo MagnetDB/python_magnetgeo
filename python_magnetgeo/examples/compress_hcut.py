@@ -5,8 +5,8 @@ import sys
 
 from ..Helix import Helix
 from ..ModelAxi import ModelAxi
-from ..Shape import Shape
 from ..Profile import Profile
+from ..Shape import Shape
 
 
 def main():

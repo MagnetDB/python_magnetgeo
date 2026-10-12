@@ -16,7 +16,7 @@ os.chdir("/tmp")
 ### SHAPER component
 ###
 
-from salome.shaper import model
+from salome.shaper import model  # noqa: E402
 
 model.begin()
 partSet = model.moduleDocument()
@@ -140,7 +140,7 @@ model.end()
 ###
 
 model.publishToShaperStudy()
-import SHAPERSTUDY
+import SHAPERSTUDY  # noqa: E402
 
 Face_1_1, = SHAPERSTUDY.shape(model.featureStringId(Face_1))
 Face_1_2, = SHAPERSTUDY.shape(model.featureStringId(Face_1, 1))
@@ -150,11 +150,11 @@ Face_1_4, = SHAPERSTUDY.shape(model.featureStringId(Face_1, 3))
 ### GEOM component
 ###
 
-from salome.geom import geomBuilder
+from salome.geom import geomBuilder  # noqa: E402
 
 geompy = geomBuilder.New()
 
-O = geompy.MakeVertex(0, 0, 0)
+O = geompy.MakeVertex(0, 0, 0)  # noqa: E741
 OX = geompy.MakeVectorDXDYDZ(1, 0, 0)
 OY = geompy.MakeVectorDXDYDZ(0, 1, 0)
 OZ = geompy.MakeVectorDXDYDZ(0, 0, 1)

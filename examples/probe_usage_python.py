@@ -125,13 +125,13 @@ def load_from_yaml_example():
     # This would load an Insert from YAML that contains both embedded probes
     # and string references to external probe files
 
-    yaml_content = """
+    _yaml_content = """
 name: M9_Mixed_Probes
 helices: ["H1", "H2"]
 rings: ["R1"]
 currentleads: ["inner_lead"]
 hangles: [0.0, 180.0]
-rangles: [0.0, 90.0, 180.0, 270.0]  
+rangles: [0.0, 90.0, 180.0, 270.0]
 innerbore: 12.5
 outerbore: 45.2
 probes:
@@ -141,7 +141,7 @@ probes:
     index: [1, 2, 3]
     locations:
       - [16.5, 5.2, 11.0]
-      - [20.0, -3.1, 13.5] 
+      - [20.0, -3.1, 13.5]
       - [24.8, 2.7, 16.2]
 """
 

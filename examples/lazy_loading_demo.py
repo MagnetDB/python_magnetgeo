@@ -32,14 +32,14 @@ def demo_basic_lazy_loading():
 
     # Access a class (triggers lazy import)
     start = time.time()
-    helix_class = pmg.Helix
+    _ = pmg.Helix
     helix_time = time.time() - start
 
     print(f"✓ Helix class loaded in {helix_time*1000:.2f}ms")
 
     # Second access is instant (cached)
     start = time.time()
-    helix_class2 = pmg.Helix
+    _ = pmg.Helix
     cached_time = time.time() - start
 
     print(f"✓ Helix class (cached) accessed in {cached_time*1000:.2f}ms")

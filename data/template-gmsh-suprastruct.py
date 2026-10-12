@@ -1,7 +1,8 @@
 """
 Template for Gmsh
-"""    
-from python_magnetgeo.SupraStructure in SupraStructure
+"""
+from python_magnetgeo.SupraStructure import SupraStructure
+
 
 # TODO move the template in a well defined directory (defined in config file for magnetgeo)
 def template_gmsh(struct: SupraStructure, name: str, detail: str) -> None:
@@ -15,9 +16,7 @@ def template_gmsh(struct: SupraStructure, name: str, detail: str) -> None:
 
     print("ISolations:", len(struct.isolations))
     print("=== Save to geo gmsh: NB use gmsh 4.9 or later")
-    import getpass
 
-    UserName = getpass.getuser()
 
     max_mandrin = max(struct.getMandrinPancake())
     min_r_ = min(struct.getR0Pancake_Isolation())

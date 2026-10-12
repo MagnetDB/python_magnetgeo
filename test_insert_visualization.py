@@ -8,10 +8,10 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 
-from python_magnetgeo.Insert import Insert
 from python_magnetgeo.Helix import Helix
-from python_magnetgeo.ModelAxi import ModelAxi
+from python_magnetgeo.Insert import Insert
 from python_magnetgeo.Model3D import Model3D
+from python_magnetgeo.ModelAxi import ModelAxi
 
 print("="*60)
 print("Insert Visualization Test")
@@ -102,7 +102,7 @@ print()
 
 try:
     import matplotlib.pyplot as plt
-    
+
     # Test 1: Insert with modelaxi zones
     print("Test 1: Insert with ModelAxi zones")
     ax = insert.plot_axisymmetric(
@@ -112,7 +112,7 @@ try:
     plt.savefig("test_insert_with_modelaxi.png", dpi=150, bbox_inches='tight')
     print("  ✓ Saved as test_insert_with_modelaxi.png")
     plt.close()
-    
+
     # Test 2: Insert without modelaxi zones
     print("\nTest 2: Insert without ModelAxi zones")
     ax = insert.plot_axisymmetric(
@@ -123,7 +123,7 @@ try:
     plt.savefig("test_insert_no_modelaxi.png", dpi=150, bbox_inches='tight')
     print("  ✓ Saved as test_insert_no_modelaxi.png")
     plt.close()
-    
+
     # Test 3: Insert with custom colors
     print("\nTest 3: Insert with custom helix colors")
     ax = insert.plot_axisymmetric(
@@ -135,11 +135,11 @@ try:
     plt.savefig("test_insert_custom_colors.png", dpi=150, bbox_inches='tight')
     print("  ✓ Saved as test_insert_custom_colors.png")
     plt.close()
-    
+
     print("\n" + "="*60)
     print("✓ All Insert visualization tests passed!")
     print("="*60)
-    
+
 except ImportError:
     print("! Matplotlib not installed - skipping visualization tests")
 except Exception as e:
