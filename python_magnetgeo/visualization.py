@@ -25,7 +25,7 @@ Example:
 """
 
 from abc import abstractmethod
-from typing import Any, Optional
+from typing import Any
 
 from .logging_config import get_logger
 
@@ -74,10 +74,10 @@ class VisualizableMixin:
 
     def plot_axisymmetric(
         self,
-        ax: Optional[Any] = None,
+        ax: Any | None = None,
         show_labels: bool = True,
         show_legend: bool = True,
-        title: Optional[str] = None,
+        title: str | None = None,
         figsize: tuple[float, float] = (10, 12),
         **kwargs
     ) -> Any:
@@ -174,7 +174,7 @@ class VisualizableMixin:
             title = f"{self.__class__.__name__}: {self.name}"
         elif title is None:
             title = f"{self.__class__.__name__}"
-        
+
         if title:
             ax.set_title(title, fontsize=14, fontweight='bold')
 
@@ -185,7 +185,7 @@ class VisualizableMixin:
         # Configure axes
         ax.set_xlabel('Radius r (mm)', fontsize=12)
         ax.set_ylabel('Axial Position z (mm)', fontsize=12)
-        
+
         # Set aspect ratio after plotting (when limits are established)
         ax.set_aspect('equal', adjustable='box')
         ax.grid(True, alpha=0.3, linestyle='--', linewidth=0.5)
@@ -228,11 +228,11 @@ class VisualizableMixin:
             ...     r, z = self.boundingBox()
             ...     width = r[1] - r[0]
             ...     height = z[1] - z[0]
-            ...     
+            ...
             ...     # Default styling
             ...     color = kwargs.get('color', 'steelblue')
             ...     alpha = kwargs.get('alpha', 0.6)
-            ...     
+            ...
             ...     # Create and add rectangle
             ...     rect = Rectangle(
             ...         (r[0], z[0]), width, height,
@@ -240,7 +240,7 @@ class VisualizableMixin:
             ...         edgecolor='black', linewidth=1
             ...     )
             ...     ax.add_patch(rect)
-            ...     
+            ...
             ...     # Add label if requested
             ...     if show_labels:
             ...         ax.text(

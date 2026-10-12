@@ -4,14 +4,15 @@ Fixed test suite for Insert class - Phase 4 validation
 Corrects the YAML round-trip test to avoid FileNotFoundError with string references
 """
 
-import os
 import json
-from python_magnetgeo.Insert import Insert
+import os
+
 from python_magnetgeo.Helix import Helix
-from python_magnetgeo.Ring import Ring
 from python_magnetgeo.InnerCurrentLead import InnerCurrentLead
+from python_magnetgeo.Insert import Insert
 from python_magnetgeo.OuterCurrentLead import OuterCurrentLead
 from python_magnetgeo.Probe import Probe
+from python_magnetgeo.Ring import Ring
 from python_magnetgeo.validation import ValidationError
 
 

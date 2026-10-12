@@ -1,12 +1,15 @@
-# API Breaking Changes - python_magnetgeo v1.0.0
+# API Breaking Changes - python_magnetgeo
 
 ## Overview
 
-This document details all API breaking changes introduced in version 1.0.0 compared to previous versions (0.3.x - 0.7.x). **No backward compatibility is provided.**
+This document details all API breaking changes introduced across versions. **No backward compatibility is provided.**
 
 ## Version History Summary
 
-### v1.0.0 (Current) - Major Architectural Overhaul
+### v1.0.1 (Current)
+- **`Chamfer` constructor**: parameter `l` renamed to `length` (see [v1.0.0 → v1.0.1](#v100--v101))
+
+### v1.0.0 - Major Architectural Overhaul
 - Complete rewrite with base class architecture
 - Enhanced type safety and validation system
 - **New Profile class** for bump profile management
@@ -40,6 +43,68 @@ This document details all API breaking changes introduced in version 1.0.0 compa
 - Original API design
 
 ---
+
+## v1.0.0 → v1.0.1
+
+### Chamfer: parameter `l` renamed to `length`
+
+The `l` parameter of `Chamfer.__init__` was renamed to `length` to resolve the
+E741 linting error (ambiguous variable name).
+
+**Old:**
+```python
+Chamfer(name, side, rside, alpha=None, dr=None, l=None)
+```
+
+**New:**
+```python
+Chamfer(name, side, rside, alpha=None, dr=None, length=None)
+```
+
+**Migration — update any call that passes `l` as a keyword argument:**
+```python
+# Before
+chamfer = Chamfer("c1", "HP", "rext", alpha=45.0, l=10.0)
+
+# After
+chamfer = Chamfer("c1", "HP", "rext", alpha=45.0, length=10.0)
+```
+
+Positional calls (`Chamfer("c1", "HP", "rext", 45.0, None, 10.0)`) are
+unaffected. The YAML/JSON serialization key also changes from `"l"` to `"length"`.
+
+**YAML migration:**
+```yaml
+# Before
+!<Chamfer>
+name: c1
+side: HP
+rside: rext
+alpha: 45.0
+l: 10.0
+
+# After
+!<Chamfer>
+name: c1
+side: HP
+rside: rext
+alpha: 45.0
+length: 10.0
+```
+
+A helper script is provided to automate the YAML migration:
+
+```bash
+# Preview (no files written)
+python examples/migrate_chamfer_l_to_length.py --dry-run path/to/yaml/dir/
+
+# Apply
+python examples/migrate_chamfer_l_to_length.py path/to/yaml/dir/
+```
+
+---
+
+## v1.0.0 Breaking Changes
 
 ## 1. YAML Format Changes
 
@@ -153,11 +218,10 @@ name: "HL-31_H1"
 axi:
   name: "HL-31.d"
   h: 86.51
-  turns: [2, 16, 2]
-  pitch: [...]
-m3d:
-  cad: "HL-31_3D"
   ...
+m3d:
+  ...
+shape:
 ```
 
 **New Format (v1.0.0):**
@@ -167,12 +231,24 @@ name: "HL-31_H1"
 modelaxi: !<ModelAxi>
   name: "HL-31.d"
   h: 86.51
-  turns: [2, 16, 2]
-  pitch: [...]
 model3d: !<Model3D>
-  cad: "HL-31_3D"
-  ...
+    ...
+shape: !<Shape>
+    ...
+
 ```
+
+#### Complete Field Name Migration History
+
+| Field (v0.5.x) | Field (v0.7.0) | Field (v1.0.0) | Status in v1.0.0 |
+|----------------|----------------|----------------|------------------|
+| `axi` | `modelaxi` | `modelaxi` | ✓ Required |
+| `m3d` | `model3d` | `model3d` | ✓ Required |
+| `shape` | `shape` | `shape` | ✓ Required |
+
+**Migration Notes:**
+- **v0.5.x → v0.7.0**: Rename field names
+- **v0.7.0 → v1.0.0**: Use nested objects with explicit type annotations
 
 **Breaking Changes:**
 - Nested objects require explicit type annotations

@@ -4,9 +4,10 @@ Test script for refactored Supra and Supras classes.
 Follows the pattern from test-refactor-ring.py.
 """
 
-import os
 import json
+import os
 import tempfile
+
 from python_magnetgeo.Supra import Supra
 from python_magnetgeo.Supras import Supras
 from python_magnetgeo.validation import ValidationError
@@ -76,7 +77,7 @@ def test_supra_basic_functionality():
 
     minimal_supra = Supra.from_dict(minimal_dict)
     assert minimal_supra.n == 0, "Default n should be 0"
-    assert minimal_supra.struct == None, "Default struct should be empty"
+    assert minimal_supra.struct is None, "Default struct should be empty"
 
     print("✓ Default values work correctly")
 
@@ -92,35 +93,35 @@ def test_supra_validation():
     # Test validation: empty name
     try:
         Supra(name="", r=[20.0, 30.0], z=[10.0, 80.0], n=5, struct="")
-        assert False, "Should have raised ValidationError for empty name"
+        raise AssertionError("Should have raised ValidationError for empty name")
     except ValidationError as e:
         print(f"✓ Empty name validation: {e}")
 
     # Test validation: invalid radial bounds (r[0] > r[1])
     try:
         Supra(name="bad_supra", r=[30.0, 20.0], z=[10.0, 80.0], n=5, struct="")
-        assert False, "Should have raised ValidationError for invalid r"
+        raise AssertionError("Should have raised ValidationError for invalid r")
     except ValidationError as e:
         print(f"✓ Radial bounds validation: {e}")
 
     # Test validation: invalid axial bounds (z[0] > z[1])
     try:
         Supra(name="bad_supra", r=[20.0, 30.0], z=[80.0, 10.0], n=5, struct="")
-        assert False, "Should have raised ValidationError for invalid z"
+        raise AssertionError("Should have raised ValidationError for invalid z")
     except ValidationError as e:
         print(f"✓ Axial bounds validation: {e}")
 
     # Test validation: wrong list length for r
     try:
         Supra(name="bad_supra", r=[20.0], z=[10.0, 80.0], n=5, struct="")
-        assert False, "Should have raised ValidationError for wrong r length"
+        raise AssertionError("Should have raised ValidationError for wrong r length")
     except ValidationError as e:
         print(f"✓ Radial list length validation: {e}")
 
     # Test validation: wrong list length for z
     try:
         Supra(name="bad_supra", r=[20.0, 30.0], z=[10.0], n=5, struct="")
-        assert False, "Should have raised ValidationError for wrong z length"
+        raise AssertionError("Should have raised ValidationError for wrong z length")
     except ValidationError as e:
         print(f"✓ Axial list length validation: {e}")
 
@@ -266,7 +267,7 @@ def test_supras_validation():
     # Test empty name
     try:
         Supras(name="", magnets=[supra], innerbore=18.0, outerbore=32.0)
-        assert False, "Should have raised ValidationError for empty name"
+        raise AssertionError("Should have raised ValidationError for empty name")
     except ValidationError as e:
         print(f"✓ Empty name validation: {e}")
 

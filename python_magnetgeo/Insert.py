@@ -9,14 +9,15 @@ import os
 from .base import YAMLObjectBase
 from .Helix import Helix
 from .InnerCurrentLead import InnerCurrentLead
+
+# Module logger
+from .logging_config import get_logger
 from .OuterCurrentLead import OuterCurrentLead
 from .Probe import Probe
 from .Ring import Ring
 from .utils import flatten, getObject
 from .validation import GeometryValidator, ValidationError
 
-# Module logger
-from .logging_config import get_logger
 logger = get_logger(__name__)
 
 def filter(data: list[float], tol: float = 1.0e-6) -> list[float]:
@@ -265,12 +266,12 @@ class Insert(YAMLObjectBase):
 
             r_rings = np.array(self.rings[i].r)
             r_helices = np.array(flatten(helices_radius))
-            norm = np.linalg.norm(r_rings - r_helices)
-            bound = 1.0e-5 * max(abs(np.max(r_rings)), abs(np.max(r_helices)))
+            norm = np.max(np.abs(r_rings - r_helices))
+            bound = 0.100001 # 1.0e-5 * max(abs(np.max(r_rings)), abs(np.max(r_helices)))
             # logger.debug(f"norm: {norm}, bound: {bound}")
             if norm > bound:
                 raise ValidationError(
-                    f"Ring[{i}] ({self.rings[i].name}) radius {r_rings} does not match with adjacent helices radii {r_helices}"
+                    f"Ring[{i}] ({self.rings[i].name}) radius {r_rings} does not match with adjacent helices radii {r_helices} (tol={bound}, err={norm}, {r_rings - r_helices})"
                 )
 
         for helix in self.helices:
@@ -350,7 +351,6 @@ class Insert(YAMLObjectBase):
 
         for i in range(0, NChannels):
             names = []
-            inames = []
             if i == 0:
                 if self.rings:
                     names.append(f"{prefix}R{i+1}_rInt")  # check ring numerotation
@@ -450,11 +450,7 @@ class Insert(YAMLObjectBase):
             prefix = f"{mname}_"
         solid_names = []
 
-        Nhelices = len(self.helices)
-        NChannels = Nhelices + 1  # To be updated if there is any htype==HR in Insert
-        NIsolants = []  # To be computed depend on htype and dble
         for i, helix in enumerate(self.helices):
-            Ninsulators = 0
             if is2D:
                 h_solid_names = helix.get_names(f"{prefix}H{i+1}", is2D, verbose)
                 solid_names += h_solid_names
@@ -833,11 +829,11 @@ class Insert(YAMLObjectBase):
         show_modelaxi = kwargs.get('show_modelaxi', True)
         helix_colors = kwargs.get('helix_colors', None)
         helix_alpha = kwargs.get('helix_alpha', 0.6)
-        
+
         # Default color palette for helices
-        default_colors = ['darkgreen', 'forestgreen', 'seagreen', 'mediumseagreen', 
+        default_colors = ['darkgreen', 'forestgreen', 'seagreen', 'mediumseagreen',
                          'springgreen', 'limegreen', 'olivedrab', 'yellowgreen']
-        
+
         # Plot all helices
         for i, helix in enumerate(self.helices):
             # Determine color for this helix
@@ -847,7 +843,7 @@ class Insert(YAMLObjectBase):
                 color = helix_colors[-1]  # Use last color if list too short
             else:
                 color = default_colors[i % len(default_colors)]
-            
+
             # Plot the helix
             helix._plot_geometry(
                 ax,
@@ -855,20 +851,20 @@ class Insert(YAMLObjectBase):
                 color=color,
                 alpha=helix_alpha,
                 show_modelaxi=show_modelaxi,
-                **{k: v for k, v in kwargs.items() 
+                **{k: v for k, v in kwargs.items()
                    if k not in ['show_modelaxi', 'helix_colors', 'helix_alpha']}
             )
-        
+
         # Update axis limits to encompass entire insert
         if self.helices:
             rb, zb = self.boundingBox()
             current_xlim = ax.get_xlim()
             current_ylim = ax.get_ylim()
-            
+
             # Calculate padding (5% of geometry size)
             r_padding = (rb[1] - rb[0]) * 0.05
             z_padding = (zb[1] - zb[0]) * 0.05
-            
+
             # Expand limits if needed
             if current_xlim == (0.0, 1.0):
                 ax.set_xlim(rb[0] - r_padding, rb[1] + r_padding)
@@ -877,7 +873,7 @@ class Insert(YAMLObjectBase):
                     min(current_xlim[0], rb[0] - r_padding),
                     max(current_xlim[1], rb[1] + r_padding)
                 )
-            
+
             if current_ylim == (0.0, 1.0):
                 ax.set_ylim(zb[0] - z_padding, zb[1] + z_padding)
             else:

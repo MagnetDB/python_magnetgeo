@@ -3,10 +3,12 @@
 Fixed test script for refactored Ring
 """
 
-import os
 import json
+import os
 import tempfile
+
 from python_magnetgeo.Ring import Ring
+
 
 def test_refactored_ring_functionality():
     """Test that refactored Ring has identical functionality"""
@@ -75,13 +77,13 @@ def test_refactored_ring_functionality():
     # Test validation
     try:
         Ring(name="", r=[1.0, 2.0, 3.0, 4.0], z=[0.0, 1.0])
-        assert False, "Should have raised ValidationError for empty name"
+        raise AssertionError("Should have raised ValidationError for empty name")
     except Exception as e:
         print(f"✓ Validation works: {e}")
 
     try:
         Ring(name="bad_ring", r=[2.0, 1.0, 3.0, 4.0], z=[0.0, 1.0])  # inner > outer
-        assert False, "Should have raised ValidationError for bad radii"
+        raise AssertionError("Should have raised ValidationError for bad radii")
     except Exception as e:
         print(f"✓ Validation works: {e}")
 

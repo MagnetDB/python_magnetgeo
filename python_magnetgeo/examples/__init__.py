@@ -1,8 +1,7 @@
 """
-Example scripts for python_magnetgeo.
+CLI helper scripts for python_magnetgeo.
 
-This package contains utility scripts that demonstrate usage of the library
-and provide command-line tools for common operations.
+This subpackage hosts the entry points declared in [project.scripts]
+(pyproject.toml): check-magnetgeo-yaml, load-profile-from-dat,
+split-helix-yaml, compress-hcut.
 """
-
-__all__ = ["load_profile_from_dat", "split_helix_yaml"]

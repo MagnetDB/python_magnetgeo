@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding:utf-8 -*-
 
 """
 Script to split an Helix YAML file into separate files for modelaxi and shape objects.
@@ -20,13 +19,12 @@ Example:
     python split_helix_yaml.py data/HL-31_H1.yaml
 """
 
-import sys
-import yaml
+import argparse
 import json
 import os
-import argparse
-import python_magnetgeo as pmg
+import sys
 
+import python_magnetgeo as pmg
 from python_magnetgeo.logging_config import get_logger
 
 # Get logger for this module

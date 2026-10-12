@@ -15,19 +15,20 @@ and validation framework. This test validates:
 9. Get methods and operations
 """
 
-import os
 import json
+import os
 import tempfile
-from python_magnetgeo.MSite import MSite
-from python_magnetgeo.Insert import Insert
-from python_magnetgeo.Supras import Supras
-from python_magnetgeo.Supra import Supra
+
 from python_magnetgeo.Helix import Helix
-from python_magnetgeo.Screen import Screen
-from python_magnetgeo.ModelAxi import ModelAxi
+from python_magnetgeo.Insert import Insert
 from python_magnetgeo.Model3D import Model3D
-from python_magnetgeo.Shape import Shape
+from python_magnetgeo.ModelAxi import ModelAxi
+from python_magnetgeo.MSite import MSite
 from python_magnetgeo.Profile import Profile
+from python_magnetgeo.Screen import Screen
+from python_magnetgeo.Shape import Shape
+from python_magnetgeo.Supra import Supra
+from python_magnetgeo.Supras import Supras
 from python_magnetgeo.validation import ValidationError
 
 
@@ -196,7 +197,7 @@ def test_validation():
     try:
         MSite(name="", magnets=[insert], screens=None,
               z_offset=None, r_offset=None, paralax=None)
-        assert False, "Should have raised ValidationError for empty name"
+        raise AssertionError("Should have raised ValidationError for empty name")
     except (ValidationError, ValueError) as e:
         print(f"✓ Name validation works: {e}")
 
@@ -204,7 +205,7 @@ def test_validation():
     try:
         MSite(name=None, magnets=[insert], screens=None,
               z_offset=None, r_offset=None, paralax=None)
-        assert False, "Should have raised ValidationError for None name"
+        raise AssertionError("Should have raised ValidationError for None name")
     except (ValidationError, ValueError, TypeError) as e:
         print(f"✓ Name validation works for None: {e}")
 

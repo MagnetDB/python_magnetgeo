@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding:utf-8 -*-
 
 """
 Demonstration of lazy loading in python_magnetgeo.
@@ -14,7 +13,6 @@ Usage:
     python lazy_loading_demo.py
 """
 
-import sys
 import time
 
 

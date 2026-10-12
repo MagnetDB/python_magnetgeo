@@ -7,13 +7,13 @@ Usage:
     python test_refactor_supras.py
 """
 
-import os
 import json
+import os
 import tempfile
-from python_magnetgeo.Supras import Supras
-from python_magnetgeo.Supra import Supra
+
 from python_magnetgeo.Probe import Probe
-from python_magnetgeo.Supra import DetailLevel
+from python_magnetgeo.Supra import DetailLevel, Supra
+from python_magnetgeo.Supras import Supras
 from python_magnetgeo.validation import ValidationError
 
 
@@ -275,21 +275,21 @@ def test_supras_validation():
     # Test 1: Empty name
     try:
         Supras(name="", magnets=[supra], innerbore=18.0, outerbore=32.0)
-        assert False, "Should have raised ValidationError for empty name"
+        raise AssertionError("Should have raised ValidationError for empty name")
     except ValidationError as e:
         print(f"✓ Empty name validation: {e}")
 
     # Test 2: Invalid bore dimensions (inner >= outer)
     try:
         Supras(name="bad_supras", magnets=[supra], innerbore=32.0, outerbore=18.0)
-        assert False, "Should have raised ValidationError for invalid bores"
+        raise AssertionError("Should have raised ValidationError for invalid bores")
     except ValidationError as e:
         print(f"✓ Bore dimensions validation: {e}")
 
     # Test 3: Equal bore dimensions
     try:
         Supras(name="bad_supras", magnets=[supra], innerbore=25.0, outerbore=25.0)
-        assert False, "Should have raised ValidationError for equal bores"
+        raise AssertionError("Should have raised ValidationError for equal bores")
     except ValidationError as e:
         print(f"✓ Equal bore validation: {e}")
 

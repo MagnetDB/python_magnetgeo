@@ -13,11 +13,11 @@ import os
 
 from .base import YAMLObjectBase
 from .coolingslit import CoolingSlit
+from .logging_config import get_logger
 from .ModelAxi import ModelAxi
 from .tierod import Tierod
 from .validation import GeometryValidator, ValidationError
 
-from .logging_config import get_logger
 logger = get_logger(__name__)
 
 class Bitter(YAMLObjectBase):

@@ -6,10 +6,11 @@ Similar to test_refactor_ring.py approach - focused on core functionality.
 Tests that the migrated Bitters collection class works correctly with the new base classes.
 """
 
-import os
 import json
-from python_magnetgeo.Bitters import Bitters
+import os
+
 from python_magnetgeo.Bitter import Bitter
+from python_magnetgeo.Bitters import Bitters
 from python_magnetgeo.validation import ValidationError
 
 
@@ -97,15 +98,15 @@ def test_refactored_bitters_functionality():
     print("✓ boundingBox works")
 
     # Test intersect
-    assert bitters.intersect([0.12, 0.14], [-0.02, 0.02]) == True
-    assert bitters.intersect([0.20, 0.25], [0.0, 0.1]) == False
+    assert bitters.intersect([0.12, 0.14], [-0.02, 0.02])
+    assert not bitters.intersect([0.20, 0.25], [0.0, 0.1])
 
     print("✓ intersect works")
 
     # Test validation
     try:
         Bitters(name="", magnets=[], innerbore=0.1, outerbore=0.2)
-        assert False, "Should have raised ValidationError for empty name"
+        raise AssertionError("Should have raised ValidationError for empty name")
     except ValidationError as e:
         print(f"✓ Validation works: {e}")
 

@@ -1,9 +1,8 @@
 # Python Magnet Geometry
 
 <!-- [![PyPI version](https://img.shields.io/pypi/v/python_magnetgeo.svg)](https://pypi.python.org/pypi/python_magnetgeo)
-[![Build Status](https://img.shields.io/travis/Trophime/python_magnetgeo.svg)](https://travis-ci.com/Trophime/python_magnetgeo)
 [![Documentation Status](https://readthedocs.org/projects/python-magnetgeo/badge/?version=latest)](https://python-magnetgeo.readthedocs.io/en/latest/?version=latest)
-[![Updates](https://pyup.io/repos/github/Trophime/python_magnetgeo/shield.svg)](https://pyup.io/repos/github/Trophime/python_magnetgeo/)
+[![Updates](https://pyup.io/repos/github/MagnetDB/python_magnetgeo/shield.svg)](https://pyup.io/repos/github/MagnetDB/python_magnetgeo/)
  -->
 Python Magnet Geometry contains magnet geometrical models for high-field magnet design and simulation.
 
@@ -41,7 +40,7 @@ poetry add python_magnetgeo@^1.0.0
 ### Development installation
 
 ```bash
-git clone https://github.com/Trophime/python_magnetgeo.git
+git clone https://github.com/MagnetDB/python_magnetgeo.git
 cd python_magnetgeo
 git checkout v1.0.0
 python -m venv --system-site-packages magnetgeo-env
@@ -487,7 +486,7 @@ python -m python_magnetgeo.xao HL-31-Axi.xao mesh --group CoolingChannels --geo 
    - Enum types (e.g., `ShapePosition`)
    - Automatic YAML constructor registration
 
-**See [BREAKING_CHANGES.md](BREAKING_CHANGES.md) for complete migration guide and migration scripts.**
+**See [BREAKING_CHANGES.md](https://github.com/MagnetDB/python_magnetgeo/blob/main/BREAKING_CHANGES.md) for complete migration guide and migration scripts.**
 
 ### Version History
 
@@ -530,7 +529,7 @@ python -m python_magnetgeo.xao HL-31-Axi.xao mesh --group CoolingChannels --geo 
 
 ### Quick Assessment: Which Version Are You Using?
 
-```python
+```yaml
 # Check your YAML files
 # If they look like this, you're on v0.5.x or earlier:
 name: "HL-31"
@@ -578,7 +577,7 @@ except ValidationError as e:
 
 ### Migration Path 2: From v0.5.x (or earlier) to v1.0.0
 
-Use the provided migration scripts in [BREAKING_CHANGES.md](BREAKING_CHANGES.md):
+Use the provided migration scripts in [BREAKING_CHANGES.md](https://github.com/MagnetDB/python_magnetgeo/blob/main/BREAKING_CHANGES.md):
 
 ```bash
 # Migrate a single YAML file
@@ -1476,7 +1475,7 @@ When reporting issues, please include:
 
 ## License
 
-MIT License - see [LICENSE](LICENSE) file for details.
+MIT License - see [LICENSE](https://github.com/Trophime/python_magnetgeo/blob/main/LICENSE) file for details.
 
 ## Documentation
 
@@ -1563,4 +1562,4 @@ If you use python_magnetgeo in your research, please cite:
 
 ---
 
-**Version 1.0.0** | Released: 2025 | [Changelog](CHANGELOG.md) | [Breaking Changes](BREAKING_CHANGES.md)
+**Version 1.0.0** | Released: 2025 | [Changelog](https://github.com/MagnetDB/python_magnetgeo/blob/main/HISTORY.md) | [Breaking Changes](https://github.com/MagnetDB/python_magnetgeo/blob/main/BREAKING_CHANGES.md)

@@ -6,10 +6,11 @@ Tests that the refactored classes work correctly with the new base classes
 and validation framework, following the spirit of test-refactor-ring.py
 """
 
-import os
 import json
-import tempfile
 import math
+import os
+import tempfile
+
 from python_magnetgeo.Chamfer import Chamfer
 from python_magnetgeo.Groove import Groove
 from python_magnetgeo.ModelAxi import ModelAxi
@@ -24,14 +25,14 @@ def test_refactored_chamfer():
 
     # Test basic creation with alpha
     chamfer_alpha = Chamfer(
-        name="test_chamfer_alpha", side="HP", rside="rint", alpha=30.0, dr=None, l=10.0
+        name="test_chamfer_alpha", side="HP", rside="rint", alpha=30.0, dr=None, length=10.0
     )
 
     print(f"✓ Chamfer (alpha) created: {chamfer_alpha}")
 
     # Test basic creation with dr
     chamfer_dr = Chamfer(
-        name="test_chamfer_dr", side="BP", rside="rext", alpha=None, dr=5.0, l=10.0
+        name="test_chamfer_dr", side="BP", rside="rext", alpha=None, dr=5.0, length=10.0
     )
 
     print(f"✓ Chamfer (dr) created: {chamfer_dr}")
@@ -53,7 +54,7 @@ def test_refactored_chamfer():
     assert parsed["side"] == "HP"
     assert parsed["rside"] == "rint"
     assert parsed["alpha"] == 30.0
-    assert parsed["l"] == 10.0
+    assert parsed["length"] == 10.0
     assert parsed["__classname__"] == "Chamfer"
 
     print("✓ JSON serialization works")
@@ -64,7 +65,7 @@ def test_refactored_chamfer():
         "side": "HP",
         "rside": "rint",
         "alpha": 45.0,
-        "l": 15.0,
+        "length": 15.0,
     }
 
     dict_chamfer = Chamfer.from_dict(dict_alpha)
@@ -75,7 +76,7 @@ def test_refactored_chamfer():
     print("✓ from_dict works (alpha)")
 
     # Test from_dict with dr
-    dict_dr = {"name": "dict_chamfer_dr", "side": "BP", "rside": "rext", "dr": 7.5, "l": 20.0}
+    dict_dr = {"name": "dict_chamfer_dr", "side": "BP", "rside": "rext", "dr": 7.5, "length": 20.0}
 
     dict_chamfer_dr = Chamfer.from_dict(dict_dr)
     assert dict_chamfer_dr.name == "dict_chamfer_dr"
@@ -208,8 +209,8 @@ def test_refactored_modelaxi():
 
     # Test default constructor
     try:
-        empty_modelaxi = ModelAxi()
-        assert False, "Should have raised ValidationError for empty name"
+        ModelAxi()
+        raise AssertionError("Should have raised ValidationError for empty name")
     except ValidationError as e:
         print(f"✓ Empty name validation: {e}")
 
@@ -296,7 +297,7 @@ def test_cross_class_integration():
 
     # Create instances of all three classes
     chamfer = Chamfer(
-        name="integration_chamfer", side="HP", rside="rint", alpha=45.0, dr=None, l=10.0
+        name="integration_chamfer", side="HP", rside="rint", alpha=45.0, dr=None, length=10.0
     )
 
     groove = Groove(name="integration_groove", gtype="rint", n=4, eps=2.0)
@@ -339,19 +340,19 @@ def test_validation_edge_cases():
 
     # Chamfer: Test that getDr() fails when neither alpha nor dr is set
     chamfer_no_params = Chamfer(
-        name="invalid_chamfer", side="HP", rside="rint", alpha=None, dr=None, l=10.0
+        name="invalid_chamfer", side="HP", rside="rint", alpha=None, dr=None, length=10.0
     )
 
     try:
         chamfer_no_params.getDr()
-        assert False, "Should have raised ValueError"
+        raise AssertionError("Should have raised ValueError")
     except ValueError as e:
         print(f"✓ Chamfer validation works: {e}")
 
     # Test that getAngle() fails when neither alpha nor dr is set
     try:
         chamfer_no_params.getAngle()
-        assert False, "Should have raised ValueError"
+        raise AssertionError("Should have raised ValueError")
     except ValueError as e:
         print(f"✓ Chamfer validation works: {e}")
 

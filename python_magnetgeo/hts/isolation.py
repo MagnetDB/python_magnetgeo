@@ -13,7 +13,11 @@ class isolation:
     h: heights of the different layers
     """
 
-    def __init__(self, r0: float = 0, w: list = [], h: list = []):
+    def __init__(self, r0: float = 0, w: list | None = None, h: list | None = None):
+        if w is None:
+            w = []
+        if h is None:
+            h = []
         self.r0 = r0
         self.w = w
         self.h = h
