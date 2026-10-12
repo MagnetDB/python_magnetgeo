@@ -82,16 +82,16 @@ Ready to contribute? Here\'s how to set up
     Now you can make your changes locally.
 
 5.  When you\'re done making changes, check that your changes pass
-    flake8 and the tests, including testing other Python versions with
-    tox:
+    the static checks (ruff, bandit, ty) and the tests:
 
     ``` shell
-    $ flake8 python_magnetgeo tests
-    $ python setup.py test or pytest
-    $ tox
+    $ make check
+    $ pytest
     ```
 
-    To get flake8 and tox, just pip install them into your virtualenv.
+    To get these tools, install the development extras into your
+    virtualenv: `pip install -e ".[dev]"`. Other Python versions are
+    tested by CI.
 
 6.  Commit your changes and push your branch to GitHub:
 
