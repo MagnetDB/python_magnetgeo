@@ -407,20 +407,38 @@ class Helix(YAMLObjectBase):
             else:
                 return
 
+            import shlex
+            import subprocess
+
+            # argv list (no shell) so YAML-provided values cannot inject shell commands
             if self.get_type() == "HL":
                 angles = " ".join(f"{t:4.2f}" for t in self.shape.angle if t != 0)
-                cmd = f'add_shape --angle="{angles}" --shape_angular_length={self.shape.length} --shape={shape_profile} --format={format} --position="{self.shape.position}" {self.name}'
-                logger.info(f"create_cut: HL with_shapes - run {cmd}")
+                cmd = [
+                    "add_shape",
+                    f"--angle={angles}",
+                    f"--shape_angular_length={self.shape.length}",
+                    f"--shape={shape_profile}",
+                    f"--format={format}",
+                    f"--position={self.shape.position}",
+                    self.name,
+                ]
+                logger.info(f"create_cut: HL with_shapes - run {shlex.join(cmd)}")
             else:
                 angles = " ".join(f"{t:4.2f}" for t in self.shape.angle if t != 0)
-                cmd = f'add_shape --angle="{angles[0]}" --shape_angular_length={self.shape.length[0]} --shape={shape_profile} --format={format} --position="{self.shape.position}" {self.name}'
-                logger.info(f"create_cut: HR with_shapes - run {cmd}")
+                cmd = [
+                    "add_shape",
+                    f"--angle={angles[0]}",
+                    f"--shape_angular_length={self.shape.length[0]}",
+                    f"--shape={shape_profile}",
+                    f"--format={format}",
+                    f"--position={self.shape.position}",
+                    self.name,
+                ]
+                logger.info(f"create_cut: HR with_shapes - run {shlex.join(cmd)}")
             try:
-                import subprocess
-
-                result = subprocess.run(
+                # add_shape is resolved from PATH by design
+                result = subprocess.run(  # nosec B603
                     cmd,
-                    shell=True,
                     check=True,
                     input=stdin_data,
                     text=True,
