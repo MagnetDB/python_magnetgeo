@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """
-Phase 4 test for refactored MSite class - validation following test-refactor-ring.py pattern
+Phase 4 test for refactored Assembly class - validation following test-refactor-ring.py pattern
 
-Tests that the migrated MSite class works correctly with the new base classes
+Tests that the migrated Assembly class works correctly with the new base classes
 and validation framework. This test validates:
-1. Basic MSite creation and initialization
+1. Basic Assembly creation and initialization
 2. All inherited serialization methods
 3. JSON serialization/deserialization
 4. from_dict functionality
@@ -23,7 +23,7 @@ from python_magnetgeo.Helix import Helix
 from python_magnetgeo.Insert import Insert
 from python_magnetgeo.Model3D import Model3D
 from python_magnetgeo.ModelAxi import ModelAxi
-from python_magnetgeo.MSite import MSite
+from python_magnetgeo.Assembly import Assembly
 from python_magnetgeo.Profile import Profile
 from python_magnetgeo.Screen import Screen
 from python_magnetgeo.Shape import Shape
@@ -84,15 +84,15 @@ def create_sample_supras():
     return supras
 
 
-def test_basic_msite_creation():
-    """Test basic MSite creation with minimal parameters"""
-    print("Testing basic MSite creation...")
+def test_basic_assembly_creation():
+    """Test basic Assembly creation with minimal parameters"""
+    print("Testing basic Assembly creation...")
 
     insert = create_sample_insert()
 
-    # Create minimal MSite
-    msite = MSite(
-        name="minimal_msite",
+    # Create minimal Assembly
+    assembly = Assembly(
+        name="minimal_assembly",
         magnets=[insert],
         screens=None,
         z_offset=None,
@@ -100,14 +100,14 @@ def test_basic_msite_creation():
         paralax=None
     )
 
-    assert msite.name == "minimal_msite"
-    assert len(msite.magnets) == 1
-    assert msite.screens == []
-    assert msite.z_offset is None
-    assert msite.r_offset is None
-    assert msite.paralax is None
+    assert assembly.name == "minimal_assembly"
+    assert len(assembly.magnets) == 1
+    assert assembly.screens == []
+    assert assembly.z_offset is None
+    assert assembly.r_offset is None
+    assert assembly.paralax is None
 
-    print(f"✓ Basic MSite created: {msite}")
+    print(f"✓ Basic Assembly created: {assembly}")
 
 
 def test_inherited_methods():
@@ -115,15 +115,15 @@ def test_inherited_methods():
     print("Testing inherited serialization methods...")
 
     insert = create_sample_insert()
-    msite = MSite("test_msite", [insert], None, None, None, None)
+    assembly = Assembly("test_assembly", [insert], None, None, None, None)
 
     # Check all inherited methods exist
-    assert hasattr(msite, 'write_to_yaml')
-    assert hasattr(msite, 'to_json')
-    assert hasattr(msite, 'write_to_json')
-    assert hasattr(MSite, 'from_yaml')
-    assert hasattr(MSite, 'from_json')
-    assert hasattr(MSite, 'from_dict')
+    assert hasattr(assembly, 'write_to_yaml')
+    assert hasattr(assembly, 'to_json')
+    assert hasattr(assembly, 'write_to_json')
+    assert hasattr(Assembly, 'from_yaml')
+    assert hasattr(Assembly, 'from_json')
+    assert hasattr(Assembly, 'from_dict')
 
     print("✓ All serialization methods inherited correctly")
 
@@ -133,14 +133,14 @@ def test_json_serialization():
     print("Testing JSON serialization...")
 
     insert = create_sample_insert()
-    msite = MSite("json_msite", [insert], None, None, None, None)
+    assembly = Assembly("json_assembly", [insert], None, None, None, None)
 
     # Test to_json
-    json_str = msite.to_json()
+    json_str = assembly.to_json()
     parsed = json.loads(json_str)
 
-    assert parsed['name'] == 'json_msite'
-    assert parsed['__classname__'] == 'MSite'
+    assert parsed['name'] == 'json_assembly'
+    assert parsed['__classname__'] == 'Assembly'
     assert 'magnets' in parsed
     assert len(parsed['magnets']) == 1
 
@@ -151,11 +151,11 @@ def test_json_serialization():
         json_file = f.name
 
     try:
-        msite.write_to_json(json_file)
-        loaded_msite = MSite.from_json(json_file)
+        assembly.write_to_json(json_file)
+        loaded_assembly = Assembly.from_json(json_file)
 
-        assert loaded_msite.name == msite.name
-        assert len(loaded_msite.magnets) == len(msite.magnets)
+        assert loaded_assembly.name == assembly.name
+        assert len(loaded_assembly.magnets) == len(assembly.magnets)
 
         print("✓ JSON round-trip works correctly")
     finally:
@@ -170,7 +170,7 @@ def test_from_dict():
     # Note: from_dict with complex nested objects is challenging
     # Test with minimal dict structure
     test_dict = {
-        'name': 'dict_msite',
+        'name': 'dict_assembly',
         'magnets': [],  # Empty for now
         'screens': None,
         'z_offset': [0.0, 10.0],
@@ -178,11 +178,11 @@ def test_from_dict():
         'paralax': [0.0, 0.0]
     }
 
-    msite = MSite.from_dict(test_dict)
-    assert msite.name == 'dict_msite'
-    assert msite.magnets == []
-    assert msite.z_offset == [0.0, 10.0]
-    assert msite.r_offset == [5.0, 15.0]
+    assembly = Assembly.from_dict(test_dict)
+    assert assembly.name == 'dict_assembly'
+    assert assembly.magnets == []
+    assert assembly.z_offset == [0.0, 10.0]
+    assert assembly.r_offset == [5.0, 15.0]
 
     print("✓ from_dict works correctly")
 
@@ -195,7 +195,7 @@ def test_validation():
 
     # Test empty name validation
     try:
-        MSite(name="", magnets=[insert], screens=None,
+        Assembly(name="", magnets=[insert], screens=None,
               z_offset=None, r_offset=None, paralax=None)
         raise AssertionError("Should have raised ValidationError for empty name")
     except (ValidationError, ValueError) as e:
@@ -203,22 +203,22 @@ def test_validation():
 
     # Test None name validation
     try:
-        MSite(name=None, magnets=[insert], screens=None,
+        Assembly(name=None, magnets=[insert], screens=None,
               z_offset=None, r_offset=None, paralax=None)
         raise AssertionError("Should have raised ValidationError for None name")
     except (ValidationError, ValueError, TypeError) as e:
         print(f"✓ Name validation works for None: {e}")
 
 
-def test_complex_msite_with_multiple_magnets():
-    """Test MSite with multiple magnet types"""
-    print("Testing complex MSite with multiple magnets...")
+def test_complex_assembly_with_multiple_magnets():
+    """Test Assembly with multiple magnet types"""
+    print("Testing complex Assembly with multiple magnets...")
 
     insert = create_sample_insert()
     supras = create_sample_supras()
 
-    msite = MSite(
-        name="complex_msite",
+    assembly = Assembly(
+        name="complex_assembly",
         magnets=[insert, supras],
         screens=None,
         z_offset=[0.0, 65.0],
@@ -226,21 +226,21 @@ def test_complex_msite_with_multiple_magnets():
         paralax=[0.0, 0.0]
     )
 
-    assert len(msite.magnets) == 2
-    assert msite.z_offset == [0.0, 65.0]
+    assert len(assembly.magnets) == 2
+    assert assembly.z_offset == [0.0, 65.0]
 
-    print(f"✓ Complex MSite with {len(msite.magnets)} magnets created")
+    print(f"✓ Complex Assembly with {len(assembly.magnets)} magnets created")
 
 
-def test_msite_with_screens():
-    """Test MSite with screen objects"""
-    print("Testing MSite with screens...")
+def test_assembly_with_screens():
+    """Test Assembly with screen objects"""
+    print("Testing Assembly with screens...")
 
     insert = create_sample_insert()
     screen = Screen("test_screen", [0.0, 60.0], [0.0, 200.0])
 
-    msite = MSite(
-        name="msite_with_screens",
+    assembly = Assembly(
+        name="assembly_with_screens",
         magnets=[insert],
         screens=[screen],
         z_offset=[0.0],
@@ -248,11 +248,11 @@ def test_msite_with_screens():
         paralax=[0.0]
     )
 
-    assert msite.screens is not None
-    assert len(msite.screens) == 1
-    assert msite.screens[0].name == "test_screen"
+    assert assembly.screens is not None
+    assert len(assembly.screens) == 1
+    assert assembly.screens[0].name == "test_screen"
 
-    print("✓ MSite with screens works correctly")
+    print("✓ Assembly with screens works correctly")
 
 
 def test_bounding_box():
@@ -262,8 +262,8 @@ def test_bounding_box():
     insert = create_sample_insert()
     supras = create_sample_supras()
 
-    msite = MSite(
-        name="bbox_msite",
+    assembly = Assembly(
+        name="bbox_assembly",
         magnets=[insert, supras],
         screens=None,
         z_offset=[0.0, 65.0],
@@ -272,7 +272,7 @@ def test_bounding_box():
     )
 
     # Test boundingBox method
-    rb, zb = msite.boundingBox()
+    rb, zb = assembly.boundingBox()
 
     assert isinstance(rb, list)
     assert isinstance(zb, list)
@@ -295,9 +295,9 @@ def test_get_names():
     print("Testing get_names method...")
 
     insert = create_sample_insert()
-    msite = MSite("names_msite", [insert], None, None, None, None)
+    assembly = Assembly("names_assembly", [insert], None, None, None, None)
 
-    names = msite.get_names("test_prefix")
+    names = assembly.get_names("test_prefix")
 
     assert isinstance(names, list)
     assert len(names) > 0
@@ -310,22 +310,22 @@ def test_yaml_roundtrip():
     print("Testing YAML round-trip...")
 
     insert = create_sample_insert()
-    msite = MSite("yaml_msite", [insert], None, [0.0], [0.0], [0.0])
+    assembly = Assembly("yaml_assembly", [insert], None, [0.0], [0.0], [0.0])
 
     # Dump to YAML
-    msite.write_to_yaml()
-    yaml_file = "yaml_msite.yaml"
+    assembly.write_to_yaml()
+    yaml_file = "yaml_assembly.yaml"
 
     assert os.path.exists(yaml_file), "YAML file should be created"
     print("✓ YAML dump works")
 
     try:
         # Load from YAML
-        loaded_msite = MSite.from_yaml(yaml_file, debug=True)
+        loaded_assembly = Assembly.from_yaml(yaml_file, debug=True)
 
-        assert loaded_msite.name == msite.name
-        assert len(loaded_msite.magnets) == len(msite.magnets)
-        assert loaded_msite.z_offset == msite.z_offset
+        assert loaded_assembly.name == assembly.name
+        assert len(loaded_assembly.magnets) == len(assembly.magnets)
+        assert loaded_assembly.z_offset == assembly.z_offset
 
         print("✓ YAML round-trip works")
     finally:
@@ -340,56 +340,98 @@ def test_get_magnet():
     insert = create_sample_insert()
     supras = create_sample_supras()
 
-    msite = MSite("get_magnet_test", [insert, supras], None, None, None, None)
+    assembly = Assembly("get_magnet_test", [insert, supras], None, None, None, None)
 
     # Test getting magnet by name
-    found_insert = msite.get_magnet("test_insert")
+    found_insert = assembly.get_magnet("test_insert")
     assert found_insert is not None
     assert found_insert.name == "test_insert"
 
-    found_supras = msite.get_magnet("test_supras")
+    found_supras = assembly.get_magnet("test_supras")
     assert found_supras is not None
     assert found_supras.name == "test_supras"
 
     # Test non-existent magnet
-    not_found = msite.get_magnet("nonexistent")
+    not_found = assembly.get_magnet("nonexistent")
     assert not_found is None
 
     print("✓ get_magnet works correctly")
 
 
+def test_legacy_msite_yaml_tag_loads_as_assembly():
+    """Test that a file tagged !<MSite> loads via the compat shim as an Assembly"""
+    print("Testing legacy !<MSite> YAML tag compat...")
+
+    fixture = os.path.join(
+        os.path.dirname(__file__), "..", "tests.cfg", "msite1.yaml"
+    )
+    loaded = Assembly.load_from_yaml(fixture)
+
+    assert isinstance(loaded, Assembly)
+    assert loaded.name == "MSite_Test"
+    assert len(loaded.magnets) == 1
+
+    print("✓ Legacy !<MSite> tag loads as Assembly")
+
+
+def test_legacy_msite_classname_unserializes_as_assembly():
+    """Test that a dict with __classname__: MSite round-trips into an Assembly"""
+    print("Testing legacy __classname__ MSite compat...")
+
+    from python_magnetgeo.deserialize import unserialize_object
+
+    legacy_dict = {
+        "__classname__": "MSite",
+        "name": "legacy_dict_assembly",
+        "magnets": [],
+        "screens": None,
+        "z_offset": None,
+        "r_offset": None,
+        "paralax": None,
+    }
+
+    obj = unserialize_object(legacy_dict)
+
+    assert isinstance(obj, Assembly)
+    assert obj.name == "legacy_dict_assembly"
+
+    print("✓ Legacy __classname__ MSite unserializes as Assembly")
+
+
 def run_all_tests():
-    """Run all MSite refactoring tests"""
+    """Run all Assembly refactoring tests"""
     print("=" * 60)
-    print("MSite Refactoring Validation Tests (Phase 4)")
+    print("Assembly Refactoring Validation Tests (Phase 4)")
     print("=" * 60)
     print()
 
     try:
-        test_basic_msite_creation()
+        test_basic_assembly_creation()
         test_inherited_methods()
         test_json_serialization()
         test_from_dict()
         test_validation()
-        test_complex_msite_with_multiple_magnets()
-        test_msite_with_screens()
+        test_complex_assembly_with_multiple_magnets()
+        test_assembly_with_screens()
         test_bounding_box()
         test_get_names()
         test_get_magnet()
         test_yaml_roundtrip()
+        test_legacy_msite_yaml_tag_loads_as_assembly()
+        test_legacy_msite_classname_unserializes_as_assembly()
 
         print()
         print("=" * 60)
         print("✓ ALL TESTS PASSED!")
         print("=" * 60)
         print()
-        print("MSite refactoring is successful and maintains full compatibility.")
+        print("Assembly refactoring is successful and maintains full compatibility.")
         print("The migrated class works correctly with:")
         print("  - Base class inheritance (YAMLObjectBase)")
         print("  - Validation framework")
         print("  - All serialization methods (JSON, YAML)")
         print("  - Complex nested objects (magnets, screens)")
-        print("  - All MSite-specific operations")
+        print("  - All Assembly-specific operations")
 
     except AssertionError as e:
         print()

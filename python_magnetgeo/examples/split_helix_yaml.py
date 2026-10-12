@@ -25,8 +25,8 @@ import sys
 
 import yaml
 
-from python_magnetgeo.logging_config import get_logger
-from python_magnetgeo.utils import getObject
+from ..logging_config import get_logger
+from ..utils import getObject
 
 # Get logger for this module
 logger = get_logger(__name__)

@@ -3,10 +3,10 @@ import glob
 import os
 import sys
 
-from python_magnetgeo.Helix import Helix
-from python_magnetgeo.ModelAxi import ModelAxi
-from python_magnetgeo.Shape import Shape
-from python_magnetgeo.Profile import Profile
+from ..Helix import Helix
+from ..ModelAxi import ModelAxi
+from ..Shape import Shape
+from ..Profile import Profile
 
 
 def main():
@@ -27,7 +27,7 @@ def main():
     cwd = os.getcwd()
 
     # Import after parsing so `--help` does not trigger package init logging.
-    import python_magnetgeo as pmg
+    from .. import load, verify_class_registration
 
     # Expand glob patterns and collect all matching files
     files = []
@@ -42,12 +42,12 @@ def main():
         print("Error: no input files found.", file=sys.stderr)
         sys.exit(1)
 
-    pmg.verify_class_registration()
+    verify_class_registration()
 
     for input_file in files:
         # basename =
         # dirname =
-        obj = pmg.load(input_file)
+        obj = load(input_file)
         print(f"\nLoad {input_file}", flush=True)
 
         # test if obj is an Helix

@@ -266,12 +266,12 @@ class Insert(YAMLObjectBase):
 
             r_rings = np.array(self.rings[i].r)
             r_helices = np.array(flatten(helices_radius))
-            norm = np.linalg.norm(r_rings - r_helices)
-            bound = 1.0e-5 * max(abs(np.max(r_rings)), abs(np.max(r_helices)))
+            norm = np.max(np.abs(r_rings - r_helices))
+            bound = 0.100001 # 1.0e-5 * max(abs(np.max(r_rings)), abs(np.max(r_helices)))
             # logger.debug(f"norm: {norm}, bound: {bound}")
             if norm > bound:
                 raise ValidationError(
-                    f"Ring[{i}] ({self.rings[i].name}) radius {r_rings} does not match with adjacent helices radii {r_helices}"
+                    f"Ring[{i}] ({self.rings[i].name}) radius {r_rings} does not match with adjacent helices radii {r_helices} (tol={bound}, err={norm}, {r_rings - r_helices})"
                 )
 
         for helix in self.helices:

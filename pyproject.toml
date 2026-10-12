@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=61.0", "wheel"]
+requires = ["setuptools>=77.0.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -8,7 +8,7 @@ version = "1.0.1"
 description = "Python helpers to create HiFiMagnet cads and meshes"
 readme = "README.md"
 requires-python = ">=3.11"
-license = {text = "MIT"}
+license = "MIT"
 authors = [
     {name = "Christophe Trophime", email = "christophe.trophime@lncmi.cnrs.fr"},
     {name = "Romain Vallet", email = "romain.vallet@lncmi.cnrs.fr"},
