@@ -144,3 +144,5 @@ ENV/
 # images
 *.png
 
+
+.envrc

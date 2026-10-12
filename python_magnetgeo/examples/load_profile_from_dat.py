@@ -19,9 +19,7 @@ Usage:
 import sys
 from pathlib import Path
 
-# Add the current directory to the Python path to import python_magnetgeo
-#sys.path.insert(0, str(Path(__file__).parent))
-from python_magnetgeo.Profile import Profile
+from ..Profile import Profile
 
 
 def load_profile_from_dat(dat_file_path: str) -> Profile:

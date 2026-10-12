@@ -24,10 +24,10 @@ import glob
 import os
 import sys
 
-import python_magnetgeo as pmg
-from python_magnetgeo.logging_config import get_logger
+from .. import load, verify_class_registration
+from ..logging_config import get_logger
 
-pmg.verify_class_registration()  # Required for YAML loading
+verify_class_registration()  # Required for YAML loading
 
 # Get logger for this module
 logger = get_logger(__name__)
@@ -57,7 +57,7 @@ def check_yaml(input_file):
     logger.debug(f"Loading: {input_path}")
 
     # Load the object using getObject from utils
-    object = pmg.load(input_path)
+    object = load(input_path)
     logger.debug(object)
 
     # print(f"Loaded: {type(object)}")
