@@ -13,17 +13,17 @@
   },
   "segments": [
     {
-      "n_turns": 14,
+      "n_turns": 12,
       "plates_per_turn": 8,
       "plate": "plate"
     },
     {
-      "n_turns": 122,
+      "n_turns": 130,
       "plates_per_turn": 4,
       "plate": "plate"
     },
     {
-      "n_turns": 14,
+      "n_turns": 12,
       "plates_per_turn": 8,
       "plate": "plate"
     }
