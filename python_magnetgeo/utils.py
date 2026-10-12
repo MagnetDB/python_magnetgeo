@@ -134,7 +134,8 @@ def loadYaml(comment: str, filename: str, supported_type: type = None, debug: bo
         # Load YAML file
         logger.debug(f"looking for file: {basename}, supported_type={supported_type}")
         with open(basename) as istream:  # Potential FileNotFoundError happens here
-            obj = yaml.load(stream=istream, Loader=yaml.FullLoader)
+            # FullLoader is required to build the registered YAMLObject classes from tags
+            obj = yaml.load(stream=istream, Loader=yaml.FullLoader)  # nosec B506
             obj._basedir = cwd
             if basedir and basedir != ".":
                 obj._basedir = os.getcwd()

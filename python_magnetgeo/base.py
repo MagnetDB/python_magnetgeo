@@ -766,7 +766,7 @@ class YAMLObjectBase(SerializableMixin, VisualizableMixin):
                         nested_files = candidate_class.get_required_files(data, debug=debug)
                         required_files.update(nested_files)
                         break
-                except Exception:
+                except Exception:  # nosec B112
                     # If analysis fails for this class, try next one
                     continue
 

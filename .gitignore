@@ -112,6 +112,9 @@ ENV/
 # mypy
 .mypy_cache/
 
+# ruff
+.ruff_cache/
+
 # IDE settings
 .vscode/
 
@@ -123,6 +126,7 @@ ENV/
 *.brep
 *.xao
 *.yaml
+!.pre-commit-config.yaml
 
 *~
 *.orig

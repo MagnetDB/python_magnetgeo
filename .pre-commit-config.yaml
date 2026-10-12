@@ -1,0 +1,27 @@
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.16.10
+    hooks:
+      - id: ruff-check
+
+  - repo: https://github.com/PyCQA/bandit
+    rev: 1.9.4
+    hooks:
+      - id: bandit
+        args: ["-c", "pyproject.toml"]
+        additional_dependencies: ["bandit[toml]"]
+        files: ^python_magnetgeo/
+
+  # ty needs the project dependencies to resolve imports, so it runs from the
+  # active virtualenv (pip install -e ".[dev]").
+  # Manual stage until the existing diagnostics are fixed:
+  #   pre-commit run --hook-stage manual ty
+  - repo: local
+    hooks:
+      - id: ty
+        name: ty
+        entry: ty check
+        language: system
+        types: [python]
+        pass_filenames: false
+        stages: [manual]
