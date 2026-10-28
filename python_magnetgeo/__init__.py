@@ -35,6 +35,7 @@ except PackageNotFoundError:
 
 # Import logging configuration
 # Import core utilities and base classes immediately
+from .Assembly import Assembly
 from .base import SerializableMixin, YAMLObjectBase
 from .Bitter import Bitter
 from .Bitters import Bitters
@@ -63,7 +64,6 @@ from .logging_config import (
 )
 from .Model3D import Model3D
 from .ModelAxi import ModelAxi
-from .Assembly import Assembly
 from .OuterCurrentLead import OuterCurrentLead
 from .Probe import Probe
 from .Ring import Ring
