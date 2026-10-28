@@ -256,7 +256,9 @@ Examples:
                 print("\nProfile representation:")
                 print(f"  {profile!r}")
                 print("\nFirst 5 points:")
-                for i, (point, label) in enumerate(zip(profile.points[:5], profile.labels[:5], strict=False), 1):
+                for i, (point, label) in enumerate(
+                    zip(profile.points[:5], profile.labels[:5], strict=False), 1
+                ):
                     print(f"    {i}. [{point[0]:.2f}, {point[1]:.2f}] label={label}")
                 if len(profile.points) > 5:
                     print(f"    ... and {len(profile.points) - 5} more points")
@@ -330,12 +332,16 @@ if __name__ == "__main__":
         loaded1 = load_profile_from_dat(str(file1))
         print(f"\nLoaded {loaded1.cad}:")
         print(f"  Points: {len(loaded1.points)}")
-        print(f"  Has meaningful labels: {loaded1.labels is not None and any(label != 0 for label in loaded1.labels)}")
+        print(
+            f"  Has meaningful labels: {loaded1.labels is not None and any(label != 0 for label in loaded1.labels)}"
+        )
 
         loaded2 = load_profile_from_dat(str(file2))
         print(f"\nLoaded {loaded2.cad}:")
         print(f"  Points: {len(loaded2.points)}")
-        print(f"  Has meaningful labels: {loaded2.labels is not None and any(label != 0 for label in loaded2.labels)}")
+        print(
+            f"  Has meaningful labels: {loaded2.labels is not None and any(label != 0 for label in loaded2.labels)}"
+        )
 
         print("\n=== Verification ===")
         print(f"Example 1 matches: {example1.cad == loaded1.cad and example1.points == loaded1.points}")

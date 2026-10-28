@@ -58,9 +58,11 @@ def main():
         print(f"Original hcut: {len(hcut.pitch)}", flush=True)
         print(f"Compacted hcut: {len(pitch)}", flush=True)
         nhcut = ModelAxi(name="compacted", h=hcut.h, turns=turns, pitch=pitch)
-        assert (
-            abs(1 - hcut.get_Nturns() / nhcut.get_Nturns()) < 1e-6
-        ), f"Nturns mismatch after compaction: original={hcut.get_Nturns()}, compacted={nhcut.get_Nturns()}"
+        if not abs(1 - hcut.get_Nturns() / nhcut.get_Nturns()) < 1e-6:
+            raise AssertionError(
+                f"Nturns mismatch after compaction: original={hcut.get_Nturns()}, "
+                f"compacted={nhcut.get_Nturns()}"
+            )
 
         print(f"Compact hcut: {len(nhcut.pitch)}", flush=True)
 
