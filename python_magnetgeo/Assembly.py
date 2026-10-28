@@ -2,10 +2,12 @@
 # encoding: UTF-8
 
 """
-Provides definition for Site:
+Provides definition for Assembly:
 
 """
 import os
+
+import yaml
 
 from .base import YAMLObjectBase
 from .Bitter import Bitter
@@ -18,14 +20,14 @@ from .utils import getObject
 from .validation import GeometryValidator, ValidationError
 
 
-class MSite(YAMLObjectBase):
+class Assembly(YAMLObjectBase):
     """
     name :
     magnets : dict holding magnet list ("insert", "Bitter", "Supra")
     screens :
     """
 
-    yaml_tag = "MSite"
+    yaml_tag = "Assembly"
 
     def __init__(
         self,
@@ -37,9 +39,9 @@ class MSite(YAMLObjectBase):
         paralax: list[float] | None,
     ) -> None:
         """
-        Initialize a measurement site (MSite) assembly.
+        Initialize a measurement site (Assembly) assembly.
 
-        An MSite represents a complete measurement site containing multiple magnet
+        An Assembly represents a complete measurement site containing multiple magnet
         assemblies (Insert, Bitter, Supra), optional screening elements, and spatial
         offsets for positioning. The class validates that magnets do not intersect.
 
@@ -76,7 +78,7 @@ class MSite(YAMLObjectBase):
         Example:
             >>> insert = Insert("HL-31", ...)
             >>> bitter = Bitter("B1", ...)
-            >>> msite = MSite(
+            >>> assembly = Assembly(
             ...     name="M9",
             ...     magnets=[insert, bitter],
             ...     screens=None,
@@ -86,7 +88,7 @@ class MSite(YAMLObjectBase):
             ... )
 
             >>> # Or load from files
-            >>> msite = MSite(
+            >>> assembly = Assembly(
             ...     name="M9",
             ...     magnets=["HL-31", "B1"],  # Load from YAML files
             ...     screens=["screen1"],
@@ -165,12 +167,12 @@ class MSite(YAMLObjectBase):
         Notes:
             - Channels are organized by magnet name for clarity
             - Each magnet type (Insert, Bitter, Supra) has its own channel structure
-            - Debug output prefixed with "MSite/get_channels:"
+            - Debug output prefixed with "Assembly/get_channels:"
             - Screens do not contribute channels
 
         Example:
-            >>> msite = MSite("M9", magnets=[insert, bitter], ...)
-            >>> channels = msite.get_channels("M9", hideIsolant=True)
+            >>> assembly = Assembly("M9", magnets=[insert, bitter], ...)
+            >>> channels = assembly.get_channels("M9", hideIsolant=True)
             >>> print(channels.keys())
             >>> # dict_keys(['M9_HL-31', 'M9_B1'])
             >>>
@@ -179,7 +181,7 @@ class MSite(YAMLObjectBase):
             >>> for i, channel in enumerate(insert_channels):
             ...     print(f"Channel {i}: {channel}")
         """
-        print("MSite/get_channels:")
+        print("Assembly/get_channels:")
 
         prefix = ""
         if mname:
@@ -211,8 +213,8 @@ class MSite(YAMLObjectBase):
             When implemented, will aggregate isolants from all magnets.
 
         Example:
-            >>> msite = MSite("M9", ...)
-            >>> isolants = msite.get_isolants("M9")
+            >>> assembly = Assembly("M9", ...)
+            >>> isolants = assembly.get_isolants("M9")
             >>> # Currently returns {}
         """
         return {}
@@ -242,12 +244,12 @@ class MSite(YAMLObjectBase):
             - Each magnet's names are prefixed with site and magnet identifiers
             - Name format depends on is2D flag (passed to each magnet)
             - Order is deterministic: follows magnet order in self.magnets list
-            - Verbose mode shows total count: "MSite/get_names: solid_names {count}"
+            - Verbose mode shows total count: "Assembly/get_names: solid_names {count}"
             - TODO: Add screen names to output
 
         Example:
-            >>> msite = MSite("M9", magnets=[insert, bitter], ...)
-            >>> names = msite.get_names("M9", is2D=False)
+            >>> assembly = Assembly("M9", magnets=[insert, bitter], ...)
+            >>> names = assembly.get_names("M9", is2D=False)
             >>> print(names[:5])  # First 5 names
             >>> # ['M9_HL-31_H1', 'M9_HL-31_H2', 'M9_HL-31_R1', 'M9_B1_B1', ...]
             >>>
@@ -266,7 +268,7 @@ class MSite(YAMLObjectBase):
         # TODO add Screens
 
         if verbose:
-            print(f"MSite/get_names: solid_names {len(solid_names)}")
+            print(f"Assembly/get_names: solid_names {len(solid_names)}")
         return solid_names
 
     def get_magnet(self, name: str) -> Insert | Bitter | Supra | None:
@@ -290,17 +292,17 @@ class MSite(YAMLObjectBase):
             - Returns None rather than raising exception if not found
 
         Example:
-            >>> msite = MSite("M9", magnets=[insert, bitter, supra], ...)
+            >>> assembly = Assembly("M9", magnets=[insert, bitter, supra], ...)
             >>>
             >>> # Retrieve specific magnet
-            >>> insert = msite.get_magnet("HL-31")
+            >>> insert = assembly.get_magnet("HL-31")
             >>> if insert:
             ...     print(f"Found insert with {insert.get_nhelices()} helices")
             ... else:
             ...     print("Insert not found")
             >>>
             >>> # Check if magnet exists
-            >>> if msite.get_magnet("Unknown"):
+            >>> if assembly.get_magnet("Unknown"):
             ...     print("Magnet exists")
             ... else:
             ...     print("Magnet not found")
@@ -313,13 +315,13 @@ class MSite(YAMLObjectBase):
     @classmethod
     def from_dict(cls, values: dict, debug: bool = False):
         """
-        Create MSite instance from dictionary representation.
+        Create Assembly instance from dictionary representation.
 
         Supports flexible input formats for nested magnet and screen objects,
         allowing mixed specifications of inline definitions and external references.
 
         Args:
-            values: Dictionary containing MSite configuration with keys:
+            values: Dictionary containing Assembly configuration with keys:
                 - name (str): Site name
                 - magnets (list/dict): List of magnets (strings/dicts/objects)
                 - screens (list/dict/None, optional): List of screens
@@ -329,7 +331,7 @@ class MSite(YAMLObjectBase):
             debug: Enable debug output showing object loading process
 
         Returns:
-            MSite: New MSite instance created from dictionary
+            Assembly: New Assembly instance created from dictionary
 
         Raises:
             KeyError: If required 'name' or 'magnets' keys are missing
@@ -348,7 +350,7 @@ class MSite(YAMLObjectBase):
             ...     "r_offset": [0.0, 0.0],
             ...     "paralax": None
             ... }
-            >>> msite = MSite.from_dict(data)
+            >>> assembly = Assembly.from_dict(data)
         """
         magnets = cls._load_nested_list(
             values.get("magnets"), (Insert, Bitters, Supras), debug=debug
@@ -400,7 +402,7 @@ class MSite(YAMLObjectBase):
             ...     existing_bitter_object,  # Pre-created object
             ...     {"name": "supra1", ...}  # Inline Supra
             ... ]
-            >>> magnets = MSite._load_nested_magnets(magnets_data)
+            >>> magnets = Assembly._load_nested_magnets(magnets_data)
         """
         if magnets_data is None:
             return []
@@ -441,8 +443,8 @@ class MSite(YAMLObjectBase):
             (magnets are assumed at their nominal positions)
 
         Example:
-            >>> msite = MSite("M9", magnets=[insert, bitter], ...)
-            >>> rb, zb = msite.boundingBox()
+            >>> assembly = Assembly("M9", magnets=[insert, bitter], ...)
+            >>> rb, zb = assembly.boundingBox()
             >>> print(f"Site radial extent: {rb[0]:.1f} to {rb[1]:.1f} mm")
             >>> print(f"Site axial extent: {zb[0]:.1f} to {zb[1]:.1f} mm")
             >>>
@@ -473,3 +475,15 @@ class MSite(YAMLObjectBase):
             (rmin, rmax, zmin, zmax) = cboundingBox(rmin, rmax, zmin, zmax, r, z)
 
         return ([rmin, rmax], [zmin, zmax])
+
+
+# Backward compatibility: accept files serialized under the old name.
+# Safe to remove once no `!<MSite>`-tagged YAML or `"__classname__":
+# "MSite"` JSON is expected to exist anywhere (including outside this repo).
+def _legacy_msite_constructor(loader, node):
+    values = loader.construct_mapping(node, deep=True)
+    return Assembly.from_dict(values)
+
+
+yaml.add_constructor("MSite", _legacy_msite_constructor)
+YAMLObjectBase._class_registry["MSite"] = Assembly
