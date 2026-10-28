@@ -314,7 +314,7 @@ class Supra(YAMLObjectBase):
         if isinstance(detail_value, str):
             detail = DetailLevel(detail_value.upper())
         else:
-            detail = detail_valueobject = cls(name, r, z, n, struct)
+            detail = cls(name, r, z, n, struct)
 
         return cls(name, r, z, n, struct, detail)
 

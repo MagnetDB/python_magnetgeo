@@ -20,9 +20,9 @@ pytest.importorskip("matplotlib")
 def test_helix_visualization():
     """Test Helix visualization with modelaxi zone"""
     import matplotlib.pyplot as plt
-    
+
     print("Testing Helix visualization...")
-    
+
     # Create a ModelAxi object
     # Note: sum(pitch * turns) must equal 2*h
     # h=50.0, so we need sum(pitch*turns) = 100.0
@@ -33,7 +33,7 @@ def test_helix_visualization():
         turns=[2, 16, 2],  # Turn counts for each section
         pitch=[5.0, 5.0, 5.0]  # Pitch for each section
     )
-    
+
     # Create a Helix object
     helix = Helix(
         name="H1",
@@ -44,14 +44,14 @@ def test_helix_visualization():
         dble=False,
         modelaxi=modelaxi
     )
-    
+
     # Test 1: Single helix with modelaxi zone
     print("  - Creating single helix plot with modelaxi zone...")
     ax = helix.plot_axisymmetric(title="Helix with ModelAxi Zone")
     plt.savefig("test_helix_single.png", dpi=150, bbox_inches='tight')
     plt.close()
     print("    ✓ Saved as test_helix_single.png")
-    
+
     # Test 2: Helix without modelaxi zone
     print("  - Creating helix plot without modelaxi zone...")
     fig, ax = plt.subplots(figsize=(8, 10))
@@ -63,7 +63,7 @@ def test_helix_visualization():
     plt.savefig("test_helix_no_modelaxi.png", dpi=150, bbox_inches='tight')
     plt.close()
     print("    ✓ Saved as test_helix_no_modelaxi.png")
-    
+
     # Test 3: Multiple helices
     print("  - Creating multiple helices plot...")
     # h=40.0, so sum(pitch*turns) = 80.0
@@ -82,7 +82,7 @@ def test_helix_visualization():
             pitch=[4.0, 4.0, 4.0]
         )
     )
-    
+
     fig, ax = plt.subplots(figsize=(10, 12))
     helix.plot_axisymmetric(
         ax=ax,
@@ -100,7 +100,7 @@ def test_helix_visualization():
     plt.savefig("test_helices_multiple.png", dpi=150, bbox_inches='tight')
     plt.close()
     print("    ✓ Saved as test_helices_multiple.png")
-    
+
     # Test 4: Custom modelaxi styling
     print("  - Creating helix with custom modelaxi styling...")
     fig, ax = plt.subplots(figsize=(8, 10))
@@ -115,7 +115,7 @@ def test_helix_visualization():
     plt.savefig("test_helix_custom_style.png", dpi=150, bbox_inches='tight')
     plt.close()
     print("    ✓ Saved as test_helix_custom_style.png")
-    
+
     print("✓ Helix visualization tests passed!\n")
 
 
@@ -125,9 +125,9 @@ def main():
     print("Helix Visualization Test")
     print("="*60)
     print()
-    
+
     test_helix_visualization()
-    
+
     print("="*60)
     print("✓ All tests completed successfully!")
     print("Check the generated PNG files for visual results.")

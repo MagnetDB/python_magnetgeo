@@ -23,7 +23,9 @@ class pancake:
         self.r0 = r0
 
     @classmethod
-    def from_data(cls, data={}) -> Self:
+    def from_data(cls, data=None) -> Self:
+        if data is None:
+            data = {}
         r0 = 0
         n = 0
         t_ = tape()
@@ -42,12 +44,7 @@ class pancake:
         """
         representation of object
         """
-        return "pancake(r0=%r, n=%r, tape=%r, mandrin=%r)" % (
-            self.r0,
-            self.n,
-            self.tape,
-            self.mandrin,
-        )
+        return f"pancake(r0={self.r0!r}, n={self.n!r}, tape={self.tape!r}, mandrin={self.mandrin!r})"
 
     def __str__(self) -> str:
         msg = "\n"
@@ -126,7 +123,7 @@ class pancake:
         r = []
         ri = self.getR0()
         dr = self.tape.w + self.tape.e
-        for i in range(self.n):
+        for _ in range(self.n):
             r.append(ri)
             ri += dr
         return r

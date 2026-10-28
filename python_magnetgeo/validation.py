@@ -118,7 +118,7 @@ class GeometryValidator:
         if not name.strip():
             logger.error("Validation failed: Name cannot be whitespace only")
             raise ValidationError("Name cannot be whitespace only")
-        
+
         logger.debug(f"Name validation passed: '{name}'")
 
     @staticmethod
@@ -130,7 +130,7 @@ class GeometryValidator:
         if r < 0:
             logger.error(f"Validation failed: {name}={r} must be positive or null")
             raise ValidationError(f"{name} must be positive or null")
-        
+
         logger.debug(f"Positive validation passed: {name}={r}")
 
     @staticmethod
@@ -139,7 +139,7 @@ class GeometryValidator:
         if not isinstance(n, int):
             logger.error(f"Validation failed: {name} must be an integer, got {type(n)}")
             raise ValidationError(f"{name} must be an integer")
-        
+
         logger.debug(f"Integer validation passed: {name}={n}")
 
     @staticmethod
@@ -148,7 +148,7 @@ class GeometryValidator:
         if not isinstance(n, (int, float)):
             logger.error(f"Validation failed: {name} must be numeric, got {type(n)}")
             raise ValidationError(f"{name} must be an integer or a float")
-        
+
         logger.debug(f"Numeric validation passed: {name}={n}")
 
     @staticmethod
@@ -167,7 +167,7 @@ class GeometryValidator:
             raise ValidationError(
                 f"{name} must have exactly {expected_length} values, got {len(values)}"
             )
-        
+
         logger.debug(f"Numeric list validation passed: {name} with {len(values)} elements")
 
     @staticmethod
@@ -177,5 +177,5 @@ class GeometryValidator:
             if values[i] <= values[i - 1]:
                 logger.error(f"Validation failed: {name} values not in ascending order at index {i}: {values}")
                 raise ValidationError(f"{name} values must be in ascending order: {values}")
-        
+
         logger.debug(f"Ascending order validation passed: {name}={values}")

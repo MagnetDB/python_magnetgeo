@@ -4,6 +4,7 @@ Unit tests for get_required_files() dry-run dependency analysis.
 """
 
 import unittest
+
 from python_magnetgeo.Helix import Helix
 
 

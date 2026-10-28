@@ -353,11 +353,11 @@ class Ring(YAMLObjectBase):
         # Update axis limits to include this geometry with some padding
         current_xlim = ax.get_xlim()
         current_ylim = ax.get_ylim()
-        
+
         # Calculate padding (5% of geometry size)
         r_padding = width * 0.05
         z_padding = height * 0.05
-        
+
         # Expand limits if needed (check if limits are default)
         if current_xlim == (0.0, 1.0):
             # Default limits, set based on geometry
@@ -368,7 +368,7 @@ class Ring(YAMLObjectBase):
                 min(current_xlim[0], r_min - r_padding),
                 max(current_xlim[1], r_max + r_padding)
             )
-        
+
         if current_ylim == (0.0, 1.0):
             # Default limits, set based on geometry
             ax.set_ylim(z_min - z_padding, z_max + z_padding)

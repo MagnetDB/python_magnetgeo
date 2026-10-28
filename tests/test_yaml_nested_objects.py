@@ -8,10 +8,11 @@ ensuring they are serialized with their YAML tags (!<ClassName>).
 
 import pytest
 import yaml
+
 from python_magnetgeo.Bitter import Bitter
-from python_magnetgeo.ModelAxi import ModelAxi
 from python_magnetgeo.Helix import Helix
 from python_magnetgeo.Insert import Insert
+from python_magnetgeo.ModelAxi import ModelAxi
 from python_magnetgeo.Ring import Ring
 
 

@@ -6,13 +6,14 @@
 import os
 
 from .base import YAMLObjectBase
+
+# Module logger
+from .logging_config import get_logger
 from .Probe import Probe
 from .Supra import Supra
 from .utils import getObject
 from .validation import GeometryValidator, ValidationError
 
-# Module logger
-from .logging_config import get_logger
 logger = get_logger(__name__)
 
 class Supras(YAMLObjectBase):
@@ -126,7 +127,7 @@ class Supras(YAMLObjectBase):
         # check that magnets are not intersecting
         for i in range(1, len(self.magnets)):
             rb, zb = self.magnets[i - 1].boundingBox()
-            for j in range(i + 1, len(self.magnets)):
+            for _ in range(i + 1, len(self.magnets)):
                 if self.magnets[i].intersect(rb, zb):
                     raise ValidationError(
                         f"magnets intersect: magnet[{i}] intersect magnet[{i-1}]: /n{self.magnets[i]} /n{self.magnets[i-1]}"

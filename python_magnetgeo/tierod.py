@@ -9,7 +9,7 @@ class Tierod(YAMLObjectBase):
     yaml_tag = "Tierod"
 
     def __init__(
-        self, name: str, r: float, n: int, dh: float, sh: float, contour2d: str | Contour2D
+        self, name: str, r: float, n: int, dh: float, sh: float, contour2d: Contour2D
     ) -> None:
         """
         Initialize a tie rod configuration for Bitter disk magnets.
@@ -33,8 +33,7 @@ class Tierod(YAMLObjectBase):
             sh: Cross-sectional area of a single tie rod hole in mm².
                 Total structural area removed = n * sh.
                 Set to 0.0 if tie rods are purely structural.
-            contour2d: Contour2D object defining the tie rod hole cross-section,
-                    or string reference to Contour2D YAML file, or None.
+            contour2d: Contour2D object defining the tie rod hole cross-section.
                     Describes the actual 2D shape of each hole (typically circular).
 
         Raises:

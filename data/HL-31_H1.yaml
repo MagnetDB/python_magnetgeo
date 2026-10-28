@@ -59,10 +59,9 @@ model3d: !<Model3D>
   with_shapes: False
   with_channels: False
 shape: !<Shape>
-  name:
   profile: ""
   length: 0
   angle: 0
   onturns: 0
   position: ABOVE
-materials:
+

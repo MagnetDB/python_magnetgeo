@@ -7,17 +7,17 @@ and uses their built-in serialization instead of manually constructing JSON.
 """
 
 import json
-import sys
 import os
+import sys
 from pathlib import Path
 
 # Add python_magnetgeo to path
 test_dir = Path(__file__).parent
 sys.path.insert(0, str(test_dir.parent))
 
-from python_magnetgeo.Insert import Insert
-from python_magnetgeo.Supras import Supras
-from python_magnetgeo.Bitters import Bitters
+from python_magnetgeo.Bitters import Bitters  # noqa: E402
+from python_magnetgeo.Insert import Insert  # noqa: E402
+from python_magnetgeo.Supras import Supras  # noqa: E402
 
 
 def test_insert_serialization():

@@ -6,19 +6,19 @@ Provides common testing utilities and a comprehensive test runner
 
 # File: new-tests/test_utils.py
 import json
-import yaml
 import tempfile
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Type, Union
-from unittest.mock import Mock
+from typing import Any
+
 import pytest
+import yaml
 
 
 class TestDataFactory:
     """Factory for creating consistent test data across test modules"""
 
     @staticmethod
-    def create_modelaxi_data(name: str = "test_axi") -> Dict[str, Any]:
+    def create_modelaxi_data(name: str = "test_axi") -> dict[str, Any]:
         """Create ModelAxi test data"""
         return {
             "name": name,
@@ -28,7 +28,7 @@ class TestDataFactory:
         }
 
     @staticmethod
-    def create_shape_data(name: str = "test_shape") -> Dict[str, Any]:
+    def create_shape_data(name: str = "test_shape") -> dict[str, Any]:
         """Create Shape test data"""
         return {
             "name": name,
@@ -40,7 +40,7 @@ class TestDataFactory:
         }
 
     @staticmethod
-    def create_helix_data(name: str = "test_helix") -> Dict[str, Any]:
+    def create_helix_data(name: str = "test_helix") -> dict[str, Any]:
         """Create Helix test data"""
         return {
             "name": name,
@@ -52,7 +52,7 @@ class TestDataFactory:
         }
 
     @staticmethod
-    def create_ring_data(name: str = "test_ring") -> Dict[str, Any]:
+    def create_ring_data(name: str = "test_ring") -> dict[str, Any]:
         """Create Ring test data"""
         return {
             "name": name,
@@ -61,7 +61,7 @@ class TestDataFactory:
         }
 
     @staticmethod
-    def create_supra_data(name: str = "test_supra") -> Dict[str, Any]:
+    def create_supra_data(name: str = "test_supra") -> dict[str, Any]:
         """Create Supra test data"""
         return {
             "name": name,
@@ -72,7 +72,7 @@ class TestDataFactory:
         }
 
     @staticmethod
-    def create_probe_data(name: str = "test_probe") -> Dict[str, Any]:
+    def create_probe_data(name: str = "test_probe") -> dict[str, Any]:
         """Create Probe test data"""
         return {
             "name": name,
@@ -86,7 +86,7 @@ class TestDataFactory:
         }
 
     @staticmethod
-    def create_insert_data(name: str = "test_insert") -> Dict[str, Any]:
+    def create_insert_data(name: str = "test_insert") -> dict[str, Any]:
         """Create Insert test data"""
         return {
             "name": name,
@@ -101,7 +101,7 @@ class TestDataFactory:
         }
 
     @staticmethod
-    def create_screen_data(name: str = "test_screen") -> Dict[str, Any]:
+    def create_screen_data(name: str = "test_screen") -> dict[str, Any]:
         """Create Screen test data"""
         return {
             "name": name,
@@ -114,7 +114,7 @@ class GeometricAssertions:
     """Assertions for geometric operations"""
 
     @staticmethod
-    def assert_valid_bounding_box(rb: List[float], zb: List[float]) -> None:
+    def assert_valid_bounding_box(rb: list[float], zb: list[float]) -> None:
         """Assert bounding box has valid format and values"""
         assert isinstance(rb, list), "r bounds must be a list"
         assert isinstance(zb, list), "z bounds must be a list"
@@ -126,8 +126,8 @@ class GeometricAssertions:
         assert all(isinstance(x, (int, float)) for x in zb), "z bounds must be numeric"
 
     @staticmethod
-    def assert_bounding_box_contains(outer_rb: List[float], outer_zb: List[float],
-                                   inner_rb: List[float], inner_zb: List[float]) -> None:
+    def assert_bounding_box_contains(outer_rb: list[float], outer_zb: list[float],
+                                   inner_rb: list[float], inner_zb: list[float]) -> None:
         """Assert outer bounding box contains inner bounding box"""
         assert outer_rb[0] <= inner_rb[0], "Outer r_min must be <= inner r_min"
         assert outer_rb[1] >= inner_rb[1], "Outer r_max must be >= inner r_max"
@@ -140,8 +140,8 @@ class GeometricAssertions:
         assert isinstance(result, bool), "Intersection result must be boolean"
 
     @staticmethod
-    def assert_rectangles_overlap(r1: List[float], z1: List[float],
-                                r2: List[float], z2: List[float]) -> bool:
+    def assert_rectangles_overlap(r1: list[float], z1: list[float],
+                                r2: list[float], z2: list[float]) -> bool:
         """Calculate if two rectangles should overlap"""
         r_overlap = r1[0] < r2[1] and r2[0] < r1[1]
         z_overlap = z1[0] < z2[1] and z2[0] < z1[1]
@@ -152,7 +152,7 @@ class SerializationAssertions:
     """Assertions for serialization operations"""
 
     @staticmethod
-    def assert_valid_json_structure(json_str: str, expected_classname: str) -> Dict[str, Any]:
+    def assert_valid_json_structure(json_str: str, expected_classname: str) -> dict[str, Any]:
         """Assert JSON string has valid structure and return parsed data"""
         assert isinstance(json_str, str), "JSON output must be string"
 
@@ -183,7 +183,7 @@ class SerializationAssertions:
             assert parsed["z"] == original_obj.z
 
     @staticmethod
-    def assert_has_serialization_interface(cls: Type) -> None:
+    def assert_has_serialization_interface(cls: type) -> None:
         """Assert class implements required serialization methods"""
         required_class_methods = ['from_dict', 'from_yaml', 'from_json']
         required_instance_methods = ['to_json', 'write_to_json', 'write_to_yaml']
@@ -227,13 +227,13 @@ class YAMLTestUtils:
             return f.name
 
     @staticmethod
-    def create_yaml_content(obj_type: str, data: Dict[str, Any]) -> str:
+    def create_yaml_content(obj_type: str, data: dict[str, Any]) -> str:
         """Create YAML content with proper type annotation"""
         yaml_dict = {f'!<{obj_type}>': data}
         return yaml.dump(yaml_dict, default_flow_style=False)
 
     @staticmethod
-    def assert_yaml_tag_exists(cls: Type, expected_tag: str) -> None:
+    def assert_yaml_tag_exists(cls: type, expected_tag: str) -> None:
         """Assert class has correct YAML tag"""
         assert hasattr(cls, 'yaml_tag'), f"Class {cls.__name__} missing yaml_tag"
         assert cls.yaml_tag == expected_tag, f"Expected tag {expected_tag}, got {cls.yaml_tag}"
@@ -243,7 +243,7 @@ class ProbeTestUtils:
     """Utilities for testing probe functionality"""
 
     @staticmethod
-    def create_sample_probes() -> List[Dict[str, Any]]:
+    def create_sample_probes() -> list[dict[str, Any]]:
         """Create various types of sample probes for testing"""
         return [
             {
@@ -302,12 +302,12 @@ class MagnetTestRunner:
         """Validate test environment is properly set up"""
         try:
             # Check python_magnetgeo can be imported
-            import python_magnetgeo
+            import python_magnetgeo  # noqa: F401
             print("✓ python_magnetgeo import successful")
 
             # Check required test dependencies
-            import pytest
-            import yaml
+            import pytest  # noqa: F401
+            import yaml  # noqa: F401
             print("✓ Test dependencies available")
 
             # Check test directory exists
@@ -353,12 +353,7 @@ class MagnetTestRunner:
 
         try:
             # Test basic class imports
-            from python_magnetgeo.Insert import Insert
-            from python_magnetgeo.Helix import Helix
-            from python_magnetgeo.Ring import Ring
-            from python_magnetgeo.Supra import Supra
             from python_magnetgeo.Screen import Screen
-            from python_magnetgeo.Probe import Probe
             print("✓ Core class imports successful")
 
             # Test basic object creation
@@ -383,7 +378,7 @@ class MagnetTestRunner:
             print(f"✗ Smoke test failed: {e}")
             return False
 
-    def run_test_suite(self, test_pattern: str = None, verbose: bool = True) -> Dict[str, Any]:
+    def run_test_suite(self, test_pattern: str = None, verbose: bool = True) -> dict[str, Any]:
         """Run the complete test suite"""
         import subprocess
         import sys
@@ -401,7 +396,7 @@ class MagnetTestRunner:
 
         # Add coverage if available
         try:
-            import pytest_cov
+            import pytest_cov  # noqa: F401
             cmd.extend(["--cov=python_magnetgeo", "--cov-report=term-missing"])
         except ImportError:
             pass
@@ -435,7 +430,7 @@ class MagnetTestRunner:
             print(f"✗ Error running test suite: {e}")
             return {"success": False, "error": str(e)}
 
-    def run_specific_tests(self, test_categories: List[str]) -> Dict[str, Any]:
+    def run_specific_tests(self, test_categories: list[str]) -> dict[str, Any]:
         """Run specific test categories"""
         results = {}
 
@@ -504,10 +499,10 @@ Test runner script for python_magnetgeo v0.7.0
 Provides comprehensive testing with validation and reporting
 """
 
-import argparse
-import sys
-from pathlib import Path
-from test_utils import MagnetTestRunner
+import argparse  # noqa: E402
+import sys  # noqa: E402
+
+from test_utils import MagnetTestRunner  # noqa: E402, F811
 
 
 def main():
@@ -630,9 +625,8 @@ Implementation validation script for python_magnetgeo v0.7.0
 Checks that all expected methods and classes are properly implemented
 """
 
-import inspect
-import sys
-from typing import Dict, List, Any, Optional
+import inspect  # noqa: E402
+from typing import Any  # noqa: E402
 
 
 class ImplementationValidator:
@@ -670,7 +664,7 @@ class ImplementationValidator:
         except (ImportError, AttributeError):
             return False
 
-    def validate_core_classes(self) -> Dict[str, bool]:
+    def validate_core_classes(self) -> dict[str, bool]:
         """Validate core geometry classes"""
         core_classes = {
             "Helix": ["boundingBox", "intersect", "get_type", "insulators", "to_json", "from_dict"],
@@ -697,7 +691,7 @@ class ImplementationValidator:
 
         return results
 
-    def validate_collection_classes(self) -> Dict[str, bool]:
+    def validate_collection_classes(self) -> dict[str, bool]:
         """Validate magnet collection classes"""
         collection_classes = {
             "Insert": ["boundingBox", "intersect", "get_nhelices", "get_channels", "to_json", "from_dict"],
@@ -724,7 +718,7 @@ class ImplementationValidator:
 
         return results
 
-    def validate_yaml_system(self) -> Dict[str, bool]:
+    def validate_yaml_system(self) -> dict[str, bool]:
         """Validate YAML constructor system"""
         yaml_classes = ["Insert", "Helix", "Ring", "Supra", "Supras", "Bitters", "Screen", "MSite", "Probe"]
 
@@ -754,7 +748,7 @@ class ImplementationValidator:
 
         return results
 
-    def validate_serialization_interface(self) -> Dict[str, bool]:
+    def validate_serialization_interface(self) -> dict[str, bool]:
         """Validate serialization interface consistency"""
         classes_to_check = ["Insert", "Helix", "Ring", "Supra", "Supras", "Screen", "MSite", "Probe"]
         required_methods = {
@@ -794,7 +788,7 @@ class ImplementationValidator:
 
         return results
 
-    def run_full_validation(self) -> Dict[str, Any]:
+    def run_full_validation(self) -> dict[str, Any]:
         """Run complete implementation validation"""
         print("=== Python MagnetGeo v0.7.0 Implementation Validation ===\n")
 
@@ -823,7 +817,7 @@ class ImplementationValidator:
             "summary": self.generate_summary()
         }
 
-    def generate_summary(self) -> Dict[str, Any]:
+    def generate_summary(self) -> dict[str, Any]:
         """Generate validation summary"""
         total_missing = len(self.missing_implementations)
 
@@ -834,7 +828,7 @@ class ImplementationValidator:
             "recommendations": self.get_recommendations()
         }
 
-    def get_recommendations(self) -> List[str]:
+    def get_recommendations(self) -> list[str]:
         """Get recommendations based on validation results"""
         recommendations = []
 
@@ -854,7 +848,7 @@ class ImplementationValidator:
 
         return recommendations
 
-    def print_validation_report(self, results: Dict[str, Any]) -> None:
+    def print_validation_report(self, results: dict[str, Any]) -> None:
         """Print detailed validation report"""
         print("\n" + "="*60)
         print("VALIDATION REPORT")

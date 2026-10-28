@@ -1,26 +1,15 @@
 # File: new-tests/test_core_classes.py
-import pytest
 import json
-import yaml
-import tempfile
-from pathlib import Path
-from typing import Any, Dict, List, Optional
-from unittest.mock import Mock
+
+import pytest
+
+from python_magnetgeo.Helix import Helix
 
 # Import all classes for testing
-from python_magnetgeo.Insert import Insert
-from python_magnetgeo.Helix import Helix
-from python_magnetgeo.Ring import Ring
-from python_magnetgeo.Supra import Supra
-from python_magnetgeo.Supras import Supras
-from python_magnetgeo.Bitter import Bitter
-from python_magnetgeo.Bitters import Bitters
-from python_magnetgeo.Screen import Screen
-from python_magnetgeo.MSite import MSite
 from python_magnetgeo.Probe import Probe
-from python_magnetgeo.Shape import Shape
-from python_magnetgeo.ModelAxi import ModelAxi
-from python_magnetgeo.Model3D import Model3D
+from python_magnetgeo.Ring import Ring
+from python_magnetgeo.Screen import Screen
+from python_magnetgeo.Supra import Supra
 
 
 class TestHelix:
@@ -39,7 +28,7 @@ class TestHelix:
             model3d=sample_model3d,
             shape=sample_shape
         )
-        
+
         assert helix.name == "init_helix"
         assert helix.r == [10.0, 20.0]
         assert helix.z == [0.0, 80.0]
@@ -53,7 +42,7 @@ class TestHelix:
     def test_helix_bounding_box(self, sample_helix):
         """Test boundingBox returns correct r,z bounds"""
         rb, zb = sample_helix.boundingBox()
-        
+
         assert isinstance(rb, list)
         assert isinstance(zb, list)
         assert len(rb) == 2
@@ -66,7 +55,7 @@ class TestHelix:
         # Test overlapping rectangle
         overlap_result = sample_helix.intersect([18.0, 22.0], [25.0, 75.0])
         assert overlap_result is True
-        
+
         # Test non-overlapping rectangle
         no_overlap_result = sample_helix.intersect([30.0, 40.0], [120.0, 130.0])
         assert no_overlap_result is False
@@ -88,7 +77,7 @@ class TestHelix:
         """Test JSON serialization preserves all data"""
         json_str = sample_helix.to_json()
         parsed = json.loads(json_str)
-        
+
         assert parsed["__classname__"] == "Helix"
         assert parsed["name"] == "test_helix"
         assert parsed["r"] == [15.0, 25.0]
@@ -112,7 +101,7 @@ class TestRing:
             bpside=True,
             fillets=False
         )
-        
+
         assert ring.name == "init_ring"
         assert ring.r == [8.0, 8.1, 31.9, 32.0]
         assert ring.z == [20.0, 30.0]
@@ -128,7 +117,7 @@ class TestRing:
         """Test JSON serialization"""
         json_str = sample_ring.to_json()
         parsed = json.loads(json_str)
-        
+
         assert parsed["__classname__"] == "Ring"
         assert parsed["name"] == "test_ring"
         assert parsed["r"] == [12.0, 12.1, 27.9, 28.0]
@@ -146,25 +135,25 @@ class TestSupra:
             n=8,
             struct=None  # Empty to avoid file loading
         )
-        
+
         assert supra.name == "init_supra"
         assert supra.r == [25.0, 45.0]
         assert supra.z == [15.0, 85.0]
         assert supra.n == 8
-        assert supra.struct == None
+        assert supra.struct is None
 
     def test_supra_detail_levels(self, sample_supra):
         """Test set_Detail method with valid levels"""
         from python_magnetgeo.Supra import DetailLevel
         valid_details = ["None", "dblpancake", "pancake", "tape"]
-        
+
         for detail in valid_details:
             sample_supra.set_Detail(detail)
             assert sample_supra.detail == DetailLevel[detail.upper()]
 
     def test_supra_detail_invalid(self, sample_supra):
         """Test set_Detail raises exception for invalid levels"""
-        with pytest.raises(Exception):
+        with pytest.raises(Exception):  # noqa: B017
             sample_supra.set_Detail("invalid_detail")
 
     def test_supra_get_nturns(self, sample_supra):
@@ -183,11 +172,11 @@ class TestSupra:
         """Test JSON serialization"""
         json_str = sample_supra.to_json()
         parsed = json.loads(json_str)
-        
+
         assert parsed["__classname__"] == "Supra"
         assert parsed["name"] == "test_supra"
         assert parsed["n"] == 5
-        assert parsed["struct"] == None
+        assert parsed["struct"] is None
 
 
 class TestScreen:
@@ -200,7 +189,7 @@ class TestScreen:
             r=[5.0, 50.0],
             z=[0.0, 100.0]
         )
-        
+
         assert screen.name == "init_screen"
         assert screen.r == [5.0, 50.0]
         assert screen.z == [0.0, 100.0]
@@ -209,18 +198,18 @@ class TestScreen:
         """Test boundingBox returns screen dimensions"""
         screen = Screen("bbox_screen", [10.0, 30.0], [0.0, 80.0])
         rb, zb = screen.boundingBox()
-        
+
         assert rb == [10.0, 30.0]
         assert zb == [0.0, 80.0]
 
     def test_screen_intersection(self):
         """Test intersect method"""
         screen = Screen("intersect_screen", [10.0, 30.0], [20.0, 60.0])
-        
+
         # Overlapping case
         overlap = screen.intersect([15.0, 25.0], [30.0, 50.0])
         assert overlap is True
-        
+
         # Non-overlapping case
         no_overlap = screen.intersect([40.0, 50.0], [70.0, 80.0])
         assert no_overlap is False
@@ -235,14 +224,14 @@ class TestScreen:
     def test_screen_mesh_support(self):
         """Test mesh generation support methods"""
         screen = Screen("mesh_screen", [5.0, 25.0], [0.0, 50.0])
-        
+
         # get_names should return screen identifiers
         names = screen.get_names("test_system")
         assert len(names) == 1
         assert "Screen" in names[0]
         assert "test_system" in names[0]
         assert screen.name in names[0]
-        
+
         # get_channels and get_isolants should return empty for screens
         channels = screen.get_channels("test")
         isolants = screen.get_isolants("test")
@@ -261,7 +250,7 @@ class TestProbe:
             labels=[1, 2, 3],
             points=[[10.0, 0.0, 5.0], [15.0, 0.0, 10.0], [20.0, 0.0, 15.0]]
         )
-        
+
         assert probe.name == "init_probe"
         assert probe.type == "temperature"
         assert probe.labels == [1, 2, 3]
@@ -275,7 +264,7 @@ class TestProbe:
     def test_probe_by_labels(self, sample_probe):
         """Test get_probe_by_labels method"""
         probe_info = sample_probe.get_probe_by_labels("V2")
-        
+
         assert probe_info["labels"] == "V2"
         assert probe_info["points"] == [20.0, 0.0, 50.0]
         assert probe_info["type"] == "voltage_taps"
@@ -290,7 +279,7 @@ class TestProbe:
         points = sample_probe.get_points_by_type("voltage_taps")
         assert len(points) == 3
         assert points == sample_probe.points
-        
+
         # Test with different type
         empty_points = sample_probe.get_points_by_type("temperature")
         assert empty_points == []
@@ -298,9 +287,9 @@ class TestProbe:
     def test_probe_add_probe(self, sample_probe):
         """Test add_probe method"""
         initial_count = sample_probe.get_probe_count()
-        
+
         sample_probe.add_probe("V4", [22.0, 0.0, 85.0])
-        
+
         assert sample_probe.get_probe_count() == initial_count + 1
         new_probe = sample_probe.get_probe_by_labels("V4")
         assert new_probe["points"] == [22.0, 0.0, 85.0]
@@ -314,7 +303,7 @@ class TestProbe:
         """Test JSON serialization"""
         json_str = sample_probe.to_json()
         parsed = json.loads(json_str)
-        
+
         assert parsed["__classname__"] == "Probe"
         assert parsed["name"] == "test_probe"
         assert parsed["type"] == "voltage_taps"

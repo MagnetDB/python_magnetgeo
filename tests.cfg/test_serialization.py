@@ -1,25 +1,15 @@
-import pytest
 import json
-import yaml
-import tempfile
 from pathlib import Path
-from typing import Any, Dict, List, Optional
-from unittest.mock import Mock, patch
+
+import pytest
 
 # Import all classes for testing
 from python_magnetgeo.Insert import Insert
-from python_magnetgeo.Helix import Helix
-from python_magnetgeo.Ring import Ring
-from python_magnetgeo.Supra import Supra
-from python_magnetgeo.Supras import Supras
-from python_magnetgeo.Bitter import Bitter
-from python_magnetgeo.Bitters import Bitters
-from python_magnetgeo.Screen import Screen
-from python_magnetgeo.MSite import MSite
 from python_magnetgeo.Probe import Probe
-from python_magnetgeo.Shape import Shape
-from python_magnetgeo.ModelAxi import ModelAxi
-from python_magnetgeo.Model3D import Model3D
+from python_magnetgeo.Ring import Ring
+from python_magnetgeo.Screen import Screen
+from python_magnetgeo.Supra import Supra
+
 
 class TestSerialization:
     """Test JSON and YAML serialization across all classes"""
@@ -30,7 +20,7 @@ class TestSerialization:
         sample_helix.write_to_json()
 
         # Read back and verify
-        with open(f"{sample_helix.name}.json", 'r') as f:
+        with open(f"{sample_helix.name}.json") as f:
             json_data = json.load(f)
 
         assert json_data["__classname__"] == "Helix"
@@ -55,7 +45,7 @@ class TestSerialization:
             "shape": None
         }
 
-        ring_dict = {
+        _ring_dict = {
             "__classname__": "Ring",
             "name": "ring1",
             "r": [10.0, 10.1, 19.9, 20.0],
@@ -77,7 +67,7 @@ class TestSerialization:
             "fillet": True
         }
 
-        outer_lead_dict = {
+        _outer_lead_dict = {
             "__classname__": "OuterCurrentLead",
             "name": "outer",
             "r": [35.0, 40.0],
@@ -136,7 +126,7 @@ class TestSerialization:
         assert supra.r == [30.0, 50.0]
         assert supra.z == [20.0, 80.0]
         assert supra.n == 6
-        assert supra.struct == None
+        assert supra.struct is None
 
     def test_probe_from_dict(self):
         """Test Probe creation from dictionary"""

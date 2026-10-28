@@ -18,12 +18,8 @@ Usage:
 
 import sys
 from pathlib import Path
-from typing import Optional
 
-# Add the current directory to the Python path to import python_magnetgeo
-#sys.path.insert(0, str(Path(__file__).parent))
-
-from python_magnetgeo.Profile import Profile
+from ..Profile import Profile
 
 
 def load_profile_from_dat(dat_file_path: str) -> Profile:
@@ -65,13 +61,11 @@ def load_profile_from_dat(dat_file_path: str) -> Profile:
     # Prioritize encodings commonly used for French text files
     encodings = ["utf-8", "latin-1", "iso-8859-1", "cp1252", "windows-1252"]
     file_content = None
-    successful_encoding = None
 
     for encoding in encodings:
         try:
-            with open(dat_path, "r", encoding=encoding, errors='strict') as f:
+            with open(dat_path, encoding=encoding, errors='strict') as f:
                 file_content = f.readlines()
-            successful_encoding = encoding
             print(f'{dat_file_path}: Successfully read file with encoding: {encoding}', flush=True)
             break
         except (UnicodeDecodeError, LookupError) as e:
@@ -143,7 +137,7 @@ def load_profile_from_dat(dat_file_path: str) -> Profile:
                         labels.append(0)
                 continue
     except Exception as e:
-        raise ValueError(f"Error parsing DAT file: {e}")
+        raise ValueError(f"Error parsing DAT file: {e}") from e
 
     if not points:
         raise ValueError("No valid data points found in DAT file")
@@ -233,8 +227,6 @@ Examples:
             print(f"Loading profile from: {args.dat_file}")
 
         profile = load_profile_from_dat(args.dat_file)
-        dirname = Path(args.dat_file).parent
-        basename = Path(args.dat_file).stem
 
         # Output based on flags
         if args.yaml:
@@ -255,16 +247,18 @@ Examples:
             print(f"Saved JSON to: {args.save_json}/{profile.cad}.json")
         else:
             # Default: show profile information
-            print(f"Profile loaded successfully!")
+            print("Profile loaded successfully!")
             print(f"  CAD: {profile.cad}")
             print(f"  Points: {len(profile.points)}")
             print(f"  Has labels: {profile.labels is not None and any(label != 0 for label in profile.labels)}")
 
             if args.verbose:
-                print(f"\nProfile representation:")
+                print("\nProfile representation:")
                 print(f"  {profile!r}")
-                print(f"\nFirst 5 points:")
-                for i, (point, label) in enumerate(zip(profile.points[:5], profile.labels[:5]), 1):
+                print("\nFirst 5 points:")
+                for i, (point, label) in enumerate(
+                    zip(profile.points[:5], profile.labels[:5], strict=False), 1
+                ):
                     print(f"    {i}. [{point[0]:.2f}, {point[1]:.2f}] label={label}")
                 if len(profile.points) > 5:
                     print(f"    ... and {len(profile.points) - 5} more points")
@@ -338,12 +332,16 @@ if __name__ == "__main__":
         loaded1 = load_profile_from_dat(str(file1))
         print(f"\nLoaded {loaded1.cad}:")
         print(f"  Points: {len(loaded1.points)}")
-        print(f"  Has meaningful labels: {loaded1.labels is not None and any(l != 0 for l in loaded1.labels)}")
+        print(
+            f"  Has meaningful labels: {loaded1.labels is not None and any(label != 0 for label in loaded1.labels)}"
+        )
 
         loaded2 = load_profile_from_dat(str(file2))
         print(f"\nLoaded {loaded2.cad}:")
         print(f"  Points: {len(loaded2.points)}")
-        print(f"  Has meaningful labels: {loaded2.labels is not None and any(l != 0 for l in loaded2.labels)}")
+        print(
+            f"  Has meaningful labels: {loaded2.labels is not None and any(label != 0 for label in loaded2.labels)}"
+        )
 
         print("\n=== Verification ===")
         print(f"Example 1 matches: {example1.cad == loaded1.cad and example1.points == loaded1.points}")
