@@ -1,0 +1,18 @@
+# extracted from BITTER M9M10 INT06-06-2023.pdf - review before use
+type: bitter int M9/M10 (18MW)
+number: 8
+date: 06/06/2023
+overlap: 3/4
+slit_direction: left
+active_discs: {qty: 728, thickness: 0.8}
+dead_discs: {hp: 3, bp: 0}
+insulators: {qty: 680, thickness: 0.125, material: APTIV}
+measured_height: 603.0
+height_limits: [596.5, 605.0]
+observations: |
+  -Aimant constitué de 6 spires à 8 disques aux extrémités. (6 en HP et 6 en
+  BP)
+  158 spires à 4 disques en partie centrale. (Aimant optimisé pour 18MW).
+  -les empilements de Belleville sont de 2 paquets de 9 rondelles montées
+  Tête-bêche en Hp et en Bp.
+  Il y a 3 disques morts en HP et aucun en BP.

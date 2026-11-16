@@ -1,0 +1,21 @@
+# Fiche d'identification aimant Bitter, ref. IN-01 rev G (26/06/2026)
+type: bitter int M9/M10 (18MW)
+number: 10
+overlap: "3/4"
+slit_direction: left        # "la fente se déplace vers la gauche, l'isolant est à gauche de la fente"
+active_discs: {qty: 728, thickness: 0.8}          # Ø680 x Ø400 x 0.8 mm, Cu
+dead_discs: {hp: 5, bp: 5}
+insulators: {qty: 612, thickness: 0.125, material: APTIV}
+measured_height: 599.44     # clamped, without end plates [mm]
+height_limits: [596.5, 605] # page 2, internal Bitter without end plates [mm]
+thickness_range: [0.775, 0.790]  # thickness.xlsx (50 discs); batch not confirmed
+observations: |
+  -Aimant constitué de 14 spires à 8 disques aux extrémités. (HPet BP)
+  -126 spires à 4 disques en partie centrale. (Aimant pour 18MW).
+  -les empilements de Belleville sont de 2 paquets de 9 rondelles montées
+  Tête-bêche en Hp et en Bp.
+  Il y a 5 disques morts en HP et 5 disques morts en BP.
+notes: >-
+  Page 2 states there are no dead discs ("aucun disque mort en HP et en BP");
+  page 1 (used here) lists 5 HP + 5 BP. Without them the disc width would be
+  0.7971 mm, above thickness_range.

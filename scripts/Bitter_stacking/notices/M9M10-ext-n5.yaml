@@ -1,0 +1,16 @@
+# Fiche d'identification aimant Bitter, ref. SPRJ-00001 IN-01 rev G (29/01/2013)
+type: bitter ext M9/M10
+number: 5
+overlap: "3/4"
+slit_direction: right       # "la fente se déplace vers la droite"
+active_discs: {qty: 720, thickness: 0.8}          # Ø1000 x Ø686 x 0.8 mm, Cu
+dead_discs: {hp: 7, bp: 12}
+insulators: {qty: null, thickness: 0.125, material: APTIV}   # quantity left blank on the sheet
+measured_height: 597.5      # clamped, without end plates [mm]
+observations: |
+  -Aimant constitué de 14 spires à 4x4 disques
+  et de 62 spires à 4x2 disques en partie centrale.
+  -les empilements de belleville sont de 2 paquets de 9 rondelles montées
+  Tête-bêche en Hp et en Bp.
+  Il y a une différence de 5 disques morts entre la Hp et la Bp donc un
+  décalage du centre magnétique de (5x0.8mm)/2=2 mm vers le haut.

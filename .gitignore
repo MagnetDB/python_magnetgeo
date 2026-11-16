@@ -127,6 +127,7 @@ ENV/
 *.xao
 *.yaml
 !.pre-commit-config.yaml
+!scripts/Bitter_stacking/notices/*.yaml
 
 *~
 *.orig

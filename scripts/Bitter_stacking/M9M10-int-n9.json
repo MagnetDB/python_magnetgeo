@@ -1,0 +1,33 @@
+{
+  "components": {
+    "plate": {
+      "mu": 0.7998,
+      "tolerance": 0.0125,
+      "distribution": "normal"
+    },
+    "aptiv": {
+      "mu": 0.125,
+      "tolerance": 1e-05,
+      "distribution": "uniform"
+    }
+  },
+  "segments": [
+    {
+      "n_turns": 10,
+      "plates_per_turn": 8,
+      "plate": "plate"
+    },
+    {
+      "n_turns": 142,
+      "plates_per_turn": 4,
+      "plate": "plate"
+    },
+    {
+      "n_turns": 10,
+      "plates_per_turn": 8,
+      "plate": "plate"
+    }
+  ],
+  "kapton": "aptiv",
+  "n_kaptons": null
+}
