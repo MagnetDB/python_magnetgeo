@@ -13,13 +13,13 @@ import yaml
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # Import all classes for testing
+from python_magnetgeo.Assembly import Assembly
 from python_magnetgeo.Bitter import Bitter
 from python_magnetgeo.Bitters import Bitters
 from python_magnetgeo.Helix import Helix
 from python_magnetgeo.Insert import Insert
 from python_magnetgeo.Model3D import Model3D
 from python_magnetgeo.ModelAxi import ModelAxi
-from python_magnetgeo.Assembly import Assembly
 from python_magnetgeo.Probe import Probe
 from python_magnetgeo.Ring import Ring
 from python_magnetgeo.Screen import Screen

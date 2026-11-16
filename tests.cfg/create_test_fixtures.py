@@ -8,15 +8,15 @@ Usage:
     python create_test_fixtures.py
 """
 
-import os
 from pathlib import Path
+
 
 def create_yaml_fixtures():
     """Create all missing YAML test fixtures"""
-    
+
     # Get the directory where this script is located
     script_dir = Path(__file__).parent
-    
+
     # Define all YAML fixtures needed by tests
     fixtures = {
         "inner_lead.yaml": """!<InnerCurrentLead>
@@ -27,7 +27,7 @@ holes: []
 support: []
 fillet: false
 """,
-        
+
         "lead1.yaml": """!<InnerCurrentLead>
 name: "lead1"
 r: [11.0, 13.0]
@@ -36,7 +36,7 @@ holes: []
 support: []
 fillet: false
 """,
-        
+
         "inner.yaml": """!<InnerCurrentLead>
 name: "inner"
 r: [9.0, 11.0]
@@ -45,7 +45,7 @@ holes: []
 support: []
 fillet: false
 """,
-        
+
         "helix1.yaml": """!<Helix>
 name: "helix1"
 r: [15.0, 25.0]
@@ -54,7 +54,7 @@ cutwidth: 1.5
 odd: true
 dble: false
 """,
-        
+
         "ring1.yaml": """!<Ring>
 name: "ring1"
 r: [20.0, 30.0]
@@ -64,7 +64,7 @@ angle: 0.0
 bpside: true
 fillets: false
 """,
-        
+
         # Additional fixtures for comprehensive testing
         "test_helix.yaml": """!<Helix>
 name: "test_helix"
@@ -74,7 +74,7 @@ cutwidth: 1.8
 odd: false
 dble: true
 """,
-        
+
         "test_ring.yaml": """!<Ring>
 name: "test_ring"
 r: [10.0, 20.0]
@@ -84,7 +84,7 @@ angle: 30.0
 bpside: true
 fillets: false
 """,
-        
+
         "test_insert.yaml": """!<Insert>
 name: "test_insert"
 helices:
@@ -99,7 +99,7 @@ innerbore: 8.0
 outerbore: 26.0
 probes: []
 """,
-        
+
         # Probe fixture
         "test_probe.yaml": """!<Probe>
 name: "test_probe"
@@ -110,7 +110,7 @@ positions:
   - [15.0, 0.0, 30.0]
   - [15.0, 0.0, 50.0]
 """,
-        
+
         # ModelAxi fixture
         "test_modelaxi.yaml": """!<ModelAxi>
 name: "test_axi"
@@ -118,7 +118,7 @@ h: 86.51
 turns: [3.0, 2.5, 2.0]
 pitch: [10.0, 12.0, 15.0]
 """,
-        
+
         # Shape fixture
         "test_shape.yaml": """!<Shape>
 name: "test_shape"
@@ -129,18 +129,18 @@ onturns: 0
 position: "BELOW"
 """,
     }
-    
+
     print("=" * 70)
     print("Creating YAML Test Fixtures for tests.yaml")
     print("=" * 70)
     print()
-    
+
     created_count = 0
     skipped_count = 0
-    
+
     for filename, content in fixtures.items():
         filepath = script_dir / filename
-        
+
         if filepath.exists():
             print(f"⊘ Skipped (already exists): {filename}")
             skipped_count += 1
@@ -149,16 +149,16 @@ position: "BELOW"
                 f.write(content.strip() + '\n')
             print(f"✓ Created: {filename}")
             created_count += 1
-    
+
     print()
     print("=" * 70)
-    print(f"Summary:")
+    print("Summary:")
     print(f"  Created: {created_count} files")
     print(f"  Skipped: {skipped_count} files (already existed)")
     print(f"  Total:   {len(fixtures)} fixtures")
     print("=" * 70)
     print()
-    
+
     if created_count > 0:
         print("✓ Test fixtures created successfully!")
         print()
@@ -173,52 +173,52 @@ position: "BELOW"
 def verify_fixtures():
     """Verify that all created fixtures are valid YAML"""
     import yaml
-    
+
     script_dir = Path(__file__).parent
     yaml_files = list(script_dir.glob("*.yaml"))
-    
+
     if not yaml_files:
         print("⚠ No YAML files found to verify")
         return
-    
+
     print("=" * 70)
     print("Verifying YAML Fixtures")
     print("=" * 70)
     print()
-    
+
     valid_count = 0
     invalid_count = 0
-    
+
     for filepath in sorted(yaml_files):
         try:
-            with open(filepath, 'r') as f:
+            with open(filepath) as f:
                 content = f.read()
-            
+
             # Check for type annotation
             if not content.strip().startswith('!<'):
                 print(f"⚠ {filepath.name}: Missing type annotation")
                 invalid_count += 1
                 continue
-            
+
             # Try to parse
             data = yaml.safe_load(content)
-            
+
             # Check for name field
             if 'name' not in data:
                 print(f"⚠ {filepath.name}: Missing 'name' field")
                 invalid_count += 1
                 continue
-            
+
             print(f"✓ {filepath.name}: Valid ({data.get('name', 'unknown')})")
             valid_count += 1
-            
+
         except Exception as e:
             print(f"✗ {filepath.name}: Parse error - {e}")
             invalid_count += 1
-    
+
     print()
     print("=" * 70)
-    print(f"Verification Summary:")
+    print("Verification Summary:")
     print(f"  Valid:   {valid_count} files")
     print(f"  Invalid: {invalid_count} files")
     print("=" * 70)
@@ -228,7 +228,7 @@ def main():
     """Main entry point"""
     print()
     create_yaml_fixtures()
-    
+
     # Ask if user wants to verify
     try:
         response = input("Would you like to verify the fixtures? (y/n): ").strip().lower()

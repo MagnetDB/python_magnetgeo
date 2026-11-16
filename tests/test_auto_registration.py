@@ -1,6 +1,7 @@
 import pytest
 
 from python_magnetgeo import list_registered_classes, verify_class_registration
+from python_magnetgeo.Assembly import Assembly
 from python_magnetgeo.base import YAMLObjectBase
 from python_magnetgeo.Bitter import Bitter
 from python_magnetgeo.Bitters import Bitters
@@ -13,7 +14,6 @@ from python_magnetgeo.InnerCurrentLead import InnerCurrentLead
 from python_magnetgeo.Insert import Insert
 from python_magnetgeo.Model3D import Model3D
 from python_magnetgeo.ModelAxi import ModelAxi
-from python_magnetgeo.Assembly import Assembly
 from python_magnetgeo.OuterCurrentLead import OuterCurrentLead
 from python_magnetgeo.Probe import Probe
 from python_magnetgeo.Ring import Ring

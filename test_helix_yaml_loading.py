@@ -21,7 +21,7 @@ yaml_file = "data/HL-31_H1.yaml"
 try:
     print(f"Loading Helix from {yaml_file}...")
     helix = Helix.from_yaml(yaml_file)
-    
+
     print(f"✓ Successfully loaded: {helix.name}")
     print(f"  Radial extent: {helix.r}")
     print(f"  Axial extent: {helix.z}")
@@ -36,7 +36,7 @@ try:
         print(f"    With channels: {helix.model3d.with_channels}")
         print(f"    With shapes: {helix.model3d.with_shapes}")
     print()
-    
+
     # Try visualization
     try:
         import matplotlib.pyplot as plt
@@ -47,15 +47,15 @@ try:
         plt.close()
     except ImportError:
         print("! Matplotlib not installed - skipping visualization")
-    
+
     print("\n" + "="*60)
     print("✓ All tests passed!")
     print("="*60)
-    
+
 except FileNotFoundError:
     print(f"✗ File not found: {yaml_file}")
     print("  Trying alternative file...")
-    
+
     # Try another file
     import os
     yaml_files = [f for f in os.listdir('data') if f.startswith('HL-31_H') and f.endswith('.yaml')]
@@ -66,7 +66,7 @@ except FileNotFoundError:
         print(f"✓ Successfully loaded: {helix.name}")
     else:
         print("  No suitable YAML files found")
-        
+
 except Exception as e:
     print(f"✗ Error: {e}")
     import traceback
