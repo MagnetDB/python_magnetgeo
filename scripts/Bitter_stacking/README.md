@@ -197,7 +197,9 @@ A catalogue of component types. Each entry accepts:
 
 Exactly one of `sigma` / `tolerance` is needed; the other is derived using the
 table in the theory section. The `tolerance` value is also used as the hard
-limit in the worst-case bound.
+limit in the worst-case bound; when only `sigma` is given, that limit is
+$k\sigma$ for `normal`, and the true half-width $\sqrt{3}\,\sigma$ /
+$\sqrt{6}\,\sigma$ for `uniform` / `triangular`.
 
 ### `segments`, `kapton`, `n_kaptons`
 
@@ -206,6 +208,119 @@ field names the component to use (default: the component called `plate`, so
 with a single plate type the field can be omitted). `kapton` names the
 insulation component, and `n_kaptons` overrides the default count of
 `total_turns - 1` (e.g. if the ends are also insulated).
+
+### `dead_discs` (optional)
+
+Inactive ("dead") discs at the ends of the stack, outside the active turns:
+
+```json
+"dead_discs": {"top": 7, "bottom": 12, "plate": "plate"}
+```
+
+| field | type | meaning |
+|---|---|---|
+| `top` | int | number of dead discs at the top (HP side), default 0 |
+| `bottom` | int | number of dead discs at the bottom (BP side), default 0 |
+| `plate` | string | component name, default `plate` |
+
+Dead discs count in the stack height and in the tolerance budget (they join
+the group of their plate component), but add no turn and no kapton. When
+`top` and `bottom` differ, the magnetic centre sits
+$(\text{bottom} - \text{top})\,\mu/2$ above the mechanical centre; the script
+prints this offset (in the same unit as `mu`).
+
+`M9M10-ext-n5.json` is the stacking plan of the M9/M10 external Bitter n°5
+(7 × 16 + 62 × 8 + 7 × 16 active discs, 7 HP / 12 BP dead discs, APTIV
+125 µm insulators). Its disc width, 0.796 mm, is back-calculated from the
+measured clamped height (597.5 mm without the end plates), which the plan
+reproduces (597.62 mm).
+
+`M9M10-int-n10.json` is the stacking plan of the M9/M10 internal Bitter n°10
+(18 MW): 14 × 8 + 126 × 4 + 14 × 8 active discs (728), 5 HP / 5 BP dead
+discs (symmetric, so no magnetic-centre offset) and 612 APTIV 125 µm
+sectors, i.e. 4 × 153 = one insulator per turn. Its disc width, 0.7863 mm, is
+back-calculated from the measured clamped height (599.44 mm without the end
+plates; the plan gives 599.41 mm, inside the allowed 596.5–605 mm). The
+identification sheet lists the 5 + 5 dead discs but its second page states
+there are none; without them the back-calculated width would be 0.7971 mm,
+above every value in `thickness.xlsx` (0.775–0.790 mm).
+
+## From an identification sheet to a stacking plan
+
+`notice_to_plan.py` builds the stacking plan from a YAML transcription of a
+Bitter identification sheet ("fiche d'identification", typed by hand for now)
+and prints a report of the reading chosen, the checks and the warnings:
+
+```bash
+python notice_to_plan.py notices/M9M10-int-n10.yaml --output M9M10-int-n10.json
+python stacking_plan.py --config M9M10-int-n10.json
+```
+
+A notice copies the raw facts of the sheet, without interpreting them:
+
+```yaml
+overlap: "3/4"
+active_discs: {qty: 728, thickness: 0.8}
+dead_discs: {hp: 5, bp: 5}
+insulators: {qty: 612, thickness: 0.125, material: APTIV}
+measured_height: 599.44           # clamped, without end plates [mm]
+height_limits: [596.5, 605]       # optional [mm]
+thickness_range: [0.775, 0.790]   # optional, measured discs [mm]
+observations: |
+  -Aimant constitué de 14 spires à 8 disques aux extrémités. (HPet BP)
+  -126 spires à 4 disques en partie centrale.
+notes: "doubts about the sheet, repeated as a warning"
+```
+
+Optional fields: `dead_discs`, `insulators.qty`, `measured_height`,
+`height_limits`, `thickness_range`, `tolerances` (`plate`, `insulator`
+half-widths, default 0.0125 and 0.00001 mm), `notes`, and the informational
+`type`, `number`, `slit_direction`.
+
+Rules applied:
+
+1. groups per turn $= 1/(1-\text{overlap})$, so 4 for an overlap of 3/4;
+2. observation items "N spires à AxB disques" or "N spires à K disques" give
+   the discs per turn (A·B or K); an item mentioning "centrale" is the body,
+   any other the ends;
+3. the end turns are read either per end or as a total over both ends; the
+   reading whose disc count equals `active_discs.qty` is kept, and none or
+   both is an error (n°5 resolves to total, n°10 to per end);
+4. one insulator per turn ($n_\text{turns}-1$); a given `insulators.qty` must
+   equal groups × ($n_\text{turns}-1$);
+5. HP dead discs go on top, BP on the bottom;
+6. the disc width is back-calculated from the measured height,
+   $\mu = (H - (n_\text{turns}-1)\,t_\text{ins}) / (n_\text{active}+n_\text{dead})$,
+   or the nominal thickness is used without a measured height.
+
+Warnings are raised for a wrong insulator count, a measured height outside
+`height_limits`, a disc width outside `thickness_range`, discs per turn not
+matching the groups per turn, and any `notes`. A contradiction inside a sheet
+cannot be detected from a single value: record it in `notes`.
+
+`notices/` holds the notices of the M9/M10 external Bitter n°5 and internal
+Bitters n°8, n°9 and n°10.
+
+### Extracting a notice from a PDF sheet
+
+`pdf_to_notice.py` writes the notice from a *digital* sheet (form
+FOR 007 A, with a text layer; requires `pypdf`):
+
+```bash
+python pdf_to_notice.py "BITTER M9M10 INT19-05-2025.pdf" --output notices/M9M10-int-n9.yaml
+python notice_to_plan.py notices/M9M10-int-n9.yaml --output M9M10-int-n9.json
+```
+
+Page 1 is authoritative: the type, number, date, overlap, stacking
+direction, measured height, the active / dead disc and insulator rows of the
+table, and the observations all come from page 1; only `height_limits` (the
+"côte mini / maxi") comes from page 2. Sentences such as "N disques morts en
+HP et M en BP" anywhere in the sheet are compared with the table, and a
+disagreement is recorded in `notes` (the table is kept), so that
+`notice_to_plan.py` repeats it as a warning. A missing required field
+(overlap, active discs, insulators, observations) is an error. Scanned
+sheets have no text layer: the script stops and they must be transcribed by
+hand. The generated YAML starts with a "review before use" comment.
 
 ## Example output
 

@@ -53,6 +53,12 @@ kapton : str
 n_kaptons : int or null, optional
     Number of kapton sheets; null means one between each pair of
     consecutive turns (``total_turns - 1``).
+dead_discs : dict, optional
+    Inactive ("dead") discs at the stack ends: ``top`` and ``bottom``
+    counts (default 0) and ``plate`` (component name, default
+    ``"plate"``). They add to the stack height and tolerance budget but
+    not to the turns or kapton count. An asymmetry shifts the magnetic
+    centre by ``(bottom - top) * mu / 2`` [mm] above the mechanical centre.
 
 Analytic model
 --------------
@@ -64,7 +70,8 @@ group g (N_g pieces, sigma_g):
 
 H is approximately Gaussian (CLT), whatever the per-piece distribution.
 The worst-case bound uses the hard tolerance limit of each piece
-(``tolerance`` if given, else k*sigma) all in the same direction. A
+(``tolerance`` if given, else k*sigma for normal, sqrt(3)*sigma for
+uniform, sqrt(6)*sigma for triangular) all in the same direction. A
 Monte Carlo simulation cross-checks both, sampling each component from
 its declared distribution.
 
@@ -87,11 +94,21 @@ import numpy as np
 
 logger = logging.getLogger(__name__)
 
-_TOL_TO_SIGMA = {
-    "normal": lambda tol, k: tol / k,
-    "uniform": lambda tol, k: tol / np.sqrt(3.0),
-    "triangular": lambda tol, k: tol / np.sqrt(6.0),
-}
+_DISTRIBUTIONS = ("normal", "triangular", "uniform")
+
+
+def _tol_over_sigma(distribution: str, k: float) -> float:
+    """Ratio tolerance/sigma: k for 'normal', the exact half-width/sigma otherwise."""
+    if distribution == "uniform":
+        return float(np.sqrt(3.0))
+    if distribution == "triangular":
+        return float(np.sqrt(6.0))
+    return k
+
+
+# Max number of random draws held in memory at once by the Monte Carlo
+# (~8 bytes each, so ~40 MB per chunk).
+_MC_CHUNK_DRAWS = 5_000_000
 
 EXAMPLE_CONFIG: dict = {
     "components": {
@@ -122,7 +139,9 @@ class Component:
         Random (piece-to-piece) standard deviation.
     tolerance : float
         Hard half-width of the tolerance band (used for the worst-case
-        bound; equals k*sigma if not given explicitly).
+        bound). If not given explicitly it is derived from sigma: k*sigma
+        for 'normal', sqrt(3)*sigma for 'uniform', sqrt(6)*sigma for
+        'triangular' (the true support half-width of those laws).
     sigma_syst : float
         Systematic (batch) standard deviation.
     distribution : str
@@ -140,20 +159,21 @@ class Component:
     def from_dict(cls, name: str, d: dict, default_k: float = 3.0) -> "Component":
         """Build a Component from a JSON dictionary entry."""
         dist = d.get("distribution", "normal")
-        if dist not in _TOL_TO_SIGMA:
+        if dist not in _DISTRIBUTIONS:
             raise ValueError(
                 f"component {name!r}: unknown distribution {dist!r} "
-                f"(expected one of {sorted(_TOL_TO_SIGMA)})"
+                f"(expected one of {list(_DISTRIBUTIONS)})"
             )
         k = float(d.get("tolerance_k", default_k))
+        ratio = _tol_over_sigma(dist, k)
         sigma = d.get("sigma")
         tol = d.get("tolerance")
         if sigma is None and tol is None:
             raise ValueError(f"component {name!r}: need 'sigma' or 'tolerance'")
         if sigma is None:
-            sigma = float(_TOL_TO_SIGMA[dist](float(tol), k))
+            sigma = float(tol) / ratio
         if tol is None:
-            tol = k * float(sigma)
+            tol = ratio * float(sigma)
         return cls(
             name=name,
             mu=float(d["mu"]),
@@ -173,14 +193,53 @@ class Group:
 
 
 @dataclass(frozen=True)
+class Segment:
+    """``n_turns`` turns of ``plates_per_turn`` identical plates, in stack order."""
+
+    n_turns: int
+    plates_per_turn: int
+    plate: Component
+
+
+@dataclass(frozen=True)
 class StackingPlan:
-    """Resolved stacking plan: component groups + bookkeeping."""
+    """Resolved stacking plan: component groups + bookkeeping.
+
+    ``groups`` aggregates pieces per component type (for tolerance stacking),
+    dead discs included; ``segments`` keeps the ordered per-segment layout
+    of the active turns (for axial geometry). ``n_plates`` counts active
+    plates only.
+    """
 
     groups: list[Group]
+    segments: list[Segment]
+    kapton: Component
     n_turns: int
     n_plates: int
     n_kaptons: int
     label: str
+    n_dead_top: int = 0
+    n_dead_bottom: int = 0
+    dead_plate: Component | None = None
+
+    @property
+    def nominal_height(self) -> float:
+        """Nominal total stack height: sum of all plate and kapton widths."""
+        return sum(g.count * g.component.mu for g in self.groups)
+
+    @property
+    def magnetic_centre_offset(self) -> float:
+        """Shift of the magnetic centre above the mechanical centre.
+
+        Returns
+        -------
+        float
+            ``(n_dead_bottom - n_dead_top) * mu_dead / 2`` [mm]; positive
+            means upward, 0 without dead discs.
+        """
+        if self.dead_plate is None:
+            return 0.0
+        return (self.n_dead_bottom - self.n_dead_top) * self.dead_plate.mu / 2.0
 
     @classmethod
     def from_config(cls, cfg: dict) -> "StackingPlan":
@@ -191,6 +250,7 @@ class StackingPlan:
         }
 
         plate_counts: dict[str, int] = {}
+        segments: list[Segment] = []
         n_turns = 0
         n_plates = 0
         parts = []
@@ -199,6 +259,7 @@ class StackingPlan:
             pname = seg.get("plate", "plate")
             if pname not in components:
                 raise ValueError(f"segment references unknown component {pname!r}")
+            segments.append(Segment(nt, ppt, components[pname]))
             plate_counts[pname] = plate_counts.get(pname, 0) + nt * ppt
             n_turns += nt
             n_plates += nt * ppt
@@ -209,14 +270,46 @@ class StackingPlan:
             raise ValueError(f"'kapton' references unknown component {kname!r}")
         n_kaptons = cfg.get("n_kaptons")
         n_kaptons = int(n_kaptons) if n_kaptons is not None else n_turns - 1
+        if n_kaptons < 0:
+            raise ValueError(f"n_kaptons must be >= 0, got {n_kaptons}")
+
+        dead = cfg.get("dead_discs") or {}
+        n_dead_top = int(dead.get("top", 0))
+        n_dead_bottom = int(dead.get("bottom", 0))
+        if n_dead_top < 0 or n_dead_bottom < 0:
+            raise ValueError(
+                f"dead_discs counts must be >= 0, got top={n_dead_top}, "
+                f"bottom={n_dead_bottom}"
+            )
+        dead_plate = None
+        if dead:
+            dname = dead.get("plate", "plate")
+            if dname not in components:
+                raise ValueError(f"dead_discs references unknown component {dname!r}")
+            dead_plate = components[dname]
+            plate_counts[dname] = plate_counts.get(dname, 0) + n_dead_top + n_dead_bottom
 
         groups = [Group(components[n], c) for n, c in plate_counts.items()]
         groups.append(Group(components[kname], n_kaptons))
+        dead_label = (
+            f", {n_dead_top + n_dead_bottom} dead discs" if dead else ""
+        )
         label = (
             f"[{' + '.join(parts)}] -> {n_turns} turns, "
-            f"{n_plates} plates, {n_kaptons} kaptons"
+            f"{n_plates} plates{dead_label}, {n_kaptons} kaptons"
         )
-        return cls(groups, n_turns, n_plates, n_kaptons, label)
+        return cls(
+            groups=groups,
+            segments=segments,
+            kapton=components[kname],
+            n_turns=n_turns,
+            n_plates=n_plates,
+            n_kaptons=n_kaptons,
+            label=label,
+            n_dead_top=n_dead_top,
+            n_dead_bottom=n_dead_bottom,
+            dead_plate=dead_plate,
+        )
 
 
 @dataclass(frozen=True)
@@ -290,12 +383,19 @@ def monte_carlo(
     batch biases are drawn once per simulated stack. The reported
     interval uses empirical quantiles with the same coverage
     probability as +/- k sigma.
+
+    Stacks are simulated in chunks so that at most ``_MC_CHUNK_DRAWS``
+    piece widths are held in memory at once, whatever ``n_samples``.
     """
     if rng is None:
         rng = np.random.default_rng()
+    max_count = max((g.count for g in plan.groups), default=1)
+    chunk = max(1, _MC_CHUNK_DRAWS // max(1, max_count))
     heights = np.zeros(n_samples)
-    for g in plan.groups:
-        heights += _sample_group(g, n_samples, rng)
+    for start in range(0, n_samples, chunk):
+        stop = min(start + chunk, n_samples)
+        for g in plan.groups:
+            heights[start:stop] += _sample_group(g, stop - start, rng)
 
     from scipy.stats import norm
 
@@ -419,6 +519,9 @@ def main(argv: list[str] | None = None) -> int:
     print(f"  analytic RSS : {rss}")
     print(f"  Monte Carlo  : {mc}   ({args.samples} samples)")
     print(f"  relative dispersion: sigma_H/H = {rss.std / rss.mean:.4%}")
+    if plan.dead_plate is not None:
+        print(f"  dead discs   : top={plan.n_dead_top}, bottom={plan.n_dead_bottom}"
+              f"  -> magnetic centre offset {plan.magnetic_centre_offset:+.3f} mm")
     print(budget_table(plan))
 
     if args.plot:

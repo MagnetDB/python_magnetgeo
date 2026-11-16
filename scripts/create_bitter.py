@@ -4,10 +4,19 @@
 The stacking plan (``components``, ``segments``, ``kapton``) defines the axial
 geometry:
 
-* one "turn" = ``plates_per_turn`` plates + one kapton sheet
+* one "turn" = ``plates_per_turn`` plates + one kapton sheet  (ModelAxi pitch model,
+  independent of ``n_kaptons``)
 * ``pitch_i = plates_per_turn[i] × mu_plate + mu_kapton``  (mm per turn)
 * ``h = Σ n_turns[i] × pitch_i / 2``                       (ModelAxi half-height)
-* ``z = [−h, +h]``                                          (physical axial extent, overridable)
+* ``z = [−h, +h]``                                          (Bitter axial extent)
+
+``z`` must enclose the ModelAxi pattern ``[−h, +h]``, otherwise
+``Bitter.get_params()`` returns non-monotonic ``Zh``. The physical stack height
+``Σ plates + n_kaptons × mu_kapton`` is only reported in the summary.
+
+The Bitter is always centred on z=0: ModelAxi has no offset, and the library
+treats ``[−h, +h]`` as absolute coordinates in the magnet frame. To position
+the magnet axially, use ``Assembly.z_offset``.
 
 The extended JSON adds the Bitter-specific geometric fields that are not part
 of the stacking plan (``name``, ``r``, ``odd``, ``innerbore``, ``outerbore``,
@@ -15,12 +24,17 @@ of the stacking plan (``name``, ``r``, ``odd``, ``innerbore``, ``outerbore``,
 
 JSON schema
 -----------
-Stacking-plan fields (same as stacking_plan.py):
-    components    dict    component catalogue (needs "plate" and "kapton" entries)
+Stacking-plan fields (parsed and validated by ``StackingPlan`` from
+Bitter_stacking/stacking_plan.py):
+    components    dict    component catalogue: one entry per plate name used in
+                          segments, plus the one named by ``kapton``; each needs
+                          ``mu`` and ``sigma`` or ``tolerance`` (only ``mu`` is
+                          used for the geometry)
     segments      list    ordered stack segments, each with n_turns, plates_per_turn
                           and optional plate name (default: "plate")
     kapton        str     name of the kapton component in components
-    n_kaptons     int|null  total kapton sheets (null → total_turns − 1)
+    n_kaptons     int|null  total kapton sheets (null → total_turns − 1); only
+                          affects the reported physical height, not ModelAxi
 
 Additional Bitter geometry fields:
     name          str     unique identifier
@@ -28,7 +42,6 @@ Additional Bitter geometry fields:
     odd           bool    helix handedness (true = left-handed)
     innerbore     float   inner bore radius in mm  (default: 0)
     outerbore     float   outer bore radius in mm  (default: 0)
-    z_offset      float   shift the centre of the stack away from z=0  (default: 0)
     coolingslits  list    list of CoolingSlit dicts  (default: [])
     tierod        dict|null  Tierod dict or null      (default: null)
 
@@ -48,10 +61,14 @@ import sys
 from pathlib import Path
 
 # Allow running as a standalone script: add repo root to sys.path so that
-# 'python_magnetgeo' is importable without 'pip install -e .'.
-_repo_root = Path(__file__).resolve().parent.parent
-if str(_repo_root) not in sys.path:
-    sys.path.insert(0, str(_repo_root))
+# 'python_magnetgeo' is importable without 'pip install -e .', and the
+# Bitter_stacking helpers so that 'stacking_plan' is importable.
+_scripts_dir = Path(__file__).resolve().parent
+for _p in (_scripts_dir.parent, _scripts_dir / "Bitter_stacking"):
+    if str(_p) not in sys.path:
+        sys.path.insert(0, str(_p))
+
+from stacking_plan import StackingPlan  # noqa: E402
 
 logger = logging.getLogger(__name__)
 
@@ -66,7 +83,6 @@ EXAMPLE_CONFIG: dict = {
     "odd": True,
     "innerbore": 80.0,
     "outerbore": 160.0,
-    "z_offset": 0.0,
     "coolingslits": [
         {
             "name": "slit1",
@@ -98,44 +114,20 @@ EXAMPLE_CONFIG: dict = {
 # Stacking-plan → ModelAxi conversion
 # ---------------------------------------------------------------------------
 
-def _resolve_stacking(cfg: dict) -> tuple[list[float], list[float], float, float, int]:
-    """Derive (turns, pitches, h, H_actual, n_kaptons) from the stacking-plan fields.
+def modelaxi_params(plan: StackingPlan) -> tuple[list[float], list[float], float]:
+    """Derive ModelAxi (turns, pitches, h) from a resolved stacking plan.
 
-    Returns
-    -------
-    turns      list of n_turns per segment
-    pitches    list of mm-per-turn per segment  (plates_per_turn*mu_plate + mu_kapton)
-    h          ModelAxi half-height = sum(n*p)/2
-    H_actual   physical stack height = 2*h - mu_kapton  (one fewer kapton than pitch formula)
-    n_kaptons  number of kapton sheets in the stack
+    turns    n_turns per segment
+    pitches  mm per turn per segment = plates_per_turn*mu_plate + mu_kapton
+    h        half-height = sum(turns*pitches)/2
     """
-    components = cfg["components"]
-    kapton_name = cfg["kapton"]
-    mu_kapton = float(components[kapton_name]["mu"])
-
-    turns: list[float] = []
-    pitches: list[float] = []
-    n_total_turns = 0
-
-    for seg in cfg["segments"]:
-        plate_name = seg.get("plate", "plate")
-        mu_plate = float(components[plate_name]["mu"])
-        ppt = int(seg["plates_per_turn"])
-        nt = int(seg["n_turns"])
-        turns.append(float(nt))
-        pitches.append(ppt * mu_plate + mu_kapton)
-        n_total_turns += nt
-
-    n_kaptons_cfg = cfg.get("n_kaptons")
-    n_kaptons = int(n_kaptons_cfg) if n_kaptons_cfg is not None else n_total_turns - 1
-
+    turns = [float(s.n_turns) for s in plan.segments]
+    pitches = [s.plates_per_turn * s.plate.mu + plan.kapton.mu for s in plan.segments]
     h = sum(t * p for t, p in zip(turns, pitches)) / 2.0
-    H_actual = 2 * h - mu_kapton
-
-    return turns, pitches, h, H_actual, n_kaptons
+    return turns, pitches, h
 
 
-def build_bitter_from_config(cfg: dict, debug: bool = False):
+def build_bitter_from_config(cfg: dict, plan: StackingPlan | None = None, debug: bool = False):
     """Instantiate a Bitter object from the extended stacking-plan config."""
     from python_magnetgeo.Bitter import Bitter
     from python_magnetgeo.coolingslit import CoolingSlit
@@ -147,12 +139,19 @@ def build_bitter_from_config(cfg: dict, debug: bool = False):
     odd = cfg["odd"]
     innerbore = cfg.get("innerbore", 0.0)
     outerbore = cfg.get("outerbore", 0.0)
-    z_offset = cfg.get("z_offset", 0.0)
+    if cfg.get("z_offset", 0.0):
+        raise ValueError(
+            "z_offset is not supported: the ModelAxi pattern is always centred on "
+            "z=0 in the Bitter frame. Position the magnet with Assembly.z_offset instead."
+        )
 
-    turns, pitches, h, H_actual, _ = _resolve_stacking(cfg)
+    if plan is None:
+        plan = StackingPlan.from_config(cfg)
+    turns, pitches, h = modelaxi_params(plan)
 
-    z_half = H_actual / 2.0
-    z = [z_offset - z_half, z_offset + z_half]
+    # z must enclose the ModelAxi pattern [-h, h]: using the physical height
+    # would put z inside it and break Bitter.get_params() Zh.
+    z = [-h, h]
 
     modelaxi = ModelAxi(name=f"{name}_axi", h=h, turns=turns, pitch=pitches)
 
@@ -190,7 +189,7 @@ def build_bitter_from_config(cfg: dict, debug: bool = False):
 # Summary
 # ---------------------------------------------------------------------------
 
-def print_summary(bitter, cfg: dict) -> None:
+def print_summary(bitter, plan: StackingPlan) -> None:
     """Print a human-readable summary of the Bitter object and its stacking plan."""
     rb, zb = bitter.boundingBox()
     n_turns_total = bitter.get_Nturns()
@@ -211,19 +210,14 @@ def print_summary(bitter, cfg: dict) -> None:
     print(f"    Total turns : {n_turns_total:.1f}")
 
     # Stacking plan breakdown per segment
-    components = cfg["components"]
-    kapton_name = cfg["kapton"]
-    mu_kapton = float(components[kapton_name]["mu"])
-    print(f"\n  Stacking plan ({'segments'})")
+    print("\n  Stacking plan (segments)")
     print(f"  {'Segment':<6} {'n_turns':>8} {'ppt':>4} {'mu_plate':>10} {'pitch':>10} {'height':>10}")
     print(f"  {'-'*52}")
-    for i, (seg, t, p) in enumerate(zip(cfg["segments"], axi.turns, axi.pitch)):
-        plate_name = seg.get("plate", "plate")
-        mu_plate = float(components[plate_name]["mu"])
-        ppt = seg["plates_per_turn"]
-        print(f"  {i:<6} {int(t):>8} {ppt:>4} {mu_plate:>10.4f} {p:>10.4f} {t*p:>10.4f}")
+    for i, (seg, t, p) in enumerate(zip(plan.segments, axi.turns, axi.pitch)):
+        print(f"  {i:<6} {int(t):>8} {seg.plates_per_turn:>4} {seg.plate.mu:>10.4f} {p:>10.4f} {t*p:>10.4f}")
     print(f"  {'total':<6} {int(n_turns_total):>8}      {'':>10} {'':>10} {sum(t*p for t,p in zip(axi.turns, axi.pitch)):>10.4f}")
-    print(f"  kapton mu={mu_kapton:.4f} mm")
+    print(f"  kapton mu={plan.kapton.mu:.4f} mm")
+    print(f"  physical stack height : {plan.nominal_height:.4f} mm  ({plan.n_kaptons} kaptons)")
 
     print(f"\n  Mesh lc       : {lc:.4f} mm")
 
@@ -313,8 +307,9 @@ def main(argv: list[str] | None = None) -> int:
     with open(args.config, encoding="utf-8") as f:
         cfg = json.load(f)
 
-    bitter = build_bitter_from_config(cfg, debug=args.debug)
-    print_summary(bitter, cfg)
+    plan = StackingPlan.from_config(cfg)
+    bitter = build_bitter_from_config(cfg, plan=plan, debug=args.debug)
+    print_summary(bitter, plan)
 
     if args.yaml:
         bitter.write_to_yaml(directory=args.output_dir)
