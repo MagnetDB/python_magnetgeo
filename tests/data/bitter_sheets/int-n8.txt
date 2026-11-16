@@ -1,0 +1,125 @@
+ 
+ 
+GRENOBLE HIGH  MAGNETIC  FIELD LABORATORY 
+LABORATOIRE  DES  CHAMPS  MAGNÉTIQUES  INTENSES 
+HOCHFELD-MAGNETLABOR 
+MPI CNRS 
+25, Avenue des Martyrs B.P.166 
+F-38042 GRENOBLE CEDEX 9 FRANCE 
+Tél : +33 476 88 10 01  Fax :  +33 476 85 56 10 
+Réf. / Rév  IN-01 G 
+Date Rév / For 06/062023 FOR 007 A 
+Auteur VERNEY 
+Vérificateur Sans Objet 
+Approbateur Sans Objet  
+Exemple : Contrôle dimensionnel  Diffusion : gdt Page 1 sur 2 
+FICHE D’IDENTIFICATION AIMANT BITTER 
+TYPE BOBINAGE :        bitter int M9/M10 (18MW) 
+N°    8 
+DATE : 06/06/2023 Mise en service le 08/06/2023 
+RECOUVREMENT ELECTRIQUE : 3/4 
+SENS D’EMPILEMENT : la fente se déplace vers la gauche, l’isolant est à gauche de la fente. 
+ 
+SERRAGE 
+Appareil utilisé 
+ Couple de serrage en 
+Nm 
+Force par tirant 
+(N) 
+Hauteur mesurée 
+(Hors plateaux) après 
+Serrage (mm) 
+Clé 
+dynamométrique 13 10320 N 603 
+ 
+OBSERVATIONS : 
+ -Aimant constitué de 6 spires à 8 disques aux extrémités. (6 en HP et 6 en  
+ BP) 
+ 158 spires à 4 disques en partie centrale. (Aimant optimisé pour 18MW). 
+ -les empilements de Belleville sont de 2 paquets de 9 rondelles montées 
+ Tête-bêche en Hp et en Bp. 
+ Il y a 3 disques morts en HP et aucun en BP. 
+  
+ 
+ 
+GRENOBLE HIGH  MAGNETIC  FIELD LABORATORY 
+LABORATOIRE  DES  CHAMPS  MAGNÉTIQUES  INTENSES 
+HOCHFELD-MAGNETLABOR 
+MPI CNRS 
+25, Avenue des Martyrs B.P.166 
+F-38042 GRENOBLE CEDEX 9 FRANCE 
+Tél : +33 476 88 10 01  Fax :  +33 476 85 56 10 
+Réf. / Rév  IN-01 G 
+Date Rév / For 06/06/2023 FOR 007 A 
+Auteur VERNEY 
+Vérificateur Sans Objet 
+Approbateur Sans Objet  
+Exemple : Contrôle dimensionnel  Diffusion : gdt Page 1 sur 2 
+ Matière Quantité Dimensions Référence 
+Disques actifs Cu 728 Ø 680x Ø 400x0.8 mm  
+Disques « morts » HP Cu 3 Ø 680x Ø 400x0.8 mm  
+Disques « morts » BP Cu  0 Ø 680x Ø 400x0.8 mm  
+Isolants APTIV 125µ 680 Ø 680x Ø 400x0.125 mm  
+Tirants Inox 32 Ø6x675mm  
+Ecrous InoxA4 128 M6  
+Rondelles isolantes HP Verre+époxy G11 32 Ø 16x Ø 8.1x14mm  
+Rondelles isolantes BP Verre+époxy G11 32 Ø 16x Ø 8.1x14mm  
+Rondelles d’appui Belleville Z6 NCTDV 25-15 32 Ø 13.1x Ø 6.1x2 mm  
+Rondelles Belleville Inox 1152   
+Tubes isolants Verre+époxy G11 32 Ø 7.8x Ø 6.1xL mm  
+Plateau HP UE12P 1 Ø 680x Ø 400x30 mm  
+Plateau BP UE12P 1 Ø 680x Ø 400x30 mm   
+ 
+GRENOBLE HIGH  MAGNETIC  FIELD LABORATORY 
+LABORATOIRE  DES  CHAMPS  MAGNÉTIQUES  INTENSES 
+HOCHFELD-MAGNETLABOR 
+MPI CNRS 
+25, Avenue des Martyrs B.P.166 
+F-38042 GRENOBLE CEDEX 9 FRANCE 
+Tél : +33 476 88 10 01  Fax :  +33 476 85 56 10 
+Réf. / Rév  IN-01 G 
+Date Rév / For 06/062023 FOR 007 A 
+Auteur VERNEY 
+Vérificateur Sans Objet 
+Approbateur Sans Objet  
+Exemple : Contrôle dimensionnel  Diffusion : gdt Page 2 sur 2 
+CONTROLE RESISTANCE BITTER INT M9/M10  
+ 
+ 
+Rt=16.1m Ω pour un calibre de 50mΩ/3A à une température de 20,5°C 
+ 
+ 
+NB : Les isolateurs de tirants sont neufs. 
+NB : La côte théorique d’un empilage bitter est de 600mm. Cependant une tolérance mini 
+et maxi est possible tout en gardant l’isolation des tirants correcte et le réglage des vis de la 
+caisse. 
+Côte mini bitter interne hors plateaux 596.5mm. 
+Côte maxi bitter interne hors plateaux 605 mm (606 théorique). 
+Ces côtes sont données pour une Bitter parfaitement symétrique avec le même nombre de 
+disques morts en HP et BP. 
+ 
+ Calcul du réglage des vis en relatif par rapport à la Bitter sortie : 
+ 
+ 
+Côte de longueur de la nouvelle Bitter : 603mm (sans plateau) 
+Côté de l’ancienne Bitter : 596.1 mm (sans plateau) 
+ 
+La nouvelle Bitter a une dissymétrie de 3 disques entre la HP et la BP soit 2,4mm (3x0,8) 
+On retranche cette côte à la longueur totale pour avoir la longueur électrique de la nouvelle 
+Bitter : 
+663-2,4=661,6mm. 
+On suppose l’ancienne Bitter parfaitement symétrique car centrée dans la caisse (même si elle ne 
+l’est pas). On peut donc soustraire les deux longueurs électriques : 
+ 
+661,6-656,1=5,5mm que l’on divise /2 pour avoir la différence entre les deux centres 
+magnétiques. 
+ 
+5,5/2=2,75mm de différence entre les deux centres magnétiques vers le haut auquel s’ajoute les 
+trois disques morts en HP soit : 
+ 
+2,75+2,4=5,1 mm il faudra donc descendre les vis de réglages de 5,1mm par rapport à l’ancien 
+réglage. 
+L’ancien réglage étant de 10,4mm le nouveau réglage sera donc : 
+ 
+10,4-5,1=5,3mm 
+ 
