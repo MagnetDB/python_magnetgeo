@@ -62,7 +62,6 @@ from fractions import Fraction
 from pathlib import Path
 
 import yaml
-
 from stacking_plan import StackingPlan
 
 logger = logging.getLogger(__name__)

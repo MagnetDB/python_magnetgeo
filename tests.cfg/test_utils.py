@@ -5,7 +5,11 @@ Provides common testing utilities and a comprehensive test runner
 """
 
 # File: new-tests/test_utils.py
+import argparse
+import importlib.util
+import inspect
 import json
+import sys
 import tempfile
 from pathlib import Path
 from typing import Any
@@ -302,12 +306,14 @@ class MagnetTestRunner:
         """Validate test environment is properly set up"""
         try:
             # Check python_magnetgeo can be imported
-            import python_magnetgeo
+            if importlib.util.find_spec("python_magnetgeo") is None:
+                raise ImportError("python_magnetgeo")
             print("✓ python_magnetgeo import successful")
 
             # Check required test dependencies
-            import pytest
-            import yaml
+            for _mod in ("pytest", "yaml"):
+                if importlib.util.find_spec(_mod) is None:
+                    raise ImportError(_mod)
             print("✓ Test dependencies available")
 
             # Check test directory exists
@@ -395,11 +401,8 @@ class MagnetTestRunner:
             cmd.extend(["-k", test_pattern])
 
         # Add coverage if available
-        try:
-            import pytest_cov
+        if importlib.util.find_spec("pytest_cov") is not None:
             cmd.extend(["--cov=python_magnetgeo", "--cov-report=term-missing"])
-        except ImportError:
-            pass
 
         # Run tests
         try:
@@ -498,11 +501,6 @@ class MagnetTestRunner:
 Test runner script for python_magnetgeo v0.7.0
 Provides comprehensive testing with validation and reporting
 """
-
-import argparse
-import sys
-
-from test_utils import MagnetTestRunner
 
 
 def main():
@@ -624,9 +622,6 @@ if __name__ == "__main__":
 Implementation validation script for python_magnetgeo v0.7.0
 Checks that all expected methods and classes are properly implemented
 """
-
-import inspect
-from typing import Any
 
 
 class ImplementationValidator:

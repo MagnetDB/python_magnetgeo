@@ -18,7 +18,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 try:
     from python_magnetgeo.base import YAMLObjectBase
     from python_magnetgeo.tierod import Tierod
-    from python_magnetgeo.validation import GeometryValidator, ValidationError
+    from python_magnetgeo.validation import ValidationError
 except ImportError as e:
     print(f"Warning: Could not import python_magnetgeo modules: {e}")
     print("This validation suite requires the refactored codebase to be available")
@@ -393,11 +393,6 @@ shape: !<Shape>
 
         try:
             # These should fail in the new version
-            breaking_cases = [
-                # Old YAML format without type annotation should require migration
-                {"name": "old_format", "r": 12.5, "n": 8},  # Raw dict without !<Tierod>
-            ]
-
             # Test that direct instantiation from old format requires from_dict
             old_format_data = {"name": "old_style", "r": 12.5, "n": 8}
 
@@ -498,7 +493,9 @@ def main():
 
     # Check if we can import the required modules
     try:
-        from python_magnetgeo.tierod import Tierod
+        import importlib
+
+        importlib.import_module("python_magnetgeo.tierod")
         print("✓ Successfully imported Tierod from python_magnetgeo")
     except ImportError as e:
         print(f"✗ Cannot import Tierod: {e}")

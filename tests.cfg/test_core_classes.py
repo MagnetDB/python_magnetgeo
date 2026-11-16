@@ -140,7 +140,7 @@ class TestSupra:
         assert supra.r == [25.0, 45.0]
         assert supra.z == [15.0, 85.0]
         assert supra.n == 8
-        assert supra.struct == None
+        assert supra.struct is None
 
     def test_supra_detail_levels(self, sample_supra):
         """Test set_Detail method with valid levels"""
@@ -153,7 +153,7 @@ class TestSupra:
 
     def test_supra_detail_invalid(self, sample_supra):
         """Test set_Detail raises exception for invalid levels"""
-        with pytest.raises(Exception):
+        with pytest.raises(ValueError):
             sample_supra.set_Detail("invalid_detail")
 
     def test_supra_get_nturns(self, sample_supra):
@@ -176,7 +176,7 @@ class TestSupra:
         assert parsed["__classname__"] == "Supra"
         assert parsed["name"] == "test_supra"
         assert parsed["n"] == 5
-        assert parsed["struct"] == None
+        assert parsed["struct"] is None
 
 
 class TestScreen:

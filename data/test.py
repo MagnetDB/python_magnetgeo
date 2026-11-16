@@ -15,7 +15,7 @@ gmsh.model.setPhysicalName(2, pgrp, "Cu")
 """
 gmsh.model.mesh.setSize(gmsh.model.getEntities(0), 2)
 gmsh.option.setNumber("Mesh.Algorithm", 5)
-gmsh.model.mesh.generate(3) 
+gmsh.model.mesh.generate(3)
 gmsh.write("test.msh")
 """
 

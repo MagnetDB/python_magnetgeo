@@ -189,7 +189,7 @@ def plot_distribution(data: dict[str, np.ndarray], all_stats: dict[str, dict], p
     n_sheets = len(data)
     fig, axes = plt.subplots(1, n_sheets, figsize=(6 * n_sheets, 5), squeeze=False)
 
-    for ax, (name, values) in zip(axes[0], data.items()):
+    for ax, (name, values) in zip(axes[0], data.items(), strict=True):
         stats = all_stats[name]
         mu, sigma = stats["mu"], stats["sigma"]
         tol = stats["tolerance"]
@@ -211,7 +211,7 @@ def plot_distribution(data: dict[str, np.ndarray], all_stats: dict[str, dict], p
         ax.legend(fontsize=8)
 
     from matplotlib.patches import Patch
-    for ax, (name, stats) in zip(axes[0], all_stats.items()):
+    for ax, (_name, stats) in zip(axes[0], all_stats.items(), strict=True):
         tol = stats["tolerance"]
         legend = ax.get_legend()
         existing = getattr(legend, "legend_handles", None) or getattr(legend, "legendHandles", [])

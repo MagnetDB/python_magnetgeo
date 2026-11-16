@@ -85,19 +85,19 @@ def example_validation_logging():
 
     # Empty name
     try:
-        helix = pmg.Helix(name="", r=[10, 20], z=[0, 50])
+        pmg.Helix(name="", r=[10, 20], z=[0, 50])
     except pmg.ValidationError as e:
         print(f"  Caught: {e}")
 
     # Wrong order
     try:
-        helix = pmg.Helix(name="test", r=[20, 10], z=[0, 50])  # r values descending
+        pmg.Helix(name="test", r=[20, 10], z=[0, 50])  # r values descending
     except pmg.ValidationError as e:
         print(f"  Caught: {e}")
 
     # Wrong type
     try:
-        helix = pmg.Helix(name="test", r="not a list", z=[0, 50])
+        pmg.Helix(name="test", r="not a list", z=[0, 50])
     except pmg.ValidationError as e:
         print(f"  Caught: {e}")
 
@@ -109,19 +109,19 @@ def example_runtime_level_change():
     pmg.configure_logging(level='INFO')
     print("Starting with INFO level")
 
-    helix = pmg.Helix(name="test1", r=[10, 20], z=[0, 50])
+    pmg.Helix(name="test1", r=[10, 20], z=[0, 50])
 
     # Switch to DEBUG for detailed inspection
     print("\nSwitching to DEBUG level")
     pmg.set_level('DEBUG')
 
-    helix2 = pmg.Helix(name="test2", r=[15, 25], z=[5, 55])
+    pmg.Helix(name="test2", r=[15, 25], z=[5, 55])
 
     # Back to WARNING (minimal output)
     print("\nSwitching to WARNING level (minimal output)")
     pmg.set_level('WARNING')
 
-    helix3 = pmg.Helix(name="test3", r=[20, 30], z=[10, 60])
+    pmg.Helix(name="test3", r=[20, 30], z=[10, 60])
     print("Created test3 (no logs because WARNING level)")
 
 def example_custom_format():
@@ -138,7 +138,7 @@ def example_custom_format():
 
     print("Using detailed format (includes function:line)")
 
-    helix = pmg.Helix(name="formatted", r=[10, 20], z=[0, 50])
+    pmg.Helix(name="formatted", r=[10, 20], z=[0, 50])
 
 def example_silent_mode():
     """Example of completely silent operation"""

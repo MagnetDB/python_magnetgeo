@@ -123,7 +123,7 @@ def modelaxi_params(plan: StackingPlan) -> tuple[list[float], list[float], float
     """
     turns = [float(s.n_turns) for s in plan.segments]
     pitches = [s.plates_per_turn * s.plate.mu + plan.kapton.mu for s in plan.segments]
-    h = sum(t * p for t, p in zip(turns, pitches)) / 2.0
+    h = sum(t * p for t, p in zip(turns, pitches, strict=True)) / 2.0
     return turns, pitches, h
 
 
@@ -213,9 +213,9 @@ def print_summary(bitter, plan: StackingPlan) -> None:
     print("\n  Stacking plan (segments)")
     print(f"  {'Segment':<6} {'n_turns':>8} {'ppt':>4} {'mu_plate':>10} {'pitch':>10} {'height':>10}")
     print(f"  {'-'*52}")
-    for i, (seg, t, p) in enumerate(zip(plan.segments, axi.turns, axi.pitch)):
+    for i, (seg, t, p) in enumerate(zip(plan.segments, axi.turns, axi.pitch, strict=True)):
         print(f"  {i:<6} {int(t):>8} {seg.plates_per_turn:>4} {seg.plate.mu:>10.4f} {p:>10.4f} {t*p:>10.4f}")
-    print(f"  {'total':<6} {int(n_turns_total):>8}      {'':>10} {'':>10} {sum(t*p for t,p in zip(axi.turns, axi.pitch)):>10.4f}")
+    print(f"  {'total':<6} {int(n_turns_total):>8}      {'':>10} {'':>10} {sum(t*p for t,p in zip(axi.turns, axi.pitch, strict=True)):>10.4f}")
     print(f"  kapton mu={plan.kapton.mu:.4f} mm")
     print(f"  physical stack height : {plan.nominal_height:.4f} mm  ({plan.n_kaptons} kaptons)")
 
@@ -234,7 +234,7 @@ def print_summary(bitter, plan: StackingPlan) -> None:
         tr = bitter.tierod
         print(f"\n  Tierod        : {tr.name}, r={tr.r} mm, n={tr.n}")
     else:
-        print(f"\n  Tierod        : none")
+        print("\n  Tierod        : none")
 
 
 # ---------------------------------------------------------------------------

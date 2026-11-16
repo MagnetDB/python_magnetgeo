@@ -279,5 +279,3 @@ class TestIntegration:
         assert insert_zb[1] == expected_z_max  # 100.0 + 10.0 = 110.0
 
         # Test intersection consistency
-        test_rect_r = [12.0, 23.0]  # Overlaps both helices
-        test_rect_z = [20.0, 80.0]  #

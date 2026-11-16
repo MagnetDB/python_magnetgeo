@@ -45,17 +45,6 @@ class TestSerialization:
             "shape": None
         }
 
-        ring_dict = {
-            "__classname__": "Ring",
-            "name": "ring1",
-            "r": [10.0, 10.1, 19.9, 20.0],
-            "z": [0.0, 10.0],
-            "n": 6,
-            "angle": 30.0,
-            "bpside": True,
-            "fillets": False
-        }
-
         # Define inline currentleads - both InnerCurrentLead and OuterCurrentLead
         inner_lead_dict = {
             "__classname__": "InnerCurrentLead",
@@ -65,15 +54,6 @@ class TestSerialization:
             "holes": [5.0, 10.0, 0.0, 45.0, 0.0, 8],
             "support": [10.1, 5.0],
             "fillet": True
-        }
-
-        outer_lead_dict = {
-            "__classname__": "OuterCurrentLead",
-            "name": "outer",
-            "r": [35.0, 40.0],
-            "h": 52.0,
-            "bar": [37.5, 10.0, 15.0, 40.0],
-            "support": [5.0, 10.0, 30.0, 0.0]
         }
 
         probe_dict = {
@@ -126,7 +106,7 @@ class TestSerialization:
         assert supra.r == [30.0, 50.0]
         assert supra.z == [20.0, 80.0]
         assert supra.n == 6
-        assert supra.struct == None
+        assert supra.struct is None
 
     def test_probe_from_dict(self):
         """Test Probe creation from dictionary"""
